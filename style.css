@@ -48,36 +48,34 @@ a:hover {
 
 /* ---------- header and nav ---------- */
 
+/* One bar across the top: the name on the left, the menu on the right,
+   sitting on a single rule. */
 header.masthead {
-  padding: 34px 0 0 0;
-  text-align: center;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 0 11px 0;
+  border-bottom: 1px solid var(--edge);
 }
 
 h1.title {
   margin: 0;
-  font-size: 34px;
+  font-size: 30px;
   font-weight: normal;
   font-variant: small-caps;
   letter-spacing: 3px;
   color: var(--brown);
 }
 
-p.tagline {
-  margin: 6px 0 0 0;
-  font-size: 14px;
-  font-style: italic;
-  color: var(--brown);
-}
-
 nav.bar {
-  margin: 18px 0 0 0;
-  padding: 10px 0;
-  border-top: 1px solid var(--edge);
-  border-bottom: 1px solid var(--edge);
-  text-align: center;
+  margin: 0;
+  padding: 0;
+  border: none;
   font-variant: small-caps;
   letter-spacing: 2px;
   font-size: 16px;
+  white-space: nowrap;
 }
 
 nav.bar a {
@@ -95,6 +93,10 @@ nav.bar a:hover {
 nav.bar a.current {
   color: var(--rust);
   text-decoration: underline;
+}
+
+nav.bar a:last-of-type {
+  padding-right: 0;
 }
 
 nav.bar span.sep {
@@ -488,16 +490,26 @@ article.post p.date {
     height: 380px;
   }
 
+  header.masthead {
+    display: block;
+    padding-bottom: 9px;
+  }
+
   h1.title {
     font-size: 26px;
   }
 
   nav.bar {
+    margin-top: 6px;
     font-size: 15px;
   }
 
   nav.bar a {
     padding: 0 4px;
+  }
+
+  nav.bar a:first-of-type {
+    padding-left: 0;
   }
 }
 
