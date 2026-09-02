@@ -217,8 +217,8 @@ footer.foot::before {
    background is rgb(12,12,12), a shade off this page - so there is no
    filter here at all. Nothing to correct. */
 
-/* MapLibre's marker is an SVG whose colour is set in map.js, so it
-   needs no filtering either. */
+/* The cameras are circles drawn into the map's own canvas, painted in
+   the accent colour by map.js, so they need no filtering either. */
 
 .maplibregl-map {
   font-family: var(--mono);
