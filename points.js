@@ -21,7 +21,29 @@
    must fall inside Greater London.
    ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------
+   cammap - the cameras on the published map
+
+   Written out by index.html?edit. Paste this over everything in
+   points.js, then commit and push to publish it.
+   ------------------------------------------------------------------ */
+
 var POINTS = [
 
+  {
+    name: "cam 1",
+    note: "",
+    lat: 51.477132,
+    lon: -0.191669
+  },
+
+  {
+    name: "cam 2",
+    note: "",
+    lat: 51.476714,
+    lon: -0.203679
+  }
+
 ];
+
 
