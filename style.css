@@ -1,0 +1,558 @@
+/* ------------------------------------------------------------------
+   cammap - shared stylesheet
+   Every page links this file. Change a colour here and all three
+   pages change together.
+   ------------------------------------------------------------------ */
+
+:root {
+  --paper: #f4ead8;   /* page background   */
+  --ink:   #3b2f2a;   /* body text         */
+  --brown: #6b4f3a;   /* headings, borders */
+  --rust:  #8c4a32;   /* links, accents    */
+  --edge:  #c8b48f;   /* hairline rules    */
+  --panel: #efe2c9;   /* boxes on the page */
+}
+
+/* ---------- page ---------- */
+
+html {
+  background: var(--paper);
+}
+
+body {
+  margin: 0;
+  padding: 0 20px 60px 20px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.sheet {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+p {
+  margin: 0 0 1em 0;
+}
+
+a {
+  color: var(--rust);
+}
+
+a:hover {
+  color: var(--brown);
+}
+
+/* ---------- header and nav ---------- */
+
+header.masthead {
+  padding: 34px 0 0 0;
+  text-align: center;
+}
+
+h1.title {
+  margin: 0;
+  font-size: 34px;
+  font-weight: normal;
+  font-variant: small-caps;
+  letter-spacing: 3px;
+  color: var(--brown);
+}
+
+p.tagline {
+  margin: 6px 0 0 0;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--brown);
+}
+
+nav.bar {
+  margin: 18px 0 0 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--edge);
+  border-bottom: 1px solid var(--edge);
+  text-align: center;
+  font-variant: small-caps;
+  letter-spacing: 2px;
+  font-size: 16px;
+}
+
+nav.bar a {
+  margin: 0 4px;
+  padding: 0 10px;
+  color: var(--brown);
+  text-decoration: none;
+}
+
+nav.bar a:hover {
+  color: var(--rust);
+  text-decoration: underline;
+}
+
+nav.bar a.current {
+  color: var(--rust);
+  text-decoration: underline;
+}
+
+nav.bar span.sep {
+  color: var(--edge);
+}
+
+/* ---------- main content ---------- */
+
+main {
+  padding: 30px 0 0 0;
+}
+
+h2 {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  font-weight: normal;
+  font-variant: small-caps;
+  letter-spacing: 1.5px;
+  color: var(--brown);
+}
+
+h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: normal;
+  font-variant: small-caps;
+  letter-spacing: 1.5px;
+  color: var(--brown);
+}
+
+/* ---------- footer ---------- */
+
+footer.foot {
+  margin: 50px 0 0 0;
+  padding: 12px 0 0 0;
+  border-top: 1px solid var(--edge);
+  text-align: center;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--brown);
+}
+
+/* ------------------------------------------------------------------
+   MAP PAGE
+   ------------------------------------------------------------------ */
+
+.map-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.map-column {
+  flex: 1 1 auto;
+  min-width: 0;   /* lets the map shrink instead of overflowing */
+}
+
+.side-column {
+  flex: 0 0 280px;
+}
+
+#map {
+  height: 500px;
+  border: 1px solid var(--brown);
+  background: var(--panel);
+}
+
+/* Age the map imagery only. The filter is on the tile pane, so
+   markers, popups and the zoom buttons stay crisp. */
+.leaflet-tile-pane {
+  filter: sepia(0.55) saturate(0.65) contrast(0.9) brightness(1.03);
+}
+
+/* Leaflet's own furniture, dressed to match the page. */
+.leaflet-container {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  background: var(--panel);
+}
+
+.leaflet-control-attribution {
+  background: rgba(244, 234, 216, 0.85) !important;
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.leaflet-control-attribution a {
+  color: var(--rust);
+}
+
+.leaflet-bar a {
+  background: var(--paper);
+  color: var(--brown);
+  border-bottom-color: var(--edge);
+}
+
+.leaflet-bar a:hover {
+  background: var(--panel);
+  color: var(--rust);
+}
+
+/* ---------- boxes ---------- */
+
+.box {
+  margin: 0 0 20px 0;
+  padding: 14px 16px;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+}
+
+.box p.hint {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--brown);
+}
+
+/* ---------- forms ---------- */
+
+label {
+  display: block;
+  margin: 0 0 3px 0;
+  font-size: 13px;
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  color: var(--brown);
+}
+
+input[type="text"],
+input[type="number"],
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 10px 0;
+  padding: 6px 8px;
+  background: #fbf5e9;
+  border: 1px solid var(--edge);
+  border-radius: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 15px;
+}
+
+textarea {
+  height: 60px;
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--brown);
+}
+
+button {
+  padding: 6px 16px;
+  background: var(--brown);
+  border: 1px solid var(--brown);
+  border-radius: 0;
+  color: var(--paper);
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 15px;
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--rust);
+  border-color: var(--rust);
+}
+
+button:disabled {
+  background: var(--edge);
+  border-color: var(--edge);
+  cursor: default;
+}
+
+.pair {
+  display: flex;
+  gap: 10px;
+}
+
+.pair > div {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.row input {
+  margin-bottom: 0;
+}
+
+/* ---------- messages ---------- */
+
+.note {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--rust);
+  min-height: 1em;
+}
+
+/* ---------- search results ---------- */
+
+ul.results {
+  margin: 10px 0 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--edge);
+}
+
+ul.results li {
+  border-bottom: 1px solid var(--edge);
+}
+
+ul.results button.pick {
+  display: block;
+  width: 100%;
+  padding: 7px 4px;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-size: 14px;
+  font-variant: normal;
+  letter-spacing: 0;
+  text-align: left;
+  line-height: 1.35;
+}
+
+ul.results button.pick:hover {
+  background: #e6d6b6;
+  color: var(--rust);
+}
+
+/* ---------- saved points list ---------- */
+
+ul.points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul.points li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--edge);
+}
+
+ul.points li:first-child {
+  border-top: 1px solid var(--edge);
+}
+
+button.goto {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-size: 15px;
+  font-variant: normal;
+  letter-spacing: 0;
+  text-align: left;
+  line-height: 1.4;
+}
+
+button.goto:hover {
+  background: none;
+  color: var(--rust);
+}
+
+button.goto .name {
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  color: var(--brown);
+}
+
+button.goto:hover .name {
+  color: var(--rust);
+}
+
+button.goto .memo {
+  display: block;
+  font-size: 13px;
+  font-style: italic;
+}
+
+button.goto .coords {
+  display: block;
+  font-size: 12px;
+  color: var(--brown);
+}
+
+button.remove {
+  flex: 0 0 auto;
+  padding: 0 6px;
+  background: none;
+  border: 1px solid var(--edge);
+  color: var(--brown);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+button.remove:hover {
+  background: var(--rust);
+  border-color: var(--rust);
+  color: var(--paper);
+}
+
+p.empty {
+  margin: 0;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--brown);
+}
+
+/* ---------- popups ---------- */
+
+.leaflet-popup-content-wrapper {
+  background: var(--paper);
+  border: 1px solid var(--brown);
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--ink);
+}
+
+.leaflet-popup-tip {
+  background: var(--paper);
+  border: 1px solid var(--brown);
+  box-shadow: none;
+}
+
+.leaflet-popup-content {
+  margin: 10px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.leaflet-popup-content strong {
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  color: var(--brown);
+}
+
+/* ------------------------------------------------------------------
+   ABOUT AND BLOG PAGES
+   ------------------------------------------------------------------ */
+
+.prose {
+  max-width: 660px;
+}
+
+article.post {
+  margin: 0 0 34px 0;
+  padding: 0 0 34px 0;
+  border-bottom: 1px solid var(--edge);
+  max-width: 660px;
+}
+
+article.post:last-of-type {
+  border-bottom: none;
+}
+
+article.post p.date {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--brown);
+}
+
+/* ------------------------------------------------------------------
+   NARROW SCREENS
+   ------------------------------------------------------------------ */
+
+@media (max-width: 700px) {
+  .map-layout {
+    display: block;
+  }
+
+  .side-column {
+    margin-top: 20px;
+  }
+
+  #map {
+    height: 380px;
+  }
+
+  h1.title {
+    font-size: 26px;
+  }
+
+  nav.bar {
+    font-size: 15px;
+  }
+
+  nav.bar a {
+    padding: 0 4px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   EDIT MODE
+
+   The authoring tools are ordinary markup that is simply not shown
+   unless the page was opened as map.html?edit. This is a convenience
+   for whoever is keeping the map, not a lock: a visitor who finds the
+   flag can only rearrange their own copy, which is never published.
+   ------------------------------------------------------------------ */
+
+.edit-only {
+  display: none;
+}
+
+body.editing .edit-only {
+  display: block;
+}
+
+.banner {
+  margin: 20px 0 0 0;
+  padding: 9px 14px;
+  background: #e6d6b6;
+  border: 1px solid var(--brown);
+  color: var(--brown);
+  font-size: 14px;
+  font-style: italic;
+  text-align: center;
+}
+
+.banner strong {
+  font-style: normal;
+  font-variant: small-caps;
+  letter-spacing: 1px;
+}
+
+button.quiet {
+  background: none;
+  border: 1px solid var(--edge);
+  color: var(--brown);
+}
+
+button.quiet:hover {
+  background: var(--edge);
+  border-color: var(--edge);
+  color: var(--paper);
+}
+
+textarea.export {
+  display: none;   /* shown once you press Copy */
+  height: 220px;
+  margin: 10px 0 0 0;
+  font-family: "SF Mono", Menlo, Monaco, "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre;
+}
