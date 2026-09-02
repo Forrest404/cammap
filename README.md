@@ -7,7 +7,7 @@ outside dependency and it comes from a CDN. Open the files in a browser
 or drop them on any static host.
 
     style.css     all the styling for all three pages
-    points.js     the points on the map - the file you edit
+    points.js     the cameras on the map - the file you edit
     map.js        the map page's logic
     index.html    the map (the site's front page)
     about.html    the about page
@@ -15,20 +15,20 @@ or drop them on any static host.
 
 ## How the map works
 
-The published map is **read-only for everyone, including you**. The points
+The published map is **read-only for everyone, including you**. The cameras
 come from `points.js`, which is part of the site. A visitor has no way to
 add, change or delete anything, because there is no server for them to
 change anything on.
 
-You add points by editing `points.js` and republishing. There is a tool to
+You add cameras by editing `points.js` and republishing. There is a tool to
 make that pleasant:
 
-### Adding points
+### Adding cameras
 
 1. Open `index.html?edit` in a browser. An "Edit mode" banner appears, along
    with the place search, the coordinate form, click-to-place and delete
    buttons.
-2. Add and remove points until you are happy. Work in progress is kept in
+2. Add and remove cameras until you are happy. Work in progress is kept in
    your browser, so you can close the tab and come back to it.
 3. Press **Copy points.js**. The whole file appears, selected and ready.
 4. Paste it over everything in `points.js`.
@@ -38,7 +38,7 @@ make that pleasant:
 **Start again** throws away the draft and returns to whatever is currently
 published.
 
-You can also just open `points.js` in a text editor and type a point in by
+You can also just open `points.js` in a text editor and type a camera in by
 hand. The format is four fields:
 
     {
@@ -56,7 +56,7 @@ inside Greater London.
 `?edit` is a convenience, not a lock. Anyone may add it to the live URL and
 the forms will appear for them. It does not matter: their changes live in
 their own browser, vanish when they clear it, and can never reach the
-published map. The only way a point gets onto this site is a commit.
+published map. The only way a camera gets onto this site is a commit.
 
 There is no way to make an edit mode genuinely private on a static site —
 everything sent to a browser can be read by whoever receives it. What is

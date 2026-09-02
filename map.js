@@ -431,7 +431,7 @@ function rowFor(point) {
     var remove = document.createElement("button");
     remove.className = "remove";
     remove.textContent = "×";
-    remove.title = "Remove this point";
+    remove.title = "Remove this camera";
     remove.onclick = function () {
       removePoint(point.id);
     };
@@ -460,7 +460,7 @@ function startEditing() {
     addNote.textContent = "";
 
     if (name === "") {
-      addNote.textContent = "Please give the place a name.";
+      addNote.textContent = "Please give the camera a name.";
       nameInput.focus();
       return;
     }
@@ -585,7 +585,7 @@ function startEditing() {
     pick.textContent = result.display_name;
 
     /* Picking a result fills the form rather than saving straight away,
-       so you can name the place yourself before it is recorded. */
+       so you can name the camera yourself before it is recorded. */
     pick.onclick = function () {
       var shortName = result.display_name.split(",")[0];
 
@@ -628,7 +628,7 @@ function startEditing() {
   map.on("click", function (event) {
     latInput.value = event.lngLat.lat.toFixed(6);
     lonInput.value = event.lngLat.lng.toFixed(6);
-    addNote.textContent = "Coordinates taken. Now give the place a name.";
+    addNote.textContent = "Coordinates taken. Now give the camera a name.";
     nameInput.focus();
   });
 
@@ -640,7 +640,7 @@ function startEditing() {
     var point;
 
     lines.push("/* ------------------------------------------------------------------");
-    lines.push("   cammap - the points on the published map");
+    lines.push("   cammap - the cameras on the published map");
     lines.push("");
     lines.push("   Written out by index.html?edit. Paste this over everything in");
     lines.push("   points.js, then commit and push to publish it.");
@@ -716,7 +716,7 @@ function startEditing() {
 
     exportText.style.display = "none";
     exportNote.textContent = "";
-    addNote.textContent = "Back to the published points.";
+    addNote.textContent = "Back to the published cameras.";
   };
 }
 
