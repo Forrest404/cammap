@@ -83,17 +83,105 @@ map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-le
    passing our own as well printed it twice. */
 map.addControl(new maplibregl.AttributionControl({ compact: false }));
 
-/* The one-way arrows are the last of the clutter, and with vector
-   tiles they can simply be taken off. */
+/* How much to lift each kind of colour. The style is drawn for a pure
+   black page and against this one the roads all but vanish, so the
+   palette is raised once, here, rather than by filtering the canvas on
+   every frame. Halos go the other way - darker - so labels keep their
+   edge against the brighter roads underneath. */
+var LIFT = {
+  line: 2.6,
+  fill: 1.9,
+  background: 1.6,
+  text: 1.75,
+  halo: 0.55
+};
+
+/* An off-screen scrap of the page, used to let the browser turn
+   whatever notation the style happens to use - #abc, rgb(), hsl() -
+   into numbers that can be scaled. */
+var swatch = document.createElement("div");
+swatch.style.cssText = "position:fixed;left:-9999px;top:0;";
+
+function lift(colour, factor) {
+  var parts;
+  var scale = function (v) {
+    return Math.min(255, Math.round(v * factor));
+  };
+
+  swatch.style.color = "";
+  swatch.style.color = colour;
+  parts = window.getComputedStyle(swatch).color.match(/[\d.]+/g);
+
+  if (!parts) {
+    return null;
+  }
+
+  return "rgba(" + scale(parts[0]) + "," + scale(parts[1]) + "," +
+         scale(parts[2]) + "," + (parts[3] === undefined ? 1 : parts[3]) + ")";
+}
+
+/* Which paint property carries the colour, for each kind of layer. */
+var COLOUR_OF = {
+  line: ["line-color", "line"],
+  fill: ["fill-color", "fill"],
+  background: ["background-color", "background"]
+};
+
+function repaint(layer) {
+  var pair = COLOUR_OF[layer.type];
+  var paint = layer.paint || {};
+  var lifted;
+
+  if (pair && typeof paint[pair[0]] === "string") {
+    lifted = lift(paint[pair[0]], LIFT[pair[1]]);
+    if (lifted) {
+      map.setPaintProperty(layer.id, pair[0], lifted);
+    }
+  }
+
+  if (layer.type !== "symbol") {
+    return;
+  }
+
+  if (typeof paint["text-color"] === "string") {
+    lifted = lift(paint["text-color"], LIFT.text);
+    if (lifted) {
+      map.setPaintProperty(layer.id, "text-color", lifted);
+    }
+  }
+
+  if (typeof paint["text-halo-color"] === "string") {
+    lifted = lift(paint["text-halo-color"], LIFT.halo);
+    if (lifted) {
+      map.setPaintProperty(layer.id, "text-halo-color", lifted);
+    }
+  }
+}
+
 map.on("load", function () {
-  var noisy = ["road_oneway", "road_oneway_opposite"];
+  var layers;
   var i;
+
+  /* The one-way arrows are the last of the clutter, and with vector
+     tiles they can simply be taken off. */
+  var noisy = ["road_oneway", "road_oneway_opposite"];
 
   for (i = 0; i < noisy.length; i++) {
     if (map.getLayer(noisy[i])) {
       map.removeLayer(noisy[i]);
     }
   }
+
+  /* Nothing below is tied to a layer name, so it survives the style
+     being changed underneath us. */
+  document.body.appendChild(swatch);
+  layers = map.getStyle().layers;
+
+  for (i = 0; i < layers.length; i++) {
+    repaint(layers[i]);
+  }
+
+  swatch.remove();
 });
 
 function inLondon(lat, lon) {
