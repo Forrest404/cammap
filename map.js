@@ -1,6 +1,7 @@
 /* ------------------------------------------------------------------
    cammap - map page
-   Plain browser JavaScript. No build step, no libraries but Leaflet.
+   Plain browser JavaScript. No build step. MapLibre GL draws the
+   map; OpenFreeMap serves the vector tiles. Neither needs a key.
 
    The page has two modes.
 
@@ -38,26 +39,67 @@ var WIDEST_ZOOM  = 10;   /* the whole of London at once */
 
 /* points is the list being shown, in order. Each entry looks like:
      { id: 1, name: "...", note: "...", lat: 0, lon: 0 }
-   markers holds the Leaflet marker for each one, keyed by that id. */
+   markers holds the MapLibre marker for each one, keyed by that id. */
 var points = [];
 var markers = {};
 var nextId = 1;
 
-/* ---------------- the map ---------------- */
+/* ---------------- the map ----------------
 
-var map = L.map("map", {
-  maxBounds: LONDON_BOUNDS,
-  maxBoundsViscosity: 1.0,   /* 1.0 = the edge is solid, not elastic */
-  minZoom: WIDEST_ZOOM,
-  maxZoom: CLOSEST_ZOOM
-}).setView(LONDON, OPENING_ZOOM);
+   OpenFreeMap's "dark" style. Vector tiles rather than pictures of a
+   map, which is why this one is quiet: it carries place and road names
+   and nothing else, no shop pins or clutter, and it is drawn dark at
+   source instead of being inverted after the fact.
 
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+   MapLibre counts coordinates the other way round from the rest of
+   this file - longitude first - so the two are converted here, once,
+   and nowhere else. */
+
+var MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
+
+var MARKER_COLOUR = "#cf6a58";   /* matches --accent in style.css */
+
+function lngLat(lat, lon) {
+  return [lon, lat];
+}
+
+var map = new maplibregl.Map({
+  container: "map",
+  style: MAP_STYLE,
+  center: lngLat(LONDON[0], LONDON[1]),
+  zoom: OPENING_ZOOM,
   minZoom: WIDEST_ZOOM,
   maxZoom: CLOSEST_ZOOM,
-  bounds: LONDON_BOUNDS,
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
+  maxBounds: [
+    lngLat(LONDON_BOUNDS[0][0], LONDON_BOUNDS[0][1]),   /* south-west */
+    lngLat(LONDON_BOUNDS[1][0], LONDON_BOUNDS[1][1])    /* north-east */
+  ],
+  attributionControl: false,
+  preserveDrawingBuffer: true
+});
+
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+
+map.addControl(new maplibregl.AttributionControl({
+  compact: false,
+  customAttribution:
+    '<a href="https://openfreemap.org">OpenFreeMap</a> ' +
+    '&copy; <a href="https://www.openmaptiles.org/">OpenMapTiles</a> ' +
+    'Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}));
+
+/* The one-way arrows are the last of the clutter, and with vector
+   tiles they can simply be taken off. */
+map.on("load", function () {
+  var noisy = ["road_oneway", "road_oneway_opposite"];
+  var i;
+
+  for (i = 0; i < noisy.length; i++) {
+    if (map.getLayer(noisy[i])) {
+      map.removeLayer(noisy[i]);
+    }
+  }
+});
 
 function inLondon(lat, lon) {
   return lat >= LONDON_BOUNDS[0][0] && lat <= LONDON_BOUNDS[1][0] &&
@@ -193,7 +235,7 @@ function removePoint(id) {
   points = kept;
 
   if (markers[id]) {
-    map.removeLayer(markers[id]);
+    markers[id].remove();
     delete markers[id];
   }
 
@@ -202,9 +244,25 @@ function removePoint(id) {
 }
 
 function drawMarker(point) {
-  var marker = L.marker([point.lat, point.lon]).addTo(map);
-  marker.bindPopup(popupFor(point));
+  var popup = new maplibregl.Popup({ offset: 26, closeButton: true })
+    .setDOMContent(popupFor(point));
+
+  var marker = new maplibregl.Marker({ color: MARKER_COLOUR })
+    .setLngLat(lngLat(point.lat, point.lon))
+    .setPopup(popup)
+    .addTo(map);
+
   markers[point.id] = marker;
+}
+
+/* MapLibre only offers a toggle, so opening an already-open popup
+   would close it. */
+function showPopup(marker) {
+  var popup = marker.getPopup();
+
+  if (popup && !popup.isOpen()) {
+    marker.togglePopup();
+  }
 }
 
 /* Built as elements rather than as a string of HTML, so a name or a
@@ -278,9 +336,9 @@ function rowFor(point) {
   go.appendChild(coords);
 
   go.onclick = function () {
-    map.setView([point.lat, point.lon], 15);
+    map.flyTo({ center: lngLat(point.lat, point.lon), zoom: 15, speed: 1.6 });
     if (markers[point.id]) {
-      markers[point.id].openPopup();
+      showPopup(markers[point.id]);
     }
   };
 
@@ -454,7 +512,11 @@ function startEditing() {
         nameInput.value = shortName;
       }
 
-      map.setView([parseFloat(result.lat), parseFloat(result.lon)], 15);
+      map.flyTo({
+      center: lngLat(parseFloat(result.lat), parseFloat(result.lon)),
+      zoom: 15,
+      speed: 1.6
+    });
 
       searchResults.innerHTML = "";
       searchNote.textContent = "";
@@ -481,8 +543,8 @@ function startEditing() {
      -------- */
 
   map.on("click", function (event) {
-    latInput.value = event.latlng.lat.toFixed(6);
-    lonInput.value = event.latlng.lng.toFixed(6);
+    latInput.value = event.lngLat.lat.toFixed(6);
+    lonInput.value = event.lngLat.lng.toFixed(6);
     addNote.textContent = "Coordinates taken. Now give the place a name.";
     nameInput.focus();
   });
@@ -556,7 +618,7 @@ function startEditing() {
     }
 
     for (i in markers) {
-      map.removeLayer(markers[i]);
+      markers[i].remove();
     }
     markers = {};
 
@@ -567,7 +629,7 @@ function startEditing() {
     }
 
     render();
-    map.setView(LONDON, OPENING_ZOOM);
+    map.flyTo({ center: lngLat(LONDON[0], LONDON[1]), zoom: OPENING_ZOOM, speed: 1.6 });
 
     exportText.style.display = "none";
     exportNote.textContent = "";
