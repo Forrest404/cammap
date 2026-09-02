@@ -213,75 +213,64 @@ footer.foot::before {
   background: var(--bg);
 }
 
-/* Monochrome, inverted and dimmed until the basemap sits close to the
-   page background. Roads and labels stay readable but stop shouting,
-   so our own points are the loudest thing on the map. The filter is on
-   the tile pane, so markers, popups and the zoom buttons are
-   untouched. */
-.leaflet-tile-pane {
-  filter: grayscale(1) invert(1) contrast(1.1) brightness(0.62);
-}
+/* The OpenFreeMap "dark" style is drawn dark at source - its
+   background is rgb(12,12,12), a shade off this page - so there is no
+   filter here at all. Nothing to correct. */
 
-/* Leaflet's default pin is blue, which would be a second accent
-   colour. Turned to match. */
-.leaflet-marker-icon {
-  filter: hue-rotate(150deg) saturate(0.8) brightness(1.05);
-}
+/* MapLibre's marker is an SVG whose colour is set in map.js, so it
+   needs no filtering either. */
 
-.leaflet-container {
-  background: var(--bg);
+.maplibregl-map {
   font-family: var(--mono);
   font-size: 13px;
+  background: var(--bg);
 }
 
-/* Leaflet ships rounded corners and drop shadows of its own. The
-   .leaflet-touch selectors are the ones that actually win, so they are
-   named here too. */
-.leaflet-bar,
-.leaflet-touch .leaflet-bar,
-.leaflet-bar a:first-child,
-.leaflet-bar a:last-child,
-.leaflet-touch .leaflet-bar a:first-child,
-.leaflet-touch .leaflet-bar a:last-child,
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
+/* MapLibre ships rounded corners and drop shadows of its own. */
+.maplibregl-ctrl-group,
+.maplibregl-ctrl-group button,
+.maplibregl-popup-content {
   border-radius: 0;
   box-shadow: none;
 }
 
-/* Leaflet's attribution carries a colour flag graphic. One accent
-   colour on this site means it goes. */
-.leaflet-attribution-flag {
-  display: none !important;   /* Leaflet sets this with !important too */
-}
-
-.leaflet-bar,
-.leaflet-touch .leaflet-bar {
+.maplibregl-ctrl-group {
+  background: var(--bg);
   border: 1px solid var(--rule);
 }
 
-.leaflet-control-attribution {
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--rule);
+}
+
+.maplibregl-ctrl-group button {
+  background: var(--bg);
+}
+
+.maplibregl-ctrl-group button:hover {
+  background: var(--accent);
+}
+
+/* The zoom glyphs are background images, drawn dark by default. They
+   are inverted to read on a dark button, then flipped back on hover
+   where the button itself turns accent. */
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) brightness(0.9);
+}
+
+.maplibregl-ctrl-group button:hover .maplibregl-ctrl-icon {
+  filter: none;
+}
+
+.maplibregl-ctrl-attrib {
   background: rgba(13, 13, 13, 0.86) !important;
   color: var(--dim);
+  font-family: var(--mono);
   font-size: 11px;
 }
 
-.leaflet-control-attribution a {
+.maplibregl-ctrl-attrib a {
   color: var(--accent);
-}
-
-.leaflet-bar a,
-.leaflet-touch .leaflet-bar a {
-  background: var(--bg);
-  color: var(--text);
-  border-bottom: 1px solid var(--rule);
-  font-family: var(--mono);
-}
-
-.leaflet-bar a:hover,
-.leaflet-touch .leaflet-bar a:hover {
-  background: var(--accent);
-  color: var(--bg);
 }
 
 /* ---------- panels ----------
@@ -513,30 +502,54 @@ p.empty {
 
 /* ---------- popups ---------- */
 
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
+.maplibregl-popup-content {
+  padding: 10px 12px;
   background: var(--bg);
   border: 1px solid var(--accent);
   color: var(--text);
-}
-
-.leaflet-popup-content {
-  margin: 10px 12px;
   font-size: 13px;
   line-height: 1.55;
 }
 
-.leaflet-popup-content strong {
+/* The tip is a CSS triangle, so it is coloured one border at a time
+   and only the side facing the popup is ever visible. */
+.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--accent);
+}
+
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--accent);
+}
+
+.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--accent);
+}
+
+.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--accent);
+}
+
+.maplibregl-popup-content strong {
   color: var(--accent);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
 
-.leaflet-container a.leaflet-popup-close-button {
+.maplibregl-popup-close-button {
+  padding: 0 5px;
+  background: none;
+  border: none;
   color: var(--dim);
+  font-family: var(--mono);
+  font-size: 15px;
 }
 
-.leaflet-container a.leaflet-popup-close-button:hover {
+.maplibregl-popup-close-button:hover {
+  background: none;
   color: var(--accent);
 }
 

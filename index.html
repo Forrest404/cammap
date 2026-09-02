@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Map &mdash; cammap</title>
 
-<!-- Leaflet, loaded from a CDN. Nothing else is needed to run this page. -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- MapLibre GL, loaded from a CDN. Version 5 rather than 6: the 6.x
+     builds are ES modules only, and a plain script tag keeps this page
+     buildable by nothing at all. -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 
 <link rel="stylesheet" href="style.css">
 </head>
