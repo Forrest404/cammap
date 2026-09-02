@@ -4,10 +4,10 @@
 
    The page has two modes.
 
-     map.html        What the public sees. The points come from
+     index.html      What the public sees. The points come from
                      points.js and nothing on the page can change them.
 
-     map.html?edit   How you add points. The form, the place search,
+     index.html?edit How you add points. The form, the place search,
                      clicking the map and the delete buttons all come
                      back, and a button writes out a new points.js for
                      you to paste in and republish.
@@ -497,7 +497,7 @@ function startEditing() {
     lines.push("/* ------------------------------------------------------------------");
     lines.push("   cammap - the points on the published map");
     lines.push("");
-    lines.push("   Written out by map.html?edit. Paste this over everything in");
+    lines.push("   Written out by index.html?edit. Paste this over everything in");
     lines.push("   points.js, then commit and push to publish it.");
     lines.push("   ------------------------------------------------------------------ */");
     lines.push("");

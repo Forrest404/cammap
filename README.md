@@ -9,7 +9,7 @@ or drop them on any static host.
     style.css     all the styling for all three pages
     points.js     the points on the map - the file you edit
     map.js        the map page's logic
-    map.html      the map
+    index.html    the map (the site's front page)
     about.html    the about page
     blog.html     the blog
 
@@ -25,7 +25,7 @@ make that pleasant:
 
 ### Adding points
 
-1. Open `map.html?edit` in a browser. An "Edit mode" banner appears, along
+1. Open `index.html?edit` in a browser. An "Edit mode" banner appears, along
    with the place search, the coordinate form, click-to-place and delete
    buttons.
 2. Add and remove points until you are happy. Work in progress is kept in
