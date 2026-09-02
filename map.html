@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map &mdash; cammap</title>
+
+<!-- Leaflet, loaded from a CDN. Nothing else is needed to run this page. -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sheet">
+
+<!-- Only shown when the page is opened as map.html?edit -->
+<div class="banner edit-only">
+  Edit mode. These changes are yours alone until you copy
+  <strong>points.js</strong> and republish.
+</div>
+
+<header class="masthead">
+  <h1 class="title">cammap</h1>
+  <p class="tagline">a register of London places, kept by hand</p>
+  <nav class="bar">
+    <a href="map.html" class="current">Map</a>
+    <span class="sep">&middot;</span>
+    <a href="about.html">About</a>
+    <span class="sep">&middot;</span>
+    <a href="blog.html">Blog</a>
+  </nav>
+</header>
+
+<main>
+
+  <div class="map-layout">
+
+    <!-- ---------------- left: the map itself ---------------- -->
+    <div class="map-column">
+      <div id="map"></div>
+      <p class="hint edit-only" style="margin-top:8px">
+        Click anywhere on the map to take its coordinates, then give the
+        place a name in the form opposite.
+      </p>
+    </div>
+
+    <!-- ---------------- right: the list, and the editing tools ----------------
+
+         Everything marked edit-only is hidden unless the page was
+         opened as map.html?edit. The public page is the map, the list
+         and the popups, and nothing else.
+         ------------------------------------------------------------- -->
+    <div class="side-column">
+
+      <!-- Way 2: search for a place by name -->
+      <div class="box edit-only">
+        <h3>Find a place</h3>
+        <div class="row">
+          <input type="text" id="search-text" placeholder="Postman's Park">
+          <button id="search-button">Search</button>
+        </div>
+        <p class="note" id="search-note"></p>
+        <ul class="results" id="search-results"></ul>
+      </div>
+
+      <!-- Way 1: type the coordinates in directly -->
+      <div class="box edit-only">
+        <h3>Add a point</h3>
+        <div class="pair">
+          <div>
+            <label for="lat">Latitude</label>
+            <input type="number" id="lat" step="any" placeholder="51.5169">
+          </div>
+          <div>
+            <label for="lon">Longitude</label>
+            <input type="number" id="lon" step="any" placeholder="-0.0977">
+          </div>
+        </div>
+        <label for="name">Name</label>
+        <input type="text" id="name" placeholder="required">
+        <label for="memo">Note</label>
+        <textarea id="memo" placeholder="optional"></textarea>
+        <button id="add-button">Add</button>
+        <p class="note" id="add-note"></p>
+      </div>
+
+      <!-- The points. Everyone sees this. -->
+      <div class="box">
+        <h3>Points</h3>
+        <ul class="points" id="points-list"></ul>
+        <p class="empty" id="points-empty">Nothing recorded yet.</p>
+      </div>
+
+      <!-- Writing the file back out -->
+      <div class="box edit-only">
+        <h3>Publish</h3>
+        <p class="hint">
+          Copy the file below, paste it over everything in
+          <strong>points.js</strong>, then commit and push.
+        </p>
+        <div class="row">
+          <button id="copy-button">Copy points.js</button>
+          <button id="reset-button" class="quiet">Start again</button>
+        </div>
+        <p class="note" id="export-note"></p>
+        <textarea id="export-text" class="export" readonly></textarea>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<footer class="foot">
+  A hand-kept map of London. Map data &copy; OpenStreetMap contributors.
+</footer>
+
+</div>
+
+<!-- points.js first: it holds the points, map.js draws them. -->
+<script src="points.js"></script>
+<script src="map.js"></script>
+</body>
+</html>
