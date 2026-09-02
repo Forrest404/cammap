@@ -74,19 +74,14 @@ var map = new maplibregl.Map({
     lngLat(LONDON_BOUNDS[0][0], LONDON_BOUNDS[0][1]),   /* south-west */
     lngLat(LONDON_BOUNDS[1][0], LONDON_BOUNDS[1][1])    /* north-east */
   ],
-  attributionControl: false,
-  preserveDrawingBuffer: true
+  attributionControl: false
 });
 
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
 
-map.addControl(new maplibregl.AttributionControl({
-  compact: false,
-  customAttribution:
-    '<a href="https://openfreemap.org">OpenFreeMap</a> ' +
-    '&copy; <a href="https://www.openmaptiles.org/">OpenMapTiles</a> ' +
-    'Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-}));
+/* The tile source carries its own attribution, so none is added here:
+   passing our own as well printed it twice. */
+map.addControl(new maplibregl.AttributionControl({ compact: false }));
 
 /* The one-way arrows are the last of the clutter, and with vector
    tiles they can simply be taken off. */
