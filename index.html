@@ -37,7 +37,7 @@
       <div id="map"></div>
       <p class="hint edit-only" style="margin-top:8px">
         Click anywhere on the map to take its coordinates, then give the
-        place a name in the form opposite.
+        camera a name in the form opposite.
       </p>
     </div>
 
@@ -57,7 +57,7 @@
 
       <!-- Way 1: type the coordinates in directly -->
       <div class="box edit-only">
-        <h3>Add a point</h3>
+        <h3>Add a camera</h3>
         <div class="pair">
           <div>
             <label for="lat">Latitude</label>
@@ -76,11 +76,11 @@
         <p class="note" id="add-note"></p>
       </div>
 
-      <!-- The points. Everyone sees this. -->
+      <!-- The cameras. Everyone sees this. -->
       <div class="box">
-        <h3>Points</h3>
+        <h3>Cameras</h3>
         <ul class="points" id="points-list"></ul>
-        <p class="empty" id="points-empty">Nothing recorded yet.</p>
+        <p class="empty" id="points-empty">No cameras recorded yet.</p>
       </div>
 
       <!-- Writing the file back out -->
@@ -109,7 +109,7 @@
 
 </div>
 
-<!-- points.js first: it holds the points, map.js draws them. -->
+<!-- points.js first: it holds the cameras, map.js draws them. -->
 <script src="points.js"></script>
 <script src="map.js"></script>
 </body>
