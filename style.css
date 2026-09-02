@@ -25,10 +25,12 @@ html {
   color-scheme: dark;
 }
 
+/* No background on the body: the colour lives on <html> so that the
+   scanline layer below can show through the whole viewport rather than
+   only where the body box ends. */
 body {
   margin: 0;
   padding: 0 20px 50px 20px;
-  background: var(--bg);
   color: var(--text);
   font-family: var(--mono);
   font-size: 15px;
@@ -244,15 +246,25 @@ footer.foot::before {
   font-size: 13px;
 }
 
-/* Leaflet ships rounded corners and drop shadows of its own. */
+/* Leaflet ships rounded corners and drop shadows of its own. The
+   .leaflet-touch selectors are the ones that actually win, so they are
+   named here too. */
 .leaflet-bar,
 .leaflet-touch .leaflet-bar,
 .leaflet-bar a:first-child,
 .leaflet-bar a:last-child,
+.leaflet-touch .leaflet-bar a:first-child,
+.leaflet-touch .leaflet-bar a:last-child,
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
   border-radius: 0;
   box-shadow: none;
+}
+
+/* Leaflet's attribution carries a colour flag graphic. One accent
+   colour on this site means it goes. */
+.leaflet-attribution-flag {
+  display: none !important;   /* Leaflet sets this with !important too */
 }
 
 .leaflet-bar,
