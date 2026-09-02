@@ -7,6 +7,9 @@
 
      index.html      What the public sees. The points come from
                      points.js and nothing on the page can change them.
+                     Each one is a small circle. Pull back and the
+                     circles in crowded places pool into a glow, so the
+                     shape of the thing is visible from above.
 
      index.html?edit How you add points. The form, the place search,
                      clicking the map and the delete buttons all come
@@ -39,9 +42,15 @@ var WIDEST_ZOOM  = 10;   /* the whole of London at once */
 
 /* points is the list being shown, in order. Each entry looks like:
      { id: 1, name: "...", note: "...", lat: 0, lon: 0 }
-   markers holds the MapLibre marker for each one, keyed by that id. */
+
+   The cameras are not markers any more. They are one GeoJSON source
+   that two layers draw, so a few thousand of them cost about what a
+   few dozen did. popup is the one popup on the page, moved about and
+   refilled rather than made afresh each time; popupId is the camera it
+   is currently showing, so that deleting that camera can close it. */
 var points = [];
-var markers = {};
+var popup = null;
+var popupId = null;
 var nextId = 1;
 
 /* ---------------- the map ----------------
@@ -57,7 +66,33 @@ var nextId = 1;
 
 var MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
 
-var MARKER_COLOUR = "#cf6a58";   /* matches --accent in style.css */
+/* ---------------- how a camera is drawn ----------------
+
+   Two layers over one source.
+
+     cammap-heat   Where cameras crowd together the glow pools, which
+                   is the only reading you get of the whole city at
+                   once. Full strength at the widest zoom and gone by
+                   the time you are down among the streets, where the
+                   circles themselves say everything there is to say.
+
+     cammap-dot    One small circle per camera, at every zoom. No pin,
+                   no shadow, no label. The circles are part
+                   transparent and lose their outline as you pull
+                   back, so two on the same corner run together into
+                   something darker than one.
+
+   The glow goes underneath the map's own labels, so place names stay
+   readable through it. The circles go over everything. */
+
+var SOURCE = "cameras";
+var HEAT   = "cammap-heat";
+var DOT    = "cammap-dot";
+
+var DOT_COLOUR = "#cf6a58";   /* matches --accent in style.css */
+
+var HEAT_FULL = 12.5;   /* at or below this the glow is at full strength */
+var HEAT_GONE = 15;     /* by here it has gone entirely */
 
 function lngLat(lat, lon) {
   return [lon, lat];
@@ -182,7 +217,97 @@ map.on("load", function () {
   }
 
   swatch.remove();
+
+  /* The first symbol layer is the bottom of the map's own labelling.
+     The glow is slid in underneath it. */
+  var firstLabel;
+
+  for (i = 0; i < layers.length; i++) {
+    if (layers[i].type === "symbol") {
+      firstLabel = layers[i].id;
+      break;
+    }
+  }
+
+  addCameras(firstLabel);
 });
+
+function addCameras(beneath) {
+  map.addSource(SOURCE, { type: "geojson", data: cameraFeatures() });
+
+  map.addLayer({
+    id: HEAT,
+    type: "heatmap",
+    source: SOURCE,
+    maxzoom: HEAT_GONE,
+    paint: {
+      "heatmap-weight": 1,
+
+      /* Held deliberately low. A camera on its own should be an ember
+         and no more: the glow is there to say where cameras gather,
+         so one on a quiet road must not shout as loudly as thirty on
+         the same junction. */
+      "heatmap-intensity": ["interpolate", ["linear"], ["zoom"],
+        WIDEST_ZOOM, 0.8,
+        HEAT_GONE, 2.2],
+
+      "heatmap-radius": ["interpolate", ["linear"], ["zoom"],
+        WIDEST_ZOOM, 18,
+        HEAT_GONE, 45],
+
+      /* Straight up the accent colour, ending just short of white. The
+         first stop has to be fully transparent or the entire map is
+         washed over rather than only the places with cameras in. */
+      "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"],
+        0,    "rgba(207, 106,  88, 0.00)",
+        0.20, "rgba(207, 106,  88, 0.18)",
+        0.45, "rgba(212, 118,  86, 0.45)",
+        0.75, "rgba(226, 150,  94, 0.70)",
+        1,    "rgba(240, 198, 146, 0.88)"],
+
+      "heatmap-opacity": ["interpolate", ["linear"], ["zoom"],
+        HEAT_FULL, 1,
+        HEAT_GONE, 0]
+    }
+  }, beneath);
+
+  map.addLayer({
+    id: DOT,
+    type: "circle",
+    source: SOURCE,
+    paint: {
+      "circle-radius": ["interpolate", ["linear"], ["zoom"],
+        WIDEST_ZOOM, 2.5,
+        14, 4,
+        CLOSEST_ZOOM, 7],
+
+      "circle-color": DOT_COLOUR,
+      "circle-opacity": 0.8,
+
+      /* A hairline of the page's own background keeps two neighbouring
+         circles legible as two once you are close enough for that to
+         matter. Zoomed out it is taken away, so that a crowd is
+         allowed to become a mass. */
+      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"],
+        13, 0,
+        15, 1],
+      "circle-stroke-color": "#0d0d0d",
+      "circle-stroke-opacity": 0.6
+    }
+  });
+
+  map.on("click", DOT, function (event) {
+    openPopup(event.features[0].properties.id);
+  });
+
+  map.on("mouseenter", DOT, function () {
+    map.getCanvas().style.cursor = "pointer";
+  });
+
+  map.on("mouseleave", DOT, function () {
+    map.getCanvas().style.cursor = "";
+  });
+}
 
 function inLondon(lat, lon) {
   return lat >= LONDON_BOUNDS[0][0] && lat <= LONDON_BOUNDS[1][0] &&
@@ -298,7 +423,7 @@ function addPoint(lat, lon, name, note) {
   };
 
   points.push(point);
-  drawMarker(point);
+  refreshCameras();
   saveDraft();
   render();
 
@@ -317,35 +442,83 @@ function removePoint(id) {
   }
   points = kept;
 
-  if (markers[id]) {
-    markers[id].remove();
-    delete markers[id];
+  if (popupId === id) {
+    closePopup();
   }
 
+  refreshCameras();
   saveDraft();
   render();
 }
 
-function drawMarker(point) {
-  var popup = new maplibregl.Popup({ offset: 26, closeButton: true })
-    .setDOMContent(popupFor(point));
+/* The whole list, as the one thing the two layers read. */
+function cameraFeatures() {
+  var features = [];
+  var i;
 
-  var marker = new maplibregl.Marker({ color: MARKER_COLOUR })
-    .setLngLat(lngLat(point.lat, point.lon))
-    .setPopup(popup)
-    .addTo(map);
+  for (i = 0; i < points.length; i++) {
+    features.push({
+      type: "Feature",
+      properties: { id: points[i].id },
+      geometry: {
+        type: "Point",
+        coordinates: lngLat(points[i].lat, points[i].lon)
+      }
+    });
+  }
 
-  markers[point.id] = marker;
+  return { type: "FeatureCollection", features: features };
 }
 
-/* MapLibre only offers a toggle, so opening an already-open popup
-   would close it. */
-function showPopup(marker) {
-  var popup = marker.getPopup();
+/* Every change to the list ends here. Before the style has loaded
+   there is no source to write to, and the load handler fills the one
+   it makes from the list as it stands, so there is nothing to do. */
+function refreshCameras() {
+  var source = map.getSource(SOURCE);
 
-  if (popup && !popup.isOpen()) {
-    marker.togglePopup();
+  if (source) {
+    source.setData(cameraFeatures());
   }
+}
+
+function pointById(id) {
+  var i;
+
+  for (i = 0; i < points.length; i++) {
+    if (points[i].id === Number(id)) {
+      return points[i];
+    }
+  }
+
+  return null;
+}
+
+/* One popup, moved from camera to camera. Circles are not elements, so
+   there is nothing for a popup to hang off; it is placed by coordinate
+   instead, and the previous one is taken down first. */
+function openPopup(id) {
+  var point = pointById(id);
+
+  if (!point) {
+    return;
+  }
+
+  closePopup();
+
+  popup = new maplibregl.Popup({ offset: 10, closeButton: true })
+    .setLngLat(lngLat(point.lat, point.lon))
+    .setDOMContent(popupFor(point))
+    .addTo(map);
+
+  popupId = point.id;
+}
+
+function closePopup() {
+  if (popup) {
+    popup.remove();
+  }
+  popup = null;
+  popupId = null;
 }
 
 /* Built as elements rather than as a string of HTML, so a name or a
@@ -419,10 +592,8 @@ function rowFor(point) {
   go.appendChild(coords);
 
   go.onclick = function () {
-    map.flyTo({ center: lngLat(point.lat, point.lon), zoom: 15, speed: 1.6 });
-    if (markers[point.id]) {
-      showPopup(markers[point.id]);
-    }
+    map.flyTo({ center: lngLat(point.lat, point.lon), zoom: 17, speed: 1.6 });
+    openPopup(point.id);
   };
 
   row.appendChild(go);
@@ -626,6 +797,14 @@ function startEditing() {
      -------- */
 
   map.on("click", function (event) {
+    /* A click that landed on a camera has already been dealt with by
+       the circle layer's own handler, which opened its popup. Taking
+       the coordinates as well would be reading it as two things. */
+    if (map.getLayer(DOT) &&
+        map.queryRenderedFeatures(event.point, { layers: [DOT] }).length) {
+      return;
+    }
+
     latInput.value = event.lngLat.lat.toFixed(6);
     lonInput.value = event.lngLat.lng.toFixed(6);
     addNote.textContent = "Coordinates taken. Now give the camera a name.";
@@ -692,24 +871,15 @@ function startEditing() {
   };
 
   resetButton.onclick = function () {
-    var i;
-
     try {
       window.localStorage.removeItem(DRAFT_KEY);
     } catch (err) {
       /* nothing to remove */
     }
 
-    for (i in markers) {
-      markers[i].remove();
-    }
-    markers = {};
-
+    closePopup();
     points = tidy(published());
-
-    for (i = 0; i < points.length; i++) {
-      drawMarker(points[i]);
-    }
+    refreshCameras();
 
     render();
     map.flyTo({ center: lngLat(LONDON[0], LONDON[1]), zoom: OPENING_ZOOM, speed: 1.6 });
@@ -731,10 +901,8 @@ if (EDITING) {
   points = tidy(published());
 }
 
-for (var n = 0; n < points.length; n++) {
-  drawMarker(points[n]);
-}
-
+/* The layers are made when the style finishes loading, and take the
+   list as it stands then, so there is nothing to draw here. */
 render();
 
 if (EDITING) {
