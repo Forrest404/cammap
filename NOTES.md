@@ -2,21 +2,32 @@
 
 ## Project goals
 
+- The goal of *cammap* is to create a website that:
+    - Maps all LFR vans and fixed cameras across london - with locations all over the world planned after finishing the london version
+    - It differentiates between different types of cameras - fixed cameras, van cameras, nonfunctional cameras, supermarket (facewatch) cameras, british transport map, and more - using different colours which are visible in the bottom right corner below the map
+    - It shows previous facial recognition cameras with a "legacy" toggle, and may have a feature that uses AI to predict/track the facial recognition vans
+    - The map can be viewed as a normal street map or in a satellite, etc view.
+    - It has an accounts feature where users sign up with a simple username and password - Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password (one capital letter, number and symbol...). IP addresses might be logged to prevent spam but hopefully not to maintain complete anonymity
+    - The accounts feature distinguishes between moderators/admins and normal users. The normal user has access to a "report camera" button which allows them to report cameras and also report the status of cameras - e.g. if they are nonfunctional. They can upload images for proof and videos too, in a totally anonymous manner. They also have access to a leaderboard which displays the top users. Different camera categories have different ammounts of XP (experience points) gained. For example, a normal camera will gain 5xp whereas a nonfunctional or transport one will gain 50XP (as an example). New users gain more xp than established ones (perhaps) and there are daily/weekly EXP counts too.
+    - Admins however have a different view. They can authorise cameras which have been reported to enable them to be seen on the map. Cameras are also added if 3 (or 5) or more users report them within the same fixed radius, to bypass moderation, in case the site becomes very popular.
+
+    - The UI must be easy to use, lightweight, working on mobile, and polished.
 
 ## TODO
 
 - Make it *active* facial recognition cameras, and add a legacy toggle to show ones previously in use. We could also perhaps use AI to predict where the next LFR deployments will be.
 - Make the fixed LFR cameras (not vans) a different color to the vans
 - Add satellite, etc views.
+- Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password (one capital letter, number and symbol...). IP addresses might be logged to prevent spam but hopefully not to maintain complete anonymity
 
-## Shadi
+## Forrest404
 
 - Leaderboard
 - Superbase (server setup)
 - Accounts functionality
 etc
 
-## Leo
+## Laki2128
 
 - Fix and build UI
 etc
