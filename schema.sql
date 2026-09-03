@@ -176,10 +176,15 @@ create unique index if not exists profiles_username_lower_idx
 
 alter table public.profiles enable row level security;
 
+-- A person reads their own row; a moderator reads anyone's, because
+-- the queue shows who sent each report. Nothing in a profile is
+-- secret from a moderator - a username, a role, a total - and the
+-- reports themselves already carry the user id.
 drop policy if exists "profiles: read own" on public.profiles;
-create policy "profiles: read own"
+drop policy if exists "profiles: read own or moderator" on public.profiles;
+create policy "profiles: read own or moderator"
   on public.profiles for select
-  using (auth.uid() = id);
+  using (auth.uid() = id or public.is_moderator());
 
 drop policy if exists "profiles: update own" on public.profiles;
 create policy "profiles: update own"
