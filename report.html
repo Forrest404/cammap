@@ -27,53 +27,110 @@
 <main>
   <div class="prose">
 
-    <h2>Report a camera</h2>
+    <h2 id="report-title">Report a camera</h2>
 
     <!-- Signed out this page has nothing to offer, and the database
          would refuse the report anyway. -->
     <div id="report-locked" style="display:none">
       <p>
-        You need an account to send a report in. It takes one press and
-        asks for nothing &mdash; see <a href="account.html">Account</a>.
+        You need an account to send a report in. It asks for nothing but
+        a password &mdash; see <a href="account.html">Account</a>.
       </p>
     </div>
 
     <div id="report-form" style="display:none">
 
-      <p>
-        Seen a facial recognition camera that is not on the map? Send it
-        in and someone will check it.
-      </p>
+      <!-- Reporting a camera the map does not have. -->
+      <div id="report-new">
+        <p>
+          Seen a facial recognition camera that is not on the map? Send it
+          in. Once enough people report the same spot it goes on the map
+          by itself; until then a moderator looks first.
+        </p>
 
-      <p class="hint">
-        This does not put the camera on the map. Reports go to a queue to
-        be looked at by hand; the map itself only ever changes by a commit
-        to the site. Coordinates must fall inside Greater London.
-      </p>
+        <div class="box">
+          <label for="s-type">What kind</label>
+          <select id="s-type">
+            <option value="fixedcam">Fixed LFR camera</option>
+            <option value="vancam">LFR van</option>
+            <option value="transportcam">Transport police</option>
+            <option value="facewatchcam">Shop (Facewatch)</option>
+            <option value="privatecam">Private</option>
+          </select>
+          <p class="hint" id="s-xp"></p>
 
-      <div class="box">
-        <div class="pair">
-          <div>
-            <label for="s-lat">Latitude</label>
-            <input type="number" id="s-lat" step="any" placeholder="51.5169">
+          <div class="pair">
+            <div>
+              <label for="s-lat">Latitude</label>
+              <input type="number" id="s-lat" step="any" placeholder="51.5169" inputmode="decimal">
+            </div>
+            <div>
+              <label for="s-lon">Longitude</label>
+              <input type="number" id="s-lon" step="any" placeholder="-0.0977" inputmode="decimal">
+            </div>
           </div>
-          <div>
-            <label for="s-lon">Longitude</label>
-            <input type="number" id="s-lon" step="any" placeholder="-0.0977">
-          </div>
+          <p class="hint">
+            <button id="locate-button" class="quiet">Use my location</button>
+            <span id="locate-note"></span>
+          </p>
+
+          <label for="s-name">Where is it?</label>
+          <input type="text" id="s-name" placeholder="e.g. outside Stratford station, east exit">
+          <label for="s-note">Anything worth adding</label>
+          <textarea id="s-note" placeholder="optional"></textarea>
+
+          <label for="s-proof">A photo or video, if you have one</label>
+          <input type="file" id="s-proof" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
+          <p class="hint">
+            Photos are re-saved in your browser before upload, which
+            removes location and camera details from the file. Videos are
+            sent as they are, so check what yours contains. Proof is seen
+            by moderators only. 20 MB at most.
+          </p>
+
+          <button id="submit-button">Send for review</button>
+          <p class="note" id="submit-note"></p>
         </div>
-        <label for="s-name">Where is it?</label>
-        <input type="text" id="s-name" placeholder="required">
-        <label for="s-note">Anything worth adding</label>
-        <textarea id="s-note" placeholder="optional"></textarea>
-        <button id="submit-button">Send for review</button>
-        <p class="note" id="submit-note"></p>
+      </div>
+
+      <!-- Reporting the state of a camera already on the map. Reached
+           from the map's popup with ?camera=<id>. -->
+      <div id="report-status" style="display:none">
+        <p>
+          Reporting on <strong id="status-camera-name"></strong>.
+          What have you seen?
+        </p>
+
+        <div class="box">
+          <label for="s-claim">The camera is</label>
+          <select id="s-claim">
+            <option value="nonfunctional">There, but not working</option>
+            <option value="removed">Gone</option>
+            <option value="active">Back in use</option>
+          </select>
+          <p class="hint" id="s-claim-xp"></p>
+
+          <label for="s-status-note">Anything worth adding</label>
+          <textarea id="s-status-note" placeholder="optional"></textarea>
+
+          <label for="s-status-proof">A photo or video, if you have one</label>
+          <input type="file" id="s-status-proof" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
+          <p class="hint">Moderators only. Photos have their location data removed first.</p>
+
+          <button id="submit-status-button">Send for review</button>
+          <p class="note" id="submit-status-note"></p>
+        </div>
+
+        <p class="hint">
+          Not what you meant? <a href="report.html">Report a camera that is
+          not on the map instead.</a>
+        </p>
       </div>
 
       <p class="hint">
-        The easiest way to get the coordinates is to open the
+        The easiest way to get coordinates is to open the
         <a href="index.html">map</a>, find the spot, and read them off
-        &mdash; or use any mapping app and copy the pair it gives you.
+        the camera nearest to it &mdash; or use any mapping app.
       </p>
 
     </div>
