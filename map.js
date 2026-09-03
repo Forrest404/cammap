@@ -122,6 +122,56 @@ function colourOf(type) {
 /* Off by default: the map shows what is in use now. */
 var showLegacy = false;
 
+/* ---------------- satellite ----------------
+
+   Esri's World Imagery, as raster tiles slid in under the vector
+   map's labels. No key: the open tile endpoint is free for
+   non-commercial use with attribution, which this is. When it is on,
+   the dark map's fills and roads are hidden so the imagery shows
+   through, and the labels stay on top so places can still be read.
+   Everything about it lives here, so if the endpoint ever changes or
+   goes away, this block is the whole of what needs touching. */
+
+var SATELLITE = "satellite";
+var SATELLITE_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+var SATELLITE_CREDIT = "Imagery &copy; Esri, Maxar, Earthstar Geographics";
+
+var showSatellite = false;
+
+/* The style's own layers that get hidden under imagery, worked out
+   once when the style loads. Symbols (labels) are never in it. */
+var groundLayers = [];
+
+/* Which toggles were on last time, so a reload keeps them. Read and
+   written with the same care as the draft: storage may be refused. */
+var VIEW_KEY = "cammap.view";
+
+function loadView() {
+  try {
+    var raw = window.localStorage.getItem(VIEW_KEY);
+    var view = raw ? JSON.parse(raw) : null;
+    if (view && typeof view === "object") {
+      showLegacy = view.legacy === true;
+      showSatellite = view.satellite === true;
+    }
+  } catch (err) {
+    /* nothing saved, or storage refused - defaults stand */
+  }
+}
+
+function saveView() {
+  try {
+    window.localStorage.setItem(VIEW_KEY, JSON.stringify({
+      legacy: showLegacy,
+      satellite: showSatellite
+    }));
+  } catch (err) {
+    /* storage refused - the toggles still work for this visit */
+  }
+}
+
+loadView();
+
 var HEAT_FULL = 12.5;   /* at or below this the glow is at full strength */
 var HEAT_GONE = 15;     /* by here it has gone entirely */
 
@@ -260,7 +310,34 @@ map.on("load", function () {
     }
   }
 
+  /* Everything that is not a label is ground: it goes under imagery. */
+  groundLayers = [];
+  for (i = 0; i < layers.length; i++) {
+    if (layers[i].type !== "symbol") {
+      groundLayers.push(layers[i].id);
+    }
+  }
+
+  /* The imagery sits directly above the style's background layer, so
+     it is under every road and label but over the plain colour. */
+  map.addSource(SATELLITE, {
+    type: "raster",
+    tiles: [SATELLITE_TILES],
+    tileSize: 256,
+    maxzoom: 19,
+    attribution: SATELLITE_CREDIT
+  });
+
+  map.addLayer({
+    id: SATELLITE,
+    type: "raster",
+    source: SATELLITE,
+    layout: { visibility: "none" },
+    paint: { "raster-opacity": 1 }
+  }, layers.length > 1 ? layers[1].id : undefined);
+
   addCameras(firstLabel);
+  applySatellite();
 });
 
 function addCameras(beneath) {
@@ -377,6 +454,7 @@ var pointsList    = document.getElementById("points-list");
 var pointsEmpty   = document.getElementById("points-empty");
 
 var legacyToggle  = document.getElementById("legacy-toggle");
+var satelliteToggle = document.getElementById("satellite-toggle");
 var legend        = document.getElementById("legend");
 var typeInput     = document.getElementById("type");
 
@@ -543,11 +621,54 @@ function setLegacy(on) {
   showLegacy = on;
   applyLegacyFilter();
   render();
+  saveView();
 
   if (legacyToggle) {
     legacyToggle.className = on ? "toggle on" : "toggle";
     legacyToggle.setAttribute("aria-pressed", on ? "true" : "false");
   }
+}
+
+/* Imagery on: show the raster, hide the ground, ring every dot in the
+   page background so it holds up against grass and rooftops. Imagery
+   off: put it all back exactly as it was. */
+function applySatellite() {
+  var i;
+  var on = showSatellite;
+
+  if (!map.getLayer(SATELLITE)) {
+    return;
+  }
+
+  map.setLayoutProperty(SATELLITE, "visibility", on ? "visible" : "none");
+
+  for (i = 0; i < groundLayers.length; i++) {
+    if (map.getLayer(groundLayers[i])) {
+      map.setLayoutProperty(groundLayers[i], "visibility", on ? "none" : "visible");
+    }
+  }
+
+  if (map.getLayer(DOT)) {
+    map.setPaintProperty(DOT, "circle-stroke-width", on
+      ? ["case", ["==", ["get", "status"], "legacy"], 1.6, 1.5]
+      : ["interpolate", ["linear"], ["zoom"],
+          13, ["case", ["==", ["get", "status"], "legacy"], 1.2, 0],
+          15, ["case", ["==", ["get", "status"], "legacy"], 1.2, 1]]);
+    map.setPaintProperty(DOT, "circle-stroke-opacity", on
+      ? 0.95
+      : ["case", ["==", ["get", "status"], "legacy"], 0.9, 0.6]);
+  }
+
+  if (satelliteToggle) {
+    satelliteToggle.className = on ? "toggle on" : "toggle";
+    satelliteToggle.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+}
+
+function setSatellite(on) {
+  showSatellite = on;
+  applySatellite();
+  saveView();
 }
 
 /* The legend is drawn from TYPES so it always matches the paint. */
@@ -1103,9 +1224,19 @@ if (EDITING) {
 drawLegend();
 render();
 
+/* A remembered legacy setting has to show on the button straight away;
+   the map side of it is applied when the layers are built. */
 if (legacyToggle) {
+  legacyToggle.className = showLegacy ? "toggle on" : "toggle";
+  legacyToggle.setAttribute("aria-pressed", showLegacy ? "true" : "false");
   legacyToggle.onclick = function () {
     setLegacy(!showLegacy);
+  };
+}
+
+if (satelliteToggle) {
+  satelliteToggle.onclick = function () {
+    setSatellite(!showSatellite);
   };
 }
 
