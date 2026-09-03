@@ -304,7 +304,7 @@ create table if not exists public.cameras (
   status      text not null default 'active'
                 check (status in ('active', 'legacy', 'nonfunctional')),
   last_seen   integer,                     -- the last year a source records it, or null
-  source      text not null check (source in ('seed', 'report')),
+  source      text not null check (source in ('seed', 'report', 'admin')),
   seed_key    text unique,                 -- name|lat|lon|type, seed rows only
   visible     boolean not null default true,
   approved_at timestamptz,
@@ -318,6 +318,12 @@ create table if not exists public.cameras (
     lon between -0.51 and 0.33
   )
 );
+
+-- version 2.1 widened source to allow 'admin'; on an older table the
+-- check constraint has the old list, so it is replaced.
+alter table public.cameras drop constraint if exists cameras_source_check;
+alter table public.cameras add constraint cameras_source_check
+  check (source in ('seed', 'report', 'admin'));
 
 create index if not exists cameras_visible_idx on public.cameras (visible);
 
@@ -1072,6 +1078,59 @@ $fn$;
 
 revoke all on function public.reapprove_report(bigint, uuid) from public, anon, authenticated;
 grant execute on function public.reapprove_report(bigint, uuid) to service_role;
+
+-- Put a camera on the map by hand, without a report. For the things a
+-- moderator knows about that nobody has reported - a published record,
+-- a site visit. Goes straight on, visible, attributed to whoever added
+-- it, with no XP for anyone. Same London box as everything else.
+create or replace function public.add_camera(
+  cam_name text, cam_note text, cam_lat double precision, cam_lon double precision,
+  cam_type text, cam_status text default 'active', actor uuid default null)
+returns bigint
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+declare
+  cid bigint;
+begin
+  if cam_name is null or btrim(cam_name) = '' then
+    raise exception 'a camera needs a name';
+  end if;
+  insert into public.cameras (name, note, lat, lon, type, status, source, approved_at, approved_by)
+  values (btrim(cam_name), coalesce(cam_note, ''), cam_lat, cam_lon, cam_type,
+          coalesce(cam_status, 'active'), 'admin', now(), actor)
+  returning id into cid;
+  return cid;
+end;
+$fn$;
+
+revoke all on function public.add_camera(text, text, double precision, double precision, text, text, uuid)
+  from public, anon, authenticated;
+grant execute on function public.add_camera(text, text, double precision, double precision, text, text, uuid)
+  to service_role;
+
+-- The browser's way in for a moderator. Checks the role, then adds.
+create or replace function public.moderate_add_camera(
+  cam_name text, cam_note text, cam_lat double precision, cam_lon double precision,
+  cam_type text, cam_status text default 'active')
+returns bigint
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  if not public.is_moderator() then
+    raise exception 'moderators only' using errcode = '42501';
+  end if;
+  return public.add_camera(cam_name, cam_note, cam_lat, cam_lon, cam_type, cam_status, auth.uid());
+end;
+$fn$;
+
+revoke all on function public.moderate_add_camera(text, text, double precision, double precision, text, text)
+  from public, anon, authenticated;
+grant execute on function public.moderate_add_camera(text, text, double precision, double precision, text, text)
+  to authenticated, service_role;
 
 -- What the moderator's browser calls for any of the above. Same gate
 -- as moderate_report. Actions: hide_camera and unhide_camera take a

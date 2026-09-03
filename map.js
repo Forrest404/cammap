@@ -949,6 +949,36 @@ function popupFor(point) {
     report.href = "report.html?camera=" + encodeURIComponent(point.cameraId);
     report.textContent = "Report its state \u2192";
     box.appendChild(report);
+
+    /* A moderator can take a camera off the map from right here. The
+       server checks the role again; this only decides whether to
+       offer the link. */
+    if (typeof isModerator === "function" && isModerator()) {
+      box.appendChild(document.createElement("br"));
+      var remove = document.createElement("a");
+      remove.className = "report-link";
+      remove.href = "#";
+      remove.textContent = "Remove from map \u2192";
+      remove.onclick = function (event) {
+        event.preventDefault();
+        var why = window.prompt("Why is this camera coming off the map?", "");
+        if (why === null) { return; }
+        remove.textContent = "\u2026";
+        sb.rpc("moderate_undo", { target: point.cameraId, action: "hide_camera", note: why })
+          .then(function (result) {
+            if (result.error) {
+              remove.textContent = result.error.message || "That did not go through.";
+              return;
+            }
+            try { window.localStorage.removeItem("cammap.cameras"); } catch (e) {}
+            closePopup();
+            points = points.filter(function (p) { return p.cameraId !== point.cameraId; });
+            refreshCameras();
+            render();
+          });
+      };
+      box.appendChild(remove);
+    }
   }
 
   return box;

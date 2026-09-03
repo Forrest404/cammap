@@ -1093,8 +1093,11 @@ function setUpModeratePage() {
         }
         document.getElementById("mod-queue").style.display = which === "queue" ? "block" : "none";
         document.getElementById("mod-history").style.display = which === "history" ? "block" : "none";
+        document.getElementById("mod-cameras").style.display = which === "cameras" ? "block" : "none";
         if (which === "history") {
           loadHistory();
+        } else if (which === "cameras") {
+          setUpCamerasTab();
         } else {
           loadQueue();
         }
@@ -1103,6 +1106,200 @@ function setUpModeratePage() {
   }
 
   loadQueue();
+}
+
+/* ---------------- cameras: any camera, on or off the map ----------------
+
+   The full list, seed and reported alike, with the search done in the
+   browser: a few hundred rows is nothing to hold, and a moderator
+   looking for "Croydon" should not wait on a round trip per letter.
+   Adding a camera goes through moderate_add_camera, gated on the
+   server like everything else here. */
+
+var allCameras = [];
+var camerasLoaded = false;
+var showHiddenCameras = false;
+
+function setUpCamerasTab() {
+  var search = document.getElementById("c-search");
+  var hiddenToggle = document.getElementById("c-hidden-toggle");
+  var addButton = document.getElementById("c-add-button");
+
+  if (!camerasLoaded) {
+    search.oninput = function () { renderCameras(); };
+    hiddenToggle.onclick = function () {
+      showHiddenCameras = !showHiddenCameras;
+      hiddenToggle.className = showHiddenCameras ? "toggle on" : "toggle";
+      hiddenToggle.setAttribute("aria-pressed", showHiddenCameras ? "true" : "false");
+      renderCameras();
+    };
+    addButton.onclick = addCameraByHand;
+  }
+
+  loadAllCameras();
+}
+
+function loadAllCameras() {
+  var note = document.getElementById("cameras-note");
+
+  note.textContent = "Loading…";
+
+  /* A moderator's select on cameras returns hidden ones too, by the
+     read policy. Ordered by name so the list reads like the map's. */
+  sb.from("cameras")
+    .select("id,name,note,lat,lon,type,status,source,visible")
+    .order("name")
+    .limit(5000)
+    .then(function (result) {
+      note.textContent = "";
+      if (result.error) {
+        note.textContent = "Could not load the cameras.";
+        return;
+      }
+      allCameras = result.data;
+      camerasLoaded = true;
+      renderCameras();
+    });
+}
+
+function renderCameras() {
+  var list  = document.getElementById("cameras-list");
+  var empty = document.getElementById("cameras-empty");
+  var q = document.getElementById("c-search").value.trim().toLowerCase();
+  var shown = 0;
+  var i;
+  var c;
+
+  list.innerHTML = "";
+
+  for (i = 0; i < allCameras.length; i++) {
+    c = allCameras[i];
+    if (!c.visible && !showHiddenCameras) { continue; }
+    if (q && c.name.toLowerCase().indexOf(q) === -1) { continue; }
+    list.appendChild(cameraRow(c));
+    shown++;
+  }
+
+  empty.style.display = shown === 0 ? "block" : "none";
+}
+
+function cameraRow(c) {
+  var row = document.createElement("li");
+  var head = document.createElement("div");
+  var body = document.createElement("div");
+  var actions = document.createElement("div");
+
+  head.className = "queue-head";
+  body.className = "queue-body";
+  actions.className = "row";
+  if (!c.visible) { row.className = "done"; }
+
+  var what = document.createElement("strong");
+  what.textContent = c.name;
+  head.appendChild(what);
+
+  var meta = document.createElement("span");
+  meta.className = "coords";
+  meta.textContent = typeLabel(c.type) + " · " + c.status + " · " +
+    (c.visible ? "on the map" : "hidden") + " · " +
+    { seed: "from the published record", report: "from a report", admin: "added by hand" }[c.source] +
+    " · " + Number(c.lat).toFixed(5) + ", " + Number(c.lon).toFixed(5);
+  head.appendChild(meta);
+
+  if (c.note) {
+    body.textContent = c.note;
+    body.appendChild(document.createElement("br"));
+  }
+  var onMap = document.createElement("a");
+  onMap.href = "index.html#" + Number(c.lat).toFixed(5) + "," + Number(c.lon).toFixed(5);
+  onMap.target = "_blank";
+  onMap.textContent = "See on the map →";
+  body.appendChild(onMap);
+
+  var outcome = document.createElement("span");
+  outcome.className = "note";
+
+  var b = document.createElement("button");
+  b.textContent = c.visible ? "Remove from map" : "Put back on map";
+  if (c.visible) { b.className = "quiet"; }
+  b.onclick = function () {
+    var why = null;
+    if (c.visible) {
+      why = window.prompt("Why is this camera coming off the map?", "");
+      if (why === null) { return; }
+    }
+    b.disabled = true;
+    outcome.textContent = "…";
+    undo(c.id, c.visible ? "hide_camera" : "unhide_camera", why, function (problem) {
+      if (problem) {
+        b.disabled = false;
+        outcome.textContent = problem;
+        return;
+      }
+      c.visible = !c.visible;
+      renderCameras();
+    });
+  };
+
+  actions.appendChild(b);
+  actions.appendChild(outcome);
+  row.appendChild(head);
+  row.appendChild(body);
+  row.appendChild(actions);
+  return row;
+}
+
+function addCameraByHand() {
+  var typeSel = document.getElementById("c-type");
+  var statusSel = document.getElementById("c-status");
+  var latIn = document.getElementById("c-lat");
+  var lonIn = document.getElementById("c-lon");
+  var nameIn = document.getElementById("c-name");
+  var noteIn = document.getElementById("c-note");
+  var button = document.getElementById("c-add-button");
+  var note = document.getElementById("c-add-note");
+  var lat = parseFloat(latIn.value);
+  var lon = parseFloat(lonIn.value);
+
+  note.textContent = "";
+
+  if (nameIn.value.trim() === "") {
+    note.textContent = "Give it a name.";
+    nameIn.focus();
+    return;
+  }
+  if (isNaN(lat) || isNaN(lon)) {
+    note.textContent = "Both coordinates need to be numbers.";
+    latIn.focus();
+    return;
+  }
+  if (!inLondonBox(lat, lon)) {
+    note.textContent = "That is outside London. This map covers Greater London only.";
+    latIn.focus();
+    return;
+  }
+
+  button.disabled = true;
+  note.textContent = "Adding…";
+
+  sb.rpc("moderate_add_camera", {
+    cam_name: nameIn.value.trim(),
+    cam_note: noteIn.value.trim(),
+    cam_lat: lat,
+    cam_lon: lon,
+    cam_type: typeSel.value,
+    cam_status: statusSel.value
+  }).then(function (result) {
+    button.disabled = false;
+    if (result.error) {
+      note.textContent = result.error.message || "That did not go through.";
+      return;
+    }
+    try { window.localStorage.removeItem("cammap.cameras"); } catch (e) {}
+    latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
+    note.textContent = "On the map as camera #" + result.data + ".";
+    loadAllCameras();
+  });
 }
 
 /* ---------------- history: undoing decisions ----------------
