@@ -1090,7 +1090,7 @@ function loadQueue() {
   note.textContent = "Loading…";
 
   sb.from("reports")
-    .select("id,user_id,kind,camera_id,type,status_claim,name,note,lat,lon,created_at,profiles(username),report_proof(id,storage_path,mime)")
+    .select("id,user_id,kind,camera_id,type,status_claim,name,note,lat,lon,created_at,profiles!reports_user_id_fkey(username),report_proof(id,storage_path,mime)")
     .eq("state", "pending")
     .order("created_at", { ascending: false })
     .limit(QUEUE_PAGE)
