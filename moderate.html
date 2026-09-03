@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Moderate &mdash; cammap</title>
 <link rel="stylesheet" href="fonts/fonts.css">
-<link rel="stylesheet" href="style.css?v=3a73a89a">
+<link rel="stylesheet" href="style.css?v=c5eb52c2">
 </head>
 <body>
 <div class="sheet">
@@ -41,6 +41,7 @@
       <div class="map-toggles" id="mod-tabs">
         <button class="toggle on" data-tab="queue">Queue</button>
         <button class="toggle" data-tab="history">History</button>
+        <button class="toggle" data-tab="cameras">Cameras</button>
       </div>
 
       <!-- What is waiting. -->
@@ -55,6 +56,58 @@
         <p class="note" id="queue-note"></p>
         <ul class="queue" id="queue-list"></ul>
         <p class="empty" id="queue-empty" style="display:none">Nothing waiting.</p>
+      </div>
+
+      <!-- Every camera on the map, and a way to put one there by hand. -->
+      <div id="mod-cameras" style="display:none">
+        <p class="hint">
+          Every camera the map knows about, seed and reported alike.
+          Removing one hides it - it keeps its reports and can be put
+          back. Adding one puts it on the map at once, with no report
+          behind it and no XP for anyone.
+        </p>
+
+        <div class="box">
+          <h3>Add a camera</h3>
+          <label for="c-type">What kind</label>
+          <select id="c-type">
+            <option value="fixedcam">Fixed LFR camera</option>
+            <option value="vancam">LFR van site</option>
+            <option value="transportcam">Transport police</option>
+            <option value="facewatchcam">Shop (Facewatch)</option>
+            <option value="privatecam">Private</option>
+          </select>
+          <label for="c-status">State</label>
+          <select id="c-status">
+            <option value="active">Active</option>
+            <option value="legacy">Legacy - no longer in use</option>
+            <option value="nonfunctional">Non-functional</option>
+          </select>
+          <div class="pair">
+            <div>
+              <label for="c-lat">Latitude</label>
+              <input type="number" id="c-lat" step="any" placeholder="51.5169" inputmode="decimal">
+            </div>
+            <div>
+              <label for="c-lon">Longitude</label>
+              <input type="number" id="c-lon" step="any" placeholder="-0.0977" inputmode="decimal">
+            </div>
+          </div>
+          <label for="c-name">Name</label>
+          <input type="text" id="c-name" placeholder="required">
+          <label for="c-note">Note</label>
+          <textarea id="c-note" placeholder="optional - shown in the popup"></textarea>
+          <button id="c-add-button">Put it on the map</button>
+          <p class="note" id="c-add-note"></p>
+        </div>
+
+        <div class="row">
+          <input type="text" id="c-search" placeholder="Find a camera by name">
+          <button id="c-hidden-toggle" class="toggle" aria-pressed="false">Show hidden</button>
+        </div>
+        <p class="note" id="cameras-note"></p>
+        <ul class="queue" id="cameras-list"></ul>
+        <p class="empty" id="cameras-empty" style="display:none">No cameras match.</p>
       </div>
 
       <!-- What has been decided, and the means to undo it. -->
@@ -82,7 +135,7 @@
 
 </div>
 <script src="lib/supabase.js"></script>
-<script src="supabase-config.js?v=3a73a89a"></script>
-<script src="account.js?v=3a73a89a"></script>
+<script src="supabase-config.js?v=c5eb52c2"></script>
+<script src="account.js?v=c5eb52c2"></script>
 </body>
 </html>
