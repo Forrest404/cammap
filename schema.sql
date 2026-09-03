@@ -72,8 +72,10 @@ begin
 end;
 $$;
 
+-- Granted to anon as well: the cameras policy asks it, and a signed-
+-- out map visitor must get "false" from it, not "permission denied".
 revoke all on function public.is_moderator() from public, anon, authenticated;
-grant execute on function public.is_moderator() to authenticated, service_role;
+grant execute on function public.is_moderator() to anon, authenticated, service_role;
 
 -- True if the report exists, belongs to the caller and is still
 -- pending. Used to gate proof uploads and deletions.
@@ -332,9 +334,10 @@ create index if not exists cameras_cell_idx
 alter table public.cameras enable row level security;
 
 drop policy if exists "cameras: read visible" on public.cameras;
-create policy "cameras: read visible"
+drop policy if exists "cameras: read visible or moderator" on public.cameras;
+create policy "cameras: read visible or moderator"
   on public.cameras for select
-  using (visible);
+  using (visible or public.is_moderator());
 
 -- Read only, for everyone. Nothing a browser sends can create, move,
 -- rename or hide a camera - only approve_report and the service role
@@ -926,6 +929,183 @@ $$;
 
 revoke all on function public.moderate_report(bigint, text, text) from public, anon, authenticated;
 grant execute on function public.moderate_report(bigint, text, text) to authenticated, service_role;
+
+-- ---------------- undoing things ----------------
+
+-- Moderation is not one-way. A camera can be taken off the map, an
+-- approval can be taken back, and a rejection can be reconsidered.
+-- None of it deletes anything: a camera is hidden rather than
+-- removed, so the reports that pointed at it still make sense, and
+-- every report keeps its history in resolved_by / resolved_at /
+-- resolution_note. What must not survive an undo is the XP: a report
+-- whose approval is taken back loses its award, or approve-retract-
+-- approve would pay twice. The xp_events trigger subtracts it from
+-- the person's total on delete, so nothing here adds up anything.
+
+-- Take a camera off the map. It stays in the table, invisible, with
+-- its reports intact. Idempotent.
+create or replace function public.hide_camera(cid bigint, why text default null, actor uuid default null)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  update public.cameras
+     set visible = false
+   where id = cid and visible;
+  if not found then
+    return;
+  end if;
+  -- leave a note on the reports so the queue's history shows why
+  update public.reports
+     set resolution_note = coalesce(why, 'camera removed from the map'),
+         resolved_by = coalesce(actor, resolved_by),
+         resolved_at = now()
+   where camera_id = cid and state = 'approved';
+end;
+$fn$;
+
+revoke all on function public.hide_camera(bigint, text, uuid) from public, anon, authenticated;
+grant execute on function public.hide_camera(bigint, text, uuid) to service_role;
+
+-- Put a hidden camera back. The reverse of hide_camera, for a removal
+-- that turned out to be wrong.
+create or replace function public.unhide_camera(cid bigint, actor uuid default null)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  update public.cameras set visible = true where id = cid and not visible;
+end;
+$fn$;
+
+revoke all on function public.unhide_camera(bigint, uuid) from public, anon, authenticated;
+grant execute on function public.unhide_camera(bigint, uuid) to service_role;
+
+-- Take back an approval. The report goes back to pending, its XP
+-- award is deleted (and so subtracted from the total by the
+-- xp_events trigger), and if it was a new-camera report whose camera
+-- has no other approved report holding it up, the camera is hidden.
+-- A status report's effect on its camera is not unwound here - the
+-- moderator decides what the camera's state should be by hand, since
+-- "what it was before" may itself have been wrong.
+create or replace function public.retract_approval(rid bigint, why text default null, actor uuid default null)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+declare
+  r public.reports%rowtype;
+begin
+  select * into r from public.reports where id = rid;
+  if not found or r.state <> 'approved' then
+    return;
+  end if;
+
+  delete from public.xp_events where report_id = rid;
+
+  update public.reports
+     set state = 'pending', resolution_note = why, resolved_by = actor, resolved_at = now()
+   where id = rid;
+
+  if r.kind = 'new' and r.camera_id is not null
+     and not exists (select 1 from public.reports
+                      where camera_id = r.camera_id and kind = 'new'
+                        and state = 'approved' and id <> rid) then
+    update public.cameras set visible = false where id = r.camera_id;
+  end if;
+end;
+$fn$;
+
+revoke all on function public.retract_approval(bigint, text, uuid) from public, anon, authenticated;
+grant execute on function public.retract_approval(bigint, text, uuid) to service_role;
+
+-- Reconsider a rejection: back to pending, then through the ordinary
+-- approval so it behaves exactly like any other approval - cluster,
+-- merge, XP and all. Returns the camera it now points at.
+create or replace function public.reapprove_report(rid bigint, actor uuid default null)
+returns bigint
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+declare
+  r public.reports%rowtype;
+begin
+  select * into r from public.reports where id = rid;
+  if not found or r.state not in ('rejected', 'pending') then
+    return r.camera_id;
+  end if;
+
+  -- A report whose approval was taken back and is now being restored
+  -- already has a camera - hidden by the retraction. Put that one
+  -- back rather than make a second, or every retract-and-restore
+  -- would leave a hidden orphan behind.
+  if r.camera_id is not null
+     and exists (select 1 from public.cameras where id = r.camera_id and not visible) then
+    update public.cameras set visible = true where id = r.camera_id;
+    update public.reports
+       set state = 'approved', resolution_note = null, resolved_by = actor, resolved_at = now()
+     where id = rid;
+    -- the XP went with the retraction; award it again, once
+    insert into public.xp_events (user_id, report_id, xp, reason)
+    select r.user_id, r.id,
+           coalesce((select xp from public.xp_rules where key = 'new_' || r.type), 0)
+           + case when not exists (select 1 from public.xp_events where user_id = r.user_id)
+                  then coalesce((select xp from public.xp_rules where key = 'first_report_bonus'), 0) else 0 end,
+           'new_' || r.type || ' (restored)'
+     where r.kind = 'new'
+    on conflict (report_id) do nothing;
+    return r.camera_id;
+  end if;
+
+  update public.reports
+     set state = 'pending', resolution_note = null
+   where id = rid and state = 'rejected';
+  return public.approve_report(rid, actor);
+end;
+$fn$;
+
+revoke all on function public.reapprove_report(bigint, uuid) from public, anon, authenticated;
+grant execute on function public.reapprove_report(bigint, uuid) to service_role;
+
+-- What the moderator's browser calls for any of the above. Same gate
+-- as moderate_report. Actions: hide_camera and unhide_camera take a
+-- camera id; retract and reapprove take a report id.
+create or replace function public.moderate_undo(target bigint, action text, note text default null)
+returns bigint
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  if not public.is_moderator() then
+    raise exception 'moderators only' using errcode = '42501';
+  end if;
+
+  if action = 'hide_camera' then
+    perform public.hide_camera(target, note, auth.uid());
+    return target;
+  elsif action = 'unhide_camera' then
+    perform public.unhide_camera(target, auth.uid());
+    return target;
+  elsif action = 'retract' then
+    perform public.retract_approval(target, note, auth.uid());
+    return null;
+  elsif action = 'reapprove' then
+    return public.reapprove_report(target, auth.uid());
+  end if;
+
+  raise exception 'unknown action "%"', action;
+end;
+$fn$;
+
+revoke all on function public.moderate_undo(bigint, text, text) from public, anon, authenticated;
+grant execute on function public.moderate_undo(bigint, text, text) to authenticated, service_role;
 
 -- ---------------- report triggers ----------------
 

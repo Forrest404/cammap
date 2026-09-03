@@ -38,17 +38,39 @@
 
     <div id="moderate-panel" style="display:none">
 
-      <p class="hint">
-        Pending reports, newest first. Approving a new camera puts it on
-        the map for everyone; approving a state report changes the camera
-        it is about. Both give the reporter their XP. Reports that enough
-        people agreed on have already gone through by themselves and are
-        not here.
-      </p>
+      <div class="map-toggles" id="mod-tabs">
+        <button class="toggle on" data-tab="queue">Queue</button>
+        <button class="toggle" data-tab="history">History</button>
+      </div>
 
-      <p class="note" id="queue-note"></p>
-      <ul class="queue" id="queue-list"></ul>
-      <p class="empty" id="queue-empty" style="display:none">Nothing waiting.</p>
+      <!-- What is waiting. -->
+      <div id="mod-queue">
+        <p class="hint">
+          Pending reports, newest first. Approving a new camera puts it on
+          the map for everyone; approving a state report changes the camera
+          it is about. Both give the reporter their XP. Reports that enough
+          people agreed on have already gone through by themselves and are
+          not here.
+        </p>
+        <p class="note" id="queue-note"></p>
+        <ul class="queue" id="queue-list"></ul>
+        <p class="empty" id="queue-empty" style="display:none">Nothing waiting.</p>
+      </div>
+
+      <!-- What has been decided, and the means to undo it. -->
+      <div id="mod-history" style="display:none">
+        <p class="hint">
+          Every report that has been decided, newest first, and every
+          camera that came from one. Nothing here deletes anything: a
+          camera taken off the map is hidden and can be put back; an
+          approval taken back returns the report to the queue and takes
+          its XP with it; a rejection can be reconsidered and goes through
+          the ordinary approval.
+        </p>
+        <p class="note" id="history-note"></p>
+        <ul class="queue" id="history-list"></ul>
+        <p class="empty" id="history-empty" style="display:none">Nothing decided yet.</p>
+      </div>
 
     </div>
   </div>

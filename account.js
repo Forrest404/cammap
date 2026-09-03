@@ -1079,7 +1079,173 @@ function setUpModeratePage() {
 
   locked.style.display = "none";
   panel.style.display = "block";
+
+  var tabs = document.querySelectorAll("#mod-tabs button");
+  var i;
+
+  for (i = 0; i < tabs.length; i++) {
+    tabs[i].onclick = (function (button) {
+      return function () {
+        var j;
+        var which = button.getAttribute("data-tab");
+        for (j = 0; j < tabs.length; j++) {
+          tabs[j].className = tabs[j] === button ? "toggle on" : "toggle";
+        }
+        document.getElementById("mod-queue").style.display = which === "queue" ? "block" : "none";
+        document.getElementById("mod-history").style.display = which === "history" ? "block" : "none";
+        if (which === "history") {
+          loadHistory();
+        } else {
+          loadQueue();
+        }
+      };
+    })(tabs[i]);
+  }
+
   loadQueue();
+}
+
+/* ---------------- history: undoing decisions ----------------
+
+   Approved and rejected reports, newest first, each with the one
+   action that reverses it, and every camera that came from a report
+   with a way to take it off the map or put it back. All four actions
+   go through moderate_undo, gated on the server like the rest. */
+
+function loadHistory() {
+  var list  = document.getElementById("history-list");
+  var empty = document.getElementById("history-empty");
+  var note  = document.getElementById("history-note");
+
+  note.textContent = "Loading…";
+
+  sb.from("reports")
+    .select("id,kind,camera_id,type,status_claim,name,note,lat,lon,state,resolved_at,resolution_note,profiles!reports_user_id_fkey(username),cameras(id,name,visible,status)")
+    .in("state", ["approved", "rejected", "merged"])
+    .order("resolved_at", { ascending: false, nullsFirst: false })
+    .limit(QUEUE_PAGE)
+    .then(function (result) {
+      var i;
+
+      list.innerHTML = "";
+      note.textContent = "";
+
+      if (result.error) {
+        note.textContent = "Could not load the history.";
+        return;
+      }
+
+      empty.style.display = result.data.length === 0 ? "block" : "none";
+
+      for (i = 0; i < result.data.length; i++) {
+        list.appendChild(historyRow(result.data[i]));
+      }
+    });
+}
+
+function undo(target, action, noteText, onDone) {
+  sb.rpc("moderate_undo", { target: target, action: action, note: noteText || null })
+    .then(function (result) {
+      if (!result.error) {
+        try { window.localStorage.removeItem("cammap.cameras"); } catch (e) {}
+      }
+      onDone(result.error ? (result.error.message || "That did not go through.") : null);
+    });
+}
+
+function stateLabel(state) {
+  return { approved: "Approved", rejected: "Rejected", merged: "Merged into an existing camera" }[state] || state;
+}
+
+function historyRow(r) {
+  var row = document.createElement("li");
+  var head = document.createElement("div");
+  var body = document.createElement("div");
+  var actions = document.createElement("div");
+  var cam = r.cameras;
+
+  head.className = "queue-head";
+  body.className = "queue-body";
+  actions.className = "row";
+
+  var what = document.createElement("strong");
+  what.textContent = (r.kind === "new"
+    ? typeLabel(r.type) + " — " + (r.name || "")
+    : "State: " + (cam ? cam.name : "camera #" + r.camera_id) + " is " + claimLabel(r.status_claim));
+  head.appendChild(what);
+
+  var meta = document.createElement("span");
+  meta.className = "coords";
+  meta.textContent = stateLabel(r.state) +
+    " · " + (r.profiles && r.profiles.username ? r.profiles.username : "?") +
+    (r.resolved_at ? " · " + new Date(r.resolved_at).toLocaleString() : "") +
+    (r.resolution_note ? " · " + r.resolution_note : "");
+  head.appendChild(meta);
+
+  if (cam) {
+    var camLine = document.createElement("span");
+    camLine.className = "coords";
+    camLine.textContent = "Camera #" + cam.id + " · " + (cam.visible ? "on the map" : "hidden") + " · " + cam.status;
+    body.appendChild(camLine);
+    body.appendChild(document.createElement("br"));
+  }
+
+  var onMap = document.createElement("a");
+  onMap.href = "index.html#" + Number(r.lat).toFixed(5) + "," + Number(r.lon).toFixed(5);
+  onMap.target = "_blank";
+  onMap.textContent = "See on the map →";
+  body.appendChild(onMap);
+
+  var outcome = document.createElement("span");
+  outcome.className = "note";
+
+  function button(text, quiet, target, action, confirmText) {
+    var b = document.createElement("button");
+    b.textContent = text;
+    if (quiet) { b.className = "quiet"; }
+    b.onclick = function () {
+      var why = confirmText ? window.prompt(confirmText, "") : null;
+      if (confirmText && why === null) { return; }
+      b.disabled = true;
+      outcome.textContent = "…";
+      undo(target, action, why, function (problem) {
+        if (problem) {
+          b.disabled = false;
+          outcome.textContent = problem;
+          return;
+        }
+        outcome.textContent = "Done.";
+        loadHistory();
+      });
+    };
+    return b;
+  }
+
+  /* Which undo fits: an approval can be retracted; a rejection can be
+     reconsidered; a camera on the map can be hidden, a hidden one put
+     back. Merged reports have nothing to undo - the camera they merged
+     into has its own row. */
+  if (r.state === "approved") {
+    actions.appendChild(button("Retract approval", true, r.id, "retract",
+      "Why is this approval being taken back? (the reporter loses the XP)"));
+  }
+  if (r.state === "rejected") {
+    actions.appendChild(button("Approve after all", false, r.id, "reapprove", null));
+  }
+  if (cam && cam.visible) {
+    actions.appendChild(button("Remove from map", true, cam.id, "hide_camera",
+      "Why is this camera coming off the map?"));
+  }
+  if (cam && !cam.visible) {
+    actions.appendChild(button("Put back on map", false, cam.id, "unhide_camera", null));
+  }
+
+  actions.appendChild(outcome);
+
+  row.appendChild(head);
+  row.appendChild(body);
+  row.appendChild(actions);
+  return row;
 }
 
 function loadQueue() {
