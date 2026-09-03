@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moderate &mdash; cammap</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sheet">
+
+<header class="masthead">
+  <h1 class="title">cammap</h1>
+  <nav class="bar">
+    <a href="index.html">Map</a>
+    <span class="sep">&middot;</span>
+    <a href="about.html">About</a>
+    <span class="sep">&middot;</span>
+    <a href="blog.html">Thoughts</a>
+    <!-- account.js fills this in once it knows whether anyone is
+         signed in. Empty until then, so the nav never flickers. -->
+    <span id="nav-account"></span>
+  </nav>
+</header>
+
+<main>
+  <div class="prose">
+
+    <h2>Moderation</h2>
+
+    <!-- Hidden from anyone who is not a moderator. The server checks
+         the role again on every action, so this is a courtesy, not
+         the lock. -->
+    <div id="moderate-locked" style="display:none">
+      <p>This page is for moderators.</p>
+    </div>
+
+    <div id="moderate-panel" style="display:none">
+
+      <p class="hint">
+        Pending reports, newest first. Approving a new camera puts it on
+        the map for everyone; approving a state report changes the camera
+        it is about. Both give the reporter their XP. Reports that enough
+        people agreed on have already gone through by themselves and are
+        not here.
+      </p>
+
+      <p class="note" id="queue-note"></p>
+      <ul class="queue" id="queue-list"></ul>
+      <p class="empty" id="queue-empty" style="display:none">Nothing waiting.</p>
+
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  Map data &copy; OpenStreetMap contributors.
+</footer>
+
+</div>
+<script src="lib/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="account.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaderboard &mdash; cammap</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sheet">
+
+<header class="masthead">
+  <h1 class="title">cammap</h1>
+  <nav class="bar">
+    <a href="index.html">Map</a>
+    <span class="sep">&middot;</span>
+    <a href="about.html">About</a>
+    <span class="sep">&middot;</span>
+    <a href="blog.html">Thoughts</a>
+    <!-- account.js fills this in once it knows whether anyone is
+         signed in. Empty until then, so the nav never flickers. -->
+    <span id="nav-account"></span>
+  </nav>
+</header>
+
+<main>
+  <div class="prose">
+
+    <h2>Leaderboard</h2>
+
+    <p class="hint">
+      Points for reports that were confirmed: a camera the map did not
+      have, or a change in one it did. Only a username is shown; there is
+      nothing else to show.
+    </p>
+
+    <div class="map-toggles" id="board-tabs">
+      <button class="toggle" data-view="leaderboard_all">All time</button>
+      <button class="toggle" data-view="leaderboard_weekly">This week</button>
+      <button class="toggle" data-view="leaderboard_daily">Today</button>
+    </div>
+
+    <p class="note" id="board-note"></p>
+
+    <div class="table-box">
+      <table class="board">
+        <thead>
+          <tr><th>#</th><th>Who</th><th>XP</th><th>Confirmed</th></tr>
+        </thead>
+        <tbody id="board-body"></tbody>
+      </table>
+    </div>
+    <p class="empty" id="board-empty" style="display:none">Nobody yet.</p>
+  </div>
+</main>
+
+<footer class="foot">
+  Map data &copy; OpenStreetMap contributors.
+</footer>
+
+</div>
+<script src="lib/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="account.js"></script>
+</body>
+</html>

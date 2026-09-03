@@ -119,6 +119,7 @@ function passwordProblem(pw) {
 var sb = null;            /* the Supabase client, once created */
 var configured = false;   /* true once sb exists and looks usable */
 var currentUser = null;   /* the signed-in user, or null */
+var currentRole = "user"; /* from profiles, once signed in; the server re-checks */
 var savedCameras = [];    /* rows from saved_cameras, kept in step with the server */
 
 /* ------------------------------------------------------------------
@@ -192,6 +193,10 @@ function renderNav() {
     return;
   }
 
+  /* The leaderboard is public: anyone can look. */
+  navAccount.appendChild(navSeparator());
+  navAccount.appendChild(navLink("leaderboard.html", "Leaderboard", PAGE === "leaderboard.html"));
+
   if (!currentUser) {
     navAccount.appendChild(navSeparator());
     navAccount.appendChild(navLink("account.html", "Account", PAGE === "account.html"));
@@ -200,6 +205,11 @@ function renderNav() {
 
   navAccount.appendChild(navSeparator());
   navAccount.appendChild(navLink("report.html", "Report a camera", PAGE === "report.html"));
+
+  if (isModerator()) {
+    navAccount.appendChild(navSeparator());
+    navAccount.appendChild(navLink("moderate.html", "Moderate", PAGE === "moderate.html"));
+  }
 
   navAccount.appendChild(navSeparator());
 
@@ -236,10 +246,39 @@ function authProblem(error) {
   return "Something went wrong. Try again in a moment.";
 }
 
+/* The role decides whether the nav offers moderation. The client
+   only uses it to show or hide the link; every moderating call is
+   gated again on the server, so a wrong value here can show a page
+   that then refuses to do anything. */
+function loadRole(onDone) {
+  if (!currentUser) {
+    currentRole = "user";
+    onDone();
+    return;
+  }
+  sb.from("profiles").select("role,xp_total").eq("id", currentUser.id).single()
+    .then(function (result) {
+      currentRole = result.error ? "user" : (result.data.role || "user");
+      currentXp = result.error ? 0 : (result.data.xp_total || 0);
+      onDone();
+    });
+}
+
+var currentXp = 0;
+
+function isModerator() {
+  return currentRole === "moderator" || currentRole === "admin";
+}
+
 function finishSignIn(user) {
   currentUser = user;
-  renderNav();
-  loadSaved();
+  loadRole(function () {
+    renderNav();
+    loadSaved();
+    if (PAGE === "account.html") {
+      showAccountPage();
+    }
+  });
 }
 
 function signIn(username, password, onDone) {
@@ -298,13 +337,15 @@ function signUp(username, password, onDone, retried) {
 function signOut() {
   sb.auth.signOut().then(function () {
     currentUser = null;
+    currentRole = "user";
+    currentXp = 0;
     savedCameras = [];
     renderNav();
 
     /* The report page is no use signed out, and neither is the signed
        in half of the account page, so leave for the map. Everywhere
        else can stay where it is and just redraw. */
-    if (PAGE === "report.html") {
+    if (PAGE === "report.html" || PAGE === "moderate.html") {
       window.location.href = "index.html";
       return;
     }
@@ -334,7 +375,7 @@ function restoreSession(onDone) {
     }
 
     currentUser = user;
-    onDone();
+    loadRole(onDone);
   }).catch(function () {
     onDone();
   });
@@ -510,6 +551,10 @@ function showAccountPage() {
 
   if (currentUser && who) {
     who.textContent = usernameOf(currentUser);
+    var standing = document.getElementById("account-standing");
+    if (standing) {
+      standing.textContent = currentXp + " XP" + (isModerator() ? " \u00b7 " + currentRole : "");
+    }
   }
 }
 
@@ -940,10 +985,16 @@ function setUpStatusReport(cameraId) {
   claimSel.onchange = showXp;
   showXp();
 
-  /* The name, so the person can see they are on the right one. */
-  sb.from("cameras").select("name,type,status").eq("id", cameraId).single()
+  /* The name, so the person can see they are on the right one - and
+     its position, which the report has to carry too. */
+  var camera = null;
+
+  sb.from("cameras").select("name,type,status,lat,lon").eq("id", cameraId).single()
     .then(function (result) {
-      nameEl.textContent = result.error ? "camera #" + cameraId : result.data.name;
+      if (!result.error) {
+        camera = result.data;
+      }
+      nameEl.textContent = camera ? camera.name : "camera #" + cameraId;
     });
 
   button.onclick = function () {
@@ -962,12 +1013,20 @@ function setUpStatusReport(cameraId) {
 
       note.textContent = "Sending…";
 
+      if (!camera) {
+        button.disabled = false;
+        note.textContent = "That camera could not be found.";
+        return;
+      }
+
       sb.from("reports").insert({
         user_id: currentUser.id,
         kind: "status",
         camera_id: cameraId,
         status_claim: claimSel.value,
-        note: noteIn.value.trim()
+        note: noteIn.value.trim(),
+        lat: camera.lat,
+        lon: camera.lon
       }).select("id").single().then(function (result) {
         if (result.error) {
           button.disabled = false;
@@ -994,6 +1053,276 @@ function setUpStatusReport(cameraId) {
 }
 
 /* ------------------------------------------------------------------
+   The moderation page
+
+   A queue of pending reports, newest first, with the proof attached
+   to each. Approve and reject go through moderate_report, which
+   checks the role again on the server: this page hiding itself from
+   a non-moderator is a courtesy, not the lock.
+   ------------------------------------------------------------------ */
+
+var QUEUE_PAGE = 30;
+
+function setUpModeratePage() {
+  var locked = document.getElementById("moderate-locked");
+  var panel  = document.getElementById("moderate-panel");
+
+  if (!locked || !panel) {
+    return;
+  }
+
+  if (!currentUser || !isModerator()) {
+    locked.style.display = "block";
+    panel.style.display = "none";
+    return;
+  }
+
+  locked.style.display = "none";
+  panel.style.display = "block";
+  loadQueue();
+}
+
+function loadQueue() {
+  var list  = document.getElementById("queue-list");
+  var empty = document.getElementById("queue-empty");
+  var note  = document.getElementById("queue-note");
+
+  note.textContent = "Loading…";
+
+  sb.from("reports")
+    .select("id,user_id,kind,camera_id,type,status_claim,name,note,lat,lon,created_at,profiles(username),report_proof(id,storage_path,mime)")
+    .eq("state", "pending")
+    .order("created_at", { ascending: false })
+    .limit(QUEUE_PAGE)
+    .then(function (result) {
+      var i;
+
+      list.innerHTML = "";
+      note.textContent = "";
+
+      if (result.error) {
+        note.textContent = "Could not load the queue.";
+        return;
+      }
+
+      empty.style.display = result.data.length === 0 ? "block" : "none";
+
+      for (i = 0; i < result.data.length; i++) {
+        list.appendChild(queueRow(result.data[i]));
+      }
+    });
+}
+
+function typeLabel(type) {
+  var names = { fixedcam: "Fixed LFR camera", vancam: "LFR van", transportcam: "Transport police",
+                facewatchcam: "Shop (Facewatch)", privatecam: "Private", nonfunccam: "Non-functional" };
+  return names[type] || type || "";
+}
+
+function claimLabel(claim) {
+  var names = { nonfunctional: "not working", removed: "gone", active: "back in use" };
+  return names[claim] || claim || "";
+}
+
+function queueRow(r) {
+  var row = document.createElement("li");
+  var head = document.createElement("div");
+  var body = document.createElement("div");
+  var proof = document.createElement("div");
+  var actions = document.createElement("div");
+  var i;
+
+  head.className = "queue-head";
+  body.className = "queue-body";
+  proof.className = "queue-proof";
+  actions.className = "row";
+
+  var what = document.createElement("strong");
+  what.textContent = r.kind === "new"
+    ? "New: " + typeLabel(r.type) + " — " + (r.name || "")
+    : "State: camera #" + r.camera_id + " is " + claimLabel(r.status_claim);
+  head.appendChild(what);
+
+  var meta = document.createElement("span");
+  meta.className = "coords";
+  meta.textContent = (r.profiles && r.profiles.username ? r.profiles.username : "?") +
+    " · " + new Date(r.created_at).toLocaleString() +
+    " · " + Number(r.lat).toFixed(5) + ", " + Number(r.lon).toFixed(5);
+  head.appendChild(meta);
+
+  if (r.note) {
+    body.textContent = r.note;
+  }
+
+  var onMap = document.createElement("a");
+  onMap.href = "index.html#" + Number(r.lat).toFixed(5) + "," + Number(r.lon).toFixed(5);
+  onMap.target = "_blank";
+  onMap.textContent = "See on the map →";
+  body.appendChild(document.createElement("br"));
+  body.appendChild(onMap);
+
+  /* Proof is in a private bucket: each file needs a short-lived
+     signed address, made only when a moderator is looking. */
+  if (r.report_proof && r.report_proof.length) {
+    for (i = 0; i < r.report_proof.length; i++) {
+      proof.appendChild(proofThumb(r.report_proof[i]));
+    }
+  }
+
+  var approve = document.createElement("button");
+  approve.textContent = "Approve";
+  var reject = document.createElement("button");
+  reject.className = "quiet";
+  reject.textContent = "Reject";
+  var outcome = document.createElement("span");
+  outcome.className = "note";
+
+  function act(action) {
+    approve.disabled = true;
+    reject.disabled = true;
+    outcome.textContent = "…";
+
+    sb.rpc("moderate_report", { report_id: r.id, action: action, note: null })
+      .then(function (result) {
+        if (result.error) {
+          approve.disabled = false;
+          reject.disabled = false;
+          outcome.textContent = result.error.message || "That did not go through.";
+          return;
+        }
+        row.className = "done";
+        outcome.textContent = action === "approve" ? "Approved." : "Rejected.";
+        /* the map cache is five minutes old at most; a moderator who
+           just approved something should see it on their next look */
+        try { window.localStorage.removeItem("cammap.cameras"); } catch (e) {}
+      });
+  }
+
+  approve.onclick = function () { act("approve"); };
+  reject.onclick = function () { act("reject"); };
+
+  actions.appendChild(approve);
+  actions.appendChild(reject);
+  actions.appendChild(outcome);
+
+  row.appendChild(head);
+  row.appendChild(body);
+  row.appendChild(proof);
+  row.appendChild(actions);
+  return row;
+}
+
+function proofThumb(p) {
+  var holder = document.createElement("a");
+  holder.className = "proof";
+  holder.target = "_blank";
+  holder.textContent = "…";
+
+  sb.storage.from("proof").createSignedUrl(p.storage_path, 600).then(function (result) {
+    holder.textContent = "";
+    if (result.error) {
+      holder.textContent = "(proof unavailable)";
+      return;
+    }
+    holder.href = result.data.signedUrl;
+    if (/^image\//.test(p.mime)) {
+      var img = document.createElement("img");
+      img.src = result.data.signedUrl;
+      img.alt = "proof";
+      holder.appendChild(img);
+    } else {
+      holder.textContent = "video →";
+    }
+  });
+
+  return holder;
+}
+
+/* ------------------------------------------------------------------
+   The leaderboard
+
+   Three tables the database refreshes on a timer, so a busy day
+   costs it nothing per visitor. Only a username and a number are in
+   them - the views hold no more than that.
+   ------------------------------------------------------------------ */
+
+function setUpLeaderboardPage() {
+  var tabs = document.querySelectorAll("#board-tabs button");
+  var i;
+
+  if (!tabs.length) {
+    return;
+  }
+
+  for (i = 0; i < tabs.length; i++) {
+    tabs[i].onclick = (function (button) {
+      return function () {
+        var j;
+        for (j = 0; j < tabs.length; j++) {
+          tabs[j].className = tabs[j] === button ? "toggle on" : "toggle";
+        }
+        loadBoard(button.getAttribute("data-view"));
+      };
+    })(tabs[i]);
+  }
+
+  tabs[0].className = "toggle on";
+  loadBoard(tabs[0].getAttribute("data-view"));
+}
+
+function loadBoard(view) {
+  var body  = document.getElementById("board-body");
+  var note  = document.getElementById("board-note");
+  var empty = document.getElementById("board-empty");
+
+  if (!configured) {
+    note.textContent = "The leaderboard is not available on this copy of the site.";
+    return;
+  }
+
+  note.textContent = "Loading…";
+  body.innerHTML = "";
+
+  sb.from(view).select("username,xp_total,reports_approved").limit(100)
+    .then(function (result) {
+      var i;
+      var me = usernameOf(currentUser);
+
+      note.textContent = "";
+
+      if (result.error) {
+        note.textContent = "Could not load the leaderboard.";
+        return;
+      }
+
+      empty.style.display = result.data.length === 0 ? "block" : "none";
+
+      for (i = 0; i < result.data.length; i++) {
+        body.appendChild(boardRow(i + 1, result.data[i], result.data[i].username === me));
+      }
+    });
+}
+
+function boardRow(rank, r, mine) {
+  var tr = document.createElement("tr");
+  var cells = [rank, r.username, r.xp_total, r.reports_approved];
+  var i;
+  var td;
+
+  if (mine) {
+    tr.className = "me";
+  }
+
+  for (i = 0; i < cells.length; i++) {
+    td = document.createElement("td");
+    td.textContent = cells[i];
+    tr.appendChild(td);
+  }
+
+  return tr;
+}
+
+/* ------------------------------------------------------------------
    Start up
 
    Nothing is drawn until the session has been looked up, so the nav
@@ -1007,6 +1336,10 @@ function start() {
     setUpAccountPage();
   } else if (PAGE === "report.html") {
     setUpReportPage();
+  } else if (PAGE === "moderate.html") {
+    setUpModeratePage();
+  } else if (PAGE === "leaderboard.html") {
+    setUpLeaderboardPage();
   } else {
     loadSaved();
   }

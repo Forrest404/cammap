@@ -847,6 +847,110 @@ code.username-big {
   letter-spacing: 0.5px;
 }
 
+/* ---------- the moderation queue ---------- */
+
+ul.queue {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 68ch;
+}
+
+ul.queue li {
+  padding: 14px 0;
+  border-top: 1px solid var(--rule);
+}
+
+ul.queue li.done {
+  opacity: 0.45;
+}
+
+.queue-head strong {
+  display: block;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.queue-head .coords {
+  display: block;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.queue-body {
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.queue-proof {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0 10px 0;
+}
+
+.queue-proof a.proof {
+  display: block;
+  min-width: 60px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.queue-proof img {
+  display: block;
+  max-height: 120px;
+  border: 1px solid var(--rule);
+}
+
+ul.queue .row .note {
+  margin: 0 0 0 10px;
+  align-self: center;
+}
+
+/* ---------- the leaderboard ----------
+
+   Wide content scrolls inside its own box, so the page itself never
+   scrolls sideways on a phone. */
+
+.table-box {
+  max-width: 68ch;
+  overflow-x: auto;
+  margin-top: 14px;
+}
+
+table.board {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+table.board th,
+table.board td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+
+table.board th {
+  color: var(--dim);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+table.board td:first-child,
+table.board td:nth-child(3),
+table.board td:nth-child(4) {
+  text-align: right;
+  color: var(--dim);
+}
+
+table.board tr.me td {
+  color: var(--accent);
+}
+
 /* ------------------------------------------------------------------
    EDIT MODE
 
