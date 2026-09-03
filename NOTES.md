@@ -15,10 +15,60 @@
 
 ## TODO
 
-- Make it *active* facial recognition cameras, and add a legacy toggle to show ones previously in use. We could also perhaps use AI to predict where the next LFR deployments will be.
-- Make the fixed LFR cameras (not vans) a different color to the vans
-- Add satellite, etc views.
-- Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password (one capital letter, number and symbol...). IP addresses might be logged to prevent spam but hopefully not to maintain complete anonymity
+- [x] Make it *active* facial recognition cameras, and add a legacy toggle to show ones previously in use. (Done: a van site is active if the newest Met record we hold - 2025 - lists a deployment there. The 2026 record is behind bot protection; when it is obtained, bump `LATEST_MET_YEAR` in the build script and the split updates itself.) We could also perhaps use AI to predict where the next LFR deployments will be.
+- [x] Make the fixed LFR cameras (not vans) a different color to the vans. (Done: one colour per kind, legend under the map, built from the same table the map paints from.)
+- [x] Add satellite, etc views. (Done: Esri World Imagery under the vector labels.)
+- [x] Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password. (Done: the site generates the username - two words, `copper.heron` - and the person sets a password. No email, no name. See "Anonymity" below for what "completely" honestly means.)
+- [ ] Get the Met's 2026 deployment record (met.police.uk blocks scripted downloads; it needs a real browser) and re-run the build.
+- [ ] Other cities. The type identifiers and the schema carry over; the London bounds are three constants in `map.js` and two `check` constraints in `schema.sql`.
+
+## Setting the site up
+
+The site is static files on GitHub Pages plus one Supabase project. Everything below is a one-off.
+
+### Supabase dashboard
+
+1. **Authentication -> Providers -> Email**: on. **Confirm email: OFF.** With it on, every sign-up tries to send mail and the free tier refuses the fourth in an hour, which caps real sign-ups. The hidden login email (`<username>@users.cammap.app`) is never a real mailbox; it exists because Supabase wants one to hang a password on. **It must not change**, or every existing account stops matching.
+2. **Authentication -> Providers -> Email -> Password requirements**: "Lowercase, uppercase letters, digits and symbols", minimum length **10**. The client repeats this rule so the message is ours; the dashboard is what enforces it.
+3. **Authentication -> Providers -> Anonymous sign-ins: OFF.** The old one-press accounts are retired; the client signs any it finds out.
+4. **Authentication -> Rate Limits**: leave the defaults, tighten if abuse appears. (CAPTCHA needs a remote script, which this site's no-CDN rule forbids; rate limits and the report throttle in the database come first.)
+5. **SQL Editor**: paste and run `schema.sql`, then `seed.sql`. Both are safe to run again.
+6. **Database -> Extensions**: enable `pg_cron`, then run `schema.sql` once more - the leaderboard refresh is scheduled only when the extension is present. Without it the leaderboards are still there, just never updated; refresh by hand with `select refresh_leaderboards();`.
+7. **Storage**: the `proof` bucket is created by `schema.sql` (private, 20 MB, images and MP4/WebM only). Nothing to do.
+
+### Roles
+
+Moderators and admins are set here, not on the site:
+
+    update profiles set role = 'moderator' where username = 'copper.heron';
+    update profiles set role = 'admin'     where username = 'copper.heron';
+
+`admin` and `moderator` are the same on the site today; the two exist so they can differ later.
+
+### Housekeeping SQL
+
+Old anonymous accounts and test users:
+
+    delete from auth.users where is_anonymous = true;
+    delete from auth.users where email like 'probe%@users.cammap.app';
+
+Reports nobody acted on in a long time (they are not on the map and never will be without approval):
+
+    delete from reports where state = 'pending' and created_at < now() - interval '180 days';
+
+### Tuning
+
+One row in `settings`: how many distinct people must report the same spot for it to go on the map by itself (3), within how many metres (100), how old an account must be to count (1 hour), and how many reports one account may send in ten minutes (5). Change them with `update settings set ... where id = 1;` - no deploy needed. XP per kind of report is the `xp_rules` table, likewise.
+
+### Satellite imagery
+
+The satellite view uses Esri's World Imagery from the open tile endpoint, with attribution, which is allowed for non-commercial use. It is not guaranteed. If it stops, the toggle stops showing imagery and nothing else breaks; the whole of it is one block at the top of `map.js`.
+
+## Anonymity
+
+What the site keeps about a person: a username of two random words, a password hash, the reports they sent, and their XP. No email, no name, no IP address in any of our tables.
+
+Two honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. And a photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Videos are sent as they are, and the page says so.
 
 ## Forrest404
 
