@@ -7,6 +7,7 @@
 
 - Make it *active* facial recognition cameras, and add a legacy toggle to show ones previously in use. We could also perhaps use AI to predict where the next LFR deployments will be.
 - Make the fixed LFR cameras (not vans) a different color to the vans
+- Add satellite, etc views.
 
 ## Shadi
 

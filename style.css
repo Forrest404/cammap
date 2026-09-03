@@ -96,12 +96,12 @@ header.masthead {
   justify-content: space-between;
   gap: 24px;
   flex-wrap: wrap;
-  padding: 26px 0 0 0;
+  padding: 20px 0 0 0;
 }
 
 header.masthead::after {
   flex: 1 0 100%;
-  margin-top: 10px;
+  margin-top: -10px;
 }
 
 h1.title {
@@ -155,7 +155,7 @@ nav.bar span.sep {
 /* ---------- main content ---------- */
 
 main {
-  padding: 26px 0 0 0;
+  padding: 18px 0 0 0;
 }
 
 h2 {
@@ -179,14 +179,14 @@ h3 {
 /* ---------- footer ---------- */
 
 footer.foot {
-  margin: 44px 0 0 0;
+  margin: 20px 0 0 0;
   text-align: left;
   font-size: 13px;
   color: var(--dim);
 }
 
 footer.foot::before {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 /* ------------------------------------------------------------------
