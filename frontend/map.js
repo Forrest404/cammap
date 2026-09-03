@@ -64,7 +64,27 @@ var nextId = 1;
    this file - longitude first - so the two are converted here, once,
    and nowhere else. */
 
-var MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
+/* Two base styles, and the imagery view uses the dark one underneath
+   because its labels are drawn white with a dark halo, which is what
+   reads over a photograph. Positron is the light one: grey and quiet,
+   the nearest thing to the dark style's restraint. */
+var MAP_STYLES = {
+  dark:  "https://tiles.openfreemap.org/styles/dark",
+  light: "https://tiles.openfreemap.org/styles/positron"
+};
+
+/* "dark", "light" or "satellite". The three are one choice, not three
+   switches: satellite is imagery over the dark style, so it and light
+   cannot both be on. */
+var view = "dark";
+
+function baseStyleOf(v) {
+  return v === "light" ? MAP_STYLES.light : MAP_STYLES.dark;
+}
+
+function isLight() {
+  return view === "light";
+}
 
 /* ---------------- how a camera is drawn ----------------
 
@@ -169,7 +189,6 @@ var SATELLITE = "satellite";
 var SATELLITE_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 var SATELLITE_CREDIT = "Imagery &copy; Esri, Maxar, Earthstar Geographics";
 
-var showSatellite = false;
 
 /* The style's own layers that get hidden under imagery, worked out
    once when the style loads. Symbols (labels) are never in it. */
@@ -182,10 +201,16 @@ var VIEW_KEY = "cammap.view";
 function loadView() {
   try {
     var raw = window.localStorage.getItem(VIEW_KEY);
-    var view = raw ? JSON.parse(raw) : null;
-    if (view && typeof view === "object") {
-      showLegacy = view.legacy === true;
-      showSatellite = view.satellite === true;
+    var saved = raw ? JSON.parse(raw) : null;
+    if (saved && typeof saved === "object") {
+      showLegacy = saved.legacy === true;
+      /* version 1 of this saved a satellite boolean; read it, so a
+         visitor who left the imagery on still gets it back. */
+      if (saved.view === "dark" || saved.view === "light" || saved.view === "satellite") {
+        view = saved.view;
+      } else if (saved.satellite === true) {
+        view = "satellite";
+      }
     }
   } catch (err) {
     /* nothing saved, or storage refused - defaults stand */
@@ -196,7 +221,7 @@ function saveView() {
   try {
     window.localStorage.setItem(VIEW_KEY, JSON.stringify({
       legacy: showLegacy,
-      satellite: showSatellite
+      view: view
     }));
   } catch (err) {
     /* storage refused - the toggles still work for this visit */
@@ -214,7 +239,7 @@ function lngLat(lat, lon) {
 
 var map = new maplibregl.Map({
   container: "map",
-  style: MAP_STYLE,
+  style: baseStyleOf(view),
   center: lngLat(LONDON[0], LONDON[1]),
   zoom: OPENING_ZOOM,
   minZoom: WIDEST_ZOOM,
@@ -289,7 +314,13 @@ function heatRamp(hex) {
      heat, not so far that the colour is lost or the eye is drawn
      off the map. */
   var alpha = [0, 0.13, 0.30, 0.46, 0.60];
-  var lift = [0, 0, 0.06, 0.18, 0.34];   /* how far toward white */
+
+  /* How far the colour is pushed as cameras pile up - toward white on
+     the dark map, toward black on the light one. Pushing toward white
+     on a white map would make the busiest places the faintest, which
+     is exactly backwards. */
+  var lift = [0, 0, 0.06, 0.18, 0.34];
+  var toward = isLight() ? 0 : 255;
   var stops = [];
   var i;
   var w;
@@ -297,9 +328,9 @@ function heatRamp(hex) {
   for (i = 0; i < at.length; i++) {
     w = lift[i];
     stops.push([at[i], "rgba(" +
-      Math.round(r + (255 - r) * w) + "," +
-      Math.round(g + (255 - g) * w) + "," +
-      Math.round(b + (255 - b) * w) + "," +
+      Math.round(r + (toward - r) * w) + "," +
+      Math.round(g + (toward - g) * w) + "," +
+      Math.round(b + (toward - b) * w) + "," +
       alpha[i] + ")"]);
   }
 
@@ -348,9 +379,45 @@ function repaint(layer) {
   }
 }
 
-map.on("load", function () {
+/* Everything the map needs on top of whichever base style is loaded.
+   It runs on the first load and again after every style swap, because
+   setStyle throws away every source and layer that is not the
+   style's own - the cameras, the glow and the imagery all have to be
+   put back. */
+/* setStyle does not simply throw the old style away: it works out the
+   difference between the two and applies that, which leaves sources
+   we added still standing while their layers are gone. Adding them
+   again then throws "Source already exists". So anything of ours that
+   survived is cleared out first, and the build below always starts
+   from nothing. */
+function clearOurLayersAndSources() {
+  var ours = [SATELLITE, DOT, HEAT].concat(heatLayers.map(function (g) { return g.id; }));
+  var sources = [SOURCE, SATELLITE];
+  var i;
+
+  for (i = 0; i < 8; i++) {
+    ours.push(HEAT + "-" + i);
+    sources.push(SOURCE + "-heat-" + i);
+  }
+
+  for (i = 0; i < ours.length; i++) {
+    if (map.getLayer(ours[i])) {
+      map.removeLayer(ours[i]);
+    }
+  }
+  for (i = 0; i < sources.length; i++) {
+    if (map.getSource(sources[i])) {
+      map.removeSource(sources[i]);
+    }
+  }
+  heatLayers = [];
+}
+
+function buildOverStyle() {
   var layers;
   var i;
+
+  clearOurLayersAndSources();
 
   /* The one-way arrows are the last of the clutter, and with vector
      tiles they can simply be taken off. */
@@ -362,16 +429,19 @@ map.on("load", function () {
     }
   }
 
-  /* Nothing below is tied to a layer name, so it survives the style
-     being changed underneath us. */
-  document.body.appendChild(swatch);
+  /* The lift below is a correction for the dark style, which is drawn
+     for a pure black page and all but disappears against this one. The
+     light style needs no such help - brightening it would only wash it
+     out - so it is left as its authors drew it. */
   layers = map.getStyle().layers;
 
-  for (i = 0; i < layers.length; i++) {
-    repaint(layers[i]);
+  if (!isLight()) {
+    document.body.appendChild(swatch);
+    for (i = 0; i < layers.length; i++) {
+      repaint(layers[i]);
+    }
+    swatch.remove();
   }
-
-  swatch.remove();
 
   /* The first symbol layer is the bottom of the map's own labelling.
      The glow is slid in underneath it. */
@@ -411,8 +481,19 @@ map.on("load", function () {
   }, layers.length > 1 ? layers[1].id : undefined);
 
   addCameras(firstLabel);
-  applySatellite();
-});
+  applyView();
+}
+
+map.on("load", buildOverStyle);
+
+/* setStyle replaces the whole style, so everything above has to be
+   built again over the new one. style.load is the event that says the
+   new one is ready to take layers. */
+/* style.load fires for the first style too, and "load" fires once
+   after it. Building on style.load alone would leave the first build
+   racing the first render, so both are used and the clear-out above
+   makes the second call harmless. */
+map.on("style.load", buildOverStyle);
 
 function addCameras(beneath) {
   map.addSource(SOURCE, { type: "geojson", data: cameraFeatures() });
@@ -522,6 +603,23 @@ function addCameras(beneath) {
 
   applyLegacyFilter();
 
+  bindCameraHandlers();
+}
+
+/* Bound once and only once. addCameras runs again after every style
+   swap, but these listeners live on the map rather than on the layer,
+   so binding them there too would leave two of each after one swap
+   and four after three - and a click would open the popup four times.
+   MapLibre is content for a delegated listener to name a layer that
+   does not exist yet; it simply matches nothing until it does. */
+var cameraHandlersBound = false;
+
+function bindCameraHandlers() {
+  if (cameraHandlersBound) {
+    return;
+  }
+  cameraHandlersBound = true;
+
   map.on("click", DOT, function (event) {
     openPopup(event.features[0].properties.id);
   });
@@ -558,7 +656,7 @@ var pointsList    = document.getElementById("points-list");
 var pointsEmpty   = document.getElementById("points-empty");
 
 var legacyToggle  = document.getElementById("legacy-toggle");
-var satelliteToggle = document.getElementById("satellite-toggle");
+var viewButtons = document.querySelectorAll("#view-buttons button");
 var legend        = document.getElementById("legend");
 var typeInput     = document.getElementById("type");
 
@@ -737,43 +835,83 @@ function setLegacy(on) {
 /* Imagery on: show the raster, hide the ground, ring every dot in the
    page background so it holds up against grass and rooftops. Imagery
    off: put it all back exactly as it was. */
-function applySatellite() {
-  var i;
-  var on = showSatellite;
+/* The ring drawn round every dot. On the dark map it is the page's own
+   black, which separates two dots that sit on the same corner. Over
+   imagery and over the light map it does more than that: it is what
+   holds a pale dot against a pale ground, so it is always drawn and a
+   little thicker. */
+function dotRingColour() {
+  return isLight() ? "#3a3632" : "#0d0d0d";
+}
 
-  if (!map.getLayer(SATELLITE)) {
-    return;
+function applyView() {
+  var i;
+  var imagery = view === "satellite";
+  var outlined = imagery || isLight();
+
+  if (map.getLayer(SATELLITE)) {
+    map.setLayoutProperty(SATELLITE, "visibility", imagery ? "visible" : "none");
   }
 
-  map.setLayoutProperty(SATELLITE, "visibility", on ? "visible" : "none");
-
+  /* Under imagery the style's own ground is hidden and only its labels
+     are kept, so it reads as a photograph with names on it. */
   for (i = 0; i < groundLayers.length; i++) {
     if (map.getLayer(groundLayers[i])) {
-      map.setLayoutProperty(groundLayers[i], "visibility", on ? "none" : "visible");
+      map.setLayoutProperty(groundLayers[i], "visibility", imagery ? "none" : "visible");
     }
   }
 
   if (map.getLayer(DOT)) {
-    map.setPaintProperty(DOT, "circle-stroke-width", on
+    map.setPaintProperty(DOT, "circle-stroke-color", dotRingColour());
+    map.setPaintProperty(DOT, "circle-stroke-width", outlined
       ? ["case", ["==", ["get", "status"], "legacy"], 1.6, 1.5]
       : ["interpolate", ["linear"], ["zoom"],
           13, ["case", ["==", ["get", "status"], "legacy"], 1.2, 0],
           15, ["case", ["==", ["get", "status"], "legacy"], 1.2, 1]]);
-    map.setPaintProperty(DOT, "circle-stroke-opacity", on
+    map.setPaintProperty(DOT, "circle-stroke-opacity", outlined
       ? 0.95
       : ["case", ["==", ["get", "status"], "legacy"], 0.9, 0.6]);
+
+    /* A legacy ring is the type colour with almost no fill. On the
+       light map that is a pale ring on pale ground, so it is filled
+       a little more firmly. */
+    map.setPaintProperty(DOT, "circle-opacity",
+      ["case", ["==", ["get", "status"], "legacy"], isLight() ? 0.30 : 0.12, 0.85]);
   }
 
-  if (satelliteToggle) {
-    satelliteToggle.className = on ? "toggle on" : "toggle";
-    satelliteToggle.setAttribute("aria-pressed", on ? "true" : "false");
+  markView();
+}
+
+/* Which of the three buttons is lit. */
+function markView() {
+  var i;
+  var b;
+
+  for (i = 0; i < viewButtons.length; i++) {
+    b = viewButtons[i];
+    b.className = b.getAttribute("data-view") === view ? "toggle on" : "toggle";
+    b.setAttribute("aria-pressed", b.getAttribute("data-view") === view ? "true" : "false");
   }
 }
 
-function setSatellite(on) {
-  showSatellite = on;
-  applySatellite();
+function setView(next) {
+  var wasStyle = baseStyleOf(view);
+  var nowStyle = baseStyleOf(next);
+
+  view = next;
   saveView();
+  markView();
+
+  if (wasStyle === nowStyle) {
+    applyView();     /* same base map, only the imagery on top changes */
+    return;
+  }
+
+  /* A different base style: MapLibre throws everything else away, and
+     style.load puts it all back. The glow ramps are rebuilt there too,
+     since they lift toward white on the dark map and toward black on
+     the light one. */
+  map.setStyle(nowStyle);
 }
 
 /* The legend is drawn from TYPES so it always matches the paint. */
@@ -1569,10 +1707,14 @@ if (legacyToggle) {
   };
 }
 
-if (satelliteToggle) {
-  satelliteToggle.onclick = function () {
-    setSatellite(!showSatellite);
-  };
+markView();
+
+for (var v = 0; v < viewButtons.length; v++) {
+  viewButtons[v].onclick = (function (button) {
+    return function () {
+      setView(button.getAttribute("data-view"));
+    };
+  })(viewButtons[v]);
 }
 
 if (EDITING) {

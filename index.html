@@ -19,7 +19,7 @@
 <script src="lib/supabase.js"></script>
 
 <link rel="stylesheet" href="fonts/fonts.css">
-<link rel="stylesheet" href="frontend/style.css?v=e605baff">
+<link rel="stylesheet" href="frontend/style.css?v=7a4fcd99">
 </head>
 <body>
 <div class="sheet">
@@ -53,7 +53,11 @@
       <div class="map-bar">
         <div class="map-toggles">
           <button id="legacy-toggle" class="toggle" aria-pressed="false" title="Also show cameras no longer in use">Legacy</button>
-          <button id="satellite-toggle" class="toggle" aria-pressed="false" title="Aerial imagery under the map">Satellite</button>
+        </div>
+        <div class="map-toggles" id="view-buttons">
+          <button class="toggle on" data-view="dark" aria-pressed="true" title="The dark map">Dark</button>
+          <button class="toggle" data-view="light" aria-pressed="false" title="The light map">Light</button>
+          <button class="toggle" data-view="satellite" aria-pressed="false" title="Aerial imagery under the labels">Satellite</button>
         </div>
         <ul class="legend" id="legend"></ul>
       </div>
@@ -151,9 +155,9 @@
      Supabase CDN script above failed to load, account.js notices and
      says the account panel is unavailable rather than breaking
      anything. -->
-<script src="data/points.js?v=e605baff"></script>
-<script src="supabase-config.js?v=e605baff"></script>
-<script src="frontend/account.js?v=e605baff"></script>
-<script src="frontend/map.js?v=e605baff"></script>
+<script src="data/points.js?v=7a4fcd99"></script>
+<script src="supabase-config.js?v=7a4fcd99"></script>
+<script src="frontend/account.js?v=7a4fcd99"></script>
+<script src="frontend/map.js?v=7a4fcd99"></script>
 </body>
 </html>
