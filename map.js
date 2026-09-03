@@ -93,9 +93,9 @@ var DOT    = "cammap-dot";
 
 /* The glow is not one heatmap but one per camera colour - a heatmap
    can only carry a single colour ramp, and the glow should match the
-   point. heatLayers records each one's layer id and the filter that
-   says which cameras glow in its colour, so the legacy toggle can be
-   laid over all of them. */
+   point - so the heatmap layers are not separate. heatLayers records
+   each one's layer id, its own source and the colour that source is
+   built from. */
 var HEAT = "cammap-heat";   /* base id; one layer per colour gets -0, -1, ... */
 var heatLayers = [];
 
@@ -138,22 +138,16 @@ function glowColourOf(point) {
   return point.status === "nonfunctional" ? NONFUNCTIONAL_COLOUR : colourOf(point.type);
 }
 
-/* One heatmap layer per possible glow colour. The filters are disjoint:
-   non-functional is claimed first, and every type group disowns it, so
-   no camera glows twice. */
+/* One heatmap layer per possible glow colour - non-functional's own
+   colour first, then one per type - so a camera glows in the exact
+   colour its dot is drawn in. Each gets its own source below, because
+   MapLibre will not draw two heatmaps over the same source. */
 function glowGroups() {
-  var groups = [
-    { filter: ["==", ["get", "status"], "nonfunctional"], colour: NONFUNCTIONAL_COLOUR }
-  ];
+  var groups = [{ colour: NONFUNCTIONAL_COLOUR }];
   var i;
 
   for (i = 0; i < TYPES.length; i++) {
-    groups.push({
-      filter: ["all",
-        ["!=", ["get", "status"], "nonfunctional"],
-        ["==", ["get", "type"], TYPES[i].type]],
-      colour: TYPES[i].colour
-    });
+    groups.push({ colour: TYPES[i].colour });
   }
   return groups;
 }
@@ -429,13 +423,26 @@ function addCameras(beneath) {
   heatLayers = [];
 
   for (g = 0; g < groups.length; g++) {
-    heatLayers.push({ id: HEAT + "-" + g, filter: groups[g].filter });
+    heatLayers.push({
+      id: HEAT + "-" + g,
+      source: SOURCE + "-heat-" + g,
+      colour: groups[g].colour
+    });
+
+    /* A heatmap may only have one ramp, and MapLibre will not draw two
+       heatmaps over the same source, so every colour gets its own
+       source holding just its cameras. */
+    map.addSource(SOURCE + "-heat-" + g, {
+      type: "geojson",
+      data: cameraFeatures(function (point) {
+        return isShown(point) && glowColourOf(point) === groups[g].colour;
+      })
+    });
 
     map.addLayer({
       id: HEAT + "-" + g,
       type: "heatmap",
-      source: SOURCE,
-      filter: groups[g].filter,
+      source: SOURCE + "-heat-" + g,
       maxzoom: HEAT_GONE,
       paint: {
         "heatmap-weight": 1,
@@ -685,31 +692,20 @@ function isShown(point) {
 }
 
 function applyLegacyFilter() {
-  var i;
-  var filter;
-  var layer;
-
-  filter = showLegacy ? null : ["!=", ["get", "status"], "legacy"];
+  var filter = showLegacy ? null : ["!=", ["get", "status"], "legacy"];
 
   if (map.getLayer(DOT)) {
     map.setFilter(DOT, filter);
-  }
-
-  /* Each heat layer keeps the filter for its own colour; when legacy
-     cameras are hidden, that is combined with the legacy exclusion. */
-  for (i = 0; i < heatLayers.length; i++) {
-    layer = heatLayers[i];
-    if (map.getLayer(layer.id)) {
-      map.setFilter(layer.id, showLegacy
-        ? layer.filter
-        : ["all", layer.filter, ["!=", ["get", "status"], "legacy"]]);
-    }
   }
 }
 
 function setLegacy(on) {
   showLegacy = on;
   applyLegacyFilter();
+
+  /* The dots hide legacy cameras with a filter above; the glow sources
+     are picked by hand, so toggling here rebuilds them too. */
+  refreshCameras();
   render();
   saveView();
 
@@ -800,12 +796,17 @@ function drawLegend() {
   legend.appendChild(item);
 }
 
-/* The whole list, as the one thing the two layers read. */
-function cameraFeatures() {
+/* Build one feature per point. keep decides whether the point is in
+   this particular collection, so the same list can be split up any
+   way (all of it, or just one glow colour). */
+function cameraFeatures(keep) {
   var features = [];
   var i;
 
   for (i = 0; i < points.length; i++) {
+    if (keep && !keep(points[i])) {
+      continue;
+    }
     features.push({
       type: "Feature",
       properties: {
@@ -824,14 +825,29 @@ function cameraFeatures() {
   return { type: "FeatureCollection", features: features };
 }
 
-/* Every change to the list ends here. Before the style has loaded
-   there is no source to write to, and the load handler fills the one
-   it makes from the list as it stands, so there is nothing to do. */
+/* Every change to the list ends here: the dot source takes the whole
+   list, and each glow source takes only the cameras that glow in its
+   colour. Before the style has loaded there is nothing to write to,
+   and the load handler fills the sources it makes from the list as it
+   stands, so there is nothing to do. */
 function refreshCameras() {
   var source = map.getSource(SOURCE);
+  var i;
+  var glow;
+  var glowSource;
 
   if (source) {
     source.setData(cameraFeatures());
+  }
+
+  for (i = 0; i < heatLayers.length; i++) {
+    glow = heatLayers[i];
+    glowSource = map.getSource(glow.source);
+    if (glowSource) {
+      glowSource.setData(cameraFeatures(function (point) {
+        return isShown(point) && glowColourOf(point) === glow.colour;
+      }));
+    }
   }
 }
 
