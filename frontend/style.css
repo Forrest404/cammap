@@ -191,6 +191,37 @@ footer.foot {
   text-align: left;
   font-size: 13px;
   color: var(--dim);
+
+  /* the button and its line sit together, and the line drops under
+     the button rather than squeezing it on a narrow screen */
+  display: flex;
+  align-items: center;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+}
+
+/* A link dressed as one of the site's buttons. An <a> rather than a
+   <button> because it goes somewhere: a middle click or a long press
+   should offer to open it in a tab, which a button will not. */
+a.donate {
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+a.donate:hover,
+a.donate:focus {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.foot-note {
+  color: var(--dim);
 }
 
 footer.foot::before {
