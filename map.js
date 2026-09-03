@@ -89,7 +89,38 @@ var SOURCE = "cameras";
 var HEAT   = "cammap-heat";
 var DOT    = "cammap-dot";
 
-var DOT_COLOUR = "#cf6a58";   /* matches --accent in style.css */
+/* One colour per kind of camera, matching --t-* in style.css. Colour
+   always means what a thing IS. Whether it works now is said by the
+   fill instead: an active camera is a solid dot, a legacy one is a
+   hollow ring in the same colour, and a non-functional one is filled
+   in a colour of its own regardless of type. The legend under the map
+   is built from this table, so the two cannot drift apart. */
+var TYPES = [
+  { type: "fixedcam",     colour: "#cf6a58", label: "Fixed LFR camera" },
+  { type: "vancam",       colour: "#e0a458", label: "LFR van site" },
+  { type: "transportcam", colour: "#6aa8d8", label: "Transport police" },
+  { type: "facewatchcam", colour: "#7bbf7b", label: "Shop (Facewatch)" },
+  { type: "privatecam",   colour: "#8a8a8a", label: "Private" }
+];
+
+var NONFUNCTIONAL_COLOUR = "#b58bd6";
+
+/* Which dot wins when two share a spot. Croydon is both a fixed
+   install and a van hotspot, and the fixed one should be on top. */
+var DRAW_ORDER = { fixedcam: 5, transportcam: 4, facewatchcam: 3, vancam: 2, privatecam: 1 };
+
+function colourOf(type) {
+  var i;
+  for (i = 0; i < TYPES.length; i++) {
+    if (TYPES[i].type === type) {
+      return TYPES[i].colour;
+    }
+  }
+  return TYPES[1].colour;   /* an unknown type draws as a van site */
+}
+
+/* Off by default: the map shows what is in use now. */
+var showLegacy = false;
 
 var HEAT_FULL = 12.5;   /* at or below this the glow is at full strength */
 var HEAT_GONE = 15;     /* by here it has gone entirely */
@@ -281,20 +312,34 @@ function addCameras(beneath) {
         14, 4,
         CLOSEST_ZOOM, 7],
 
-      "circle-color": DOT_COLOUR,
-      "circle-opacity": 0.8,
+      "circle-color": typeColourExpression(),
 
-      /* A hairline of the page's own background keeps two neighbouring
-         circles legible as two once you are close enough for that to
-         matter. Zoomed out it is taken away, so that a crowd is
-         allowed to become a mass. */
+      /* A legacy site is a ring: nearly no fill, a firm outline in its
+         own colour. An active one is solid. */
+      "circle-opacity": ["case", ["==", ["get", "status"], "legacy"], 0.12, 0.85],
+
+      "circle-stroke-color": ["case",
+        ["==", ["get", "status"], "legacy"], typeColourExpression(),
+        "#0d0d0d"],
+
+      /* Active dots get a hairline of the page background so two
+         neighbours read as two once you are close; zoomed out it goes
+         so a crowd can become a mass. Legacy rings keep their outline
+         at every zoom, or they would vanish. MapLibre insists "zoom"
+         be the outermost expression, so the status test sits inside
+         each stop rather than around the interpolation. */
       "circle-stroke-width": ["interpolate", ["linear"], ["zoom"],
-        13, 0,
-        15, 1],
-      "circle-stroke-color": "#0d0d0d",
-      "circle-stroke-opacity": 0.6
+        13, ["case", ["==", ["get", "status"], "legacy"], 1.2, 0],
+        15, ["case", ["==", ["get", "status"], "legacy"], 1.2, 1]],
+      "circle-stroke-opacity": ["case", ["==", ["get", "status"], "legacy"], 0.9, 0.6]
+    },
+    layout: {
+      /* Two dots on one spot: the more permanent kind wins. */
+      "circle-sort-key": ["get", "order"]
     }
   });
+
+  applyLegacyFilter();
 
   map.on("click", DOT, function (event) {
     openPopup(event.features[0].properties.id);
@@ -331,6 +376,10 @@ var searchResults = document.getElementById("search-results");
 var pointsList    = document.getElementById("points-list");
 var pointsEmpty   = document.getElementById("points-empty");
 
+var legacyToggle  = document.getElementById("legacy-toggle");
+var legend        = document.getElementById("legend");
+var typeInput     = document.getElementById("type");
+
 var copyButton    = document.getElementById("copy-button");
 var resetButton   = document.getElementById("reset-button");
 var exportText    = document.getElementById("export-text");
@@ -363,7 +412,12 @@ function tidy(list) {
       name: entry.name,
       note: typeof entry.note === "string" ? entry.note : "",
       lat: parseFloat(entry.lat),
-      lon: parseFloat(entry.lon)
+      lon: parseFloat(entry.lon),
+
+      /* A hand-typed entry may leave these out. */
+      type: typeof entry.type === "string" ? entry.type : "vancam",
+      status: typeof entry.status === "string" ? entry.status : "active",
+      last: typeof entry.last === "number" ? entry.last : null
     });
   }
 
@@ -413,13 +467,16 @@ function saveDraft() {
    place where a point is actually created.
    ------------------------------------------------------------------ */
 
-function addPoint(lat, lon, name, note) {
+function addPoint(lat, lon, name, note, type) {
   var point = {
     id: nextId++,
     name: name,
     note: note,
     lat: lat,
-    lon: lon
+    lon: lon,
+    type: type || "vancam",
+    status: "active",
+    last: null
   };
 
   points.push(point);
@@ -451,6 +508,87 @@ function removePoint(id) {
   render();
 }
 
+/* The paint expression for "what colour is this dot": non-functional
+   overrides everything, otherwise the type decides. */
+function typeColourExpression() {
+  var match = ["match", ["get", "type"]];
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    match.push(TYPES[i].type, TYPES[i].colour);
+  }
+  match.push(TYPES[1].colour);   /* fallback: the van colour */
+
+  return ["case", ["==", ["get", "status"], "nonfunctional"], NONFUNCTIONAL_COLOUR, match];
+}
+
+/* Both layers and the list obey the same rule, so the glow can never
+   hint at a camera the list does not admit to. */
+function isShown(point) {
+  return showLegacy || point.status !== "legacy";
+}
+
+function applyLegacyFilter() {
+  var filter = showLegacy ? null : ["!=", ["get", "status"], "legacy"];
+
+  if (map.getLayer(DOT)) {
+    map.setFilter(DOT, filter);
+  }
+  if (map.getLayer(HEAT)) {
+    map.setFilter(HEAT, filter);
+  }
+}
+
+function setLegacy(on) {
+  showLegacy = on;
+  applyLegacyFilter();
+  render();
+
+  if (legacyToggle) {
+    legacyToggle.className = on ? "toggle on" : "toggle";
+    legacyToggle.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+}
+
+/* The legend is drawn from TYPES so it always matches the paint. */
+function drawLegend() {
+  var i;
+  var item;
+  var swatch;
+
+  if (!legend) {
+    return;
+  }
+
+  legend.innerHTML = "";
+
+  for (i = 0; i < TYPES.length; i++) {
+    item = document.createElement("li");
+    swatch = document.createElement("span");
+    swatch.className = "swatch";
+    swatch.style.background = TYPES[i].colour;
+    item.appendChild(swatch);
+    item.appendChild(document.createTextNode(TYPES[i].label));
+    legend.appendChild(item);
+  }
+
+  item = document.createElement("li");
+  swatch = document.createElement("span");
+  swatch.className = "swatch";
+  swatch.style.background = NONFUNCTIONAL_COLOUR;
+  item.appendChild(swatch);
+  item.appendChild(document.createTextNode("Non-functional"));
+  legend.appendChild(item);
+
+  item = document.createElement("li");
+  swatch = document.createElement("span");
+  swatch.className = "swatch hollow";
+  swatch.style.borderColor = TYPES[1].colour;
+  item.appendChild(swatch);
+  item.appendChild(document.createTextNode("Legacy (no longer in use)"));
+  legend.appendChild(item);
+}
+
 /* The whole list, as the one thing the two layers read. */
 function cameraFeatures() {
   var features = [];
@@ -459,7 +597,12 @@ function cameraFeatures() {
   for (i = 0; i < points.length; i++) {
     features.push({
       type: "Feature",
-      properties: { id: points[i].id },
+      properties: {
+        id: points[i].id,
+        type: points[i].type,
+        status: points[i].status,
+        order: DRAW_ORDER[points[i].type] || 0
+      },
       geometry: {
         type: "Point",
         coordinates: lngLat(points[i].lat, points[i].lon)
@@ -521,6 +664,29 @@ function closePopup() {
   popupId = null;
 }
 
+/* "LFR van site · legacy · last seen 2024" and the like. */
+function labelOf(point) {
+  var i;
+  var label = "Camera";
+
+  for (i = 0; i < TYPES.length; i++) {
+    if (TYPES[i].type === point.type) {
+      label = TYPES[i].label;
+    }
+  }
+
+  if (point.status === "legacy") {
+    label += " · legacy";
+    if (point.last) {
+      label += " · last seen " + point.last;
+    }
+  } else if (point.status === "nonfunctional") {
+    label += " · non-functional";
+  }
+
+  return label;
+}
+
 /* Built as elements rather than as a string of HTML, so a name or a
    note containing angle brackets is shown as typed. */
 function popupFor(point) {
@@ -529,6 +695,12 @@ function popupFor(point) {
   var title = document.createElement("strong");
   title.textContent = point.name;
   box.appendChild(title);
+
+  box.appendChild(document.createElement("br"));
+  var kind = document.createElement("span");
+  kind.className = "kind";
+  kind.textContent = labelOf(point);
+  box.appendChild(kind);
 
   if (point.note) {
     box.appendChild(document.createElement("br"));
@@ -553,17 +725,18 @@ function popupFor(point) {
 function render() {
   var i;
 
+  var shown = 0;
+
   pointsList.innerHTML = "";
 
-  if (points.length === 0) {
-    pointsEmpty.style.display = "block";
-    return;
-  }
-  pointsEmpty.style.display = "none";
-
   for (i = 0; i < points.length; i++) {
-    pointsList.appendChild(rowFor(points[i]));
+    if (isShown(points[i])) {
+      pointsList.appendChild(rowFor(points[i]));
+      shown++;
+    }
   }
+
+  pointsEmpty.style.display = shown === 0 ? "block" : "none";
 }
 
 function rowFor(point) {
@@ -573,6 +746,16 @@ function rowFor(point) {
   var go = document.createElement("button");
   go.className = "goto";
   go.title = "Show on the map";
+
+  var swatch = document.createElement("span");
+  swatch.className = point.status === "legacy" ? "swatch hollow" : "swatch";
+  if (point.status === "legacy") {
+    swatch.style.borderColor = colourOf(point.type);
+  } else {
+    swatch.style.background = point.status === "nonfunctional" ? NONFUNCTIONAL_COLOUR : colourOf(point.type);
+  }
+  swatch.title = labelOf(point);
+  go.appendChild(swatch);
 
   var name = document.createElement("span");
   name.className = "name";
@@ -659,7 +842,7 @@ function startEditing() {
       return;
     }
 
-    addPoint(lat, lon, name, note);
+    addPoint(lat, lon, name, note, typeInput ? typeInput.value : "vancam");
 
     latInput.value = "";
     lonInput.value = "";
@@ -846,7 +1029,10 @@ function startEditing() {
       lines.push("    name: " + JSON.stringify(point.name) + ",");
       lines.push("    note: " + JSON.stringify(point.note) + ",");
       lines.push("    lat: " + point.lat.toFixed(6) + ",");
-      lines.push("    lon: " + point.lon.toFixed(6));
+      lines.push("    lon: " + point.lon.toFixed(6) + ",");
+      lines.push("    type: " + JSON.stringify(point.type) + ",");
+      lines.push("    status: " + JSON.stringify(point.status) + ",");
+      lines.push("    last: " + (point.last === null ? "null" : String(point.last)));
       lines.push(i === points.length - 1 ? "  }" : "  },");
     }
 
@@ -914,7 +1100,14 @@ if (EDITING) {
 
 /* The layers are made when the style finishes loading, and take the
    list as it stands then, so there is nothing to draw here. */
+drawLegend();
 render();
+
+if (legacyToggle) {
+  legacyToggle.onclick = function () {
+    setLegacy(!showLegacy);
+  };
+}
 
 if (EDITING) {
   startEditing();

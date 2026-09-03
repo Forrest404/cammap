@@ -46,6 +46,16 @@
     <!-- ---------------- left: the map itself ---------------- -->
     <div class="map-column">
       <div id="map"></div>
+
+      <!-- Under the map: what is shown, and the key to reading it.
+           The legend is filled in by map.js from its colour table,
+           so it cannot disagree with the dots. -->
+      <div class="map-bar">
+        <div class="map-toggles">
+          <button id="legacy-toggle" class="toggle" aria-pressed="false" title="Also show cameras no longer in use">Legacy</button>
+        </div>
+        <ul class="legend" id="legend"></ul>
+      </div>
       <p class="hint edit-only" style="margin-top:8px">
         Click anywhere on the map to take its coordinates, then give the
         camera a name in the form opposite.
@@ -81,6 +91,14 @@
         </div>
         <label for="name">Name</label>
         <input type="text" id="name" placeholder="required">
+        <label for="type">Kind</label>
+        <select id="type">
+          <option value="vancam">LFR van site</option>
+          <option value="fixedcam">Fixed LFR camera</option>
+          <option value="transportcam">Transport police</option>
+          <option value="facewatchcam">Shop (Facewatch)</option>
+          <option value="privatecam">Private</option>
+        </select>
         <label for="memo">Note</label>
         <textarea id="memo" placeholder="optional"></textarea>
         <button id="add-button">Add</button>
