@@ -153,6 +153,19 @@ function pageName() {
 
 var PAGE = pageName();
 
+/* The map is at the root, because that is the page a web server hands
+   out for the site's address; everything else lives in pages/. This
+   file runs on both, so a link to another page has to be written from
+   wherever it is being written. */
+var IN_PAGES = window.location.pathname.indexOf("/pages/") !== -1;
+
+function pageHref(name) {
+  if (name === "index.html") {
+    return IN_PAGES ? "../index.html" : "index.html";
+  }
+  return IN_PAGES ? name : "pages/" + name;
+}
+
 /* ------------------------------------------------------------------
    The nav
 
@@ -195,20 +208,20 @@ function renderNav() {
 
   /* The leaderboard is public: anyone can look. */
   navAccount.appendChild(navSeparator());
-  navAccount.appendChild(navLink("leaderboard.html", "Leaderboard", PAGE === "leaderboard.html"));
+  navAccount.appendChild(navLink(pageHref("leaderboard.html"), "Leaderboard", PAGE === "leaderboard.html"));
 
   if (!currentUser) {
     navAccount.appendChild(navSeparator());
-    navAccount.appendChild(navLink("account.html", "Account", PAGE === "account.html"));
+    navAccount.appendChild(navLink(pageHref("account.html"), "Account", PAGE === "account.html"));
     return;
   }
 
   navAccount.appendChild(navSeparator());
-  navAccount.appendChild(navLink("report.html", "Report a camera", PAGE === "report.html"));
+  navAccount.appendChild(navLink(pageHref("report.html"), "Report a camera", PAGE === "report.html"));
 
   if (isModerator()) {
     navAccount.appendChild(navSeparator());
-    navAccount.appendChild(navLink("moderate.html", "Moderate", PAGE === "moderate.html"));
+    navAccount.appendChild(navLink(pageHref("moderate.html"), "Moderate", PAGE === "moderate.html"));
   }
 
   navAccount.appendChild(navSeparator());
@@ -346,7 +359,7 @@ function signOut() {
        in half of the account page, so leave for the map. Everywhere
        else can stay where it is and just redraw. */
     if (PAGE === "report.html" || PAGE === "moderate.html") {
-      window.location.href = "index.html";
+      window.location.href = pageHref("index.html");
       return;
     }
 
@@ -1211,7 +1224,7 @@ function cameraRow(c) {
     body.appendChild(document.createElement("br"));
   }
   var onMap = document.createElement("a");
-  onMap.href = "index.html#" + Number(c.lat).toFixed(5) + "," + Number(c.lon).toFixed(5);
+  onMap.href = pageHref("index.html") + "#" + Number(c.lat).toFixed(5) + "," + Number(c.lon).toFixed(5);
   onMap.target = "_blank";
   onMap.textContent = "See on the map →";
   body.appendChild(onMap);
@@ -1388,7 +1401,7 @@ function historyRow(r) {
   }
 
   var onMap = document.createElement("a");
-  onMap.href = "index.html#" + Number(r.lat).toFixed(5) + "," + Number(r.lon).toFixed(5);
+  onMap.href = pageHref("index.html") + "#" + Number(r.lat).toFixed(5) + "," + Number(r.lon).toFixed(5);
   onMap.target = "_blank";
   onMap.textContent = "See on the map →";
   body.appendChild(onMap);
@@ -1518,7 +1531,7 @@ function queueRow(r) {
   }
 
   var onMap = document.createElement("a");
-  onMap.href = "index.html#" + Number(r.lat).toFixed(5) + "," + Number(r.lon).toFixed(5);
+  onMap.href = pageHref("index.html") + "#" + Number(r.lat).toFixed(5) + "," + Number(r.lon).toFixed(5);
   onMap.target = "_blank";
   onMap.textContent = "See on the map →";
   body.appendChild(document.createElement("br"));

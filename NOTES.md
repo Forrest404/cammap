@@ -13,6 +13,26 @@
 
     - The UI must be easy to use, lightweight, working on mobile, and polished.
 
+## Where things are
+
+    index.html          the map. Stays at the root: it is what a web server
+                        hands out for the site's own address.
+    supabase-config.js  the two public values you paste after making a
+                        Supabase project.
+
+    pages/              every other page - about, blog, account, report,
+                        moderate, leaderboard.
+    frontend/           the code that runs in a browser: map.js, account.js,
+                        style.css.
+    data/               points.js, the camera list you edit by hand.
+    backend/            schema.sql and seed.sql - the database.
+    lib/ fonts/         vendored, pinned by version, not ours to edit.
+    tools/              stamp.py, run before every commit (see below).
+
+Links are written relative to wherever the page sits, so index.html reaches
+`pages/about.html` while a page in pages/ reaches `../index.html`. account.js
+works this out with `pageHref()` rather than hard-coding either.
+
 ## TODO
 
 - [x] Make it *active* facial recognition cameras, and add a legacy toggle to show ones previously in use. (Done: a van site is active if the newest Met record we hold - 2025 - lists a deployment there. The 2026 record is behind bot protection; when it is obtained, bump `LATEST_MET_YEAR` in the build script and the split updates itself.) We could also perhaps use AI to predict where the next LFR deployments will be.
@@ -20,7 +40,7 @@
 - [x] Add satellite, etc views. (Done: Esri World Imagery under the vector labels.)
 - [x] Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password. (Done: the site generates the username - two words, `copper.heron` - and the person sets a password. No email, no name. See "Anonymity" below for what "completely" honestly means.)
 - [ ] Get the Met's 2026 deployment record (met.police.uk blocks scripted downloads; it needs a real browser) and re-run the build.
-- [ ] Other cities. The type identifiers and the schema carry over; the London bounds are three constants in `map.js` and two `check` constraints in `schema.sql`.
+- [ ] Other cities. The type identifiers and the schema carry over; the London bounds are three constants in `frontend/map.js` and two `check` constraints in `backend/schema.sql`.
 
 ## Setting the site up
 
@@ -32,13 +52,13 @@ The site is static files on GitHub Pages plus one Supabase project. Everything b
 2. **Authentication -> Providers -> Email -> Password requirements**: "Lowercase, uppercase letters, digits and symbols", minimum length **10**. The client repeats this rule so the message is ours; the dashboard is what enforces it.
 3. **Authentication -> Providers -> Anonymous sign-ins: OFF.** The old one-press accounts are retired; the client signs any it finds out.
 4. **Authentication -> Rate Limits**: leave the defaults, tighten if abuse appears. (CAPTCHA needs a remote script, which this site's no-CDN rule forbids; rate limits and the report throttle in the database come first.)
-5. **SQL Editor**: paste and run `schema.sql`, then `seed.sql`. Both are safe to run again.
-6. **Database -> Extensions**: enable `pg_cron`, then run `schema.sql` once more - the leaderboard refresh is scheduled only when the extension is present. Without it the leaderboards are still there, just never updated; refresh by hand with `select refresh_leaderboards();`.
-7. **Storage**: the `proof` bucket is created by `schema.sql` (private, 20 MB, images and MP4/WebM only). Nothing to do.
+5. **SQL Editor**: paste and run `backend/schema.sql`, then `backend/seed.sql`. Both are safe to run again.
+6. **Database -> Extensions**: enable `pg_cron`, then run `backend/schema.sql` once more - the leaderboard refresh is scheduled only when the extension is present. Without it the leaderboards are still there, just never updated; refresh by hand with `select refresh_leaderboards();`.
+7. **Storage**: the `proof` bucket is created by `backend/schema.sql` (private, 20 MB, images and MP4/WebM only). Nothing to do.
 
 ### Deploying a change
 
-GitHub Pages caches files for ten minutes. Run `python3 stamp.py` before
+GitHub Pages caches files for ten minutes. Run `python3 tools/stamp.py` before
 committing: it puts a version on the site's own script and stylesheet
 tags so a returning visitor's browser fetches them afresh instead of
 pairing new HTML with old JavaScript. Skip it and the first visit after
@@ -70,7 +90,7 @@ One row in `settings`: how many distinct people must report the same spot for it
 
 ### Satellite imagery
 
-The satellite view uses Esri's World Imagery from the open tile endpoint, with attribution, which is allowed for non-commercial use. It is not guaranteed. If it stops, the toggle stops showing imagery and nothing else breaks; the whole of it is one block at the top of `map.js`.
+The satellite view uses Esri's World Imagery from the open tile endpoint, with attribution, which is allowed for non-commercial use. It is not guaranteed. If it stops, the toggle stops showing imagery and nothing else breaks; the whole of it is one block at the top of `frontend/map.js`.
 
 ## Anonymity
 
