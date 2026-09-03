@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Account &mdash; cammap</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sheet">
+
+<header class="masthead">
+  <h1 class="title">cammap</h1>
+  <nav class="bar">
+    <a href="index.html">Map</a>
+    <span class="sep">&middot;</span>
+    <a href="about.html">About</a>
+    <span class="sep">&middot;</span>
+    <a href="blog.html">Thoughts</a>
+    <!-- account.js fills this in once it knows whether anyone is
+         signed in. Empty until then, so the nav never flickers. -->
+    <span id="nav-account"></span>
+  </nav>
+</header>
+
+<main>
+  <div class="prose">
+
+    <!-- Shown when nobody is signed in. -->
+    <div id="account-signedout">
+
+      <h2>An account, without an account</h2>
+
+      <p>
+        Signing in here takes one press. There is no email address, no
+        password, no username, and no way for anyone to work out who you
+        are &mdash; including us. The account exists only in your browser
+        and in a row of a database that holds nothing but a random
+        identifier.
+      </p>
+
+      <p>With one, you can:</p>
+
+      <ul class="benefits">
+        <li>
+          <strong>Save cameras.</strong> A star appears next to every
+          camera in the list on the map page. What you save is visible to
+          you and to nobody else.
+        </li>
+        <li>
+          <strong>Report a camera.</strong> Seen one that is not on the
+          map? A new tab appears at the top for sending it in.
+        </li>
+      </ul>
+
+      <p class="hint">
+        A report goes to a queue for someone to check by hand. It does not
+        appear on the map on its own &mdash; the map only ever changes by
+        a commit to the site itself.
+      </p>
+
+      <p>
+        <button id="signin-button">Sign in anonymously</button>
+      </p>
+      <p class="note" id="account-note"></p>
+
+    </div>
+
+    <!-- Shown once they are. -->
+    <div id="account-signedin" style="display:none">
+
+      <h2>Signed in</h2>
+
+      <p>
+        You are signed in anonymously. Nothing about you was asked for or
+        recorded.
+      </p>
+
+      <p>
+        Stars now appear beside every camera in the list on the
+        <a href="index.html">map</a>, and there is a new tab at the top
+        for <a href="report.html">reporting a camera</a>.
+      </p>
+
+      <p class="hint">
+        The account lives in this browser. Clear its storage, or use
+        another browser, and you will get a new one &mdash; there is no
+        password to sign back in with, which is the trade for not being
+        asked for one.
+      </p>
+
+    </div>
+
+    <!-- Shown if the site has no Supabase project set up behind it. -->
+    <p id="account-unavailable" class="note" style="display:none">
+      Accounts are not available on this copy of the site.
+    </p>
+
+  </div>
+</main>
+
+<footer class="foot">
+  Map data &copy; OpenStreetMap contributors.
+</footer>
+
+</div>
+<script src="lib/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="account.js"></script>
+</body>
+</html>

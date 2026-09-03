@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report a camera &mdash; cammap</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sheet">
+
+<header class="masthead">
+  <h1 class="title">cammap</h1>
+  <nav class="bar">
+    <a href="index.html">Map</a>
+    <span class="sep">&middot;</span>
+    <a href="about.html">About</a>
+    <span class="sep">&middot;</span>
+    <a href="blog.html">Thoughts</a>
+    <!-- account.js fills this in once it knows whether anyone is
+         signed in. Empty until then, so the nav never flickers. -->
+    <span id="nav-account"></span>
+  </nav>
+</header>
+
+<main>
+  <div class="prose">
+
+    <h2>Report a camera</h2>
+
+    <!-- Signed out this page has nothing to offer, and the database
+         would refuse the report anyway. -->
+    <div id="report-locked" style="display:none">
+      <p>
+        You need an account to send a report in. It takes one press and
+        asks for nothing &mdash; see <a href="account.html">Account</a>.
+      </p>
+    </div>
+
+    <div id="report-form" style="display:none">
+
+      <p>
+        Seen a facial recognition camera that is not on the map? Send it
+        in and someone will check it.
+      </p>
+
+      <p class="hint">
+        This does not put the camera on the map. Reports go to a queue to
+        be looked at by hand; the map itself only ever changes by a commit
+        to the site. Coordinates must fall inside Greater London.
+      </p>
+
+      <div class="box">
+        <div class="pair">
+          <div>
+            <label for="s-lat">Latitude</label>
+            <input type="number" id="s-lat" step="any" placeholder="51.5169">
+          </div>
+          <div>
+            <label for="s-lon">Longitude</label>
+            <input type="number" id="s-lon" step="any" placeholder="-0.0977">
+          </div>
+        </div>
+        <label for="s-name">Where is it?</label>
+        <input type="text" id="s-name" placeholder="required">
+        <label for="s-note">Anything worth adding</label>
+        <textarea id="s-note" placeholder="optional"></textarea>
+        <button id="submit-button">Send for review</button>
+        <p class="note" id="submit-note"></p>
+      </div>
+
+      <p class="hint">
+        The easiest way to get the coordinates is to open the
+        <a href="index.html">map</a>, find the spot, and read them off
+        &mdash; or use any mapping app and copy the pair it gives you.
+      </p>
+
+    </div>
+
+  </div>
+</main>
+
+<footer class="foot">
+  Map data &copy; OpenStreetMap contributors.
+</footer>
+
+</div>
+<script src="lib/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="account.js"></script>
+</body>
+</html>

@@ -4,48 +4,31 @@
    Plain browser JavaScript, same rules as map.js: no build step, no
    modules, var and named functions throughout.
 
-   What this gives a visitor, once signed in anonymously:
-     - a private list of saved cameras (saved_cameras table)
-     - a way to suggest a camera the map does not have yet
-       (submissions table, a moderation queue - nothing sent from
-       here ever appears on the published map by itself)
+   This file runs on every page, because the account controls live in
+   the nav bar at the top and the nav has to say the right thing
+   wherever you are. What it does beyond that depends on which page
+   it finds itself on:
+
+     index.html    adds a star to each row of the camera list, once
+                   someone is signed in
+     account.html  the sign-in screen, and what it says afterwards
+     report.html   the form for reporting a camera
+
+   The nav shows nothing about accounts until it knows the answer, so
+   it never flickers from "Account" to "Log out" in front of you.
 
    Everything here is optional. supabase-config.js carries the project
-   URL and the public anon key; if that file did not load, or the
-   Supabase script tag in index.html failed, or any call to Supabase
-   errors, the account box says it is unavailable and stops there.
-   The map itself does not depend on any of this - it is drawn by
-   map.js straight from points.js, and nothing below ever touches
-   that.
-
-   map.js loads after this file (see index.html) so that by the time
-   it builds the camera list, accountStarButton already exists for it
-   to check for. Nothing in map.js otherwise changes.
+   URL and the public key; if that file did not load, or lib/supabase.js
+   failed, or any call errors, the account controls simply do not
+   appear and the rest of the site behaves as it always did. The map is
+   drawn by map.js straight from points.js and never touches any of
+   this.
    ------------------------------------------------------------------ */
 
 var sb = null;            /* the Supabase client, once created */
 var configured = false;   /* true once sb exists and looks usable */
 var currentUser = null;   /* the signed-in user, or null */
 var savedCameras = [];    /* rows from saved_cameras, kept in step with the server */
-
-/* ---------------- the page's elements ---------------- */
-
-var accountHint   = document.getElementById("account-hint");
-var accountNote   = document.getElementById("account-note");
-var signinButton  = document.getElementById("signin-button");
-var signoutButton = document.getElementById("signout-button");
-
-var savedSection  = document.getElementById("saved-section");
-var savedList     = document.getElementById("saved-list");
-var savedEmpty    = document.getElementById("saved-empty");
-
-var suggestBox    = document.getElementById("suggest-box");
-var sLat          = document.getElementById("s-lat");
-var sLon          = document.getElementById("s-lon");
-var sName         = document.getElementById("s-name");
-var sNote         = document.getElementById("s-note");
-var submitButton  = document.getElementById("submit-button");
-var submitNote    = document.getElementById("submit-note");
 
 /* ------------------------------------------------------------------
    Setting up the client
@@ -68,89 +51,126 @@ try {
   configured = false;
 }
 
+/* Which page we are on, by file name. Works from a file:// path and
+   from a web root serving index.html for "/". */
+function pageName() {
+  var path = window.location.pathname;
+  var last = path.substring(path.lastIndexOf("/") + 1);
+  return last === "" ? "index.html" : last;
+}
+
+var PAGE = pageName();
+
 /* ------------------------------------------------------------------
-   The four states the account box can be in
+   The nav
+
+   Signed out it offers one thing, Account. Signed in it offers the
+   report form and a way out. The separators are written here too, so
+   that the dots always sit between things that are actually there.
    ------------------------------------------------------------------ */
 
-function showUnavailable() {
-  accountHint.textContent = "Accounts are not available on this copy of the site.";
-  signinButton.style.display = "none";
-  signoutButton.style.display = "none";
-  savedSection.style.display = "none";
-  suggestBox.style.display = "none";
+var navAccount = document.getElementById("nav-account");
+
+function navLink(href, text, current) {
+  var a = document.createElement("a");
+  a.href = href;
+  a.textContent = text;
+  if (current) {
+    a.className = "current";
+  }
+  return a;
 }
 
-function showSignedOut() {
-  accountHint.textContent = "Sign in anonymously to save cameras and suggest new ones. " +
-    "Nothing here needs a name or an email address.";
-  accountNote.textContent = "";
-  signinButton.style.display = "";
-  signinButton.disabled = false;
-  signoutButton.style.display = "none";
-  savedSection.style.display = "none";
-  suggestBox.style.display = "none";
+function navSeparator() {
+  var span = document.createElement("span");
+  span.className = "sep";
+  span.innerHTML = "&middot;";
+  return span;
 }
 
-function showSignedIn() {
-  accountHint.textContent = "Signed in anonymously.";
-  accountNote.textContent = "";
-  signinButton.style.display = "none";
-  signoutButton.style.display = "";
-  signoutButton.disabled = false;
-  savedSection.style.display = "block";
-  suggestBox.style.display = "block";
+function renderNav() {
+  if (!navAccount) {
+    return;
+  }
+
+  navAccount.innerHTML = "";
+
+  /* Nothing at all if there is no Supabase to talk to. An Account tab
+     that cannot work is worse than no Account tab. */
+  if (!configured) {
+    return;
+  }
+
+  if (!currentUser) {
+    navAccount.appendChild(navSeparator());
+    navAccount.appendChild(navLink("account.html", "Account", PAGE === "account.html"));
+    return;
+  }
+
+  navAccount.appendChild(navSeparator());
+  navAccount.appendChild(navLink("report.html", "Report a camera", PAGE === "report.html"));
+
+  navAccount.appendChild(navSeparator());
+
+  var out = navLink("#", "Log out", false);
+  out.onclick = function (event) {
+    event.preventDefault();
+    signOut();
+  };
+  navAccount.appendChild(out);
 }
 
 /* ------------------------------------------------------------------
    Signing in and out
    ------------------------------------------------------------------ */
 
-function signIn() {
-  signinButton.disabled = true;
-  accountNote.textContent = "Signing in…";
-
+function signIn(onDone) {
   sb.auth.signInAnonymously().then(function (result) {
-    signinButton.disabled = false;
-
     if (result.error) {
-      accountNote.textContent = "Could not sign in (" + result.error.message + "). " +
-        "If you run this site, check that anonymous sign-in is turned on in the Supabase dashboard.";
+      onDone(result.error.message);
       return;
     }
 
     currentUser = result.data.user;
-    showSignedIn();
+    renderNav();
     loadSaved();
+    onDone(null);
   });
 }
 
 function signOut() {
-  signoutButton.disabled = true;
-
   sb.auth.signOut().then(function () {
-    signoutButton.disabled = false;
     currentUser = null;
     savedCameras = [];
-    renderSaved();
-    showSignedOut();
+    renderNav();
+
+    /* The report page is no use signed out, and neither is the signed
+       in half of the account page, so leave for the map. Everywhere
+       else can stay where it is and just redraw. */
+    if (PAGE === "report.html") {
+      window.location.href = "index.html";
+      return;
+    }
+
+    if (PAGE === "account.html") {
+      showAccountPage();
+      return;
+    }
+
     if (typeof render === "function") {
       render();
     }
   });
 }
 
-function restoreSession() {
+function restoreSession(onDone) {
   sb.auth.getSession().then(function (result) {
-    if (result.error || !result.data.session) {
-      showSignedOut();
-      return;
+    if (!result.error && result.data.session) {
+      currentUser = result.data.session.user;
     }
-
-    currentUser = result.data.session.user;
-    showSignedIn();
-    loadSaved();
+    onDone();
   }).catch(function () {
-    showSignedOut();
+    onDone();
   });
 }
 
@@ -195,15 +215,19 @@ function withoutId(list, id) {
   return kept;
 }
 
+/* Only the map page has anything to show for this, so everywhere else
+   it fetches nothing and stays out of the way. */
 function loadSaved() {
+  if (PAGE !== "index.html" || !currentUser) {
+    return;
+  }
+
   sb.from("saved_cameras").select("*").then(function (result) {
     if (result.error) {
-      accountNote.textContent = "Could not load your saved cameras.";
       return;
     }
 
     savedCameras = result.data || [];
-    renderSaved();
     if (typeof render === "function") {
       render();
     }
@@ -258,25 +282,13 @@ function toggleSaved(point, button) {
 
     if (result.error) {
       if (result.error.code === "23505") {
-        /* someone else, or another tab, saved it a moment ago - the
-           star should end up lit either way, so just re-fetch rather
-           than treating this as a failure */
-        accountNote.textContent = "Already saved.";
+        /* another tab saved it a moment ago */
         loadSaved();
-      } else if (result.error.code === "23514") {
-        /* points.js is meant to be Greater London only, so this
-           should not happen in practice, but the table has the same
-           bounds check as inLondon() below and the message should
-           match it if it ever fires */
-        accountNote.textContent = "That camera falls outside the area this map covers, so it can't be saved.";
-      } else {
-        accountNote.textContent = "Could not save that camera.";
       }
       return;
     }
 
     savedCameras.push(result.data[0]);
-    renderSaved();
     if (typeof render === "function") {
       render();
     }
@@ -290,148 +302,169 @@ function removeSaved(saved, done) {
     }
 
     if (result.error) {
-      accountNote.textContent = "Could not remove that saved camera.";
       return;
     }
 
     savedCameras = withoutId(savedCameras, saved.id);
-    renderSaved();
     if (typeof render === "function") {
       render();
     }
   });
 }
 
-function renderSaved() {
-  var i;
+/* ------------------------------------------------------------------
+   The account page
+   ------------------------------------------------------------------ */
 
-  savedList.innerHTML = "";
+function showAccountPage() {
+  var outMsg = document.getElementById("account-signedout");
+  var inMsg  = document.getElementById("account-signedin");
 
-  if (savedCameras.length === 0) {
-    savedEmpty.style.display = "block";
+  if (!outMsg || !inMsg) {
     return;
   }
-  savedEmpty.style.display = "none";
 
-  for (i = 0; i < savedCameras.length; i++) {
-    savedList.appendChild(savedRow(savedCameras[i]));
+  if (!configured) {
+    outMsg.style.display = "none";
+    inMsg.style.display = "none";
+    document.getElementById("account-unavailable").style.display = "block";
+    return;
   }
+
+  outMsg.style.display = currentUser ? "none" : "block";
+  inMsg.style.display  = currentUser ? "block" : "none";
 }
 
-function savedRow(saved) {
-  var row = document.createElement("li");
+function setUpAccountPage() {
+  var button = document.getElementById("signin-button");
+  var note   = document.getElementById("account-note");
 
-  var go = document.createElement("button");
-  go.className = "goto";
+  showAccountPage();
 
-  var name = document.createElement("span");
-  name.className = "name";
-  name.textContent = saved.camera_name;
-  go.appendChild(name);
+  if (!button) {
+    return;
+  }
 
-  var coords = document.createElement("span");
-  coords.className = "coords";
-  coords.textContent = Number(saved.lat).toFixed(4) + ", " + Number(saved.lon).toFixed(4);
-  go.appendChild(coords);
+  button.onclick = function () {
+    button.disabled = true;
+    note.textContent = "Signing in…";
 
-  go.onclick = function () {
-    if (typeof map !== "undefined" && typeof lngLat === "function") {
-      map.flyTo({ center: lngLat(Number(saved.lat), Number(saved.lon)), zoom: 17, speed: 1.6 });
-    }
+    signIn(function (error) {
+      button.disabled = false;
+
+      if (error) {
+        note.textContent = "Could not sign in (" + error + "). " +
+          "If you run this site, check that anonymous sign-in is turned on " +
+          "in the Supabase dashboard.";
+        return;
+      }
+
+      note.textContent = "";
+      showAccountPage();
+    });
   };
-
-  row.appendChild(go);
-
-  var remove = document.createElement("button");
-  remove.className = "remove";
-  remove.textContent = "×";
-  remove.title = "Remove from saved";
-  remove.onclick = function () {
-    removeSaved(saved);
-  };
-  row.appendChild(remove);
-
-  return row;
 }
 
 /* ------------------------------------------------------------------
-   Suggesting a camera
+   The report page
    ------------------------------------------------------------------ */
 
-function submitSighting() {
-  var lat = parseFloat(sLat.value);
-  var lon = parseFloat(sLon.value);
-  var name = sName.value.trim();
-  var note = sNote.value.trim();
+function setUpReportPage() {
+  var form   = document.getElementById("report-form");
+  var locked = document.getElementById("report-locked");
+  var button = document.getElementById("submit-button");
+  var note   = document.getElementById("submit-note");
 
-  submitNote.textContent = "";
-
-  if (!currentUser) {
-    submitNote.textContent = "Sign in first.";
+  if (!form || !locked) {
     return;
   }
 
-  if (name === "") {
-    submitNote.textContent = "Please give the camera a name.";
-    sName.focus();
+  /* Signed out there is nothing useful to show, and the database
+     would refuse the insert anyway. */
+  form.style.display   = currentUser ? "block" : "none";
+  locked.style.display = currentUser ? "none" : "block";
+
+  if (!currentUser || !button) {
     return;
   }
 
-  if (isNaN(lat) || isNaN(lon)) {
-    submitNote.textContent = "Both coordinates need to be numbers.";
-    sLat.focus();
-    return;
-  }
+  button.onclick = function () {
+    var lat  = parseFloat(document.getElementById("s-lat").value);
+    var lon  = parseFloat(document.getElementById("s-lon").value);
+    var name = document.getElementById("s-name").value.trim();
+    var memo = document.getElementById("s-note").value.trim();
 
-  if (typeof inLondon === "function" && !inLondon(lat, lon)) {
-    submitNote.textContent = "That is outside London. This map covers Greater London only.";
-    sLat.focus();
-    return;
-  }
+    note.textContent = "";
 
-  submitButton.disabled = true;
-  submitNote.textContent = "Sending…";
-
-  sb.from("submissions").insert({
-    user_id: currentUser.id,
-    name: name,
-    note: note,
-    lat: lat,
-    lon: lon
-  }).then(function (result) {
-    submitButton.disabled = false;
-
-    if (result.error) {
-      if (result.error.code === "23514") {
-        /* the same bounds check as inLondon() above, on the table
-           itself - this is a backstop, not the first line of
-           defense, but the message should read the same either way */
-        submitNote.textContent = "That is outside London. This map covers Greater London only.";
-      } else {
-        submitNote.textContent = "Could not send that in. Try again in a moment.";
-      }
+    if (name === "") {
+      note.textContent = "Please give the camera a name.";
       return;
     }
 
-    sLat.value = "";
-    sLon.value = "";
-    sName.value = "";
-    sNote.value = "";
-    submitNote.textContent = "Sent for review. It will not appear on the map automatically.";
-  });
+    if (isNaN(lat) || isNaN(lon)) {
+      note.textContent = "Both coordinates need to be numbers.";
+      return;
+    }
+
+    /* Same box as map.js, repeated here because this page has no map
+       on it to borrow inLondon() from. The database checks it a third
+       time, so a bad pair cannot get in whatever happens up here. */
+    if (lat < 51.28 || lat > 51.70 || lon < -0.51 || lon > 0.33) {
+      note.textContent = "That is outside London. This map covers Greater London only.";
+      return;
+    }
+
+    button.disabled = true;
+    note.textContent = "Sending…";
+
+    sb.from("submissions").insert({
+      user_id: currentUser.id,
+      name: name,
+      note: memo,
+      lat: lat,
+      lon: lon
+    }).then(function (result) {
+      button.disabled = false;
+
+      if (result.error) {
+        if (result.error.code === "23514") {
+          note.textContent = "That is outside London. This map covers Greater London only.";
+        } else {
+          note.textContent = "Could not send that in. Try again in a moment.";
+        }
+        return;
+      }
+
+      document.getElementById("s-lat").value = "";
+      document.getElementById("s-lon").value = "";
+      document.getElementById("s-name").value = "";
+      document.getElementById("s-note").value = "";
+      note.textContent = "Sent for review. It will not appear on the map automatically.";
+    });
+  };
 }
 
 /* ------------------------------------------------------------------
    Start up
+
+   Nothing is drawn until the session has been looked up, so the nav
+   does not change under the reader a moment after the page settles.
    ------------------------------------------------------------------ */
 
-if (configured) {
-  signinButton.onclick = signIn;
-  signoutButton.onclick = signOut;
-  submitButton.onclick = submitSighting;
+function start() {
+  renderNav();
 
-  accountHint.textContent = "Checking your account…";
-  restoreSession();
+  if (PAGE === "account.html") {
+    setUpAccountPage();
+  } else if (PAGE === "report.html") {
+    setUpReportPage();
+  } else {
+    loadSaved();
+  }
+}
+
+if (configured) {
+  restoreSession(start);
 } else {
-  showUnavailable();
+  start();
 }

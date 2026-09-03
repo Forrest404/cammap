@@ -33,6 +33,9 @@
     <a href="about.html">About</a>
     <span class="sep">&middot;</span>
     <a href="blog.html">Thoughts</a>
+    <!-- account.js fills this in once it knows whether anyone is
+         signed in. Empty until then, so the nav never flickers. -->
+    <span id="nav-account"></span>
   </nav>
 </header>
 
@@ -89,57 +92,6 @@
         <h3>Cameras</h3>
         <ul class="points" id="points-list"></ul>
         <p class="empty" id="points-empty">No cameras recorded yet.</p>
-      </div>
-
-      <!-- Anonymous accounts. Everyone sees this, not just ?edit - it
-           has nothing to do with points.js or what gets published.
-           If the account panel cannot reach Supabase, for any reason,
-           it says so here and the map above is unaffected. -->
-      <div class="box" id="account-box">
-        <h3>Account</h3>
-        <p class="hint" id="account-hint">
-          Sign in anonymously to save cameras and suggest new ones.
-          Nothing here needs a name or an email address.
-        </p>
-        <div class="row">
-          <button id="signin-button">Sign in</button>
-          <button id="signout-button" class="quiet" style="display:none">Sign out</button>
-        </div>
-        <p class="note" id="account-note"></p>
-
-        <div id="saved-section" style="display:none">
-          <p class="hint">Cameras you have saved:</p>
-          <ul class="points" id="saved-list"></ul>
-          <p class="empty" id="saved-empty">Nothing saved yet. Use the star next to a camera in the list above.</p>
-        </div>
-      </div>
-
-      <!-- Suggesting a camera the map does not have yet. This goes
-           into a moderation queue, not onto the map: the published
-           map is only ever changed by a commit to points.js, so
-           nothing sent from here appears above automatically. -->
-      <div class="box" id="suggest-box" style="display:none">
-        <h3>Suggest a camera</h3>
-        <p class="hint">
-          Seen a camera that is not listed? Send it in for review. This
-          does not add it to the map - someone checks it by hand first.
-        </p>
-        <div class="pair">
-          <div>
-            <label for="s-lat">Latitude</label>
-            <input type="number" id="s-lat" step="any" placeholder="51.5169">
-          </div>
-          <div>
-            <label for="s-lon">Longitude</label>
-            <input type="number" id="s-lon" step="any" placeholder="-0.0977">
-          </div>
-        </div>
-        <label for="s-name">Name</label>
-        <input type="text" id="s-name" placeholder="required">
-        <label for="s-note">Note</label>
-        <textarea id="s-note" placeholder="optional"></textarea>
-        <button id="submit-button">Send for review</button>
-        <p class="note" id="submit-note"></p>
       </div>
 
       <!-- Writing the file back out -->

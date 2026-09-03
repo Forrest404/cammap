@@ -648,6 +648,42 @@ article.post p.date {
   color: var(--dim);
 }
 
+/* ---------- account and report pages ----------
+
+   Both are ordinary prose pages, so they inherit nearly everything.
+   These four rules cover the parts a prose page did not have before:
+   a hint outside a panel, the list of what an account is for, and a
+   form standing on its own rather than in the side column. */
+
+.prose p.hint {
+  font-size: 13px;
+  color: var(--dim);
+}
+
+ul.benefits {
+  margin: 0 0 18px 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul.benefits li {
+  margin: 0 0 12px 0;
+  padding: 0 0 0 16px;
+  border-left: 1px solid var(--rule);
+}
+
+ul.benefits strong {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* A form on a page of its own is not squeezed into a column, so it is
+   given the same width as the text it sits under rather than the full
+   width of the sheet. */
+.prose .box {
+  max-width: 42ch;
+}
+
 /* ------------------------------------------------------------------
    EDIT MODE
 

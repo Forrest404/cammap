@@ -18,6 +18,9 @@
     <a href="about.html" class="current">About</a>
     <span class="sep">&middot;</span>
     <a href="blog.html">Thoughts</a>
+    <!-- account.js fills this in once it knows whether anyone is
+         signed in. Empty until then, so the nav never flickers. -->
+    <span id="nav-account"></span>
   </nav>
 </header>
 
@@ -49,5 +52,10 @@
 </footer>
 
 </div>
+<!-- The account controls live in the nav, so every page needs these
+     three. All local files; nothing is fetched from a CDN. -->
+<script src="lib/supabase.js"></script>
+<script src="supabase-config.js"></script>
+<script src="account.js"></script>
 </body>
 </html>
