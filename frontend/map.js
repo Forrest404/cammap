@@ -1008,7 +1008,9 @@ function popupFor(point) {
     box.appendChild(document.createElement("br"));
     var report = document.createElement("a");
     report.className = "report-link";
-    report.href = "report.html?camera=" + encodeURIComponent(point.cameraId);
+    /* map.js only runs on the map, which is the page at the root, so
+       the report page is one folder down from here. */
+    report.href = "pages/report.html?camera=" + encodeURIComponent(point.cameraId);
     report.textContent = "Report its state \u2192";
     box.appendChild(report);
 
