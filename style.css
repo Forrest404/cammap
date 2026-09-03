@@ -286,11 +286,9 @@ footer.foot::before {
   border: 1px solid var(--rule);
 }
 
-/* The Cameras box is as tall as the map beside it and never grows past
-   it: the list scrolls within a fixed-height scroll area. Only applied
-   on the published page - in edit mode the box sits between the forms
-   and keeps its natural height. */
-body:not(.editing) #cameras-box {
+/* The Cameras box matches the height of the map beside it, so the list
+   scrolls inside instead of stretching the page. */
+#cameras-box {
   height: var(--map-h);
   box-sizing: border-box;
   display: flex;
@@ -298,21 +296,18 @@ body:not(.editing) #cameras-box {
   margin-bottom: 0;
 }
 
-body:not(.editing) #cameras-box ul.points {
+#cameras-box ul.points {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-}
 
-body:not(.editing) #cameras-box ul.points:empty {
-  display: none;
-}
-
-/* The list scrolls; give its scrollbar the same flat, unbordered look
-   as the page so it reads as part of the box. */
-#cameras-box ul.points {
+  /* a flat scrollbar, so it reads as part of the page */
   scrollbar-width: thin;
   scrollbar-color: var(--rule) transparent;
+}
+
+#cameras-box ul.points:empty {
+  display: none;
 }
 
 #cameras-box ul.points::-webkit-scrollbar {
@@ -695,12 +690,12 @@ textarea.export {
   }
 
   /* Stacked layout: no map beside the list to match, so let it grow. */
-  body:not(.editing) #cameras-box {
+  #cameras-box {
     height: auto;
     display: block;
   }
 
-  body:not(.editing) #cameras-box ul.points {
+  #cameras-box ul.points {
     overflow-y: visible;
   }
 
