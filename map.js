@@ -1224,6 +1224,150 @@ if (EDITING) {
 drawLegend();
 render();
 
+/* ------------------------------------------------------------------
+   The database, on top of the seed
+
+   points.js is drawn first and at once, so the map is never blank
+   waiting on a network. Then, if there is a Supabase project behind
+   the site, the cameras table is fetched and laid over it: a row
+   that came from the seed replaces its seed entry (so a camera the
+   moderators have since marked non-functional shows as such), and a
+   row that came from a report is added. If the fetch fails for any
+   reason the seed simply stands.
+
+   The result is kept in the browser for a few minutes. A busy day is
+   many people opening the map, not many changes to it, so most of
+   those visits should be answered from storage rather than the
+   database. Edit mode never overlays: it is for the file, not the
+   table.
+   ------------------------------------------------------------------ */
+
+var CAMERAS_KEY = "cammap.cameras";
+var CAMERAS_TTL = 5 * 60 * 1000;   /* five minutes */
+
+/* seed_key is how a database row says which seed entry it is. It is
+   built the same way here as in the build script, so they agree. */
+function seedKeyOf(point) {
+  return point.name + "|" + point.lat.toFixed(6) + "|" + point.lon.toFixed(6) + "|" + point.type;
+}
+
+function overlayCameras(rows) {
+  var bySeed = {};
+  var i;
+  var row;
+  var point;
+  var merged = [];
+
+  for (i = 0; i < rows.length; i++) {
+    if (rows[i].seed_key) {
+      bySeed[rows[i].seed_key] = rows[i];
+    }
+  }
+
+  /* Seed entries, each replaced by its database row if there is one. */
+  for (i = 0; i < points.length; i++) {
+    point = points[i];
+    row = bySeed[seedKeyOf(point)];
+    if (row) {
+      point.name = row.name;
+      point.note = row.note || "";
+      point.status = row.status;
+      point.last = typeof row.last_seen === "number" ? row.last_seen : point.last;
+      point.cameraId = row.id;
+      delete bySeed[seedKeyOf(point)];
+    }
+    merged.push(point);
+  }
+
+  /* Then everything that only exists in the database. A row that has
+     already been laid over the list once (a second overlay from the
+     cache, say) is known by its camera id and is not added twice. */
+  var haveId = {};
+  for (i = 0; i < merged.length; i++) {
+    if (merged[i].cameraId) {
+      haveId[merged[i].cameraId] = true;
+    }
+  }
+
+  for (i = 0; i < rows.length; i++) {
+    row = rows[i];
+    if (haveId[row.id]) {
+      continue;   /* matched a seed entry above, or already present */
+    }
+    if (row.seed_key && !bySeed[row.seed_key]) {
+      continue;   /* a seed row that found its entry */
+    }
+    merged.push({
+      id: nextId++,
+      cameraId: row.id,
+      name: row.name,
+      note: row.note || "",
+      lat: Number(row.lat),
+      lon: Number(row.lon),
+      type: row.type,
+      status: row.status,
+      last: typeof row.last_seen === "number" ? row.last_seen : null
+    });
+  }
+
+  points = merged;
+  refreshCameras();
+  render();
+}
+
+function readCachedCameras() {
+  try {
+    var raw = window.localStorage.getItem(CAMERAS_KEY);
+    var saved = raw ? JSON.parse(raw) : null;
+    if (saved && saved.at && Date.now() - saved.at < CAMERAS_TTL && Array.isArray(saved.rows)) {
+      return saved.rows;
+    }
+  } catch (err) {
+    /* nothing usable in storage */
+  }
+  return null;
+}
+
+function cacheCameras(rows) {
+  try {
+    window.localStorage.setItem(CAMERAS_KEY, JSON.stringify({ at: Date.now(), rows: rows }));
+  } catch (err) {
+    /* storage refused or full - the fetch still worked */
+  }
+}
+
+function loadCamerasFromDatabase() {
+  var cached;
+
+  if (EDITING || typeof configured === "undefined" || !configured || !sb) {
+    return;
+  }
+
+  cached = readCachedCameras();
+  if (cached) {
+    overlayCameras(cached);
+    return;
+  }
+
+  /* Only the columns the map needs, only visible rows, and a hard
+     ceiling on how many. The ceiling is well above what one city
+     will hold; it is there so a runaway table cannot ship megabytes
+     to every visitor. */
+  sb.from("cameras")
+    .select("id,name,note,lat,lon,type,status,last_seen,seed_key")
+    .eq("visible", true)
+    .limit(5000)
+    .then(function (result) {
+      if (result.error || !Array.isArray(result.data)) {
+        return;
+      }
+      cacheCameras(result.data);
+      overlayCameras(result.data);
+    });
+}
+
+loadCamerasFromDatabase();
+
 /* A remembered legacy setting has to show on the button straight away;
    the map side of it is applied when the layers are built. */
 if (legacyToggle) {
