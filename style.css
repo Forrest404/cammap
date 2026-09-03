@@ -308,6 +308,29 @@ body:not(.editing) #cameras-box ul.points:empty {
   display: none;
 }
 
+/* The list scrolls; give its scrollbar the same flat, unbordered look
+   as the page so it reads as part of the box. */
+#cameras-box ul.points {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+#cameras-box ul.points::-webkit-scrollbar {
+  width: 8px;
+}
+
+#cameras-box ul.points::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#cameras-box ul.points::-webkit-scrollbar-thumb {
+  background: var(--rule);
+}
+
+#cameras-box ul.points::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
 .box p.hint {
   margin: 0 0 10px 0;
   font-size: 13px;
