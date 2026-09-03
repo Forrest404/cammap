@@ -622,77 +622,373 @@ function setUpAccountPage() {
    The report page
    ------------------------------------------------------------------ */
 
+/* ---------------- proof files ----------------
+
+   A photo is drawn onto a canvas and read back out as a fresh JPEG.
+   That throws away everything in the original file that was not the
+   picture: the GPS position, the phone model, the time - all of the
+   metadata a camera writes in. It also caps the size. A video cannot
+   be rebuilt in the browser like that, so it is sent as it is and the
+   page says so. */
+
+var PROOF_MAX_BYTES = 20 * 1024 * 1024;
+var PROOF_MAX_EDGE = 1600;
+
+function stripImage(file, onDone) {
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+
+  img.onload = function () {
+    var w = img.width;
+    var h = img.height;
+    var scale = Math.min(1, PROOF_MAX_EDGE / Math.max(w, h));
+    var canvas = document.createElement("canvas");
+
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+
+    canvas.toBlob(function (blob) {
+      onDone(blob ? null : "That image could not be read.", blob, "image/jpeg", "jpg");
+    }, "image/jpeg", 0.85);
+  };
+
+  img.onerror = function () {
+    URL.revokeObjectURL(url);
+    onDone("That image could not be read.");
+  };
+
+  img.src = url;
+}
+
+/* Hands back a blob ready to upload, its mime and a file extension. */
+function prepareProof(file, onDone) {
+  if (!file) {
+    onDone(null, null);
+    return;
+  }
+
+  if (file.size > PROOF_MAX_BYTES) {
+    onDone("That file is over 20 MB.");
+    return;
+  }
+
+  /* Only the kinds the storage bucket will accept; anything else is
+     refused here with a reason rather than by the upload without one. */
+  if (file.type === "image/jpeg" || file.type === "image/png" || file.type === "image/webp") {
+    stripImage(file, onDone);
+    return;
+  }
+
+  if (file.type === "video/mp4" || file.type === "video/webm") {
+    onDone(null, file, file.type, file.type === "video/mp4" ? "mp4" : "webm");
+    return;
+  }
+
+  onDone("Only JPEG, PNG, WebP, MP4 or WebM files can be sent.");
+}
+
+function randomName() {
+  var n = new Uint32Array(2);
+  if (window.crypto && window.crypto.getRandomValues) {
+    window.crypto.getRandomValues(n);
+  } else {
+    n[0] = Math.floor(Math.random() * 4294967296);
+    n[1] = Math.floor(Math.random() * 4294967296);
+  }
+  return n[0].toString(16) + n[1].toString(16);
+}
+
+/* Uploads under the user's own prefix - which is the only place the
+   storage policy lets them write - then records the file against the
+   report. */
+function uploadProof(reportId, blob, mime, ext, onDone) {
+  var path = currentUser.id + "/" + reportId + "/" + randomName() + "." + ext;
+
+  sb.storage.from("proof").upload(path, blob, { contentType: mime, upsert: false })
+    .then(function (result) {
+      if (result.error) {
+        onDone("The file could not be uploaded.");
+        return;
+      }
+      return sb.from("report_proof").insert({
+        report_id: reportId,
+        user_id: currentUser.id,
+        storage_path: path,
+        mime: mime,
+        bytes: blob.size
+      }).then(function (row) {
+        onDone(row.error ? "The file was uploaded but could not be recorded." : null);
+      });
+    });
+}
+
+/* ---------------- the report page ----------------
+
+   Two forms on one page. ?camera=<id> in the address means "report
+   the state of this camera", otherwise it is "report a camera the map
+   does not have". Both go into the reports table; the database
+   decides whether enough people agree for it to count on its own. */
+
+var LONDON_BOX = { s: 51.28, w: -0.51, n: 51.70, e: 0.33 };
+
+function inLondonBox(lat, lon) {
+  return lat >= LONDON_BOX.s && lat <= LONDON_BOX.n &&
+         lon >= LONDON_BOX.w && lon <= LONDON_BOX.e;
+}
+
+/* What the database would say back, in plain words. */
+function reportProblem(error) {
+  var code = error && error.code;
+  var msg = (error && error.message) || "";
+
+  if (code === "23514") {
+    return "That is outside London. This map covers Greater London only.";
+  }
+  if (code === "23505") {
+    return "You have already reported this one.";
+  }
+  if (/rate/i.test(msg) || code === "P0001" && /rate/i.test(msg)) {
+    return "Too many reports in a short time. Try again in a few minutes.";
+  }
+  if (code === "P0001") {
+    return msg;   /* a raise from one of our own triggers, already plain */
+  }
+  return "Could not send that in. Try again in a moment.";
+}
+
+/* xp_rules is public: the form can say what a report is worth. */
+var xpRules = {};
+
+function loadXpRules(onDone) {
+  sb.from("xp_rules").select("key,xp").then(function (result) {
+    var i;
+    if (!result.error && result.data) {
+      for (i = 0; i < result.data.length; i++) {
+        xpRules[result.data[i].key] = result.data[i].xp;
+      }
+    }
+    onDone();
+  });
+}
+
+function xpLine(key) {
+  return typeof xpRules[key] === "number"
+    ? "Worth " + xpRules[key] + " XP once it is confirmed."
+    : "";
+}
+
 function setUpReportPage() {
   var form   = document.getElementById("report-form");
   var locked = document.getElementById("report-locked");
-  var button = document.getElementById("submit-button");
-  var note   = document.getElementById("submit-note");
+  var newBox = document.getElementById("report-new");
+  var stBox  = document.getElementById("report-status");
+  var title  = document.getElementById("report-title");
+
+  var cameraId = (function () {
+    var m = /[?&]camera=(\d+)/.exec(window.location.search);
+    return m ? Number(m[1]) : null;
+  })();
 
   if (!form || !locked) {
     return;
   }
 
-  /* Signed out there is nothing useful to show, and the database
-     would refuse the insert anyway. */
   form.style.display   = currentUser ? "block" : "none";
   locked.style.display = currentUser ? "none" : "block";
 
-  if (!currentUser || !button) {
+  if (!currentUser) {
     return;
   }
 
+  newBox.style.display = cameraId ? "none" : "block";
+  stBox.style.display  = cameraId ? "block" : "none";
+
+  loadXpRules(function () {
+    if (cameraId) {
+      setUpStatusReport(cameraId);
+    } else {
+      setUpNewReport();
+    }
+  });
+
+  if (cameraId) {
+    title.textContent = "Report a camera's state";
+  }
+}
+
+function setUpNewReport() {
+  var typeSel   = document.getElementById("s-type");
+  var xpNote    = document.getElementById("s-xp");
+  var latIn     = document.getElementById("s-lat");
+  var lonIn     = document.getElementById("s-lon");
+  var locate    = document.getElementById("locate-button");
+  var locNote   = document.getElementById("locate-note");
+  var nameIn    = document.getElementById("s-name");
+  var noteIn    = document.getElementById("s-note");
+  var proofIn   = document.getElementById("s-proof");
+  var button    = document.getElementById("submit-button");
+  var note      = document.getElementById("submit-note");
+
+  function showXp() {
+    xpNote.textContent = xpLine("new_" + typeSel.value);
+  }
+  typeSel.onchange = showXp;
+  showXp();
+
+  /* The phone's own position, if it will give it. Six decimals is
+     about a tenth of a metre, more than any phone can actually do. */
+  locate.onclick = function (event) {
+    event.preventDefault();
+    if (!navigator.geolocation) {
+      locNote.textContent = "This browser will not share a location.";
+      return;
+    }
+    locNote.textContent = "Asking…";
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      latIn.value = pos.coords.latitude.toFixed(6);
+      lonIn.value = pos.coords.longitude.toFixed(6);
+      locNote.textContent = "Filled in. Move the numbers if the camera is not right where you stand.";
+    }, function () {
+      locNote.textContent = "Could not get a location.";
+    }, { enableHighAccuracy: true, timeout: 10000 });
+  };
+
   button.onclick = function () {
-    var lat  = parseFloat(document.getElementById("s-lat").value);
-    var lon  = parseFloat(document.getElementById("s-lon").value);
-    var name = document.getElementById("s-name").value.trim();
-    var memo = document.getElementById("s-note").value.trim();
+    var lat  = parseFloat(latIn.value);
+    var lon  = parseFloat(lonIn.value);
+    var name = nameIn.value.trim();
+    var file = proofIn.files && proofIn.files[0];
 
     note.textContent = "";
 
     if (name === "") {
-      note.textContent = "Please give the camera a name.";
+      note.textContent = "Say where it is.";
+      nameIn.focus();
       return;
     }
-
     if (isNaN(lat) || isNaN(lon)) {
       note.textContent = "Both coordinates need to be numbers.";
+      latIn.focus();
       return;
     }
-
-    /* Same box as map.js, repeated here because this page has no map
-       on it to borrow inLondon() from. The database checks it a third
-       time, so a bad pair cannot get in whatever happens up here. */
-    if (lat < 51.28 || lat > 51.70 || lon < -0.51 || lon > 0.33) {
+    if (!inLondonBox(lat, lon)) {
       note.textContent = "That is outside London. This map covers Greater London only.";
+      latIn.focus();
       return;
     }
 
     button.disabled = true;
-    note.textContent = "Sending…";
+    note.textContent = file ? "Preparing the file…" : "Sending…";
 
-    sb.from("submissions").insert({
-      user_id: currentUser.id,
-      name: name,
-      note: memo,
-      lat: lat,
-      lon: lon
-    }).then(function (result) {
-      button.disabled = false;
-
-      if (result.error) {
-        if (result.error.code === "23514") {
-          note.textContent = "That is outside London. This map covers Greater London only.";
-        } else {
-          note.textContent = "Could not send that in. Try again in a moment.";
-        }
+    prepareProof(file, function (problem, blob, mime, ext) {
+      if (problem) {
+        button.disabled = false;
+        note.textContent = problem;
         return;
       }
 
-      document.getElementById("s-lat").value = "";
-      document.getElementById("s-lon").value = "";
-      document.getElementById("s-name").value = "";
-      document.getElementById("s-note").value = "";
-      note.textContent = "Sent for review. It will not appear on the map automatically.";
+      note.textContent = "Sending…";
+
+      sb.from("reports").insert({
+        user_id: currentUser.id,
+        kind: "new",
+        type: typeSel.value,
+        name: name,
+        note: noteIn.value.trim(),
+        lat: lat,
+        lon: lon
+      }).select("id").single().then(function (result) {
+        if (result.error) {
+          button.disabled = false;
+          note.textContent = reportProblem(result.error);
+          return;
+        }
+
+        function finish(uploadProblem) {
+          button.disabled = false;
+          latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
+          proofIn.value = ""; locNote.textContent = "";
+          note.textContent = uploadProblem
+            ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)
+            : "Sent for review. Thank you.";
+        }
+
+        if (blob) {
+          uploadProof(result.data.id, blob, mime, ext, finish);
+        } else {
+          finish(null);
+        }
+      });
+    });
+  };
+}
+
+function setUpStatusReport(cameraId) {
+  var nameEl   = document.getElementById("status-camera-name");
+  var claimSel = document.getElementById("s-claim");
+  var xpNote   = document.getElementById("s-claim-xp");
+  var noteIn   = document.getElementById("s-status-note");
+  var proofIn  = document.getElementById("s-status-proof");
+  var button   = document.getElementById("submit-status-button");
+  var note     = document.getElementById("submit-status-note");
+
+  function showXp() {
+    xpNote.textContent = xpLine("status_" + claimSel.value);
+  }
+  claimSel.onchange = showXp;
+  showXp();
+
+  /* The name, so the person can see they are on the right one. */
+  sb.from("cameras").select("name,type,status").eq("id", cameraId).single()
+    .then(function (result) {
+      nameEl.textContent = result.error ? "camera #" + cameraId : result.data.name;
+    });
+
+  button.onclick = function () {
+    var file = proofIn.files && proofIn.files[0];
+
+    note.textContent = "";
+    button.disabled = true;
+    note.textContent = file ? "Preparing the file…" : "Sending…";
+
+    prepareProof(file, function (problem, blob, mime, ext) {
+      if (problem) {
+        button.disabled = false;
+        note.textContent = problem;
+        return;
+      }
+
+      note.textContent = "Sending…";
+
+      sb.from("reports").insert({
+        user_id: currentUser.id,
+        kind: "status",
+        camera_id: cameraId,
+        status_claim: claimSel.value,
+        note: noteIn.value.trim()
+      }).select("id").single().then(function (result) {
+        if (result.error) {
+          button.disabled = false;
+          note.textContent = reportProblem(result.error);
+          return;
+        }
+
+        function finish(uploadProblem) {
+          button.disabled = false;
+          noteIn.value = ""; proofIn.value = "";
+          note.textContent = uploadProblem
+            ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)
+            : "Sent for review. Thank you.";
+        }
+
+        if (blob) {
+          uploadProof(result.data.id, blob, mime, ext, finish);
+        } else {
+          finish(null);
+        }
+      });
     });
   };
 }

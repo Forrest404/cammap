@@ -833,6 +833,18 @@ function popupFor(point) {
   coords.textContent = point.lat.toFixed(4) + ", " + point.lon.toFixed(4);
   box.appendChild(coords);
 
+  /* Only a camera that lives in the database can have its state
+     reported on; a seed-only entry has nothing to attach a report to
+     until the seed has been loaded. */
+  if (point.cameraId) {
+    box.appendChild(document.createElement("br"));
+    var report = document.createElement("a");
+    report.className = "report-link";
+    report.href = "report.html?camera=" + encodeURIComponent(point.cameraId);
+    report.textContent = "Report its state \u2192";
+    box.appendChild(report);
+  }
+
   return box;
 }
 
