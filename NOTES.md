@@ -36,6 +36,14 @@ The site is static files on GitHub Pages plus one Supabase project. Everything b
 6. **Database -> Extensions**: enable `pg_cron`, then run `schema.sql` once more - the leaderboard refresh is scheduled only when the extension is present. Without it the leaderboards are still there, just never updated; refresh by hand with `select refresh_leaderboards();`.
 7. **Storage**: the `proof` bucket is created by `schema.sql` (private, 20 MB, images and MP4/WebM only). Nothing to do.
 
+### Deploying a change
+
+GitHub Pages caches files for ten minutes. Run `python3 stamp.py` before
+committing: it puts a version on the site's own script and stylesheet
+tags so a returning visitor's browser fetches them afresh instead of
+pairing new HTML with old JavaScript. Skip it and the first visit after
+a deploy can show a page whose buttons do nothing.
+
 ### Roles
 
 Moderators and admins are set here, not on the site:
