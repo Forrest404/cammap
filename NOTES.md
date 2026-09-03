@@ -4,7 +4,7 @@
 
 - The goal of *cammap* is to create a website that:
     - Maps all LFR vans and fixed cameras across london - with locations all over the world planned after finishing the london version
-    - It differentiates between different types of cameras - fixed cameras, van cameras, nonfunctional cameras, supermarket (facewatch) cameras, british transport map, and more - using different colours which are visible in the bottom right corner below the map
+    - It differentiates between different types of cameras - fixed cameras, van cameras, nonfunctional cameras, supermarket (facewatch) cameras, british transport map, and more - using different colours which are visible in the bottom right corner below the map - It does this by using an SQL database which has different identifiers - e.g. fixedcam, nonfunccam, facewatchcam, vancam, transportcam, etc, which makes things easier. The names must be unique as such to make the map scalable to different cities and countries.
     - It shows previous facial recognition cameras with a "legacy" toggle, and may have a feature that uses AI to predict/track the facial recognition vans
     - The map can be viewed as a normal street map or in a satellite, etc view.
     - It has an accounts feature where users sign up with a simple username and password - Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password (one capital letter, number and symbol...). IP addresses might be logged to prevent spam but hopefully not to maintain complete anonymity
