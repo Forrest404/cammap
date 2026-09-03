@@ -541,6 +541,33 @@ p.empty {
   color: var(--dim);
 }
 
+/* ---------- the star, for saving a camera ----------
+
+   Same shape as button.remove - a small bordered box at the end of
+   the row - so the two read as a family. Filled and in the accent
+   colour once the camera is saved. */
+
+button.star {
+  flex: 0 0 auto;
+  padding: 0 7px;
+  background: none;
+  border: 1px solid var(--rule);
+  color: var(--dim);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+button.star:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+button.star.saved {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ---------- popups ---------- */
 
 .maplibregl-popup-content {

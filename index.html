@@ -11,6 +11,13 @@
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <script src="lib/maplibre-gl.js"></script>
 
+<!-- supabase-js 2.114.0, for the account panel only. Vendored into
+     lib/ alongside MapLibre rather than fetched from a CDN, so the
+     page still depends on nothing outside this repository. If it is
+     missing the account box says so and the map is unaffected - see
+     account.js. -->
+<script src="lib/supabase.js"></script>
+
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -84,6 +91,57 @@
         <p class="empty" id="points-empty">No cameras recorded yet.</p>
       </div>
 
+      <!-- Anonymous accounts. Everyone sees this, not just ?edit - it
+           has nothing to do with points.js or what gets published.
+           If the account panel cannot reach Supabase, for any reason,
+           it says so here and the map above is unaffected. -->
+      <div class="box" id="account-box">
+        <h3>Account</h3>
+        <p class="hint" id="account-hint">
+          Sign in anonymously to save cameras and suggest new ones.
+          Nothing here needs a name or an email address.
+        </p>
+        <div class="row">
+          <button id="signin-button">Sign in</button>
+          <button id="signout-button" class="quiet" style="display:none">Sign out</button>
+        </div>
+        <p class="note" id="account-note"></p>
+
+        <div id="saved-section" style="display:none">
+          <p class="hint">Cameras you have saved:</p>
+          <ul class="points" id="saved-list"></ul>
+          <p class="empty" id="saved-empty">Nothing saved yet. Use the star next to a camera in the list above.</p>
+        </div>
+      </div>
+
+      <!-- Suggesting a camera the map does not have yet. This goes
+           into a moderation queue, not onto the map: the published
+           map is only ever changed by a commit to points.js, so
+           nothing sent from here appears above automatically. -->
+      <div class="box" id="suggest-box" style="display:none">
+        <h3>Suggest a camera</h3>
+        <p class="hint">
+          Seen a camera that is not listed? Send it in for review. This
+          does not add it to the map - someone checks it by hand first.
+        </p>
+        <div class="pair">
+          <div>
+            <label for="s-lat">Latitude</label>
+            <input type="number" id="s-lat" step="any" placeholder="51.5169">
+          </div>
+          <div>
+            <label for="s-lon">Longitude</label>
+            <input type="number" id="s-lon" step="any" placeholder="-0.0977">
+          </div>
+        </div>
+        <label for="s-name">Name</label>
+        <input type="text" id="s-name" placeholder="required">
+        <label for="s-note">Note</label>
+        <textarea id="s-note" placeholder="optional"></textarea>
+        <button id="submit-button">Send for review</button>
+        <p class="note" id="submit-note"></p>
+      </div>
+
       <!-- Writing the file back out -->
       <div class="box edit-only">
         <h3>Publish</h3>
@@ -110,8 +168,20 @@
 
 </div>
 
-<!-- points.js first: it holds the cameras, map.js draws them. -->
+<!-- points.js first: it holds the cameras, map.js draws them.
+
+     supabase-config.js and account.js come next, ahead of map.js, so
+     that by the time map.js runs its first render() the account
+     panel's own globals already exist for it to check for (see the
+     accountStarButton hook in rowFor()). supabase-config.js holds
+     only a project URL and a public anon key - both are meant to be
+     public, so this file is committed. If it is missing, or the
+     Supabase CDN script above failed to load, account.js notices and
+     says the account panel is unavailable rather than breaking
+     anything. -->
 <script src="points.js"></script>
+<script src="supabase-config.js"></script>
+<script src="account.js"></script>
 <script src="map.js"></script>
 </body>
 </html>

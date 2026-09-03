@@ -598,6 +598,17 @@ function rowFor(point) {
 
   row.appendChild(go);
 
+  /* account.js adds a star button here once someone is signed in, so
+     that saving a camera does not need a second UI of its own. Left
+     alone entirely if account.js never loaded or nobody is signed in
+     - this row works exactly as before either way. */
+  if (typeof accountStarButton === "function") {
+    var star = accountStarButton(point);
+    if (star) {
+      row.appendChild(star);
+    }
+  }
+
   if (EDITING) {
     var remove = document.createElement("button");
     remove.className = "remove";
