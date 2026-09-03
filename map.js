@@ -1380,6 +1380,27 @@ function loadCamerasFromDatabase() {
 
 loadCamerasFromDatabase();
 
+/* index.html#51.51234,-0.12345 opens on that spot, close in. The
+   moderation queue links here so a report can be checked against
+   the map without leaving the queue. */
+(function () {
+  var m = /^#(-?\d+\.\d+),(-?\d+\.\d+)$/.exec(window.location.hash);
+  var lat;
+  var lon;
+
+  if (!m) {
+    return;
+  }
+
+  lat = parseFloat(m[1]);
+  lon = parseFloat(m[2]);
+
+  if (inLondon(lat, lon)) {
+    map.jumpTo({ center: lngLat(lat, lon), zoom: 17 });
+  }
+})();
+loadCamerasFromDatabase();
+
 /* A remembered legacy setting has to show on the button straight away;
    the map side of it is applied when the layers are built. */
 if (legacyToggle) {
