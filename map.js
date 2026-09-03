@@ -208,6 +208,19 @@ loadView();
 var HEAT_FULL = 12.5;   /* at or below this the glow is at full strength */
 var HEAT_GONE = 15;     /* by here it has gone entirely */
 
+/* The hotspot map. The per-colour glow above only measures density
+   within one colour, so a van site beside a station beside a shop
+   makes three faint patches rather than one hot one. Zoomed out that
+   is not a heat map. So under it all sits one more heatmap over
+   EVERY shown camera, in the site accent, that says where cameras
+   crowd regardless of kind. It is at full strength when the whole
+   city is in view and fades out by HOTSPOT_GONE, handing over to the
+   coloured glow, which by then has room to say what each cluster is
+   made of. */
+var HOTSPOT = "cammap-hotspot";
+var HOTSPOT_FULL = 11;    /* at or below this it is the whole story */
+var HOTSPOT_GONE = 13.5;  /* by here the coloured glow has taken over */
+
 function lngLat(lat, lon) {
   return [lon, lat];
 }
@@ -295,7 +308,11 @@ function heatRamp(hex) {
       alpha[i] + ")"]);
   }
 
-  return stops;
+  /* Flattened: an interpolate expression takes its stops as a single
+     run of value, colour, value, colour - not as pairs. Handed the
+     pairs, MapLibre refuses the layer ("expected an even number of
+     arguments") and the glow silently never draws. */
+  return [].concat.apply([], stops);
 }
 
 /* Which paint property carries the colour, for each kind of layer. */
@@ -421,6 +438,44 @@ function addCameras(beneath) {
     HEAT_GONE, 0];
 
   heatLayers = [];
+
+  map.addSource(SOURCE + "-hotspot", {
+    type: "geojson",
+    data: cameraFeatures(isShown)
+  });
+
+  map.addLayer({
+    id: HOTSPOT,
+    type: "heatmap",
+    source: SOURCE + "-hotspot",
+    maxzoom: HOTSPOT_GONE,
+    paint: {
+      "heatmap-weight": 1,
+
+      /* Wide and warm: at the widest zoom each camera reaches far
+         enough that neighbours a kilometre apart pool, and the ramp
+         climbs quickly so a handful on one high street already reads
+         as a hotspot. The per-colour glow is the restrained one; this
+         is the one that shouts. */
+      "heatmap-radius": ["interpolate", ["linear"], ["zoom"],
+        WIDEST_ZOOM, 34,
+        HOTSPOT_GONE, 60],
+      "heatmap-intensity": ["interpolate", ["linear"], ["zoom"],
+        WIDEST_ZOOM, 1.6,
+        HOTSPOT_GONE, 2.4],
+
+      "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"],
+        0,    "rgba(207, 106,  88, 0)",
+        0.10, "rgba(207, 106,  88, 0.25)",
+        0.30, "rgba(214, 122,  86, 0.55)",
+        0.60, "rgba(230, 160,  96, 0.80)",
+        1,    "rgba(245, 214, 160, 0.95)"],
+
+      "heatmap-opacity": ["interpolate", ["linear"], ["zoom"],
+        HOTSPOT_FULL, 1,
+        HOTSPOT_GONE, 0]
+    }
+  }, beneath);
 
   for (g = 0; g < groups.length; g++) {
     heatLayers.push({
@@ -848,6 +903,13 @@ function refreshCameras() {
         return isShown(point) && glowColourOf(point) === glow.colour;
       }));
     }
+  }
+
+  /* The hotspot map follows the same rule as the dots: every shown
+     camera, legacy included only when the toggle says so. */
+  glowSource = map.getSource(SOURCE + "-hotspot");
+  if (glowSource) {
+    glowSource.setData(cameraFeatures(isShown));
   }
 }
 
