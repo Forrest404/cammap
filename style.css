@@ -441,6 +441,7 @@ label {
 
 select,
 input[type="text"],
+input[type="password"],
 input[type="number"],
 textarea {
   width: 100%;
@@ -779,6 +780,39 @@ ul.benefits strong {
    width of the sheet. */
 .prose .box {
   max-width: 42ch;
+}
+
+/* ---------- the account page's two forms ----------
+
+   Side by side where there is room, stacked where there is not. The
+   generated username is set large so it can be read and copied. */
+
+.account-forms {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+
+.account-forms .box {
+  flex: 1 1 260px;
+  max-width: none;
+  margin: 0;
+}
+
+.username-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px 0;
+}
+
+code.username-big {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.5px;
 }
 
 /* ------------------------------------------------------------------
