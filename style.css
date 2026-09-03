@@ -14,6 +14,7 @@
   --accent: #cf6a58;   /* links, headings, marks   5.4:1  */
   --rule:   #3a3a3a;   /* dividers and borders            */
   --field:  #141414;   /* input wells                     */
+  --map-h:  660px;     /* shared height of the map        */
 
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
@@ -195,7 +196,7 @@ footer.foot::before {
 .map-layout {
   display: flex;
   gap: 20px;
-  align-items: stretch;
+  align-items: flex-start;
 }
 
 .map-column {
@@ -205,12 +206,10 @@ footer.foot::before {
 
 .side-column {
   flex: 0 0 280px;
-  display: flex;
-  flex-direction: column;
 }
 
 #map {
-  height: 660px;
+  height: var(--map-h);
   border: 1px solid var(--rule);
   background: var(--bg);
 }
@@ -287,27 +286,26 @@ footer.foot::before {
   border: 1px solid var(--rule);
 }
 
-/* Made the cameras box never go past the map box in terms of length*/
-#cameras-box {
-  flex: 1 1 auto;
-  min-height: 0;
+/* The Cameras box is as tall as the map beside it and never grows past
+   it: the list scrolls within a fixed-height scroll area. Only applied
+   on the published page - in edit mode the box sits between the forms
+   and keeps its natural height. */
+body:not(.editing) #cameras-box {
+  height: var(--map-h);
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   margin-bottom: 0;
 }
 
-#cameras-box h3 {
-  flex: 0 0 auto;
-}
-
-#cameras-box ul.points {
+body:not(.editing) #cameras-box ul.points {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
 }
 
-#cameras-box ul.points:empty {
-  flex: 0 0 auto;
+body:not(.editing) #cameras-box ul.points:empty {
+  display: none;
 }
 
 .box p.hint {
@@ -671,6 +669,16 @@ textarea.export {
 
   #map {
     height: 460px;
+  }
+
+  /* Stacked layout: no map beside the list to match, so let it grow. */
+  body:not(.editing) #cameras-box {
+    height: auto;
+    display: block;
+  }
+
+  body:not(.editing) #cameras-box ul.points {
+    overflow-y: visible;
   }
 
   header.masthead {
