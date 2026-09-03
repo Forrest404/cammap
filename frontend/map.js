@@ -280,8 +280,16 @@ function heatRamp(hex) {
   var g = parseInt(hex.slice(3, 5), 16);
   var b = parseInt(hex.slice(5, 7), 16);
   var at  = [0, 0.20, 0.45, 0.75, 1];
-  var alpha = [0, 0.18, 0.45, 0.70, 0.88];
-  var lift = [0, 0, 0.10, 0.30, 0.55];   /* how far toward white */
+
+  /* Kept translucent on purpose. The glow sits over the streets and
+     the place names, and a map you cannot read is worse than one
+     with no glow on it at all: even at its hottest this lets more
+     than a third of the map through. The lift is how far a colour
+     is pushed toward white as cameras pile up - enough to read as
+     heat, not so far that the colour is lost or the eye is drawn
+     off the map. */
+  var alpha = [0, 0.13, 0.30, 0.46, 0.60];
+  var lift = [0, 0, 0.06, 0.18, 0.34];   /* how far toward white */
   var stops = [];
   var i;
   var w;
@@ -415,18 +423,16 @@ function addCameras(beneath) {
   var groups = glowGroups();
   var g;
   var intensity = ["interpolate", ["linear"], ["zoom"],
-    WIDEST_ZOOM, 1.9,
-    HEAT_GONE, 2.2];
-  /* Wide enough at the widest zoom that neighbours across a borough
-     pool into one patch - about three kilometres of reach - so that
-     pulled back this reads as a map of where cameras gather, and not
-     as a scatter of separate embers. */
+    WIDEST_ZOOM, 1.0,
+    HEAT_GONE, 1.5];
+  /* Wide enough that neighbours down the same high street pool into
+     one patch, and no wider. It was twice this for a day and the
+     result was a wash of colour with the city lost underneath it. */
   var radius = ["interpolate", ["linear"], ["zoom"],
-    WIDEST_ZOOM, 34,
-    13, 40,
-    HEAT_GONE, 45];
+    WIDEST_ZOOM, 25,
+    HEAT_GONE, 38];
   var opacity = ["interpolate", ["linear"], ["zoom"],
-    HEAT_FULL, 1,
+    HEAT_FULL, 0.85,
     HEAT_GONE, 0];
 
   heatLayers = [];
