@@ -195,7 +195,7 @@ footer.foot::before {
 .map-layout {
   display: flex;
   gap: 20px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .map-column {
@@ -205,6 +205,8 @@ footer.foot::before {
 
 .side-column {
   flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
 }
 
 #map {
@@ -283,6 +285,29 @@ footer.foot::before {
   padding: 14px 16px;
   background: none;
   border: 1px solid var(--rule);
+}
+
+/* Made the cameras box never go past the map box in terms of length*/
+#cameras-box {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+#cameras-box h3 {
+  flex: 0 0 auto;
+}
+
+#cameras-box ul.points {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#cameras-box ul.points:empty {
+  flex: 0 0 auto;
 }
 
 .box p.hint {
