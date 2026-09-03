@@ -140,15 +140,15 @@ grant execute on function public.proof_path_pending(text) to authenticated, serv
 -- so the leaderboard never has to add anything up.
 create table if not exists public.profiles (
   id         uuid primary key references auth.users(id) on delete cascade,
-  handle     text,
   username   text,
   role       text not null default 'user',
   xp_total   integer not null default 0,
   created_at timestamptz not null default now()
 );
 
--- Upgrade from version 1, where profiles had only id, handle and
--- created_at. Harmless on a fresh database.
+-- Upgrade from version 1, where profiles had only id, a handle and
+-- created_at. The handle was never used by the site and is dropped;
+-- the rest is added. Harmless on a fresh database.
 alter table public.profiles
   add column if not exists username text,
   add column if not exists role text not null default 'user',
@@ -189,10 +189,6 @@ create policy "profiles: read own or moderator"
   using (auth.uid() = id or public.is_moderator());
 
 drop policy if exists "profiles: update own" on public.profiles;
-create policy "profiles: update own"
-  on public.profiles for update
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
 
 -- No insert or delete policy. Rows are created by the trigger below,
 -- which runs as the table owner and so is not subject to these
@@ -207,13 +203,14 @@ create policy "profiles: update own"
 -- comes back as a silent "nothing changed" rather than an error. This
 -- makes the refusal explicit as well.
 --
--- Update is granted on the handle column alone. That is what stops a
--- signed-in person setting their own role to admin or their own
--- xp_total to a million: the row policy would let the update through
--- (it is their row), but the column privilege refuses it outright.
+-- No update at all from the client. There is nothing on a profile a
+-- person should be able to change themselves - the username is
+-- generated, the role and the total are the server's - so rather
+-- than a column grant that has to stay exactly right, the whole
+-- privilege is withheld. A row policy would let a person update
+-- their own row; this makes sure there is no way to try.
 revoke all on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
-grant update (handle) on public.profiles to authenticated;
 
 -- ---------------- settings ----------------
 
@@ -662,6 +659,11 @@ begin
     drop table public.submissions;
   end if;
 end $$;
+
+-- The version 1 handle column was never used by the site. It goes
+-- here rather than with the other profile changes because the
+-- version 1 queue view, dropped just above, depended on it.
+alter table public.profiles drop column if exists handle;
 
 -- ---------------- distance ----------------
 
