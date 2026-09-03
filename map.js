@@ -75,6 +75,9 @@ var MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
                    once. Full strength at the widest zoom and gone by
                    the time you are down among the streets, where the
                    circles themselves say everything there is to say.
+                   It is actually several layers over the same source,
+                   one in each camera colour, so a blue camera glows
+                   blue and a green one green.
 
      cammap-dot    One small circle per camera, at every zoom. No pin,
                    no shadow, no label. The circles are part
@@ -86,8 +89,15 @@ var MAP_STYLE = "https://tiles.openfreemap.org/styles/dark";
    readable through it. The circles go over everything. */
 
 var SOURCE = "cameras";
-var HEAT   = "cammap-heat";
 var DOT    = "cammap-dot";
+
+/* The glow is not one heatmap but one per camera colour - a heatmap
+   can only carry a single colour ramp, and the glow should match the
+   point. heatLayers records each one's layer id and the filter that
+   says which cameras glow in its colour, so the legacy toggle can be
+   laid over all of them. */
+var HEAT = "cammap-heat";   /* base id; one layer per colour gets -0, -1, ... */
+var heatLayers = [];
 
 /* One colour per kind of camera, matching --t-* in style.css. Colour
    always means what a thing IS. Whether it works now is said by the
@@ -117,6 +127,35 @@ function colourOf(type) {
     }
   }
   return TYPES[1].colour;   /* an unknown type draws as a van site */
+}
+
+/* The colour a point glows with is the colour its dot is drawn with:
+   a non-functional one in its own colour whatever its type, otherwise
+   the type colour. Each such colour gets its own heatmap layer, built
+   below, because a heatmap can only ever carry one ramp and we want
+   the glow of a blue point to be blue, not the shared orange. */
+function glowColourOf(point) {
+  return point.status === "nonfunctional" ? NONFUNCTIONAL_COLOUR : colourOf(point.type);
+}
+
+/* One heatmap layer per possible glow colour. The filters are disjoint:
+   non-functional is claimed first, and every type group disowns it, so
+   no camera glows twice. */
+function glowGroups() {
+  var groups = [
+    { filter: ["==", ["get", "status"], "nonfunctional"], colour: NONFUNCTIONAL_COLOUR }
+  ];
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    groups.push({
+      filter: ["all",
+        ["!=", ["get", "status"], "nonfunctional"],
+        ["==", ["get", "type"], TYPES[i].type]],
+      colour: TYPES[i].colour
+    });
+  }
+  return groups;
 }
 
 /* Off by default: the map shows what is in use now. */
@@ -236,6 +275,35 @@ function lift(colour, factor) {
          scale(parts[2]) + "," + (parts[3] === undefined ? 1 : parts[3]) + ")";
 }
 
+/* A heatmap's colour ramp, made in the glow's own colour. Density
+   0 is the colour with no alpha at all - that stop being anything but
+   transparent would wash the whole map - and each higher stop both
+   thickens and lifts the colour toward white, so the centre of a
+   crowded spot reads as a brighter version of the type colour rather
+   than turning white as the old single ramp did. */
+function heatRamp(hex) {
+  var r = parseInt(hex.slice(1, 3), 16);
+  var g = parseInt(hex.slice(3, 5), 16);
+  var b = parseInt(hex.slice(5, 7), 16);
+  var at  = [0, 0.20, 0.45, 0.75, 1];
+  var alpha = [0, 0.18, 0.45, 0.70, 0.88];
+  var lift = [0, 0, 0.10, 0.30, 0.55];   /* how far toward white */
+  var stops = [];
+  var i;
+  var w;
+
+  for (i = 0; i < at.length; i++) {
+    w = lift[i];
+    stops.push([at[i], "rgba(" +
+      Math.round(r + (255 - r) * w) + "," +
+      Math.round(g + (255 - g) * w) + "," +
+      Math.round(b + (255 - b) * w) + "," +
+      alpha[i] + ")"]);
+  }
+
+  return stops;
+}
+
 /* Which paint property carries the colour, for each kind of layer. */
 var COLOUR_OF = {
   line: ["line-color", "line"],
@@ -343,41 +411,51 @@ map.on("load", function () {
 function addCameras(beneath) {
   map.addSource(SOURCE, { type: "geojson", data: cameraFeatures() });
 
-  map.addLayer({
-    id: HEAT,
-    type: "heatmap",
-    source: SOURCE,
-    maxzoom: HEAT_GONE,
-    paint: {
-      "heatmap-weight": 1,
+  /* One heat layer per glow colour, so the glow under a point is the
+     point's own colour. They share every property but the ramp and the
+     filter. */
+  var groups = glowGroups();
+  var g;
+  var intensity = ["interpolate", ["linear"], ["zoom"],
+    WIDEST_ZOOM, 0.8,
+    HEAT_GONE, 2.2];
+  var radius = ["interpolate", ["linear"], ["zoom"],
+    WIDEST_ZOOM, 18,
+    HEAT_GONE, 45];
+  var opacity = ["interpolate", ["linear"], ["zoom"],
+    HEAT_FULL, 1,
+    HEAT_GONE, 0];
 
-      /* Held deliberately low. A camera on its own should be an ember
-         and no more: the glow is there to say where cameras gather,
-         so one on a quiet road must not shout as loudly as thirty on
-         the same junction. */
-      "heatmap-intensity": ["interpolate", ["linear"], ["zoom"],
-        WIDEST_ZOOM, 0.8,
-        HEAT_GONE, 2.2],
+  heatLayers = [];
 
-      "heatmap-radius": ["interpolate", ["linear"], ["zoom"],
-        WIDEST_ZOOM, 18,
-        HEAT_GONE, 45],
+  for (g = 0; g < groups.length; g++) {
+    heatLayers.push({ id: HEAT + "-" + g, filter: groups[g].filter });
 
-      /* Straight up the accent colour, ending just short of white. The
-         first stop has to be fully transparent or the entire map is
-         washed over rather than only the places with cameras in. */
-      "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"],
-        0,    "rgba(207, 106,  88, 0.00)",
-        0.20, "rgba(207, 106,  88, 0.18)",
-        0.45, "rgba(212, 118,  86, 0.45)",
-        0.75, "rgba(226, 150,  94, 0.70)",
-        1,    "rgba(240, 198, 146, 0.88)"],
+    map.addLayer({
+      id: HEAT + "-" + g,
+      type: "heatmap",
+      source: SOURCE,
+      filter: groups[g].filter,
+      maxzoom: HEAT_GONE,
+      paint: {
+        "heatmap-weight": 1,
 
-      "heatmap-opacity": ["interpolate", ["linear"], ["zoom"],
-        HEAT_FULL, 1,
-        HEAT_GONE, 0]
-    }
-  }, beneath);
+        /* Held deliberately low. A camera on its own should be an
+           ember and no more: the glow is there to say where cameras
+           gather, so one on a quiet road must not shout as loudly as
+           thirty on the same junction. */
+        "heatmap-intensity": intensity,
+        "heatmap-radius": radius,
+
+        /* The ramp is built from this layer's own colour, the first
+           stop fully transparent or the whole map would be washed over
+           rather than only the places with cameras in. */
+        "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"]].concat(heatRamp(groups[g].colour)),
+
+        "heatmap-opacity": opacity
+      }
+    }, beneath);
+  }
 
   map.addLayer({
     id: DOT,
@@ -607,13 +685,25 @@ function isShown(point) {
 }
 
 function applyLegacyFilter() {
-  var filter = showLegacy ? null : ["!=", ["get", "status"], "legacy"];
+  var i;
+  var filter;
+  var layer;
+
+  filter = showLegacy ? null : ["!=", ["get", "status"], "legacy"];
 
   if (map.getLayer(DOT)) {
     map.setFilter(DOT, filter);
   }
-  if (map.getLayer(HEAT)) {
-    map.setFilter(HEAT, filter);
+
+  /* Each heat layer keeps the filter for its own colour; when legacy
+     cameras are hidden, that is combined with the legacy exclusion. */
+  for (i = 0; i < heatLayers.length; i++) {
+    layer = heatLayers[i];
+    if (map.getLayer(layer.id)) {
+      map.setFilter(layer.id, showLegacy
+        ? layer.filter
+        : ["all", layer.filter, ["!=", ["get", "status"], "legacy"]]);
+    }
   }
 }
 
