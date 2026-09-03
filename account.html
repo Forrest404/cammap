@@ -30,14 +30,12 @@
     <!-- Shown when nobody is signed in. -->
     <div id="account-signedout">
 
-      <h2>An account, without an account</h2>
+      <h2>An account, without the usual parts</h2>
 
       <p>
-        Signing in here takes one press. There is no email address, no
-        password, no username, and no way for anyone to work out who you
-        are &mdash; including us. The account exists only in your browser
-        and in a row of a database that holds nothing but a random
-        identifier.
+        No email address, no real name, nothing about you. The site picks
+        a username for you &mdash; two ordinary words &mdash; and you
+        choose a password. That is the whole account.
       </p>
 
       <p>With one, you can:</p>
@@ -50,20 +48,55 @@
         </li>
         <li>
           <strong>Report a camera.</strong> Seen one that is not on the
-          map? A new tab appears at the top for sending it in.
+          map, or one that no longer works? A new tab appears at the top
+          for sending it in, and reports earn points on the leaderboard.
         </li>
       </ul>
 
-      <p class="hint">
-        A report goes to a queue for someone to check by hand. It does not
-        appear on the map on its own &mdash; the map only ever changes by
-        a commit to the site itself.
-      </p>
+      <div class="account-forms">
 
-      <p>
-        <button id="signin-button">Sign in anonymously</button>
+        <div class="box">
+          <h3>Make an account</h3>
+
+          <p class="hint">Your username. Save it somewhere: it is the
+            only way back in, and there is nothing to send a reminder to.</p>
+
+          <div class="username-row">
+            <code id="new-username" class="username-big">&hellip;</code>
+            <button id="reroll-button" class="quiet" title="Pick a different one">Another</button>
+          </div>
+
+          <label for="new-password">Password</label>
+          <input type="password" id="new-password" autocomplete="new-password">
+          <label for="new-password-again">Password again</label>
+          <input type="password" id="new-password-again" autocomplete="new-password">
+          <p class="hint">At least 10 characters, with a capital, a number
+            and a symbol.</p>
+
+          <button id="signup-button">Make the account</button>
+          <p class="note" id="signup-note"></p>
+        </div>
+
+        <div class="box">
+          <h3>Sign back in</h3>
+
+          <label for="signin-username">Username</label>
+          <input type="text" id="signin-username" placeholder="copper.heron"
+                 autocomplete="username" autocapitalize="none" spellcheck="false">
+          <label for="signin-password">Password</label>
+          <input type="password" id="signin-password" autocomplete="current-password">
+
+          <button id="signin-button">Sign in</button>
+          <p class="note" id="signin-note"></p>
+        </div>
+
+      </div>
+
+      <p class="hint">
+        A report goes to a queue for someone to check. Once enough people
+        have reported the same camera it goes on the map on its own;
+        otherwise a moderator looks first.
       </p>
-      <p class="note" id="account-note"></p>
 
     </div>
 
@@ -73,8 +106,8 @@
       <h2>Signed in</h2>
 
       <p>
-        You are signed in anonymously. Nothing about you was asked for or
-        recorded.
+        You are <code id="account-username" class="username-big"></code>.
+        Nothing else about you was asked for or recorded.
       </p>
 
       <p>
@@ -84,10 +117,8 @@
       </p>
 
       <p class="hint">
-        The account lives in this browser. Clear its storage, or use
-        another browser, and you will get a new one &mdash; there is no
-        password to sign back in with, which is the trade for not being
-        asked for one.
+        There is no email on this account, so a forgotten password cannot
+        be reset. Keep it somewhere safe.
       </p>
 
     </div>
