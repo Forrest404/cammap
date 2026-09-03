@@ -336,6 +336,17 @@ footer.foot::before {
   flex: 0 0 auto;
 }
 
+/* The three base views are one choice, so they are set as one block
+   with no gap between them - a row of segments rather than three
+   separate switches, which is what Legacy beside them is. */
+#view-buttons {
+  gap: 0;
+}
+
+#view-buttons button + button {
+  border-left: none;
+}
+
 ul.legend {
   display: flex;
   flex-wrap: wrap;
