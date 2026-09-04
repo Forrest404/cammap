@@ -272,28 +272,32 @@ map.addControl(new maplibregl.AttributionControl({ compact: false }));
    floor. The style is drawn for a pure black page; against this one
    it needs help.
 
-   The floor is the important half. Multiplying alone leaves the dark
-   end crushed - a near-black colour stays near-black however large
-   the factor - and the dark end is where a map keeps its texture.
-   Buildings came out at rgb(19,19,19) against a background of
-   rgb(19,19,19): the same colour, so no buildings at all. Minor roads
-   reached 1.7 to 1, which is a rumour of a street rather than a
-   street. Adding a floor lifts those without touching the labels,
-   which were already crisp at nearly 9 to 1 and would only have been
-   blown out by a bigger factor. */
-var LIFT = {
-  line:       { by: 2.6, floor: 26 },
-  fill:       { by: 1.9, floor: 14 },
-  background: { by: 1.6, floor: 0 },
-  text:       { by: 1.75, floor: 0 },
-  halo:       { by: 0.55, floor: 0 },
+   The rule these numbers answer to: nothing on the base map may be
+   brighter than the dimmest camera dot. The dots are what the map is
+   for; the roads are the backdrop it draws them on. That was got
+   badly wrong once - the casings were lifted to a brightness of 182
+   where the dimmest dot is 134, so London came out as a white web
+   with the cameras lost in it. Under these numbers the brightest
+   thing the base map draws is 92.
 
-  /* Buildings are the one thing a floor alone cannot rescue: they
-     start at rgb(10,10,10), which even lifted and floored is barely
-     off the background. They are given their own, firmer treatment,
-     because a city map with no massing behind the streets reads as a
-     wiring diagram. */
-  building:   { by: 2.4, floor: 22 }
+   The floor matters as much as the factor. Multiplying alone leaves
+   the dark end crushed - a near-black colour stays near-black however
+   large the factor - and the dark end is where a map keeps its
+   texture. Buildings start at rgb(10,10,10) and need their own entry
+   or they stay invisible; they are meant to be quiet massing behind
+   the streets, not a feature.
+
+   Labels are lifted least of all. They were already the most legible
+   thing on the map, and they are thin glyphs in a few places rather
+   than a web over everything, so they can sit near the dots without
+   competing with them. */
+var LIFT = {
+  line:       { by: 1.4,  floor: 8 },
+  fill:       { by: 1.35, floor: 6 },
+  background: { by: 1.6,  floor: 0 },
+  text:       { by: 1.45, floor: 0 },
+  halo:       { by: 0.55, floor: 0 },
+  building:   { by: 2.4,  floor: 4 }
 };
 
 /* An off-screen scrap of the page, used to let the browser turn
@@ -486,11 +490,29 @@ function buildOverStyle() {
     swatch.remove();
   }
 
-  /* The first symbol layer is the bottom of the map's own labelling.
-     The glow is slid in underneath it. */
+  /* Where to slide the glow in: above everything the map draws on the
+     ground, below everything it writes on top.
+
+     Not simply "the first symbol layer" - that is water_name, which
+     comes before the roads and the buildings, so anchoring there
+     buried the glow beneath both. It went unnoticed while the
+     buildings were the same colour as the background and so drew
+     nothing; the moment they were given a colour of their own they
+     covered the glow up.
+
+     So: find the last layer that is not a label, and take the first
+     label after it. Everything below that is ground, everything above
+     is lettering. */
   var firstLabel;
+  var lastGround = -1;
 
   for (i = 0; i < layers.length; i++) {
+    if (layers[i].type !== "symbol") {
+      lastGround = i;
+    }
+  }
+
+  for (i = lastGround + 1; i < layers.length; i++) {
     if (layers[i].type === "symbol") {
       firstLabel = layers[i].id;
       break;
