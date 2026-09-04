@@ -366,6 +366,46 @@ ul.legend li {
   white-space: nowrap;
 }
 
+/* Each kind in the legend is also the switch for that kind. It has to
+   read as a key first and a control second, so it carries no border
+   and no fill of its own - the swatch is the thing you look at, and
+   the only thing that changes when it is off. */
+button.legend-key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 2px;
+  border: none;
+  background: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--dim);
+  white-space: nowrap;
+
+  /* Undoing the site's button styling. These have to read as the key
+     to the map, in the same voice as the two entries beside them that
+     are not buttons; a row of shouted capitals would say "controls"
+     when the first thing it has to say is "this colour means this". */
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+button.legend-key:hover {
+  background: none;
+  color: var(--accent);
+}
+
+/* Switched off: the swatch empties to an outline and the words go
+   quiet, so a glance at the key says what the map is showing. */
+button.legend-key.off {
+  color: var(--rule);
+}
+
+button.legend-key.off .swatch {
+  background: none !important;
+  border-color: var(--rule);
+}
+
 /* The dot in the legend and in each list row. A hollow one is a
    legacy site: the ring is set to the type's colour inline. */
 .swatch {
@@ -381,7 +421,8 @@ ul.legend li {
   background: none;
 }
 
-button.goto .swatch {
+button.goto .swatch,
+a.saved-goto .swatch {
   margin-right: 8px;
   vertical-align: 1px;
 }
@@ -436,6 +477,41 @@ button.toggle.on:hover {
   margin-bottom: 0;
 }
 
+/* The heading and the count share a line, so the count sits with what
+   it counts rather than adding a row of its own to a box whose height
+   is already spoken for by the map beside it. */
+#cameras-box .list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#cameras-box .list-head h3 {
+  margin: 0;
+}
+
+#cameras-box .count {
+  font-size: 12px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+/* Search, then the ordering, then the list. Both are fixed height so
+   the list below takes whatever is left. */
+input.find {
+  margin: 10px 0 8px 0;
+}
+
+#points-sort {
+  gap: 0;
+  margin-bottom: 10px;
+}
+
+#points-sort button + button {
+  border-left: none;
+}
+
 #cameras-box ul.points {
   flex: 1 1 auto;
   min-height: 0;
@@ -487,6 +563,7 @@ select,
 input[type="text"],
 input[type="password"],
 input[type="number"],
+input[type="search"],
 textarea {
   width: 100%;
   box-sizing: border-box;
@@ -508,6 +585,14 @@ textarea {
 input::placeholder,
 textarea::placeholder {
   color: #5c5c5c;
+}
+
+/* Safari and Chrome draw their own clear button inside a search
+   field, in their own colours. The field is already one line with a
+   placeholder; the button is out of place, so it goes. */
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
 }
 
 input:focus,
@@ -621,7 +706,8 @@ ul.points li:first-child {
   border-top: 1px solid var(--rule);
 }
 
-button.goto {
+button.goto,
+a.saved-goto {
   flex: 1 1 auto;
   min-width: 0;
   padding: 0;
@@ -635,30 +721,42 @@ button.goto {
   line-height: 1.5;
 }
 
-button.goto:hover {
+button.goto:hover,
+a.saved-goto:hover {
   background: none;
 }
 
-button.goto .name {
+button.goto .name,
+a.saved-goto .name {
   color: var(--accent);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
 
-button.goto:hover .name {
+button.goto:hover .name,
+a.saved-goto:hover .name {
   color: var(--text);
 }
 
-button.goto .memo {
+button.goto .memo,
+a.saved-goto .memo {
   display: block;
   font-size: 13px;
   color: var(--text);
 }
 
-button.goto .coords {
+button.goto .coords,
+a.saved-goto .coords {
   display: block;
   font-size: 12px;
   color: var(--dim);
+}
+
+/* An <a> rather than a <button>, because it goes somewhere. It needs
+   the underline taken off and the block layout put back on. */
+a.saved-goto {
+  display: block;
+  text-decoration: none;
 }
 
 button.remove {
@@ -1010,20 +1108,6 @@ table.board tr.me td {
 
 body.editing .edit-only {
   display: block;
-}
-
-.banner {
-  margin: 22px 0 0 0;
-  padding: 9px 13px;
-  background: none;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  font-size: 13px;
-}
-
-.banner strong {
-  font-weight: 600;
-  color: var(--text);
 }
 
 button.quiet {
