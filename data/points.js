@@ -12,6 +12,9 @@
      type    fixedcam | vancam | transportcam | facewatchcam | privatecam
      status  active | legacy
      last    the last year the source records it (or null)
+     deployments  how many times a source records it being used;
+                  the map weighs its heat by this, so a spot used
+                  twenty times reads hotter than one used once
 
    A van site is active only if the newest Met record (2025) lists a
    deployment there; the rest are legacy and sit behind the toggle.
@@ -32,7 +35,8 @@ var POINTS = [
     lon: -0.273261,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -42,7 +46,8 @@ var POINTS = [
     lon: 0.079324,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -52,7 +57,8 @@ var POINTS = [
     lon: -0.200226,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -62,7 +68,8 @@ var POINTS = [
     lon: -0.116314,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -72,7 +79,8 @@ var POINTS = [
     lon: -0.056163,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -82,7 +90,8 @@ var POINTS = [
     lon: -0.064883,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -92,7 +101,8 @@ var POINTS = [
     lon: 0.146094,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -102,7 +112,8 @@ var POINTS = [
     lon: -0.149786,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 4
   },
 
   {
@@ -112,7 +123,8 @@ var POINTS = [
     lon: -0.275906,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -122,7 +134,8 @@ var POINTS = [
     lon: -0.109973,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -132,7 +145,8 @@ var POINTS = [
     lon: -0.112507,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -142,7 +156,8 @@ var POINTS = [
     lon: -0.112637,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -152,7 +167,8 @@ var POINTS = [
     lon: 0.003557,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -162,7 +178,8 @@ var POINTS = [
     lon: 0.014814,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -172,7 +189,8 @@ var POINTS = [
     lon: -0.070005,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -182,7 +200,8 @@ var POINTS = [
     lon: -0.092601,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -192,7 +211,8 @@ var POINTS = [
     lon: -0.162480,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 4
   },
 
   {
@@ -202,7 +222,8 @@ var POINTS = [
     lon: -0.138995,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -212,7 +233,8 @@ var POINTS = [
     lon: -0.019753,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 3
   },
 
   {
@@ -222,7 +244,8 @@ var POINTS = [
     lon: -0.104180,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 6
   },
 
   {
@@ -232,7 +255,8 @@ var POINTS = [
     lon: -0.138304,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -242,7 +266,8 @@ var POINTS = [
     lon: -0.170518,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -252,7 +277,8 @@ var POINTS = [
     lon: -0.300439,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 4
   },
 
   {
@@ -262,7 +288,8 @@ var POINTS = [
     lon: -0.122564,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -272,7 +299,8 @@ var POINTS = [
     lon: -0.133936,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -282,7 +310,8 @@ var POINTS = [
     lon: -0.014725,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -292,7 +321,8 @@ var POINTS = [
     lon: -0.101957,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 5
   },
 
   {
@@ -302,7 +332,8 @@ var POINTS = [
     lon: 0.148114,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -312,7 +343,8 @@ var POINTS = [
     lon: 0.145638,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -322,7 +354,8 @@ var POINTS = [
     lon: -0.076013,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -332,7 +365,8 @@ var POINTS = [
     lon: -0.074968,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -342,7 +376,8 @@ var POINTS = [
     lon: -0.076053,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 4
   },
 
   {
@@ -352,7 +387,8 @@ var POINTS = [
     lon: -0.025856,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -362,7 +398,8 @@ var POINTS = [
     lon: -0.300407,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 5
   },
 
   {
@@ -372,7 +409,8 @@ var POINTS = [
     lon: -0.302214,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -382,7 +420,8 @@ var POINTS = [
     lon: -0.198220,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -392,7 +431,8 @@ var POINTS = [
     lon: -0.194750,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -402,7 +442,8 @@ var POINTS = [
     lon: 0.052604,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -412,7 +453,8 @@ var POINTS = [
     lon: 0.048904,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 6
   },
 
   {
@@ -422,7 +464,8 @@ var POINTS = [
     lon: -0.166764,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 4
   },
 
   {
@@ -432,7 +475,8 @@ var POINTS = [
     lon: -0.061402,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -442,7 +486,8 @@ var POINTS = [
     lon: -0.081018,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -452,7 +497,8 @@ var POINTS = [
     lon: -0.134191,
     type: "transportcam",
     status: "active",
-    last: 2026
+    last: 2026,
+    deployments: 4
   },
 
   {
@@ -462,7 +508,8 @@ var POINTS = [
     lon: -0.106414,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -472,7 +519,8 @@ var POINTS = [
     lon: -0.098912,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 8
   },
 
   {
@@ -482,7 +530,8 @@ var POINTS = [
     lon: 0.031186,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 5
   },
 
   {
@@ -492,7 +541,8 @@ var POINTS = [
     lon: 0.031288,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -502,7 +552,8 @@ var POINTS = [
     lon: -0.049362,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -512,7 +563,8 @@ var POINTS = [
     lon: -0.223640,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -522,7 +574,8 @@ var POINTS = [
     lon: -0.223804,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -532,7 +585,8 @@ var POINTS = [
     lon: -0.105438,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 3
   },
 
   {
@@ -542,7 +596,8 @@ var POINTS = [
     lon: -0.257833,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -552,7 +607,8 @@ var POINTS = [
     lon: -0.108371,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -562,7 +618,8 @@ var POINTS = [
     lon: 0.148201,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -572,7 +629,8 @@ var POINTS = [
     lon: -0.104195,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -582,7 +640,8 @@ var POINTS = [
     lon: 0.153083,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -592,7 +651,8 @@ var POINTS = [
     lon: 0.015094,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -602,7 +662,8 @@ var POINTS = [
     lon: -0.000115,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -612,7 +673,8 @@ var POINTS = [
     lon: -0.243402,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -622,7 +684,8 @@ var POINTS = [
     lon: -0.355498,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -632,7 +695,8 @@ var POINTS = [
     lon: 0.021934,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 6
   },
 
   {
@@ -642,7 +706,8 @@ var POINTS = [
     lon: -0.026051,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -652,7 +717,8 @@ var POINTS = [
     lon: -0.194008,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 4
   },
 
   {
@@ -662,7 +728,8 @@ var POINTS = [
     lon: -0.479465,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -672,7 +739,8 @@ var POINTS = [
     lon: -0.113009,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -682,7 +750,8 @@ var POINTS = [
     lon: -0.361347,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 4
   },
 
   {
@@ -692,7 +761,8 @@ var POINTS = [
     lon: -0.357680,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -702,7 +772,8 @@ var POINTS = [
     lon: 0.071167,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 3
   },
 
   {
@@ -712,7 +783,8 @@ var POINTS = [
     lon: 0.125724,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -722,7 +794,8 @@ var POINTS = [
     lon: -0.099905,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -732,7 +805,8 @@ var POINTS = [
     lon: -0.191353,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 5
   },
 
   {
@@ -742,7 +816,8 @@ var POINTS = [
     lon: -0.216062,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -752,7 +827,8 @@ var POINTS = [
     lon: -0.227664,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -762,7 +838,8 @@ var POINTS = [
     lon: -0.125401,
     type: "privatecam",
     status: "legacy",
-    last: null
+    last: null,
+    deployments: 1
   },
 
   {
@@ -772,7 +849,8 @@ var POINTS = [
     lon: -0.123949,
     type: "transportcam",
     status: "active",
-    last: 2026
+    last: 2026,
+    deployments: 1
   },
 
   {
@@ -782,7 +860,8 @@ var POINTS = [
     lon: -0.121655,
     type: "transportcam",
     status: "active",
-    last: 2026
+    last: 2026,
+    deployments: 4
   },
 
   {
@@ -792,7 +871,8 @@ var POINTS = [
     lon: -0.123022,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -802,7 +882,8 @@ var POINTS = [
     lon: -0.210372,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -812,7 +893,8 @@ var POINTS = [
     lon: -0.075160,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -822,7 +904,8 @@ var POINTS = [
     lon: -0.301820,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -832,7 +915,8 @@ var POINTS = [
     lon: -0.166965,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -842,7 +926,8 @@ var POINTS = [
     lon: -0.130275,
     type: "vancam",
     status: "legacy",
-    last: 2022
+    last: 2022,
+    deployments: 1
   },
 
   {
@@ -852,7 +937,8 @@ var POINTS = [
     lon: -0.130394,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 4
   },
 
   {
@@ -862,7 +948,8 @@ var POINTS = [
     lon: -0.010179,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 3
   },
 
   {
@@ -872,7 +959,8 @@ var POINTS = [
     lon: -0.010360,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -882,7 +970,8 @@ var POINTS = [
     lon: -0.015681,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -892,7 +981,8 @@ var POINTS = [
     lon: -0.080571,
     type: "transportcam",
     status: "active",
-    last: 2026
+    last: 2026,
+    deployments: 2
   },
 
   {
@@ -902,7 +992,8 @@ var POINTS = [
     lon: -0.087671,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 3
   },
 
   {
@@ -912,7 +1003,8 @@ var POINTS = [
     lon: -0.085147,
     type: "transportcam",
     status: "active",
-    last: 2026
+    last: 2026,
+    deployments: 1
   },
 
   {
@@ -922,7 +1014,8 @@ var POINTS = [
     lon: -0.111014,
     type: "fixedcam",
     status: "active",
-    last: null
+    last: null,
+    deployments: 1
   },
 
   {
@@ -932,7 +1025,8 @@ var POINTS = [
     lon: -0.111014,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -942,7 +1036,8 @@ var POINTS = [
     lon: -0.172116,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -952,7 +1047,8 @@ var POINTS = [
     lon: -0.070489,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -962,7 +1058,8 @@ var POINTS = [
     lon: -0.158905,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -972,7 +1069,8 @@ var POINTS = [
     lon: -0.055248,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -982,7 +1080,8 @@ var POINTS = [
     lon: -0.101318,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 7
   },
 
   {
@@ -992,7 +1091,8 @@ var POINTS = [
     lon: -0.102542,
     type: "fixedcam",
     status: "active",
-    last: null
+    last: null,
+    deployments: 1
   },
 
   {
@@ -1002,7 +1102,8 @@ var POINTS = [
     lon: -0.102542,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 21
   },
 
   {
@@ -1012,7 +1113,8 @@ var POINTS = [
     lon: -0.053865,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1022,7 +1124,8 @@ var POINTS = [
     lon: 0.003203,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -1032,7 +1135,8 @@ var POINTS = [
     lon: -0.140779,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 16
   },
 
   {
@@ -1042,7 +1146,8 @@ var POINTS = [
     lon: -0.135174,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1052,7 +1157,8 @@ var POINTS = [
     lon: -0.176603,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -1062,7 +1168,8 @@ var POINTS = [
     lon: -0.082013,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1072,7 +1179,8 @@ var POINTS = [
     lon: -0.069932,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 3
   },
 
   {
@@ -1082,7 +1190,8 @@ var POINTS = [
     lon: -0.069413,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -1092,7 +1201,8 @@ var POINTS = [
     lon: -0.133936,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -1102,7 +1212,8 @@ var POINTS = [
     lon: -0.148443,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -1112,7 +1223,8 @@ var POINTS = [
     lon: -0.014437,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1122,7 +1234,8 @@ var POINTS = [
     lon: 0.062603,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1132,7 +1245,8 @@ var POINTS = [
     lon: 0.064301,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 9
   },
 
   {
@@ -1142,7 +1256,8 @@ var POINTS = [
     lon: -0.175365,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1152,7 +1267,8 @@ var POINTS = [
     lon: -0.307639,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1162,7 +1278,8 @@ var POINTS = [
     lon: -0.263326,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1172,7 +1289,8 @@ var POINTS = [
     lon: 0.182265,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 5
   },
 
   {
@@ -1182,7 +1300,8 @@ var POINTS = [
     lon: -0.018176,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1192,7 +1311,8 @@ var POINTS = [
     lon: -0.065766,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 5
   },
 
   {
@@ -1202,7 +1322,8 @@ var POINTS = [
     lon: -0.140764,
     type: "facewatchcam",
     status: "active",
-    last: null
+    last: null,
+    deployments: 1
   },
 
   {
@@ -1212,7 +1333,8 @@ var POINTS = [
     lon: -0.073206,
     type: "facewatchcam",
     status: "active",
-    last: null
+    last: null,
+    deployments: 1
   },
 
   {
@@ -1222,7 +1344,8 @@ var POINTS = [
     lon: -0.084998,
     type: "facewatchcam",
     status: "legacy",
-    last: null
+    last: null,
+    deployments: 1
   },
 
   {
@@ -1232,7 +1355,8 @@ var POINTS = [
     lon: -0.097640,
     type: "facewatchcam",
     status: "active",
-    last: null
+    last: null,
+    deployments: 1
   },
 
   {
@@ -1242,7 +1366,8 @@ var POINTS = [
     lon: -0.217664,
     type: "facewatchcam",
     status: "active",
-    last: null
+    last: null,
+    deployments: 1
   },
 
   {
@@ -1252,7 +1377,8 @@ var POINTS = [
     lon: -0.033317,
     type: "facewatchcam",
     status: "active",
-    last: null
+    last: null,
+    deployments: 1
   },
 
   {
@@ -1262,7 +1388,8 @@ var POINTS = [
     lon: -0.058468,
     type: "facewatchcam",
     status: "active",
-    last: null
+    last: null,
+    deployments: 1
   },
 
   {
@@ -1272,7 +1399,8 @@ var POINTS = [
     lon: -0.081188,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1282,7 +1410,8 @@ var POINTS = [
     lon: -0.074260,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1292,7 +1421,8 @@ var POINTS = [
     lon: -0.072471,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1302,7 +1432,8 @@ var POINTS = [
     lon: -0.108782,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -1312,7 +1443,8 @@ var POINTS = [
     lon: -0.224769,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -1322,7 +1454,8 @@ var POINTS = [
     lon: -0.221755,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -1332,7 +1465,8 @@ var POINTS = [
     lon: -0.074467,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1342,7 +1476,8 @@ var POINTS = [
     lon: -0.113420,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1352,7 +1487,8 @@ var POINTS = [
     lon: 0.183993,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 6
   },
 
   {
@@ -1362,7 +1498,8 @@ var POINTS = [
     lon: -0.375517,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -1372,7 +1509,8 @@ var POINTS = [
     lon: -0.099565,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1382,7 +1520,8 @@ var POINTS = [
     lon: -0.333388,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -1392,7 +1531,8 @@ var POINTS = [
     lon: -0.167961,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1402,7 +1542,8 @@ var POINTS = [
     lon: -0.127003,
     type: "transportcam",
     status: "active",
-    last: 2026
+    last: 2026,
+    deployments: 1
   },
 
   {
@@ -1412,7 +1553,8 @@ var POINTS = [
     lon: 0.221379,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1422,7 +1564,8 @@ var POINTS = [
     lon: 0.199284,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 4
   },
 
   {
@@ -1432,7 +1575,8 @@ var POINTS = [
     lon: 0.080492,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -1442,7 +1586,8 @@ var POINTS = [
     lon: -0.421300,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1452,7 +1597,8 @@ var POINTS = [
     lon: -0.003547,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -1462,7 +1608,8 @@ var POINTS = [
     lon: 0.002803,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 7
   },
 
   {
@@ -1472,7 +1619,8 @@ var POINTS = [
     lon: -0.002268,
     type: "transportcam",
     status: "active",
-    last: 2026
+    last: 2026,
+    deployments: 1
   },
 
   {
@@ -1482,7 +1630,8 @@ var POINTS = [
     lon: -0.006417,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 6
   },
 
   {
@@ -1492,7 +1641,8 @@ var POINTS = [
     lon: -0.126424,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1502,7 +1652,8 @@ var POINTS = [
     lon: -0.451799,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1512,7 +1663,8 @@ var POINTS = [
     lon: -0.098606,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 2
   },
 
   {
@@ -1522,7 +1674,8 @@ var POINTS = [
     lon: -0.167967,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1532,7 +1685,8 @@ var POINTS = [
     lon: -0.168291,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 9
   },
 
   {
@@ -1542,7 +1696,8 @@ var POINTS = [
     lon: -0.132800,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 5
   },
 
   {
@@ -1552,7 +1707,8 @@ var POINTS = [
     lon: -0.059944,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1562,7 +1718,8 @@ var POINTS = [
     lon: -0.021346,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1572,7 +1729,8 @@ var POINTS = [
     lon: 0.033984,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -1582,7 +1740,8 @@ var POINTS = [
     lon: -0.481667,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1592,7 +1751,8 @@ var POINTS = [
     lon: -0.239410,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -1602,7 +1762,8 @@ var POINTS = [
     lon: -0.144845,
     type: "transportcam",
     status: "active",
-    last: 2026
+    last: 2026,
+    deployments: 5
   },
 
   {
@@ -1612,7 +1773,8 @@ var POINTS = [
     lon: -0.133591,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 2
   },
 
   {
@@ -1622,7 +1784,8 @@ var POINTS = [
     lon: -0.018819,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -1632,7 +1795,8 @@ var POINTS = [
     lon: -0.019994,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 6
   },
 
   {
@@ -1642,7 +1806,8 @@ var POINTS = [
     lon: -0.030573,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1652,7 +1817,8 @@ var POINTS = [
     lon: -0.096681,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 6
   },
 
   {
@@ -1662,7 +1828,8 @@ var POINTS = [
     lon: -0.096975,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1672,7 +1839,8 @@ var POINTS = [
     lon: -0.131629,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1682,7 +1850,8 @@ var POINTS = [
     lon: -0.112062,
     type: "transportcam",
     status: "active",
-    last: 2026
+    last: 2026,
+    deployments: 3
   },
 
   {
@@ -1692,7 +1861,8 @@ var POINTS = [
     lon: -0.335252,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1702,7 +1872,8 @@ var POINTS = [
     lon: -0.279603,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1712,7 +1883,8 @@ var POINTS = [
     lon: -0.296675,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 6
   },
 
   {
@@ -1722,7 +1894,8 @@ var POINTS = [
     lon: -0.102039,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1732,7 +1905,8 @@ var POINTS = [
     lon: -0.221808,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -1742,7 +1916,8 @@ var POINTS = [
     lon: -0.126540,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 22
   },
 
   {
@@ -1752,7 +1927,8 @@ var POINTS = [
     lon: -0.124930,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1762,7 +1938,8 @@ var POINTS = [
     lon: -0.134782,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1772,7 +1949,8 @@ var POINTS = [
     lon: -0.135700,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1782,7 +1960,8 @@ var POINTS = [
     lon: -0.121026,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1792,7 +1971,8 @@ var POINTS = [
     lon: -0.130261,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1802,7 +1982,8 @@ var POINTS = [
     lon: -0.065968,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -1812,7 +1993,8 @@ var POINTS = [
     lon: -0.206776,
     type: "vancam",
     status: "legacy",
-    last: 2024
+    last: 2024,
+    deployments: 1
   },
 
   {
@@ -1822,7 +2004,8 @@ var POINTS = [
     lon: -0.109959,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 3
   },
 
   {
@@ -1832,7 +2015,8 @@ var POINTS = [
     lon: -0.105348,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 1
   },
 
   {
@@ -1842,7 +2026,8 @@ var POINTS = [
     lon: 0.062334,
     type: "vancam",
     status: "active",
-    last: 2025
+    last: 2025,
+    deployments: 8
   }
 
 ];
