@@ -268,12 +268,32 @@ map.addControl(new maplibregl.AttributionControl({ compact: false }));
    palette is raised once, here, rather than by filtering the canvas on
    every frame. Halos go the other way - darker - so labels keep their
    edge against the brighter roads underneath. */
+/* How far to lift each kind of colour, and by how much to raise its
+   floor. The style is drawn for a pure black page; against this one
+   it needs help.
+
+   The floor is the important half. Multiplying alone leaves the dark
+   end crushed - a near-black colour stays near-black however large
+   the factor - and the dark end is where a map keeps its texture.
+   Buildings came out at rgb(19,19,19) against a background of
+   rgb(19,19,19): the same colour, so no buildings at all. Minor roads
+   reached 1.7 to 1, which is a rumour of a street rather than a
+   street. Adding a floor lifts those without touching the labels,
+   which were already crisp at nearly 9 to 1 and would only have been
+   blown out by a bigger factor. */
 var LIFT = {
-  line: 2.6,
-  fill: 1.9,
-  background: 1.6,
-  text: 1.75,
-  halo: 0.55
+  line:       { by: 2.6, floor: 26 },
+  fill:       { by: 1.9, floor: 14 },
+  background: { by: 1.6, floor: 0 },
+  text:       { by: 1.75, floor: 0 },
+  halo:       { by: 0.55, floor: 0 },
+
+  /* Buildings are the one thing a floor alone cannot rescue: they
+     start at rgb(10,10,10), which even lifted and floored is barely
+     off the background. They are given their own, firmer treatment,
+     because a city map with no massing behind the streets reads as a
+     wiring diagram. */
+  building:   { by: 2.4, floor: 22 }
 };
 
 /* An off-screen scrap of the page, used to let the browser turn
@@ -282,10 +302,12 @@ var LIFT = {
 var swatch = document.createElement("div");
 swatch.style.cssText = "position:fixed;left:-9999px;top:0;";
 
-function lift(colour, factor) {
+function lift(colour, how) {
   var parts;
+  var by = how.by;
+  var floor = how.floor || 0;
   var scale = function (v) {
-    return Math.min(255, Math.round(v * factor));
+    return Math.min(255, Math.round(v * by + floor));
   };
 
   swatch.style.color = "";
@@ -358,9 +380,11 @@ function repaint(layer) {
   var pair = COLOUR_OF[layer.type];
   var paint = layer.paint || {};
   var lifted;
+  var how;
 
   if (pair && typeof paint[pair[0]] === "string") {
-    lifted = lift(paint[pair[0]], LIFT[pair[1]]);
+    how = layer.id === "building" ? LIFT.building : LIFT[pair[1]];
+    lifted = lift(paint[pair[0]], how);
     if (lifted) {
       map.setPaintProperty(layer.id, pair[0], lifted);
     }
@@ -425,9 +449,22 @@ function buildOverStyle() {
 
   clearOurLayersAndSources();
 
-  /* The one-way arrows are the last of the clutter, and with vector
-     tiles they can simply be taken off. */
-  var noisy = ["road_oneway", "road_oneway_opposite"];
+  /* Layers this map has no use for. A map of cameras in one city does
+     not need country borders, the names of countries and counties, ice
+     shelves and glaciers, or the taxiways at Heathrow - and every one
+     of them is a line or a word competing with the thing the map is
+     actually for. With vector tiles they can simply be taken off,
+     which is cheaper than drawing them and then hiding them.
+
+     Village and suburb names are kept: in London they are how anyone
+     says where a camera is. */
+  var noisy = [
+    "road_oneway", "road_oneway_opposite",
+    "boundary_country_z0-4", "boundary_country_z5-", "boundary_state",
+    "place_country_major", "place_country_minor", "place_country_other", "place_state",
+    "landcover_ice_shelf", "landcover_glacier",
+    "aeroway-taxiway", "aeroway-runway", "aeroway-runway-casing", "aeroway-area"
+  ];
 
   for (i = 0; i < noisy.length; i++) {
     if (map.getLayer(noisy[i])) {
