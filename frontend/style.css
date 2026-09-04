@@ -253,9 +253,11 @@ footer.foot::before {
   background: var(--bg);
 }
 
-/* The OpenFreeMap "dark" style is drawn dark at source - its
-   background is rgb(12,12,12), a shade off this page - so there is no
-   filter here at all. Nothing to correct. */
+/* The map's own colours are corrected in map.js, not here: the dark
+   style is drawn for a pure black page and needs lifting against this
+   one, and the light style needs nothing. Doing it there rather than
+   with a CSS filter means the camera dots keep the colours they were
+   given, which a filter over the whole canvas would not. */
 
 /* The cameras are circles drawn into the map's own canvas, painted in
    the accent colour by map.js, so they need no filtering either. */
