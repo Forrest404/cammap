@@ -88,6 +88,24 @@ Reports nobody acted on in a long time (they are not on the map and never will b
 
 One row in `settings`: how many distinct people must report the same spot for it to go on the map by itself (3), within how many metres (100), how old an account must be to count (1 hour), and how many reports one account may send in ten minutes (5). Change them with `update settings set ... where id = 1;` - no deploy needed. XP per kind of report is the `xp_rules` table, likewise.
 
+### Tuning the dark map
+
+The dark style is drawn for a pure black page, so `frontend/map.js`
+lifts its colours against ours. The `LIFT` table there gives each kind
+of layer a factor and a floor. The floor is the half that matters: a
+near-black colour multiplied is still near-black, and the dark end is
+where a map keeps its texture. Buildings have their own entry because
+they start at almost nothing and a floor alone will not rescue them.
+
+Raise a floor to bring the street grid up; leave `text` alone, since
+the labels are already the most legible thing on the map and a bigger
+factor only blows them out.
+
+The `noisy` list in the same file names layers that are removed
+outright - country borders, ice shelves, Heathrow's taxiways and so
+on. Add to it rather than hiding a layer with CSS: not drawing
+something is cheaper than drawing it and covering it up.
+
 ### Satellite imagery
 
 The satellite view uses Esri's World Imagery from the open tile endpoint, with attribution, which is allowed for non-commercial use. It is not guaranteed. If it stops, the toggle stops showing imagery and nothing else breaks; the whole of it is one block at the top of `frontend/map.js`.
