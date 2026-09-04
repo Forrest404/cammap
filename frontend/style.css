@@ -455,6 +455,77 @@ button.toggle.on:hover {
   color: var(--dim);
 }
 
+/* ---------- the coordinate picker on the report page ----------
+
+   Same borders and same base map as the map page, at the size a form
+   can carry. It sits inside the box rather than beside it, because on
+   a form the map is one field among several, not the subject. */
+
+.pick-map {
+  height: 340px;
+  margin: 0 0 10px 0;
+  border: 1px solid var(--rule);
+  background: var(--bg);
+}
+
+/* The read-only one on a status report: it only has to say "this
+   camera, here", which takes less room than placing a pin does. */
+.pick-map.short {
+  height: 200px;
+  margin-bottom: 16px;
+}
+
+/* A crosshair, not a teardrop. A pin points at a spot from above it
+   and leaves you guessing which pixel it means; crossed hairs are the
+   spot. The ring is filled with the page colour so the arms do not
+   run through the middle of it. */
+.pick-pin {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  cursor: grab;
+}
+
+.pick-pin:active {
+  cursor: grabbing;
+}
+
+/* Nothing to drag on a status report, so it should not offer. */
+.pick-pin.fixed {
+  cursor: default;
+}
+
+.pick-pin .pick-h,
+.pick-pin .pick-v {
+  position: absolute;
+  background: var(--accent);
+}
+
+.pick-pin .pick-h {
+  left: 0;
+  right: 0;
+  top: 11px;
+  height: 1px;
+}
+
+.pick-pin .pick-v {
+  top: 0;
+  bottom: 0;
+  left: 11px;
+  width: 1px;
+}
+
+.pick-pin .pick-ring {
+  position: absolute;
+  left: 7px;
+  top: 7px;
+  width: 9px;
+  height: 9px;
+  box-sizing: border-box;
+  border: 2px solid var(--accent);
+  background: var(--bg);
+}
+
 /* ---------- panels ----------
 
    Bordered but not filled, so the scanlines carry through them rather
@@ -1145,6 +1216,14 @@ textarea.export {
 
   #map {
     height: 460px;
+  }
+
+  .pick-map {
+    height: 280px;
+  }
+
+  .pick-map.short {
+    height: 170px;
   }
 
   /* Stacked layout: no map beside the list to match, so let it grow. */

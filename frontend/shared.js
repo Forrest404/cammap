@@ -88,6 +88,22 @@ function typeLabel(type) {
   return type || "";
 }
 
+/* The paint expression for "what colour is this dot": non-functional
+   overrides everything, otherwise the type decides. Built from the
+   table above, so a dot can never be a colour the legend does not
+   show. Used by the map and by the picker on the report page. */
+function typeColourExpression() {
+  var match = ["match", ["get", "type"]];
+  var i;
+
+  for (i = 0; i < CAMERA_TYPES.length; i++) {
+    match.push(CAMERA_TYPES[i].type, CAMERA_TYPES[i].colour);
+  }
+  match.push(CAMERA_TYPES[1].colour);   /* fallback: the van colour */
+
+  return ["case", ["==", ["get", "status"], "nonfunctional"], NONFUNCTIONAL_COLOUR, match];
+}
+
 /* Fills a <select> from the table above, so no page has to keep its
    own copy of the list. `selected` is which one starts chosen, since
    the sensible default differs by page: the map's own add form opens
@@ -111,4 +127,184 @@ function fillTypeSelect(el, selected) {
     }
     el.appendChild(option);
   }
+}
+
+/* ------------------------------------------------------------------
+   The base map, and making the dark one readable
+
+   Two pages draw a map now - the map itself, and the coordinate
+   picker on the report form - so the styles and the correction the
+   dark one needs live here rather than in map.js.
+
+   MapLibre counts coordinates the other way round from the rest of
+   this project: longitude first. lngLat() is the one place that is
+   converted.
+   ------------------------------------------------------------------ */
+
+var MAP_STYLES = {
+  dark:  "https://tiles.openfreemap.org/styles/dark",
+  light: "https://tiles.openfreemap.org/styles/bright"
+};
+
+function lngLat(lat, lon) {
+  return [lon, lat];
+}
+
+/* Layers a map of cameras in one city has no use for. Country
+   borders, the names of countries and counties, ice shelves and
+   glaciers, the taxiways at Heathrow - every one of them a line or a
+   word competing with the thing the map is for. With vector tiles
+   they can simply be taken off, which is cheaper than drawing them
+   and then hiding them.
+
+   Village and suburb names are kept: in London they are how anyone
+   says where a camera is. */
+var NOISY_LAYERS = [
+  "road_oneway", "road_oneway_opposite",
+  "boundary_country_z0-4", "boundary_country_z5-", "boundary_state",
+  "place_country_major", "place_country_minor", "place_country_other", "place_state",
+  "landcover_ice_shelf", "landcover_glacier",
+  "aeroway-taxiway", "aeroway-runway", "aeroway-runway-casing", "aeroway-area"
+];
+
+/* How far to lift each kind of colour, and by how much to raise its
+   floor. The dark style is drawn for a pure black page; against this
+   one it needs help.
+
+   The rule these numbers answer to: nothing on the base map may be
+   brighter than the dimmest camera dot. The dots are what the map is
+   for; the roads are the backdrop it draws them on. That was got
+   badly wrong once - the casings were lifted to a brightness of 182
+   where the dimmest dot is 134, so London came out as a white web
+   with the cameras lost in it. Under these numbers the brightest
+   thing the base map draws is 92.
+
+   The floor matters as much as the factor. Multiplying alone leaves
+   the dark end crushed - a near-black colour stays near-black however
+   large the factor - and the dark end is where a map keeps its
+   texture. Buildings start at rgb(10,10,10) and need their own entry
+   or they stay invisible; they are meant to be quiet massing behind
+   the streets, not a feature.
+
+   Labels are lifted least of all. They were already the most legible
+   thing on the map, and they are thin glyphs in a few places rather
+   than a web over everything, so they can sit near the dots without
+   competing with them. */
+var LIFT = {
+  line:       { by: 1.4,  floor: 8 },
+  fill:       { by: 1.35, floor: 6 },
+  background: { by: 1.6,  floor: 0 },
+  text:       { by: 1.45, floor: 0 },
+  halo:       { by: 0.55, floor: 0 },
+  building:   { by: 2.4,  floor: 4 }
+};
+
+/* An off-screen scrap of the page, used to let the browser turn
+   whatever notation the style happens to use - #abc, rgb(), hsl() -
+   into numbers that can be scaled. */
+var liftSwatch = document.createElement("div");
+liftSwatch.style.cssText = "position:fixed;left:-9999px;top:0;";
+
+/* Answers already worked out. Setting a colour on the swatch and then
+   reading it back forces the browser to recalculate style there and
+   then, and this runs for every coloured property of every layer in
+   the style - several hundred times on each load of the dark map. A
+   vector style reuses the same handful of colours across dozens of
+   layers, so remembering them turns that into about a dozen real
+   measurements. It outlives a style swap on purpose: the answer
+   depends only on the colour and the lift asked for, not on which
+   style asked, so a return to the dark map costs nothing - and with
+   this table shared, the picker's map costs nothing after the main
+   one has drawn. */
+var liftCache = {};
+
+function lift(colour, how) {
+  var parts;
+  var by = how.by;
+  var floor = how.floor || 0;
+  var key = colour + "|" + by + "|" + floor;
+  var scale = function (v) {
+    return Math.min(255, Math.round(v * by + floor));
+  };
+
+  if (liftCache.hasOwnProperty(key)) {
+    return liftCache[key];
+  }
+
+  liftSwatch.style.color = "";
+  liftSwatch.style.color = colour;
+  parts = window.getComputedStyle(liftSwatch).color.match(/[\d.]+/g);
+
+  liftCache[key] = parts
+    ? "rgba(" + scale(parts[0]) + "," + scale(parts[1]) + "," +
+      scale(parts[2]) + "," + (parts[3] === undefined ? 1 : parts[3]) + ")"
+    : null;
+
+  return liftCache[key];
+}
+
+/* Which paint property carries the colour, for each kind of layer. */
+var COLOUR_OF = {
+  line: ["line-color", "line"],
+  fill: ["fill-color", "fill"],
+  background: ["background-color", "background"]
+};
+
+function repaintLayer(m, layer) {
+  var pair = COLOUR_OF[layer.type];
+  var paint = layer.paint || {};
+  var lifted;
+  var how;
+
+  if (pair && typeof paint[pair[0]] === "string") {
+    how = layer.id === "building" ? LIFT.building : LIFT[pair[1]];
+    lifted = lift(paint[pair[0]], how);
+    if (lifted) {
+      m.setPaintProperty(layer.id, pair[0], lifted);
+    }
+  }
+
+  if (layer.type !== "symbol") {
+    return;
+  }
+
+  if (typeof paint["text-color"] === "string") {
+    lifted = lift(paint["text-color"], LIFT.text);
+    if (lifted) {
+      m.setPaintProperty(layer.id, "text-color", lifted);
+    }
+  }
+
+  if (typeof paint["text-halo-color"] === "string") {
+    lifted = lift(paint["text-halo-color"], LIFT.halo);
+    if (lifted) {
+      m.setPaintProperty(layer.id, "text-halo-color", lifted);
+    }
+  }
+}
+
+/* Take the clutter off, and lift what is left. `dark` says whether
+   the lift is wanted: the light style needs no such help - it was
+   drawn for a white page and brightening it would only wash it out -
+   so it is left as its authors drew it. */
+function tidyBaseStyle(m, dark) {
+  var layers;
+  var i;
+
+  for (i = 0; i < NOISY_LAYERS.length; i++) {
+    if (m.getLayer(NOISY_LAYERS[i])) {
+      m.removeLayer(NOISY_LAYERS[i]);
+    }
+  }
+
+  if (!dark) {
+    return;
+  }
+
+  layers = m.getStyle().layers;
+  document.body.appendChild(liftSwatch);
+  for (i = 0; i < layers.length; i++) {
+    repaintLayer(m, layers[i]);
+  }
+  liftSwatch.remove();
 }

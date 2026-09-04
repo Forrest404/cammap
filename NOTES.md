@@ -25,7 +25,7 @@
     pages/              every other page - about, blog, account, report,
                         moderate, leaderboard.
     frontend/           the code that runs in a browser: shared.js, map.js,
-                        account.js, style.css.
+                        picker.js, account.js, style.css.
     data/               points.js, the camera list you edit by hand.
     backend/            schema.sql and seed.sql - the database.
     lib/ fonts/         vendored, pinned by version, not ours to edit.
@@ -35,12 +35,19 @@ Links are written relative to wherever the page sits, so index.html reaches
 `pages/about.html` while a page in pages/ reaches `../index.html`. account.js
 works this out with `pageHref()` rather than hard-coding either.
 
-`frontend/shared.js` holds what map.js and account.js must agree on: the kinds
-of camera (`CAMERA_TYPES` - colour, label, identifier) and the London bounds.
-The legend, every drop-down on every page, and every label are built from it,
-so adding a kind of camera is one edit rather than five. The database keeps its
-own copy of both in `check` constraints, on purpose: the server has to refuse a
-bad row without trusting anything a browser sent.
+`frontend/shared.js` holds what the other files must agree on: the kinds of
+camera (`CAMERA_TYPES` - colour, label, identifier), the London bounds, the two
+base map styles, and the correction the dark one needs against this page
+(`LIFT`, `tidyBaseStyle`). The legend, every drop-down on every page, and every
+label are built from it, so adding a kind of camera is one edit rather than
+five. The database keeps its own copy of the types and the bounds in `check`
+constraints, on purpose: the server has to refuse a bad row without trusting
+anything a browser sent.
+
+`frontend/picker.js` is the map on the report form - drop a pin, drag it, and
+the two coordinate boxes follow. It draws the same base map through the same
+shared code, so the picker and the map cannot come to disagree about what
+London looks like. It is the only other page that loads MapLibre.
 
 **The build script is missing.** `points.js`, `seed.sql` and the TODO below all
 name `build_points.py`, but `tools/` holds only `stamp.py`. Until it turns up
