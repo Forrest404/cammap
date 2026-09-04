@@ -32,9 +32,8 @@ var DRAFT_KEY = "cammap.draft";
 
 var LONDON = [51.5074, -0.1278];
 
-/* South-west corner, then north-east: Heathrow across to Upminster,
-   Coulsdon up to Enfield. All 32 boroughs and the City. */
-var LONDON_BOUNDS = [[51.28, -0.51], [51.70, 0.33]];
+/* LONDON_BOUNDS and inLondon() are in frontend/shared.js, because
+   account.js needs the same box for the report form. */
 
 var OPENING_ZOOM = 11;
 var CLOSEST_ZOOM = 19;   /* street and building level */
@@ -125,35 +124,16 @@ var DOT    = "cammap-dot";
 var HEAT = "cammap-heat";   /* base id; one layer per colour gets -0, -1, ... */
 var heatLayers = [];
 
-/* One colour per kind of camera, matching --t-* in style.css. Colour
-   always means what a thing IS. Whether it works now is said by the
-   fill instead: an active camera is a solid dot, a legacy one is a
-   hollow ring in the same colour, and a non-functional one is filled
-   in a colour of its own regardless of type. The legend under the map
-   is built from this table, so the two cannot drift apart. */
-var TYPES = [
-  { type: "fixedcam",     colour: "#cf6a58", label: "Fixed LFR camera" },
-  { type: "vancam",       colour: "#e0a458", label: "LFR van site" },
-  { type: "transportcam", colour: "#6aa8d8", label: "Transport police" },
-  { type: "facewatchcam", colour: "#7bbf7b", label: "Shop (Facewatch)" },
-  { type: "privatecam",   colour: "#8a8a8a", label: "Private" }
-];
-
-var NONFUNCTIONAL_COLOUR = "#b58bd6";
+/* The colour table, the labels, colourOf() and NONFUNCTIONAL_COLOUR
+   all live in frontend/shared.js now: the drop-downs on the report
+   and moderation pages are built from the same list, so a new kind of
+   camera is one edit rather than five. The legend under the map is
+   built from it too, so the legend and the dots cannot disagree. */
+var TYPES = CAMERA_TYPES;
 
 /* Which dot wins when two share a spot. Croydon is both a fixed
    install and a van hotspot, and the fixed one should be on top. */
 var DRAW_ORDER = { fixedcam: 5, transportcam: 4, facewatchcam: 3, vancam: 2, privatecam: 1 };
-
-function colourOf(type) {
-  var i;
-  for (i = 0; i < TYPES.length; i++) {
-    if (TYPES[i].type === type) {
-      return TYPES[i].colour;
-    }
-  }
-  return TYPES[1].colour;   /* an unknown type draws as a van site */
-}
 
 /* The colour a point glows with is the colour its dot is drawn with:
    a non-functional one in its own colour whatever its type, otherwise
@@ -164,22 +144,86 @@ function glowColourOf(point) {
   return point.status === "nonfunctional" ? NONFUNCTIONAL_COLOUR : colourOf(point.type);
 }
 
-/* One heatmap layer per possible glow colour - non-functional's own
-   colour first, then one per type - so a camera glows in the exact
-   colour its dot is drawn in. Each gets its own source below, because
-   MapLibre will not draw two heatmaps over the same source. */
+/* How many cameras a colour needs before it is worth a layer of its
+   own. Below this it cannot make a glow whatever you do: the first
+   coloured stop of the ramp sits at density 0.42, so one or two
+   cameras scattered across London draw nothing at all - and an empty
+   heatmap still costs a source, a worker parse and a pass over every
+   frame. Three is the smallest number that can pool. */
+var GLOW_MINIMUM = 3;
+
+/* Which glow colours the data actually calls for, in a fixed order so
+   the layers stack the same way every time. One heatmap layer per
+   colour - a heatmap can only carry a single ramp, and the glow under
+   a blue camera should be blue - and each gets its own source below,
+   because MapLibre will not draw two heatmaps over the same source.
+
+   Counted over every point rather than only the shown ones, so the
+   set does not change under the legacy toggle: toggling then only
+   feeds the sources new data instead of building layers again. */
 function glowGroups() {
-  var groups = [{ colour: NONFUNCTIONAL_COLOUR }];
+  var counts = {};
+  var order = [NONFUNCTIONAL_COLOUR];
+  var groups = [];
+  var colour;
   var i;
 
-  for (i = 0; i < TYPES.length; i++) {
-    groups.push({ colour: TYPES[i].colour });
+  for (i = 0; i < points.length; i++) {
+    colour = glowColourOf(points[i]);
+    counts[colour] = (counts[colour] || 0) + 1;
   }
+
+  for (i = 0; i < TYPES.length; i++) {
+    order.push(TYPES[i].colour);
+  }
+
+  for (i = 0; i < order.length; i++) {
+    if ((counts[order[i]] || 0) >= GLOW_MINIMUM) {
+      groups.push(order[i]);
+    }
+  }
+
   return groups;
 }
 
-/* Off by default: the map shows what is in use now. */
+/* The colours the glow layers standing right now were built for. */
+function glowColoursNow() {
+  var list = [];
+  var i;
+
+  for (i = 0; i < heatLayers.length; i++) {
+    list.push(heatLayers[i].colour);
+  }
+
+  return list;
+}
+
+function sameColours(a, b) {
+  var i;
+
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/* What the map is narrowed to. All three are read back out of storage
+   by loadView() below, so they have to be declared above it: `var`
+   would otherwise hoist the name but run the assignment afterwards
+   and quietly undo whatever was remembered.
+
+   showLegacy   off by default: the map shows what is in use now.
+   hiddenTypes  kinds switched off in the legend. Empty means all.
+   sortBy       "name" or "used" - see listed(). */
 var showLegacy = false;
+var hiddenTypes = {};
+var sortBy = "name";
 
 /* ---------------- satellite ----------------
 
@@ -217,6 +261,12 @@ function loadView() {
       } else if (saved.satellite === true) {
         view = "satellite";
       }
+      if (saved.hidden && typeof saved.hidden === "object") {
+        hiddenTypes = saved.hidden;
+      }
+      if (saved.sort === "used" || saved.sort === "name") {
+        sortBy = saved.sort;
+      }
     }
   } catch (err) {
     /* nothing saved, or storage refused - defaults stand */
@@ -227,7 +277,9 @@ function saveView() {
   try {
     window.localStorage.setItem(VIEW_KEY, JSON.stringify({
       legacy: showLegacy,
-      view: view
+      view: view,
+      hidden: hiddenTypes,
+      sort: sortBy
     }));
   } catch (err) {
     /* storage refused - the toggles still work for this visit */
@@ -306,24 +358,40 @@ var LIFT = {
 var swatch = document.createElement("div");
 swatch.style.cssText = "position:fixed;left:-9999px;top:0;";
 
+/* Answers already worked out. Setting a colour on the swatch and then
+   reading it back forces the browser to recalculate style there and
+   then, and this runs for every coloured property of every layer in
+   the style - several hundred times on each load of the dark map. A
+   vector style reuses the same handful of colours across dozens of
+   layers, so remembering them turns that into about a dozen real
+   measurements. It outlives a style swap on purpose: the answer
+   depends only on the colour and the lift asked for, not on which
+   style asked, so a return to the dark map costs nothing. */
+var liftCache = {};
+
 function lift(colour, how) {
   var parts;
   var by = how.by;
   var floor = how.floor || 0;
+  var key = colour + "|" + by + "|" + floor;
   var scale = function (v) {
     return Math.min(255, Math.round(v * by + floor));
   };
+
+  if (liftCache.hasOwnProperty(key)) {
+    return liftCache[key];
+  }
 
   swatch.style.color = "";
   swatch.style.color = colour;
   parts = window.getComputedStyle(swatch).color.match(/[\d.]+/g);
 
-  if (!parts) {
-    return null;
-  }
+  liftCache[key] = parts
+    ? "rgba(" + scale(parts[0]) + "," + scale(parts[1]) + "," +
+      scale(parts[2]) + "," + (parts[3] === undefined ? 1 : parts[3]) + ")"
+    : null;
 
-  return "rgba(" + scale(parts[0]) + "," + scale(parts[1]) + "," +
-         scale(parts[2]) + "," + (parts[3] === undefined ? 1 : parts[3]) + ")";
+  return liftCache[key];
 }
 
 /* A heatmap's colour ramp, made in the glow's own colour. Density
@@ -429,26 +497,36 @@ function repaint(layer) {
    again then throws "Source already exists". So anything of ours that
    survived is cleared out first, and the build below always starts
    from nothing. */
+/* Found by name rather than from a list we kept: what survived a
+   setStyle is whatever MapLibre decided to leave, and asking the style
+   itself cannot miss one. It used to guess at eight glow layers, which
+   was right only for as long as there were never more. */
 function clearOurLayersAndSources() {
-  var ours = [SATELLITE, DOT, HEAT].concat(heatLayers.map(function (g) { return g.id; }));
-  var sources = [SOURCE, SATELLITE];
+  var style = map.getStyle();
+  var layers = (style && style.layers) || [];
+  var sources = (style && style.sources) || {};
+  var ours = [];
+  var id;
   var i;
 
-  for (i = 0; i < 8; i++) {
-    ours.push(HEAT + "-" + i);
-    sources.push(SOURCE + "-heat-" + i);
+  for (i = 0; i < layers.length; i++) {
+    id = layers[i].id;
+    if (id === DOT || id === SATELLITE || id.indexOf(HEAT) === 0) {
+      ours.push(id);
+    }
   }
 
   for (i = 0; i < ours.length; i++) {
-    if (map.getLayer(ours[i])) {
-      map.removeLayer(ours[i]);
+    map.removeLayer(ours[i]);
+  }
+
+  for (id in sources) {
+    if (sources.hasOwnProperty(id) &&
+        (id === SOURCE || id === SATELLITE || id.indexOf(SOURCE + "-heat-") === 0)) {
+      map.removeSource(id);
     }
   }
-  for (i = 0; i < sources.length; i++) {
-    if (map.getSource(sources[i])) {
-      map.removeSource(sources[i]);
-    }
-  }
+
   heatLayers = [];
 }
 
@@ -565,34 +643,57 @@ map.on("load", buildOverStyle);
    makes the second call harmless. */
 map.on("style.load", buildOverStyle);
 
-function addCameras(beneath) {
-  map.addSource(SOURCE, { type: "geojson", data: cameraFeatures() });
+/* Every glow layer shares these; only the ramp and the data differ. */
+var HEAT_INTENSITY = ["interpolate", ["linear"], ["zoom"],
+  WIDEST_ZOOM, 1.0,
+  HEAT_GONE, 1.5];
 
-  /* One heat layer per glow colour, so the glow under a point is the
-     point's own colour. They share every property but the ramp and the
-     filter. */
-  var groups = glowGroups();
+/* Wide enough that neighbours down the same high street pool into one
+   patch, and no wider. It was twice this for a day and the result was
+   a wash of colour with the city lost underneath it. */
+var HEAT_RADIUS = ["interpolate", ["linear"], ["zoom"],
+  WIDEST_ZOOM, 25,
+  HEAT_GONE, 38];
+
+var HEAT_OPACITY = ["interpolate", ["linear"], ["zoom"],
+  HEAT_FULL, 0.85,
+  HEAT_GONE, 0];
+
+/* The layer the glow is slid in beneath, kept from the style build so
+   the glow can be made again without working it out afresh. */
+var glowAnchor;
+
+function removeGlow() {
+  var i;
+
+  for (i = 0; i < heatLayers.length; i++) {
+    if (map.getLayer(heatLayers[i].id)) {
+      map.removeLayer(heatLayers[i].id);
+    }
+    if (map.getSource(heatLayers[i].source)) {
+      map.removeSource(heatLayers[i].source);
+    }
+  }
+
+  heatLayers = [];
+}
+
+/* One heat layer per glow colour the data calls for, so the glow under
+   a point is the point's own colour. */
+function addGlow(built, beneath) {
+  var colours = glowGroups();
+  var colour;
   var g;
-  var intensity = ["interpolate", ["linear"], ["zoom"],
-    WIDEST_ZOOM, 1.0,
-    HEAT_GONE, 1.5];
-  /* Wide enough that neighbours down the same high street pool into
-     one patch, and no wider. It was twice this for a day and the
-     result was a wash of colour with the city lost underneath it. */
-  var radius = ["interpolate", ["linear"], ["zoom"],
-    WIDEST_ZOOM, 25,
-    HEAT_GONE, 38];
-  var opacity = ["interpolate", ["linear"], ["zoom"],
-    HEAT_FULL, 0.85,
-    HEAT_GONE, 0];
 
   heatLayers = [];
 
-  for (g = 0; g < groups.length; g++) {
+  for (g = 0; g < colours.length; g++) {
+    colour = colours[g];
+
     heatLayers.push({
       id: HEAT + "-" + g,
       source: SOURCE + "-heat-" + g,
-      colour: groups[g].colour
+      colour: colour
     });
 
     /* A heatmap may only have one ramp, and MapLibre will not draw two
@@ -600,9 +701,7 @@ function addCameras(beneath) {
        source holding just its cameras. */
     map.addSource(SOURCE + "-heat-" + g, {
       type: "geojson",
-      data: cameraFeatures(function (point) {
-        return isShown(point) && glowColourOf(point) === groups[g].colour;
-      })
+      data: collection(built.byColour[colour])
     });
 
     map.addLayer({
@@ -627,50 +726,81 @@ function addCameras(beneath) {
            camera on a quiet road is still only an ember; it is where
            they gather that lights up, and now the light is the
            colour of what gathered. */
-        "heatmap-intensity": intensity,
-        "heatmap-radius": radius,
+        "heatmap-intensity": HEAT_INTENSITY,
+        "heatmap-radius": HEAT_RADIUS,
 
         /* The ramp is built from this layer's own colour, the first
            stop fully transparent or the whole map would be washed over
            rather than only the places with cameras in. */
-        "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"]].concat(heatRamp(groups[g].colour)),
+        "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"]].concat(heatRamp(colour)),
 
-        "heatmap-opacity": opacity
+        "heatmap-opacity": HEAT_OPACITY
       }
     }, beneath);
   }
+}
+
+/* The whole of a dot's paint, for the view as it stands.
+
+   In one place on purpose. It used to be written out here and then
+   set again by applyView() a moment later, which runs immediately
+   after this on every build - so half of what was written here was
+   dead before the first frame, and the two copies had already drifted
+   apart. */
+function dotPaint() {
+  var colour = typeColourExpression();
+  var legacy = ["==", ["get", "status"], "legacy"];
+
+  /* Over imagery and over the light map every dot is ringed: the ring
+     is what holds a pale dot against pale ground. On the dark map it
+     is the page's own black, drawn close in so two dots on one corner
+     read as two, and gone as you pull back so a crowd can become a
+     mass. Legacy rings keep their outline at every zoom or they would
+     vanish. MapLibre insists "zoom" be the outermost expression, so
+     the status test sits inside each stop rather than around the
+     interpolation. */
+  var outlined = view === "satellite" || isLight();
+
+  return {
+    "circle-radius": ["interpolate", ["linear"], ["zoom"],
+      WIDEST_ZOOM, 2.5,
+      14, 4,
+      CLOSEST_ZOOM, 7],
+
+    "circle-color": colour,
+
+    /* A legacy site is a ring: nearly no fill, a firm outline in its
+       own colour. An active one is solid. On the light map the ring
+       is filled a little more firmly, or it is a pale ring on pale
+       ground. */
+    "circle-opacity": ["case", legacy, isLight() ? 0.30 : 0.12, 0.85],
+
+    "circle-stroke-color": ["case", legacy, colour, dotRingColour()],
+
+    "circle-stroke-width": outlined
+      ? ["case", legacy, 1.6, 1.5]
+      : ["interpolate", ["linear"], ["zoom"],
+          13, ["case", legacy, 1.2, 0],
+          15, ["case", legacy, 1.2, 1]],
+
+    "circle-stroke-opacity": outlined ? 0.95 : ["case", legacy, 0.9, 0.6]
+  };
+}
+
+function addCameras(beneath) {
+  var built = buildFeatures();
+
+  glowAnchor = beneath;
+
+  map.addSource(SOURCE, { type: "geojson", data: collection(built.all) });
+
+  addGlow(built, beneath);
 
   map.addLayer({
     id: DOT,
     type: "circle",
     source: SOURCE,
-    paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"],
-        WIDEST_ZOOM, 2.5,
-        14, 4,
-        CLOSEST_ZOOM, 7],
-
-      "circle-color": typeColourExpression(),
-
-      /* A legacy site is a ring: nearly no fill, a firm outline in its
-         own colour. An active one is solid. */
-      "circle-opacity": ["case", ["==", ["get", "status"], "legacy"], 0.12, 0.85],
-
-      "circle-stroke-color": ["case",
-        ["==", ["get", "status"], "legacy"], typeColourExpression(),
-        "#0d0d0d"],
-
-      /* Active dots get a hairline of the page background so two
-         neighbours read as two once you are close; zoomed out it goes
-         so a crowd can become a mass. Legacy rings keep their outline
-         at every zoom, or they would vanish. MapLibre insists "zoom"
-         be the outermost expression, so the status test sits inside
-         each stop rather than around the interpolation. */
-      "circle-stroke-width": ["interpolate", ["linear"], ["zoom"],
-        13, ["case", ["==", ["get", "status"], "legacy"], 1.2, 0],
-        15, ["case", ["==", ["get", "status"], "legacy"], 1.2, 1]],
-      "circle-stroke-opacity": ["case", ["==", ["get", "status"], "legacy"], 0.9, 0.6]
-    },
+    paint: dotPaint(),
     layout: {
       /* Two dots on one spot: the more permanent kind wins. */
       "circle-sort-key": ["get", "order"]
@@ -709,11 +839,6 @@ function bindCameraHandlers() {
   });
 }
 
-function inLondon(lat, lon) {
-  return lat >= LONDON_BOUNDS[0][0] && lat <= LONDON_BOUNDS[1][0] &&
-         lon >= LONDON_BOUNDS[0][1] && lon <= LONDON_BOUNDS[1][1];
-}
-
 /* ---------------- the page's elements ---------------- */
 
 var latInput      = document.getElementById("lat");
@@ -730,6 +855,9 @@ var searchResults = document.getElementById("search-results");
 
 var pointsList    = document.getElementById("points-list");
 var pointsEmpty   = document.getElementById("points-empty");
+var pointsSearch  = document.getElementById("points-search");
+var pointsCount   = document.getElementById("points-count");
+var sortButtons   = document.querySelectorAll("#points-sort button");
 
 var legacyToggle  = document.getElementById("legacy-toggle");
 var viewButtons = document.querySelectorAll("#view-buttons button");
@@ -839,7 +967,11 @@ function addPoint(lat, lon, name, note, type) {
     lon: lon,
     type: type || "vancam",
     status: "active",
-    last: null
+    last: null,
+
+    /* One, the same default tidy() gives a hand-typed entry: a spot
+       nobody has counted deployments at has been used once. */
+    deployments: 1
   };
 
   points.push(point);
@@ -885,34 +1017,100 @@ function typeColourExpression() {
   return ["case", ["==", ["get", "status"], "nonfunctional"], NONFUNCTIONAL_COLOUR, match];
 }
 
-/* Both layers and the list obey the same rule, so the glow can never
-   hint at a camera the list does not admit to. */
-function isShown(point) {
-  return showLegacy || point.status !== "legacy";
+/* ---------------- what is shown ----------------
+
+   Three things narrow the map: the legacy toggle, the kinds of camera
+   picked out in the legend, and the search box beside the list.
+
+   The first two hold the map and the list to the same answer, so the
+   glow can never hint at a camera the list does not admit to. The
+   search box is deliberately not one of them: it narrows the list
+   only. Dots disappearing letter by letter as you type is a poor way
+   to read a map, and leaving the map alone means a search costs
+   nothing but a redraw of the list. */
+
+/* hiddenTypes and sortBy are declared up with showLegacy, above
+   loadView(), so a remembered setting is not overwritten on the way
+   past. The search term is not remembered: it is a question you are
+   asking now, not a setting. */
+var searchTerm = "";
+
+function typeShown(type) {
+  return !hiddenTypes[type];
 }
 
+/* The rule the map obeys. The search term is not in here on purpose -
+   see above. */
+function isShown(point) {
+  return (showLegacy || point.status !== "legacy") && typeShown(point.type);
+}
+
+/* And the rule the list obeys: the same, and then the search. */
+function isListed(point) {
+  var term;
+
+  if (!isShown(point)) {
+    return false;
+  }
+  if (searchTerm === "") {
+    return true;
+  }
+
+  term = searchTerm;
+
+  return point.name.toLowerCase().indexOf(term) !== -1 ||
+         (point.note || "").toLowerCase().indexOf(term) !== -1;
+}
+
+/* The same rule again, as something MapLibre can evaluate per dot. */
 function applyLegacyFilter() {
-  var filter = showLegacy ? null : ["!=", ["get", "status"], "legacy"];
+  var filter = ["all"];
+  var type;
+
+  if (!showLegacy) {
+    filter.push(["!=", ["get", "status"], "legacy"]);
+  }
+
+  for (type in hiddenTypes) {
+    if (hiddenTypes.hasOwnProperty(type) && hiddenTypes[type]) {
+      filter.push(["!=", ["get", "type"], type]);
+    }
+  }
 
   if (map.getLayer(DOT)) {
-    map.setFilter(DOT, filter);
+    map.setFilter(DOT, filter.length > 1 ? filter : null);
   }
+}
+
+/* Anything that changes which cameras count ends here: the dot filter,
+   the glow sources and the list are all brought back into step. */
+function applyFilters() {
+  applyLegacyFilter();
+  refreshCameras();
+  render();
 }
 
 function setLegacy(on) {
   showLegacy = on;
-  applyLegacyFilter();
-
-  /* The dots hide legacy cameras with a filter above; the glow sources
-     are picked by hand, so toggling here rebuilds them too. */
-  refreshCameras();
-  render();
+  applyFilters();
   saveView();
+  markLegacy();
+}
 
+function markLegacy() {
   if (legacyToggle) {
-    legacyToggle.className = on ? "toggle on" : "toggle";
-    legacyToggle.setAttribute("aria-pressed", on ? "true" : "false");
+    legacyToggle.className = showLegacy ? "toggle on" : "toggle";
+    legacyToggle.setAttribute("aria-pressed", showLegacy ? "true" : "false");
   }
+}
+
+/* Clicking a kind in the legend takes it off the map and out of the
+   list. Clicking it again puts it back. */
+function toggleType(type) {
+  hiddenTypes[type] = !hiddenTypes[type];
+  applyFilters();
+  saveView();
+  drawLegend();
 }
 
 /* Imagery on: show the raster, hide the ground, ring every dot in the
@@ -927,10 +1125,16 @@ function dotRingColour() {
   return isLight() ? "#3a3632" : "#0d0d0d";
 }
 
+/* The four dot properties that answer to which view is on. The rest
+   of the paint never changes, so it is set once when the layer is
+   made and left alone. */
+var VIEW_PAINT = ["circle-opacity", "circle-stroke-color",
+                  "circle-stroke-width", "circle-stroke-opacity"];
+
 function applyView() {
-  var i;
   var imagery = view === "satellite";
-  var outlined = imagery || isLight();
+  var paint;
+  var i;
 
   if (map.getLayer(SATELLITE)) {
     map.setLayoutProperty(SATELLITE, "visibility", imagery ? "visible" : "none");
@@ -945,21 +1149,10 @@ function applyView() {
   }
 
   if (map.getLayer(DOT)) {
-    map.setPaintProperty(DOT, "circle-stroke-color", dotRingColour());
-    map.setPaintProperty(DOT, "circle-stroke-width", outlined
-      ? ["case", ["==", ["get", "status"], "legacy"], 1.6, 1.5]
-      : ["interpolate", ["linear"], ["zoom"],
-          13, ["case", ["==", ["get", "status"], "legacy"], 1.2, 0],
-          15, ["case", ["==", ["get", "status"], "legacy"], 1.2, 1]]);
-    map.setPaintProperty(DOT, "circle-stroke-opacity", outlined
-      ? 0.95
-      : ["case", ["==", ["get", "status"], "legacy"], 0.9, 0.6]);
-
-    /* A legacy ring is the type colour with almost no fill. On the
-       light map that is a pale ring on pale ground, so it is filled
-       a little more firmly. */
-    map.setPaintProperty(DOT, "circle-opacity",
-      ["case", ["==", ["get", "status"], "legacy"], isLight() ? 0.30 : 0.12, 0.85]);
+    paint = dotPaint();
+    for (i = 0; i < VIEW_PAINT.length; i++) {
+      map.setPaintProperty(DOT, VIEW_PAINT[i], paint[VIEW_PAINT[i]]);
+    }
   }
 
   markView();
@@ -997,11 +1190,34 @@ function setView(next) {
   map.setStyle(nowStyle);
 }
 
-/* The legend is drawn from TYPES so it always matches the paint. */
+/* A plain legend row: a swatch and a name, and nothing to press. Used
+   for the two entries that are states rather than kinds. */
+function legendNote(colour, text, hollow) {
+  var item = document.createElement("li");
+  var swatch = document.createElement("span");
+
+  swatch.className = hollow ? "swatch hollow" : "swatch";
+  if (hollow) {
+    swatch.style.borderColor = colour;
+  } else {
+    swatch.style.background = colour;
+  }
+
+  item.appendChild(swatch);
+  item.appendChild(document.createTextNode(text));
+
+  return item;
+}
+
+/* The legend is drawn from TYPES so it always matches the paint - and
+   each kind is a button, because the key to a map is also the natural
+   place to say "just these". A kind that is switched off dims here and
+   goes from both the map and the list. */
 function drawLegend() {
-  var i;
   var item;
+  var button;
   var swatch;
+  var i;
 
   if (!legend) {
     return;
@@ -1011,59 +1227,89 @@ function drawLegend() {
 
   for (i = 0; i < TYPES.length; i++) {
     item = document.createElement("li");
+
+    button = document.createElement("button");
+    button.className = typeShown(TYPES[i].type) ? "legend-key" : "legend-key off";
+    button.setAttribute("aria-pressed", typeShown(TYPES[i].type) ? "true" : "false");
+    button.title = typeShown(TYPES[i].type)
+      ? "Hide these"
+      : "Show these again";
+
     swatch = document.createElement("span");
     swatch.className = "swatch";
     swatch.style.background = TYPES[i].colour;
-    item.appendChild(swatch);
-    item.appendChild(document.createTextNode(TYPES[i].label));
+    button.appendChild(swatch);
+    button.appendChild(document.createTextNode(TYPES[i].label));
+
+    button.onclick = (function (type) {
+      return function () {
+        toggleType(type);
+      };
+    })(TYPES[i].type);
+
+    item.appendChild(button);
     legend.appendChild(item);
   }
 
-  item = document.createElement("li");
-  swatch = document.createElement("span");
-  swatch.className = "swatch";
-  swatch.style.background = NONFUNCTIONAL_COLOUR;
-  item.appendChild(swatch);
-  item.appendChild(document.createTextNode("Non-functional"));
-  legend.appendChild(item);
-
-  item = document.createElement("li");
-  swatch = document.createElement("span");
-  swatch.className = "swatch hollow";
-  swatch.style.borderColor = TYPES[1].colour;
-  item.appendChild(swatch);
-  item.appendChild(document.createTextNode("Legacy (no longer in use)"));
-  legend.appendChild(item);
+  /* Not kinds but states, and both are said by the fill rather than
+     the colour, so there is nothing here to switch off. */
+  legend.appendChild(legendNote(NONFUNCTIONAL_COLOUR, "Non-functional", false));
+  legend.appendChild(legendNote(TYPES[1].colour, "Legacy (no longer in use)", true));
 }
 
-/* Build one feature per point. keep decides whether the point is in
-   this particular collection, so the same list can be split up any
-   way (all of it, or just one glow colour). */
-function cameraFeatures(keep) {
-  var features = [];
+/* Everything the layers need, worked out in one walk of the list.
+
+   There are seven collections to fill - the dots, and one per glow
+   colour - and this used to be seven walks, each building its own
+   copy of every feature it kept. Now each point is turned into a
+   feature once and that one object is filed into every collection it
+   belongs to; MapLibre serialises features on their way to the
+   worker, so sharing them is safe.
+
+   Only shown points reach the glow, so the glow can never hint at a
+   camera the list does not admit to. */
+function buildFeatures() {
+  var all = [];
+  var byColour = {};
+  var point;
+  var feature;
+  var colour;
   var i;
 
   for (i = 0; i < points.length; i++) {
-    if (keep && !keep(points[i])) {
-      continue;
-    }
-    features.push({
+    point = points[i];
+
+    feature = {
       type: "Feature",
       properties: {
-        id: points[i].id,
-        type: points[i].type,
-        status: points[i].status,
-        deployments: points[i].deployments,
-        order: DRAW_ORDER[points[i].type] || 0
+        id: point.id,
+        type: point.type,
+        status: point.status,
+        deployments: point.deployments || 1,
+        order: DRAW_ORDER[point.type] || 0
       },
       geometry: {
         type: "Point",
-        coordinates: lngLat(points[i].lat, points[i].lon)
+        coordinates: lngLat(point.lat, point.lon)
       }
-    });
+    };
+
+    all.push(feature);
+
+    if (isShown(point)) {
+      colour = glowColourOf(point);
+      if (!byColour[colour]) {
+        byColour[colour] = [];
+      }
+      byColour[colour].push(feature);
+    }
   }
 
-  return { type: "FeatureCollection", features: features };
+  return { all: all, byColour: byColour };
+}
+
+function collection(features) {
+  return { type: "FeatureCollection", features: features || [] };
 }
 
 /* Every change to the list ends here: the dot source takes the whole
@@ -1073,24 +1319,33 @@ function cameraFeatures(keep) {
    stands, so there is nothing to do. */
 function refreshCameras() {
   var source = map.getSource(SOURCE);
-  var i;
-  var glow;
+  var built;
   var glowSource;
+  var i;
 
-  if (source) {
-    source.setData(cameraFeatures());
+  if (!source) {
+    return;
+  }
+
+  built = buildFeatures();
+  source.setData(collection(built.all));
+
+  /* The database overlay can bring in a kind of camera the seed had
+     too few of to be worth a layer. Rather than leave those cameras
+     with no glow, the set is built again - which only happens when
+     the colours actually changed, not on every refresh. */
+  if (!sameColours(glowGroups(), glowColoursNow())) {
+    removeGlow();
+    addGlow(built, glowAnchor);
+    return;
   }
 
   for (i = 0; i < heatLayers.length; i++) {
-    glow = heatLayers[i];
-    glowSource = map.getSource(glow.source);
+    glowSource = map.getSource(heatLayers[i].source);
     if (glowSource) {
-      glowSource.setData(cameraFeatures(function (point) {
-        return isShown(point) && glowColourOf(point) === glow.colour;
-      }));
+      glowSource.setData(collection(built.byColour[heatLayers[i].colour]));
     }
   }
-
 }
 
 function pointById(id) {
@@ -1135,14 +1390,7 @@ function closePopup() {
 
 /* "LFR van site · legacy · last seen 2024" and the like. */
 function labelOf(point) {
-  var i;
-  var label = "Camera";
-
-  for (i = 0; i < TYPES.length; i++) {
-    if (TYPES[i].type === point.type) {
-      label = TYPES[i].label;
-    }
-  }
+  var label = typeLabel(point.type) || "Camera";
 
   if (point.status === "legacy") {
     label += " · legacy";
@@ -1235,21 +1483,50 @@ function popupFor(point) {
    edit mode gets the delete buttons.
    ------------------------------------------------------------------ */
 
-function render() {
+/* "Most used" orders by how many times a source records the spot
+   being used - the same number the glow is weighed by. It is the
+   honest version of the question people actually ask of this map:
+   not "where will a van be next", which nothing here can know, but
+   "where have they been again and again", which the record says
+   plainly. */
+function listed() {
+  var out = [];
   var i;
 
-  var shown = 0;
-
-  pointsList.innerHTML = "";
-
   for (i = 0; i < points.length; i++) {
-    if (isShown(points[i])) {
-      pointsList.appendChild(rowFor(points[i]));
-      shown++;
+    if (isListed(points[i])) {
+      out.push(points[i]);
     }
   }
 
-  pointsEmpty.style.display = shown === 0 ? "block" : "none";
+  if (sortBy === "used") {
+    /* Busiest first, and ties fall back to the order they came in,
+       which is the seed's own alphabetical order. */
+    out.sort(function (a, b) {
+      return (b.deployments || 1) - (a.deployments || 1);
+    });
+  }
+
+  return out;
+}
+
+function render() {
+  var rows = listed();
+  var i;
+
+  pointsList.innerHTML = "";
+
+  for (i = 0; i < rows.length; i++) {
+    pointsList.appendChild(rowFor(rows[i]));
+  }
+
+  pointsEmpty.style.display = rows.length === 0 ? "block" : "none";
+
+  if (pointsCount) {
+    pointsCount.textContent = rows.length === points.length
+      ? String(points.length) + " cameras"
+      : String(rows.length) + " of " + String(points.length);
+  }
 }
 
 function rowFor(point) {
@@ -1285,6 +1562,16 @@ function rowFor(point) {
   var coords = document.createElement("span");
   coords.className = "coords";
   coords.textContent = point.lat.toFixed(4) + ", " + point.lon.toFixed(4);
+
+  /* Only while the list is ordered by it. The seed's own notes already
+     say "3 deployments 2023-2025" in the line above, so repeating the
+     number on every row the rest of the time is just noise. */
+  if (sortBy === "used") {
+    coords.textContent = (point.deployments || 1) +
+      ((point.deployments || 1) === 1 ? " use · " : " uses · ") +
+      coords.textContent;
+  }
+
   go.appendChild(coords);
 
   go.onclick = function () {
@@ -1545,7 +1832,12 @@ function startEditing() {
       lines.push("    lon: " + point.lon.toFixed(6) + ",");
       lines.push("    type: " + JSON.stringify(point.type) + ",");
       lines.push("    status: " + JSON.stringify(point.status) + ",");
-      lines.push("    last: " + (point.last === null ? "null" : String(point.last)));
+      lines.push("    last: " + (point.last === null ? "null" : String(point.last)) + ",");
+
+      /* Written out even though nothing on this page edits it. The glow
+         is weighed by it, so leaving it off here would quietly flatten
+         the map the moment anyone published from ?edit. */
+      lines.push("    deployments: " + String(point.deployments || 1));
       lines.push(i === points.length - 1 ? "  }" : "  },");
     }
 
@@ -1643,6 +1935,16 @@ function seedKeyOf(point) {
   return point.name + "|" + point.lat.toFixed(6) + "|" + point.lon.toFixed(6) + "|" + point.type;
 }
 
+/* A row's deployment count, or the fallback if it has none. A camera
+   that came from a report has never been counted, so it stands at one
+   like any hand-typed entry - and the glow is weighed by this, so a
+   missing value has to become a number here rather than reaching the
+   heatmap as null. */
+function deploymentsOf(row, fallback) {
+  return typeof row.deployments === "number" && row.deployments > 0
+    ? row.deployments : fallback;
+}
+
 function overlayCameras(rows) {
   var bySeed = {};
   var i;
@@ -1665,6 +1967,7 @@ function overlayCameras(rows) {
       point.note = row.note || "";
       point.status = row.status;
       point.last = typeof row.last_seen === "number" ? row.last_seen : point.last;
+      point.deployments = deploymentsOf(row, point.deployments);
       point.cameraId = row.id;
       delete bySeed[seedKeyOf(point)];
     }
@@ -1698,7 +2001,8 @@ function overlayCameras(rows) {
       lon: Number(row.lon),
       type: row.type,
       status: row.status,
-      last: typeof row.last_seen === "number" ? row.last_seen : null
+      last: typeof row.last_seen === "number" ? row.last_seen : null,
+      deployments: deploymentsOf(row, 1)
     });
   }
 
@@ -1746,7 +2050,7 @@ function loadCamerasFromDatabase() {
      will hold; it is there so a runaway table cannot ship megabytes
      to every visitor. */
   sb.from("cameras")
-    .select("id,name,note,lat,lon,type,status,last_seen,seed_key")
+    .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key")
     .eq("visible", true)
     .limit(5000)
     .then(function (result) {
@@ -1779,18 +2083,52 @@ loadCamerasFromDatabase();
     map.jumpTo({ center: lngLat(lat, lon), zoom: 17 });
   }
 })();
-loadCamerasFromDatabase();
 
 /* A remembered legacy setting has to show on the button straight away;
    the map side of it is applied when the layers are built. */
+markLegacy();
+
 if (legacyToggle) {
-  legacyToggle.className = showLegacy ? "toggle on" : "toggle";
-  legacyToggle.setAttribute("aria-pressed", showLegacy ? "true" : "false");
   legacyToggle.onclick = function () {
     setLegacy(!showLegacy);
   };
 }
 
+/* ---------------- finding one in the list ----------------
+
+   The list only, on purpose - see the note above isShown(). No
+   debounce: matching 182 names is nothing, and a delay between typing
+   and the list answering would be felt where the work is not. */
+if (pointsSearch) {
+  pointsSearch.oninput = function () {
+    searchTerm = pointsSearch.value.trim().toLowerCase();
+    render();
+  };
+}
+
+function markSort() {
+  var i;
+  var b;
+
+  for (i = 0; i < sortButtons.length; i++) {
+    b = sortButtons[i];
+    b.className = b.getAttribute("data-sort") === sortBy ? "toggle on" : "toggle";
+    b.setAttribute("aria-pressed", b.getAttribute("data-sort") === sortBy ? "true" : "false");
+  }
+}
+
+for (var s = 0; s < sortButtons.length; s++) {
+  sortButtons[s].onclick = (function (button) {
+    return function () {
+      sortBy = button.getAttribute("data-sort");
+      markSort();
+      saveView();
+      render();
+    };
+  })(sortButtons[s]);
+}
+
+markSort();
 markView();
 
 for (var v = 0; v < viewButtons.length; v++) {
@@ -1800,6 +2138,11 @@ for (var v = 0; v < viewButtons.length; v++) {
     };
   })(viewButtons[v]);
 }
+
+/* The kinds on offer come from CAMERA_TYPES like everything else, so
+   adding a kind of camera does not mean remembering this form. A van
+   site is what most entries are, so it is what the form opens on. */
+fillTypeSelect(typeInput, "vancam");
 
 if (EDITING) {
   startEditing();

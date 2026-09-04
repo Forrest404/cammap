@@ -3,6 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The site is meant to depend on nothing outside this repository:
+     MapLibre and supabase-js are vendored into lib/, the typeface into
+     fonts/. Until now that was a rule held by hand. This is the
+     browser holding it instead - a script from anywhere but here will
+     not run, whoever added the tag.
+
+     What is allowed out: the vector tiles, the satellite imagery, the
+     Supabase project, and (in ?edit only) OpenStreetMap's geocoder.
+     worker-src blob: is required - MapLibre starts its tile workers
+     from a blob, and without it the map does not draw at all. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
+  img-src 'self' data: blob: https://server.arcgisonline.com
+          https://tiles.openfreemap.org https://*.openfreemap.org
+          https://*.supabase.co;
+  media-src 'self' blob: https://*.supabase.co;
+  worker-src blob:;
+  child-src blob:;
+  connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
+              https://tiles.openfreemap.org https://*.openfreemap.org
+              https://server.arcgisonline.com
+              https://nominatim.openstreetmap.org;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'none';
+  frame-ancestors 'none'">
 <title>Map &mdash; cammap</title>
 
 <!-- MapLibre GL, vendored into lib/ so the page needs no CDN. Version
@@ -19,7 +48,7 @@
 <script src="lib/supabase.js"></script>
 
 <link rel="stylesheet" href="fonts/fonts.css">
-<link rel="stylesheet" href="frontend/style.css?v=8dfc4de5">
+<link rel="stylesheet" href="frontend/style.css?v=44b6667e">
 </head>
 <body>
 <div class="sheet">
@@ -97,22 +126,34 @@
         <label for="name">Name</label>
         <input type="text" id="name" placeholder="required">
         <label for="type">Kind</label>
-        <select id="type">
-          <option value="vancam">LFR van site</option>
-          <option value="fixedcam">Fixed LFR camera</option>
-          <option value="transportcam">Transport police</option>
-          <option value="facewatchcam">Shop (Facewatch)</option>
-          <option value="privatecam">Private</option>
-        </select>
+        <!-- Filled from CAMERA_TYPES in frontend/shared.js by map.js. -->
+        <select id="type"></select>
         <label for="memo">Note</label>
         <textarea id="memo" placeholder="optional"></textarea>
         <button id="add-button">Add</button>
         <p class="note" id="add-note"></p>
       </div>
 
-      <!-- The cameras. Everyone sees this. -->
+      <!-- The cameras. Everyone sees this.
+
+           The search narrows this list only, not the map: dots
+           vanishing letter by letter is a poor way to read a map. The
+           kinds of camera are switched on and off in the legend under
+           the map instead, and those do narrow both. -->
       <div class="box" id="cameras-box">
-        <h3>Cameras</h3>
+        <div class="list-head">
+          <h3>Cameras</h3>
+          <span class="count" id="points-count"></span>
+        </div>
+        <input type="search" id="points-search" class="find"
+               placeholder="Find a camera" autocomplete="off" spellcheck="false"
+               aria-label="Find a camera by name">
+        <div class="map-toggles" id="points-sort">
+          <button class="toggle on" data-sort="name" aria-pressed="true"
+                  title="In the order the record lists them">A&ndash;Z</button>
+          <button class="toggle" data-sort="used" aria-pressed="false"
+                  title="Where the record shows cameras used most often">Most used</button>
+        </div>
         <ul class="points" id="points-list"></ul>
         <p class="empty" id="points-empty">No cameras recorded yet.</p>
       </div>
@@ -155,9 +196,10 @@
      Supabase CDN script above failed to load, account.js notices and
      says the account panel is unavailable rather than breaking
      anything. -->
-<script src="data/points.js?v=8dfc4de5"></script>
-<script src="supabase-config.js?v=8dfc4de5"></script>
-<script src="frontend/account.js?v=8dfc4de5"></script>
-<script src="frontend/map.js?v=8dfc4de5"></script>
+<script src="data/points.js?v=44b6667e"></script>
+<script src="frontend/shared.js?v=44b6667e"></script>
+<script src="supabase-config.js?v=44b6667e"></script>
+<script src="frontend/account.js?v=44b6667e"></script>
+<script src="frontend/map.js?v=44b6667e"></script>
 </body>
 </html>

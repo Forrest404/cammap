@@ -120,7 +120,33 @@ var sb = null;            /* the Supabase client, once created */
 var configured = false;   /* true once sb exists and looks usable */
 var currentUser = null;   /* the signed-in user, or null */
 var currentRole = "user"; /* from profiles, once signed in; the server re-checks */
+var currentXp = 0;        /* likewise, and shown on the account page */
 var savedCameras = [];    /* rows from saved_cameras, kept in step with the server */
+
+/* ------------------------------------------------------------------
+   When the network gives out
+
+   Every call below hands its work to a promise and puts the page back
+   in order when it comes back. If it never comes back - a dropped
+   connection, a request that times out - the button it disabled on
+   the way in stays disabled, still reading "Sending…", and there is
+   no way out of it but a reload.
+
+   So every chain ends in one of these. It is deliberately vague about
+   what went wrong: from here the difference between no signal and a
+   server that fell over is not knowable, and not useful.
+   ------------------------------------------------------------------ */
+
+function recover(button, note, message) {
+  return function () {
+    if (button) {
+      button.disabled = false;
+    }
+    if (note) {
+      note.textContent = message || "That did not go through. Try again in a moment.";
+    }
+  };
+}
 
 /* ------------------------------------------------------------------
    Setting up the client
@@ -274,10 +300,15 @@ function loadRole(onDone) {
       currentRole = result.error ? "user" : (result.data.role || "user");
       currentXp = result.error ? 0 : (result.data.xp_total || 0);
       onDone();
+    })
+    .catch(function () {
+      /* No role means no moderation link, which is the safe way to be
+         wrong. The page still works; the server checks again anyway. */
+      currentRole = "user";
+      currentXp = 0;
+      onDone();
     });
 }
-
-var currentXp = 0;
 
 function isModerator() {
   return currentRole === "moderator" || currentRole === "admin";
@@ -308,6 +339,9 @@ function signIn(username, password, onDone) {
       }
       finishSignIn(result.data.user);
       onDone(null);
+    })
+    .catch(function () {
+      onDone("Could not reach the server. Check your connection and try again.");
     });
 }
 
@@ -344,6 +378,8 @@ function signUp(username, password, onDone, retried) {
 
     finishSignIn(result.data.user);
     onDone(null, username);
+  }).catch(function () {
+    onDone("Could not reach the server. Check your connection and try again.", username);
   });
 }
 
@@ -411,8 +447,17 @@ function usernameOf(user) {
    itself is keyed on.
    ------------------------------------------------------------------ */
 
+/* The type is part of the answer, not an afterthought. North End in
+   Croydon is on the map twice at exactly the same coordinates - once
+   as the fixed install, once as the van site it also is - and so is
+   London Road. Comparing only name and position makes those two rows
+   one row: starring either would light both stars, and saving the
+   second would collide with the first. The database has said so since
+   saved_cameras version 2, whose unique key is five columns wide; this
+   is the client finally agreeing with it. */
 function samePlace(row, point) {
   return row.camera_name === point.name &&
+         (row.camera_type || "vancam") === point.type &&
          Number(row.lat).toFixed(6) === point.lat.toFixed(6) &&
          Number(row.lon).toFixed(6) === point.lon.toFixed(6);
 }
@@ -442,23 +487,105 @@ function withoutId(list, id) {
   return kept;
 }
 
-/* Only the map page has anything to show for this, so everywhere else
+/* Two pages have something to show for this - the stars beside the
+   map's list, and the list on the account page - so everywhere else
    it fetches nothing and stays out of the way. */
 function loadSaved() {
-  if (PAGE !== "index.html" || !currentUser) {
+  if ((PAGE !== "index.html" && PAGE !== "account.html") || !currentUser) {
     return;
   }
 
-  sb.from("saved_cameras").select("*").then(function (result) {
-    if (result.error) {
-      return;
-    }
+  sb.from("saved_cameras").select("*").order("created_at", { ascending: false })
+    .then(function (result) {
+      if (result.error) {
+        return;
+      }
 
-    savedCameras = result.data || [];
-    if (typeof render === "function") {
-      render();
-    }
-  });
+      savedCameras = result.data || [];
+      redrawSaved();
+    })
+    .catch(function () {
+      /* No saved list this time round. The stars simply do not fill;
+         nothing else on the page depends on it. */
+    });
+}
+
+/* ---------------- the saved list on the account page ----------------
+
+   The star on the map page saves a camera and had nowhere to show
+   what it saved, which made it a button whose effect you had to
+   remember. This is where it went.
+
+   Each row links to the map at the camera's own coordinates, which
+   the map reads out of the address (see the hash handler at the foot
+   of map.js), so a saved camera is one click from being looked at. */
+
+function showSavedList() {
+  var box   = document.getElementById("saved-box");
+  var list  = document.getElementById("saved-list");
+  var empty = document.getElementById("saved-empty");
+  var i;
+
+  if (!box || !list) {
+    return;
+  }
+
+  box.style.display = currentUser ? "block" : "none";
+
+  if (!currentUser) {
+    return;
+  }
+
+  list.innerHTML = "";
+
+  for (i = 0; i < savedCameras.length; i++) {
+    list.appendChild(savedRow(savedCameras[i]));
+  }
+
+  empty.style.display = savedCameras.length === 0 ? "block" : "none";
+}
+
+function savedRow(saved) {
+  var row = document.createElement("li");
+  var go = document.createElement("a");
+  var swatch = document.createElement("span");
+  var name = document.createElement("span");
+  var coords = document.createElement("span");
+  var drop = document.createElement("button");
+
+  go.className = "goto saved-goto";
+  go.href = pageHref("index.html") + "#" +
+            Number(saved.lat).toFixed(5) + "," + Number(saved.lon).toFixed(5);
+  go.title = "Show on the map";
+
+  swatch.className = "swatch";
+  swatch.style.background = colourOf(saved.camera_type);
+  swatch.title = typeLabel(saved.camera_type);
+  go.appendChild(swatch);
+
+  name.className = "name";
+  name.textContent = saved.camera_name;
+  go.appendChild(name);
+
+  coords.className = "coords";
+  coords.textContent = typeLabel(saved.camera_type) + " · " +
+    Number(saved.lat).toFixed(4) + ", " + Number(saved.lon).toFixed(4);
+  go.appendChild(coords);
+
+  row.appendChild(go);
+
+  drop.className = "remove";
+  drop.textContent = "×";
+  drop.title = "Remove from saved";
+  drop.onclick = function () {
+    drop.disabled = true;
+    removeSaved(saved, function () {
+      drop.disabled = false;
+    });
+  };
+  row.appendChild(drop);
+
+  return row;
 }
 
 /* Called by map.js's rowFor(), once per camera in the list. Returns
@@ -501,6 +628,7 @@ function toggleSaved(point, button) {
   sb.from("saved_cameras").insert({
     user_id: currentUser.id,
     camera_name: point.name,
+    camera_type: point.type,
     lat: point.lat,
     lon: point.lon,
     note: point.note || ""
@@ -519,6 +647,8 @@ function toggleSaved(point, button) {
     if (typeof render === "function") {
       render();
     }
+  }).catch(function () {
+    button.disabled = false;
   });
 }
 
@@ -533,10 +663,23 @@ function removeSaved(saved, done) {
     }
 
     savedCameras = withoutId(savedCameras, saved.id);
-    if (typeof render === "function") {
-      render();
+    redrawSaved();
+  }).catch(function () {
+    if (done) {
+      done();
     }
   });
+}
+
+/* Both places a saved camera shows: the list on the map page, and the
+   list on the account page. Whichever is on this page redraws. */
+function redrawSaved() {
+  if (typeof render === "function") {
+    render();
+  }
+  if (PAGE === "account.html") {
+    showSavedList();
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -569,6 +712,8 @@ function showAccountPage() {
       standing.textContent = currentXp + " XP" + (isModerator() ? " \u00b7 " + currentRole : "");
     }
   }
+
+  showSavedList();
 }
 
 function setUpAccountPage() {
@@ -779,6 +924,9 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
       }).then(function (row) {
         onDone(row.error ? "The file was uploaded but could not be recorded." : null);
       });
+    })
+    .catch(function () {
+      onDone("The file could not be uploaded.");
     });
 }
 
@@ -789,14 +937,10 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
    does not have". Both go into the reports table; the database
    decides whether enough people agree for it to count on its own. */
 
-var LONDON_BOX = { s: 51.28, w: -0.51, n: 51.70, e: 0.33 };
+/* The London box is inLondon() in frontend/shared.js, shared with the
+   map so the two cannot come to disagree about where London ends.
 
-function inLondonBox(lat, lon) {
-  return lat >= LONDON_BOX.s && lat <= LONDON_BOX.n &&
-         lon >= LONDON_BOX.w && lon <= LONDON_BOX.e;
-}
-
-/* What the database would say back, in plain words. */
+   What the database would say back, in plain words. */
 function reportProblem(error) {
   var code = error && error.code;
   var msg = (error && error.message) || "";
@@ -827,6 +971,10 @@ function loadXpRules(onDone) {
         xpRules[result.data[i].key] = result.data[i].xp;
       }
     }
+    onDone();
+  }).catch(function () {
+    /* The form is built in here, so it has to run either way. Without
+       the rules it simply does not say what a report is worth. */
     onDone();
   });
 }
@@ -889,6 +1037,8 @@ function setUpNewReport() {
   var button    = document.getElementById("submit-button");
   var note      = document.getElementById("submit-note");
 
+  fillTypeSelect(typeSel, "fixedcam");
+
   function showXp() {
     xpNote.textContent = xpLine("new_" + typeSel.value);
   }
@@ -931,7 +1081,7 @@ function setUpNewReport() {
       latIn.focus();
       return;
     }
-    if (!inLondonBox(lat, lon)) {
+    if (!inLondon(lat, lon)) {
       note.textContent = "That is outside London. This map covers Greater London only.";
       latIn.focus();
       return;
@@ -978,7 +1128,7 @@ function setUpNewReport() {
         } else {
           finish(null);
         }
-      });
+      }).catch(recover(button, note));
     });
   };
 }
@@ -1008,6 +1158,9 @@ function setUpStatusReport(cameraId) {
         camera = result.data;
       }
       nameEl.textContent = camera ? camera.name : "camera #" + cameraId;
+    })
+    .catch(function () {
+      nameEl.textContent = "camera #" + cameraId;
     });
 
   button.onclick = function () {
@@ -1060,7 +1213,7 @@ function setUpStatusReport(cameraId) {
         } else {
           finish(null);
         }
-      });
+      }).catch(recover(button, note));
     });
   };
 }
@@ -1138,6 +1291,8 @@ function setUpCamerasTab() {
   var hiddenToggle = document.getElementById("c-hidden-toggle");
   var addButton = document.getElementById("c-add-button");
 
+  fillTypeSelect(document.getElementById("c-type"), "fixedcam");
+
   if (!camerasLoaded) {
     search.oninput = function () { renderCameras(); };
     hiddenToggle.onclick = function () {
@@ -1172,6 +1327,9 @@ function loadAllCameras() {
       allCameras = result.data;
       camerasLoaded = true;
       renderCameras();
+    })
+    .catch(function () {
+      note.textContent = "Could not load the cameras.";
     });
 }
 
@@ -1226,6 +1384,7 @@ function cameraRow(c) {
   var onMap = document.createElement("a");
   onMap.href = pageHref("index.html") + "#" + Number(c.lat).toFixed(5) + "," + Number(c.lon).toFixed(5);
   onMap.target = "_blank";
+  onMap.rel = "noopener noreferrer";
   onMap.textContent = "See on the map →";
   body.appendChild(onMap);
 
@@ -1286,7 +1445,7 @@ function addCameraByHand() {
     latIn.focus();
     return;
   }
-  if (!inLondonBox(lat, lon)) {
+  if (!inLondon(lat, lon)) {
     note.textContent = "That is outside London. This map covers Greater London only.";
     latIn.focus();
     return;
@@ -1312,7 +1471,7 @@ function addCameraByHand() {
     latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
     note.textContent = "On the map as camera #" + result.data + ".";
     loadAllCameras();
-  });
+  }).catch(recover(button, note));
 }
 
 /* ---------------- history: undoing decisions ----------------
@@ -1350,6 +1509,9 @@ function loadHistory() {
       for (i = 0; i < result.data.length; i++) {
         list.appendChild(historyRow(result.data[i]));
       }
+    })
+    .catch(function () {
+      note.textContent = "Could not load the history.";
     });
 }
 
@@ -1360,6 +1522,9 @@ function undo(target, action, noteText, onDone) {
         try { window.localStorage.removeItem("cammap.cameras"); } catch (e) {}
       }
       onDone(result.error ? (result.error.message || "That did not go through.") : null);
+    })
+    .catch(function () {
+      onDone("That did not go through. Try again in a moment.");
     });
 }
 
@@ -1403,6 +1568,7 @@ function historyRow(r) {
   var onMap = document.createElement("a");
   onMap.href = pageHref("index.html") + "#" + Number(r.lat).toFixed(5) + "," + Number(r.lon).toFixed(5);
   onMap.target = "_blank";
+  onMap.rel = "noopener noreferrer";
   onMap.textContent = "See on the map →";
   body.appendChild(onMap);
 
@@ -1486,14 +1652,14 @@ function loadQueue() {
       for (i = 0; i < result.data.length; i++) {
         list.appendChild(queueRow(result.data[i]));
       }
+    })
+    .catch(function () {
+      note.textContent = "Could not load the queue.";
     });
 }
 
-function typeLabel(type) {
-  var names = { fixedcam: "Fixed LFR camera", vancam: "LFR van", transportcam: "Transport police",
-                facewatchcam: "Shop (Facewatch)", privatecam: "Private", nonfunccam: "Non-functional" };
-  return names[type] || type || "";
-}
+/* typeLabel() is in frontend/shared.js, so the queue names a kind of
+   camera exactly as the map's legend and the report form do. */
 
 function claimLabel(claim) {
   var names = { nonfunctional: "not working", removed: "gone", active: "back in use" };
@@ -1533,6 +1699,7 @@ function queueRow(r) {
   var onMap = document.createElement("a");
   onMap.href = pageHref("index.html") + "#" + Number(r.lat).toFixed(5) + "," + Number(r.lon).toFixed(5);
   onMap.target = "_blank";
+  onMap.rel = "noopener noreferrer";
   onMap.textContent = "See on the map →";
   body.appendChild(document.createElement("br"));
   body.appendChild(onMap);
@@ -1571,6 +1738,11 @@ function queueRow(r) {
         /* the map cache is five minutes old at most; a moderator who
            just approved something should see it on their next look */
         try { window.localStorage.removeItem("cammap.cameras"); } catch (e) {}
+      })
+      .catch(function () {
+        approve.disabled = false;
+        reject.disabled = false;
+        outcome.textContent = "That did not go through. Try again in a moment.";
       });
   }
 
@@ -1609,6 +1781,8 @@ function proofThumb(p) {
     } else {
       holder.textContent = "video →";
     }
+  }).catch(function () {
+    holder.textContent = "(proof unavailable)";
   });
 
   return holder;
@@ -1676,6 +1850,9 @@ function loadBoard(view) {
       for (i = 0; i < result.data.length; i++) {
         body.appendChild(boardRow(i + 1, result.data[i], result.data[i].username === me));
       }
+    })
+    .catch(function () {
+      note.textContent = "Could not load the leaderboard.";
     });
 }
 
@@ -1710,6 +1887,7 @@ function start() {
 
   if (PAGE === "account.html") {
     setUpAccountPage();
+    loadSaved();
   } else if (PAGE === "report.html") {
     setUpReportPage();
   } else if (PAGE === "moderate.html") {

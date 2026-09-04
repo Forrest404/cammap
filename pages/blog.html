@@ -3,9 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The site is meant to depend on nothing outside this repository:
+     MapLibre and supabase-js are vendored into lib/, the typeface into
+     fonts/. Until now that was a rule held by hand. This is the
+     browser holding it instead - a script from anywhere but here will
+     not run, whoever added the tag.
+
+     What is allowed out: the vector tiles, the satellite imagery, the
+     Supabase project, and (in ?edit only) OpenStreetMap's geocoder.
+     worker-src blob: is required - MapLibre starts its tile workers
+     from a blob, and without it the map does not draw at all. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
+  img-src 'self' data: blob: https://server.arcgisonline.com
+          https://tiles.openfreemap.org https://*.openfreemap.org
+          https://*.supabase.co;
+  media-src 'self' blob: https://*.supabase.co;
+  worker-src blob:;
+  child-src blob:;
+  connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
+              https://tiles.openfreemap.org https://*.openfreemap.org
+              https://server.arcgisonline.com
+              https://nominatim.openstreetmap.org;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'none';
+  frame-ancestors 'none'">
 <title>Blog &mdash; cammap</title>
 <link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=8dfc4de5">
+<link rel="stylesheet" href="../frontend/style.css?v=44b6667e">
 </head>
 <body>
 <div class="sheet">
@@ -83,7 +112,8 @@
 <!-- The account controls live in the nav, so every page needs these
      three. All local files; nothing is fetched from a CDN. -->
 <script src="../lib/supabase.js"></script>
-<script src="../supabase-config.js?v=8dfc4de5"></script>
-<script src="../frontend/account.js?v=8dfc4de5"></script>
+<script src="../frontend/shared.js?v=44b6667e"></script>
+<script src="../supabase-config.js?v=44b6667e"></script>
+<script src="../frontend/account.js?v=44b6667e"></script>
 </body>
 </html>

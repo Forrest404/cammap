@@ -17,13 +17,15 @@
 
     index.html          the map. Stays at the root: it is what a web server
                         hands out for the site's own address.
+    CLAUDE.md           the house rules, for anyone (or anything) picking
+                        the project up cold.
     supabase-config.js  the two public values you paste after making a
                         Supabase project.
 
     pages/              every other page - about, blog, account, report,
                         moderate, leaderboard.
-    frontend/           the code that runs in a browser: map.js, account.js,
-                        style.css.
+    frontend/           the code that runs in a browser: shared.js, map.js,
+                        account.js, style.css.
     data/               points.js, the camera list you edit by hand.
     backend/            schema.sql and seed.sql - the database.
     lib/ fonts/         vendored, pinned by version, not ours to edit.
@@ -33,9 +35,24 @@ Links are written relative to wherever the page sits, so index.html reaches
 `pages/about.html` while a page in pages/ reaches `../index.html`. account.js
 works this out with `pageHref()` rather than hard-coding either.
 
+`frontend/shared.js` holds what map.js and account.js must agree on: the kinds
+of camera (`CAMERA_TYPES` - colour, label, identifier) and the London bounds.
+The legend, every drop-down on every page, and every label are built from it,
+so adding a kind of camera is one edit rather than five. The database keeps its
+own copy of both in `check` constraints, on purpose: the server has to refuse a
+bad row without trusting anything a browser sent.
+
+**The build script is missing.** `points.js`, `seed.sql` and the TODO below all
+name `build_points.py`, but `tools/` holds only `stamp.py`. Until it turns up
+the two data files are maintained by hand, or through `index.html?edit`, and
+they must be kept in step with each other.
+
 ## TODO
 
-- [x] Make it *active* facial recognition cameras, and add a legacy toggle to show ones previously in use. (Done: a van site is active if the newest Met record we hold - 2025 - lists a deployment there. The 2026 record is behind bot protection; when it is obtained, bump `LATEST_MET_YEAR` in the build script and the split updates itself.) We could also perhaps use AI to predict where the next LFR deployments will be.
+- [x] Make it *active* facial recognition cameras, and add a legacy toggle to show ones previously in use. (Done: a van site is active if the newest Met record we hold - 2025 - lists a deployment there. The 2026 record is behind bot protection; when it is obtained, bump `LATEST_MET_YEAR` in the build script and the split updates itself.)
+- [x] ~~Use AI to predict where the next LFR deployments will be.~~ **Dropped, deliberately.** 182 sites drawn from annual FOI records cannot support a credible forecast, and this map's own data note says "Nothing here is estimated" - a confident guess printed beside a public record invites people to read it as one. On a civil liberties map that is a liability, not a feature.
+
+  What was built instead answers the question people actually have, out of data already held: **Most used**, the sort beside the camera list, orders by `deployments` - how many times a source records a spot being used. Same number the glow is weighed by. It says where they have gone again and again, which the record does support.
 - [x] Make the fixed LFR cameras (not vans) a different color to the vans. (Done: one colour per kind, legend under the map, built from the same table the map paints from.)
 - [x] Add satellite, etc views. (Done: three base views under the map - Dark, Light and Satellite. Light is OpenFreeMap's Bright - blue water, green parks, warm off-white land; Positron was tried first but is colourless by design; Satellite is Esri World Imagery under the dark style's labels. Which one you chose is remembered.)
 - [x] Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password. (Done: the site generates the username - two words, `copper.heron` - and the person sets a password. No email, no name. See "Anonymity" below for what "completely" honestly means.)
@@ -52,7 +69,7 @@ The site is static files on GitHub Pages plus one Supabase project. Everything b
 1. **Authentication -> Providers -> Email**: on. **Confirm email: OFF.** With it on, every sign-up tries to send mail and the free tier refuses the fourth in an hour, which caps real sign-ups. The hidden login email (`<username>@users.cammap.app`) is never a real mailbox; it exists because Supabase wants one to hang a password on. **It must not change**, or every existing account stops matching.
 2. **Authentication -> Providers -> Email -> Password requirements**: "Lowercase, uppercase letters, digits and symbols", minimum length **10**. The client repeats this rule so the message is ours; the dashboard is what enforces it.
 3. **Authentication -> Providers -> Anonymous sign-ins: OFF.** The old one-press accounts are retired; the client signs any it finds out.
-4. **Authentication -> Rate Limits**: leave the defaults, tighten if abuse appears. (CAPTCHA needs a remote script, which this site's no-CDN rule forbids; rate limits and the report throttle in the database come first.)
+4. **Authentication -> Rate Limits**: leave the defaults, tighten if abuse appears. (CAPTCHA needs a remote script, which this site's no-CDN rule forbids - and the Content-Security-Policy on every page now enforces that rule rather than trusting it; rate limits and the report throttle in the database come first.)
 5. **SQL Editor**: paste and run `backend/schema.sql`, then `backend/seed.sql`. Both are safe to run again.
 6. **Database -> Extensions**: enable `pg_cron`, then run `backend/schema.sql` once more - the leaderboard refresh is scheduled only when the extension is present. Without it the leaderboards are still there, just never updated; refresh by hand with `select refresh_leaderboards();`.
 7. **Storage**: the `proof` bucket is created by `backend/schema.sql` (private, 20 MB, images and MP4/WebM only). Nothing to do.

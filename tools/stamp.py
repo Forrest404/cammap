@@ -19,8 +19,8 @@ import glob, hashlib, io, os, re
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
 
-OWN = ["frontend/map.js", "frontend/account.js", "frontend/style.css",
-       "data/points.js", "supabase-config.js"]
+OWN = ["frontend/shared.js", "frontend/map.js", "frontend/account.js",
+       "frontend/style.css", "data/points.js", "supabase-config.js"]
 
 h = hashlib.sha256()
 for f in OWN:

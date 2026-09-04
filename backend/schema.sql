@@ -295,6 +295,10 @@ create table if not exists public.cameras (
   note        text not null default '',
   lat         double precision not null,
   lon         double precision not null,
+  -- the same list as CAMERA_TYPES in frontend/shared.js. Kept
+  -- separately on purpose: the server has to be able to refuse a bad
+  -- row without trusting anything a browser sent. Change one, change
+  -- the other.
   type        text not null
                 check (type in ('fixedcam', 'vancam', 'transportcam',
                                 'facewatchcam', 'privatecam', 'nonfunccam')),
@@ -311,7 +315,7 @@ create table if not exists public.cameras (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
 
-  -- same bounds as LONDON_BOUNDS in map.js
+  -- same bounds as LONDON_BOUNDS in frontend/shared.js
   constraint cameras_in_london check (
     lat between 51.28 and 51.70 and
     lon between -0.51 and 0.33
@@ -576,7 +580,7 @@ create table if not exists public.saved_cameras (
   camera_type text not null default 'vancam',
   created_at  timestamptz default now(),
 
-  -- same bounds as LONDON_BOUNDS in map.js - a save outside Greater
+  -- same bounds as LONDON_BOUNDS in frontend/shared.js - a save outside Greater
   -- London means something is wrong upstream, so reject it here too
   -- rather than only in the browser.
   constraint saved_cameras_in_london check (
@@ -1338,8 +1342,9 @@ create trigger cameras_touch_updated_at
 -- the auth.users insert back and the sign-up fails cleanly: the API
 -- reports "Database error saving new user" and no half-made account
 -- is left behind. The client generates names, so on that error it
--- draws a new pair and tries again; username_available() below lets
--- it check first.
+-- draws a new pair and tries again. It does not ask first, and there
+-- is deliberately nothing here for it to ask: see the note below the
+-- trigger.
 --
 -- An anonymous sign-in (the version 1 way) still gets a profile, with
 -- no username, so nothing breaks until anonymous sign-in is switched
@@ -1386,23 +1391,20 @@ create trigger on_auth_user_created
   for each row
   execute function public.handle_new_user();
 
--- For the sign-up form: supabase.rpc('username_available', { username: 'copper.heron' }).
--- One lookup on profiles_username_lower_idx. Callable signed out,
--- because that is when it is needed.
-create or replace function public.username_available(username text)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public, pg_temp
-as $$
-  select not exists (
-    select 1 from public.profiles p
-     where lower(p.username) = lower(username_available.username));
-$$;
-
-revoke all on function public.username_available(text) from public, anon, authenticated;
-grant execute on function public.username_available(text) to anon, authenticated, service_role;
+-- username_available() used to live here: one lookup that answered, to
+-- anyone at all signed out, whether a given username existed.
+--
+-- It is gone, for two reasons. The client never called it - signUp()
+-- in account.js simply tries the name and draws another if it is
+-- taken, which is the same answer without asking the question. And on
+-- a site whose whole premise is that an account says nothing about a
+-- person, an endpoint that confirms a name to a stranger is exactly
+-- the wrong shape: given the two word lists in account.js it would
+-- enumerate every account on the site in about twenty thousand calls.
+--
+-- Dropped rather than left with the grant narrowed, so it cannot be
+-- re-exposed by a later change to the grants.
+drop function if exists public.username_available(text);
 
 -- ---------------- proof bucket ----------------
 
