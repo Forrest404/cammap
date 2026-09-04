@@ -66,11 +66,17 @@ var nextId = 1;
 
 /* Two base styles, and the imagery view uses the dark one underneath
    because its labels are drawn white with a dark halo, which is what
-   reads over a photograph. Positron is the light one: grey and quiet,
-   the nearest thing to the dark style's restraint. */
+   reads over a photograph.
+
+   The light one is Bright: blue water, green parks, warm off-white
+   land. Positron was tried first and is quieter still, but it is
+   colourless by design - every colour in it measures zero saturation
+   - and a map of a city with no green in the parks and no blue in the
+   river is a poorer thing to look at. Bright has colour without
+   taking any of the hues the cameras use. */
 var MAP_STYLES = {
   dark:  "https://tiles.openfreemap.org/styles/dark",
-  light: "https://tiles.openfreemap.org/styles/positron"
+  light: "https://tiles.openfreemap.org/styles/bright"
 };
 
 /* "dark", "light" or "satellite". The three are one choice, not three
