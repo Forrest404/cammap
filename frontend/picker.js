@@ -61,7 +61,7 @@ function makePicker(options) {
   map = new maplibregl.Map({
     container: options.container,
     style: MAP_STYLES.dark,
-    center: placed ? lngLat(options.lat, options.lon) : lngLat(51.5074, -0.1278),
+    center: placed ? lngLat(options.lat, options.lon) : lngLat(LONDON_CENTRE[0], LONDON_CENTRE[1]),
     zoom: placed ? PICK_ZOOM : PICK_WIDE,
     minZoom: PICK_WIDE,
     maxZoom: 19,
@@ -102,7 +102,7 @@ function makePicker(options) {
     draggable: draggable,
     anchor: "center"
   })
-    .setLngLat(placed ? lngLat(options.lat, options.lon) : lngLat(51.5074, -0.1278))
+    .setLngLat(placed ? lngLat(options.lat, options.lon) : lngLat(LONDON_CENTRE[0], LONDON_CENTRE[1]))
     .addTo(map);
 
   /* Hidden until there is something to point at, so an untouched form
@@ -168,8 +168,6 @@ function makePicker(options) {
   }
 
   return {
-    map: map,
-
     /* Move the pin from outside - the number boxes, or the locate
        button. Does not call onMove: the caller already knows. */
     setPoint: function (lat, lon, fly) {
@@ -207,13 +205,7 @@ function makePicker(options) {
       if (map.getSource(PICK_SOURCE)) {
         map.getSource(PICK_SOURCE).setData(pending);
       }
-    },
-
-    /* The map is built inside a box that may have been display:none
-       when it was made, in which case MapLibre measured it as nothing.
-       Called when the box is shown. */
-    resize: function () {
-      map.resize();
     }
+
   };
 }

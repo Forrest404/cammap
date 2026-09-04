@@ -20,8 +20,10 @@
    browser sent. Change one and change the other.
    ------------------------------------------------------------------ */
 
-/* One colour per kind of camera, matching --t-* in style.css. Colour
-   always means what a thing IS. Whether it works now is said by the
+/* One colour per kind of camera. This table is the only place the
+   colours are written: style.css does NOT keep a copy, and the dots,
+   the legend and the picker's context dots are all painted from here.
+   Colour always means what a thing IS. Whether it works now is said by the
    fill instead: an active camera is a solid dot, a legacy one is a
    hollow ring in the same colour, and a non-functional one is filled
    in a colour of its own regardless of type.
@@ -48,6 +50,10 @@ var NONFUNCTIONAL_TYPE = "nonfunccam";
    map to another city is this, the two check constraints in
    schema.sql, and the opening centre in map.js. */
 var LONDON_BOUNDS = [[51.28, -0.51], [51.70, 0.33]];
+
+/* Where a map opens when it has no reason to look anywhere else.
+   Both maps use it, so it is here rather than in either of them. */
+var LONDON_CENTRE = [51.5074, -0.1278];
 
 function inLondon(lat, lon) {
   return lat >= LONDON_BOUNDS[0][0] && lat <= LONDON_BOUNDS[1][0] &&
@@ -126,6 +132,45 @@ function fillTypeSelect(el, selected) {
       option.selected = true;
     }
     el.appendChild(option);
+  }
+}
+
+/* ------------------------------------------------------------------
+   What the browser remembers
+
+   Three keys, named here because more than one file touches them and
+   a half-updated string is a bug nobody sees: the cache simply stops
+   being found and every visit pays for a fetch.
+
+     CAMERAS   the cameras table, held for a few minutes so a busy day
+               is answered out of the visitor's own browser. map.js
+               writes it; picker.js's context dots read it; every
+               moderating action throws it away so the moderator sees
+               their own change on the next look.
+     VIEW      which base map, the legacy toggle, the kinds switched
+               off in the legend, and the list's sort order.
+     DRAFT     the ?edit working copy of points.js. Never written
+               outside edit mode.
+
+   Storage may be refused outright - a private window, a browser set
+   to block it - so every read and write of these is wrapped, and the
+   site works without any of them.
+   ------------------------------------------------------------------ */
+
+var STORAGE = {
+  cameras: "cammap.cameras",
+  view:    "cammap.view",
+  draft:   "cammap.draft"
+};
+
+/* Throw the camera cache away. Called after anything that changes what
+   is on the map, so the person who made the change sees it rather than
+   up to five minutes of the old answer. */
+function forgetCameraCache() {
+  try {
+    window.localStorage.removeItem(STORAGE.cameras);
+  } catch (err) {
+    /* storage refused; there was nothing cached to throw away either */
   }
 }
 

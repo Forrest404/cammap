@@ -55,6 +55,61 @@ tools/stamp.py      run before every commit
 Links are relative to wherever the page sits, so `account.js` writes them
 through `pageHref()` rather than hard-coding `../`. Use it.
 
+## What is copied on purpose, and must be changed everywhere
+
+With no build step there are no partials, so four things are written out once
+per page. Changing one copy and not the others is the easiest mistake to make
+here, and the least visible.
+
+| Copied on all 7 pages | If you change it |
+| --- | --- |
+| `<nav class="bar">` | edit all 7, or the nav disagrees with itself |
+| `<footer class="foot">` | same |
+| The `<meta>` Content-Security-Policy | same — `stamp.py` **fails** if they drift |
+| `<script>` tags for shared.js / account.js | same, plus add to `OWN` in `stamp.py` |
+
+`stamp.py` compares the seven policies on every run and exits non-zero naming
+the odd page out, so a CSP drift cannot survive a commit. The other three are
+on you.
+
+## The Content-Security-Policy
+
+Every page carries the same one. It is what turns "no CDN" from a rule we
+remember into a rule the browser enforces — a `<script>` added from anywhere
+but `'self'` will not run, whoever added it.
+
+What it allows out, and why:
+
+- `https://*.supabase.co` — the database, auth and the private proof bucket.
+- `https://tiles.openfreemap.org` — the vector tiles and the sprite.
+- `https://server.arcgisonline.com` — Esri imagery, for the satellite view.
+- `https://nominatim.openstreetmap.org` — the place search, `?edit` only.
+- `worker-src blob:` — **required.** MapLibre starts its tile workers from a
+  blob, and without it the map does not draw at all.
+- `style-src 'unsafe-inline'` — the swatches and the legend are coloured from
+  `CAMERA_TYPES` by setting `style.background`, which is an inline style.
+
+Adding an outbound call means adding its host here too, on all seven pages, or
+it fails silently with only a console warning.
+
+## Traps
+
+Things that look like they would work and do not:
+
+- **Camera colours are not in `style.css`.** There were six `--t-*` variables
+  holding a second copy; nothing read them, so editing them changed nothing.
+  They are gone. `CAMERA_TYPES` in `shared.js` is the only copy.
+- **`localStorage` keys are in `STORAGE` in `shared.js`,** not written inline.
+  Four files touch the camera cache; a half-updated string does not error, it
+  just silently stops finding the cache.
+- **`flyTo` will not appear to work in a headless or backgrounded tab.**
+  MapLibre advances camera flights on `requestAnimationFrame`, which a hidden
+  tab does not run. `jumpTo` does work. This is an artifact of the harness, not
+  a bug — check `document.hidden` before believing a map animation is broken.
+- **`?edit` writes nothing to the server.** It is a local drafting tool for
+  `points.js`; its export must keep writing every field, `deployments`
+  included, or publishing from it silently flattens the glow.
+
 ## Things that must not drift apart
 
 - **The base map.** Both maps - the real one and the report form's picker -
@@ -81,10 +136,10 @@ through `pageHref()` rather than hard-coding `../`. Use it.
 cameras are the point. Getting it backwards once turned London into a white web
 with the cameras lost in it.
 
-The `LIFT` table in `frontend/map.js` is where that is tuned, and the "Tuning
-the dark map" and "Tuning the glow" sections of `NOTES.md` explain what each
-number is for. Judge changes to any of it by looking at the map, not by reading
-the numbers.
+The `LIFT` table in `frontend/shared.js` is where that is tuned, and the
+"Tuning the dark map" and "Tuning the glow" sections of `NOTES.md` explain what
+each number is for. Judge changes to any of it by looking at the map, not by
+reading the numbers.
 
 ## Anonymity is a feature, not a default
 
@@ -98,6 +153,33 @@ that reason.
 Every moderating action is gated on the server. A page hiding itself from a
 non-moderator is a courtesy, never the lock.
 
+## Checking your work
+
+There are no tests. There is no build. So it is checked by running it:
+
+```
+python3 -m http.server 8000     # then open http://localhost:8000/
+python3 tools/stamp.py          # last, before committing
+```
+
+Worth looking at after any change to the map or the picker: the console is
+clean (a CSP violation shows up there and nowhere else), the camera dots
+survive a Dark → Light → Satellite → Dark round trip, and the glow still has
+three layers rather than six —
+
+```js
+map.getStyle().layers.filter(l => l.id.startsWith('cammap-heat')).length
+```
+
+The report form only renders signed in. To exercise the picker without an
+account, show the form and call its setup directly from the console:
+
+```js
+document.getElementById('report-form').style.display = 'block';
+document.getElementById('report-new').style.display = 'block';
+setUpNewReport();
+```
+
 ## The comments
 
 This repository explains *why*, in prose, at length. That is on purpose: the
@@ -105,4 +187,5 @@ reasoning behind the colour lifts, the glow ramp and the layer ordering is not
 recoverable from the code, and it was all learned the hard way.
 
 Match it. Say why a thing is the way it is, not what the line does. Do not
-strip comments to make a diff smaller.
+strip comments to make a diff smaller — for anyone arriving here cold, human or
+otherwise, they are most of what makes this codebase legible.

@@ -1031,7 +1031,6 @@ function setUpReportPage() {
    this only ever reads it, and falls back to asking the table. A
    failure here loses the context dots and nothing else, so it is
    quiet about it. */
-var CONTEXT_KEY = "cammap.cameras";
 var CONTEXT_TTL = 5 * 60 * 1000;
 
 function contextCameras(onDone) {
@@ -1039,7 +1038,7 @@ function contextCameras(onDone) {
   var saved;
 
   try {
-    raw = window.localStorage.getItem(CONTEXT_KEY);
+    raw = window.localStorage.getItem(STORAGE.cameras);
     saved = raw ? JSON.parse(raw) : null;
     if (saved && saved.at && Date.now() - saved.at < CONTEXT_TTL && Array.isArray(saved.rows)) {
       onDone(saved.rows);
@@ -1581,7 +1580,7 @@ function addCameraByHand() {
       note.textContent = result.error.message || "That did not go through.";
       return;
     }
-    try { window.localStorage.removeItem("cammap.cameras"); } catch (e) {}
+    forgetCameraCache();
     latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
     note.textContent = "On the map as camera #" + result.data + ".";
     loadAllCameras();
@@ -1633,7 +1632,7 @@ function undo(target, action, noteText, onDone) {
   sb.rpc("moderate_undo", { target: target, action: action, note: noteText || null })
     .then(function (result) {
       if (!result.error) {
-        try { window.localStorage.removeItem("cammap.cameras"); } catch (e) {}
+        forgetCameraCache();
       }
       onDone(result.error ? (result.error.message || "That did not go through.") : null);
     })
@@ -1851,7 +1850,7 @@ function queueRow(r) {
         outcome.textContent = action === "approve" ? "Approved." : "Rejected.";
         /* the map cache is five minutes old at most; a moderator who
            just approved something should see it on their next look */
-        try { window.localStorage.removeItem("cammap.cameras"); } catch (e) {}
+        forgetCameraCache();
       })
       .catch(function () {
         approve.disabled = false;
