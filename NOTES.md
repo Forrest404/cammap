@@ -97,9 +97,14 @@ near-black colour multiplied is still near-black, and the dark end is
 where a map keeps its texture. Buildings have their own entry because
 they start at almost nothing and a floor alone will not rescue them.
 
-Raise a floor to bring the street grid up; leave `text` alone, since
-the labels are already the most legible thing on the map and a bigger
-factor only blows them out.
+The rule the numbers answer to: **nothing the base map draws may be
+brighter than the dimmest camera dot** (perceived brightness 134, the
+fixed-camera red). The map is the backdrop; the cameras are the point.
+Getting that backwards once turned London into a white web with the
+cameras lost in it. The brightest thing the base map draws is now 92.
+
+Raise a floor to bring the street grid up, and check the result
+against that ceiling before committing it.
 
 The `noisy` list in the same file names layers that are removed
 outright - country borders, ice shelves, Heathrow's taxiways and so
