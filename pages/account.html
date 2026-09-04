@@ -3,16 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- The site is meant to depend on nothing outside this repository:
-     MapLibre and supabase-js are vendored into lib/, the typeface into
-     fonts/. Until now that was a rule held by hand. This is the
-     browser holding it instead - a script from anywhere but here will
-     not run, whoever added the tag.
-
-     What is allowed out: the vector tiles, the satellite imagery, the
-     Supabase project, and (in ?edit only) OpenStreetMap's geocoder.
-     worker-src blob: is required - MapLibre starts its tile workers
-     from a blob, and without it the map does not draw at all. -->
+<!-- Identical on all seven pages, and must stay that way: it is what
+     makes the no-CDN rule something the browser enforces rather than
+     something we remember. tools/stamp.py fails if they drift. Why
+     each source is listed, and what breaks without worker-src, is in
+     CLAUDE.md under "The Content-Security-Policy". -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self';
@@ -34,7 +29,7 @@
   frame-ancestors 'none'">
 <title>Account &mdash; cammap</title>
 <link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=262d4e6f">
+<link rel="stylesheet" href="../frontend/style.css?v=3d29b5f5">
 </head>
 <body>
 <div class="sheet">
@@ -184,8 +179,8 @@
 
 </div>
 <script src="../lib/supabase.js"></script>
-<script src="../frontend/shared.js?v=262d4e6f"></script>
-<script src="../supabase-config.js?v=262d4e6f"></script>
-<script src="../frontend/account.js?v=262d4e6f"></script>
+<script src="../frontend/shared.js?v=3d29b5f5"></script>
+<script src="../supabase-config.js?v=3d29b5f5"></script>
+<script src="../frontend/account.js?v=3d29b5f5"></script>
 </body>
 </html>

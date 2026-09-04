@@ -25,15 +25,15 @@
 var EDITING = window.location.search.indexOf("edit") !== -1;
 
 /* Where the draft is kept while you are working. Only ever written
-   in edit mode. The published points are never touched. */
-var DRAFT_KEY = "cammap.draft";
+   in edit mode; the published points are never touched. The key
+   itself is in shared.js with the other two. */
+var DRAFT_KEY = STORAGE.draft;
 
-/* ---------------- London, and nowhere else for now ---------------- */
+/* ---------------- London, and nowhere else for now ----------------
 
-var LONDON = [51.5074, -0.1278];
-
-/* LONDON_BOUNDS and inLondon() are in frontend/shared.js, because
-   account.js needs the same box for the report form. */
+   LONDON_CENTRE, LONDON_BOUNDS and inLondon() are in shared.js: the
+   report form validates against the same box, and the picker opens on
+   the same spot. Only the zooms below are the map's own. */
 
 var OPENING_ZOOM = 11;
 var CLOSEST_ZOOM = 19;   /* street and building level */
@@ -60,12 +60,14 @@ var nextId = 1;
    source instead of being inverted after the fact.
 
    MapLibre counts coordinates the other way round from the rest of
-   this file - longitude first - so the two are converted here, once,
-   and nowhere else. */
+   this project - longitude first. lngLat() in shared.js is the one
+   place that is converted; call it rather than writing a pair by
+   hand, and a reversed pin cannot happen. */
 
-/* Two base styles, and the imagery view uses the dark one underneath
-   because its labels are drawn white with a dark halo, which is what
-   reads over a photograph.
+/* MAP_STYLES is in shared.js, because the report page's picker draws
+   the same base map. Two styles, and the imagery view uses the dark
+   one underneath because its labels are drawn white with a dark halo,
+   which is what reads over a photograph.
 
    The light one is Bright: blue water, green parks, warm off-white
    land. Positron was tried first and is quieter still, but it is
@@ -73,8 +75,6 @@ var nextId = 1;
    - and a map of a city with no green in the parks and no blue in the
    river is a poorer thing to look at. Bright has colour without
    taking any of the hues the cameras use. */
-/* MAP_STYLES is in frontend/shared.js: the coordinate picker on the
-   report page draws the same base map. */
 
 /* "dark", "light" or "satellite". The three are one choice, not three
    switches: satellite is imagery over the dark style, so it and light
@@ -244,7 +244,7 @@ var groundLayers = [];
 
 /* Which toggles were on last time, so a reload keeps them. Read and
    written with the same care as the draft: storage may be refused. */
-var VIEW_KEY = "cammap.view";
+var VIEW_KEY = STORAGE.view;
 
 function loadView() {
   try {
@@ -292,7 +292,7 @@ var HEAT_GONE = 15;     /* by here it has gone entirely */
 var map = new maplibregl.Map({
   container: "map",
   style: baseStyleOf(view),
-  center: lngLat(LONDON[0], LONDON[1]),
+  center: lngLat(LONDON_CENTRE[0], LONDON_CENTRE[1]),
   zoom: OPENING_ZOOM,
   minZoom: WIDEST_ZOOM,
   maxZoom: CLOSEST_ZOOM,
@@ -1300,7 +1300,7 @@ function popupFor(point) {
               remove.textContent = result.error.message || "That did not go through.";
               return;
             }
-            try { window.localStorage.removeItem("cammap.cameras"); } catch (e) {}
+            forgetCameraCache();
             closePopup();
             points = points.filter(function (p) { return p.cameraId !== point.cameraId; });
             refreshCameras();
@@ -1722,7 +1722,7 @@ function startEditing() {
     refreshCameras();
 
     render();
-    map.flyTo({ center: lngLat(LONDON[0], LONDON[1]), zoom: OPENING_ZOOM, speed: 1.6 });
+    map.flyTo({ center: lngLat(LONDON_CENTRE[0], LONDON_CENTRE[1]), zoom: OPENING_ZOOM, speed: 1.6 });
 
     exportText.style.display = "none";
     exportNote.textContent = "";
@@ -1764,7 +1764,7 @@ render();
    table.
    ------------------------------------------------------------------ */
 
-var CAMERAS_KEY = "cammap.cameras";
+var CAMERAS_KEY = STORAGE.cameras;
 var CAMERAS_TTL = 5 * 60 * 1000;   /* five minutes */
 
 /* seed_key is how a database row says which seed entry it is. It is

@@ -16,13 +16,11 @@
   --field:  #141414;   /* input wells                     */
   --map-h:  660px;     /* shared height of the map        */
 
-  /* one colour per kind of camera; map.js holds the same values */
-  --t-fixed:      #cf6a58;
-  --t-van:        #e0a458;
-  --t-transport:  #6aa8d8;
-  --t-shop:       #7bbf7b;
-  --t-private:    #8a8a8a;
-  --t-nonfunc:    #b58bd6;
+  /* The camera colours are NOT here. There used to be a --t-* variable
+     per kind, holding a second copy of the same six values; nothing
+     ever read them, so editing them changed nothing and only looked
+     as though it had. They live in CAMERA_TYPES in frontend/shared.js
+     and are written onto the swatches from there. */
 
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
