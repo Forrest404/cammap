@@ -455,6 +455,69 @@ button.toggle.on:hover {
   color: var(--dim);
 }
 
+/* ---------- the report page: form beside map ----------
+
+   Every other page is a single column of prose held to 68ch, which is
+   the right measure for reading. This one has a map, and against a
+   1140px sheet that column left half the screen empty beside it - so
+   here the words keep their measure and the form-and-map row takes
+   the width.
+
+   The map sits on the right and stays put as the form scrolls past
+   it: the pin is the thing you keep checking, and it is no use if it
+   has scrolled away by the time you reach the name field. */
+
+/* Both classes, not just .report-page: the element carries `prose`
+   too, .prose sets the same property, and it is written further down
+   this file - so on equal specificity it would win and hold this page
+   to a reading measure after all. Naming both settles it wherever
+   either rule happens to sit. */
+.prose.report-page {
+  max-width: none;
+}
+
+/* The parts that are still prose keep a readable measure. */
+.report-page > h2,
+.report-page p.lead,
+.report-page > #report-locked {
+  max-width: 68ch;
+}
+
+.report-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.report-main {
+  flex: 1 1 460px;
+  min-width: 0;
+
+  /* A form is read as well as filled in, so it keeps a measure of its
+     own rather than stretching to whatever is left. */
+  max-width: 62ch;
+}
+
+.report-aside {
+  flex: 1 1 420px;
+  min-width: 0;
+  position: sticky;
+  top: 20px;
+}
+
+.report-aside .box {
+  margin-bottom: 0;
+}
+
+/* .prose .box holds a box to 42ch, which is right on the account page
+   where a box is a short form floating in a column of text. Here the
+   boxes ARE the columns, and their width is set by the layout above,
+   so that cap only leaves them stranded at 378px in a 562px column.
+   Three classes deep so it wins wherever the rules fall. */
+.prose.report-page .box {
+  max-width: none;
+}
+
 /* ---------- the coordinate picker on the report page ----------
 
    Same borders and same base map as the map page, at the size a form
@@ -462,17 +525,10 @@ button.toggle.on:hover {
    a form the map is one field among several, not the subject. */
 
 .pick-map {
-  height: 340px;
+  height: 420px;
   margin: 0 0 10px 0;
   border: 1px solid var(--rule);
   background: var(--bg);
-}
-
-/* The read-only one on a status report: it only has to say "this
-   camera, here", which takes less room than placing a pin does. */
-.pick-map.short {
-  height: 200px;
-  margin-bottom: 16px;
 }
 
 /* A crosshair, not a teardrop. A pin points at a spot from above it
@@ -1218,12 +1274,26 @@ textarea.export {
     height: 460px;
   }
 
-  .pick-map {
-    height: 280px;
+  /* One column again. The map goes above the fields rather than
+     below them: it is the better way to say where a camera is, and a
+     person who scrolls past it to the coordinate boxes has been sent
+     the long way round. */
+  .report-layout {
+    flex-direction: column;
   }
 
-  .pick-map.short {
-    height: 170px;
+  .report-main,
+  .report-aside {
+    max-width: none;
+  }
+
+  .report-aside {
+    position: static;
+    order: -1;
+  }
+
+  .pick-map {
+    height: 280px;
   }
 
   /* Stacked layout: no map beside the list to match, so let it grow. */

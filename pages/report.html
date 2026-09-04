@@ -41,7 +41,7 @@
 <script src="../lib/maplibre-gl.js"></script>
 
 <link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=35778d0f">
+<link rel="stylesheet" href="../frontend/style.css?v=262d4e6f">
 </head>
 <body>
 <div class="sheet">
@@ -61,7 +61,11 @@
 </header>
 
 <main>
-  <div class="prose">
+  <!-- Not the plain prose column the other pages use: this page has a
+       map to show, and a 68ch column left half the screen empty beside
+       it. The words inside are still held to a readable width; only
+       the form-and-map row is allowed the whole sheet. -->
+  <div class="prose report-page">
 
     <h2 id="report-title">Report a camera</h2>
 
@@ -78,31 +82,20 @@
 
       <!-- Reporting a camera the map does not have. -->
       <div id="report-new">
-        <p>
+        <p class="lead">
           Seen a facial recognition camera that is not on the map? Send it
           in. Once enough people report the same spot it goes on the map
           by itself; until then a moderator looks first.
         </p>
 
+        <div class="report-layout">
+        <div class="report-main">
         <div class="box">
           <label for="s-type">What kind</label>
           <!-- Filled from CAMERA_TYPES in frontend/shared.js, so the
                kinds offered here are the kinds the map draws. -->
           <select id="s-type"></select>
           <p class="hint" id="s-xp"></p>
-
-          <!-- The map and the two boxes are the same answer written
-               twice: drag the pin and the numbers fill in, type the
-               numbers and the pin moves. Whichever you have, use it.
-               The dimmed dots are cameras already on the map, so you
-               can see at once if yours is one of them. -->
-          <label>Point at it on the map</label>
-          <div id="pick-map" class="pick-map"></div>
-          <p class="hint" id="pick-hint">
-            Click the map to drop a pin, then drag it onto the camera.
-            Zoom in as far as it goes &mdash; the closer the pin, the
-            less a moderator has to guess.
-          </p>
 
           <div class="pair">
             <div>
@@ -143,21 +136,46 @@
           <button id="submit-button">Send for review</button>
           <p class="note" id="submit-note"></p>
         </div>
+        </div>
+
+        <!-- The map, in the room the prose column was not using. It
+             stays put as the form scrolls past it, so the pin is still
+             on screen when you are three fields further down.
+
+             The map and the two coordinate boxes opposite are the same
+             answer written twice: drag the pin and the numbers fill in,
+             type the numbers and the pin moves. Whichever you have,
+             use it. The dimmed dots are cameras already on the map, so
+             you can see at once if yours is one of them. -->
+        <div class="report-aside">
+          <div class="box">
+            <h3>Point at it on the map</h3>
+            <div id="pick-map" class="pick-map"></div>
+            <p class="hint" id="pick-hint">
+              Click the map to drop a pin, then drag it onto the camera.
+              Zoom in as far as it goes &mdash; the closer the pin, the
+              less a moderator has to guess.
+            </p>
+            <p class="hint">
+              Have coordinates from somewhere else? Type them into the
+              two boxes opposite and the pin will move to them.
+            </p>
+          </div>
+        </div>
+
+        </div>
       </div>
 
       <!-- Reporting the state of a camera already on the map. Reached
            from the map's popup with ?camera=<id>. -->
       <div id="report-status" style="display:none">
-        <p>
+        <p class="lead">
           Reporting on <strong id="status-camera-name"></strong>.
           What have you seen?
         </p>
 
-        <!-- Read-only: this report is about a camera that is already
-             on the map, so there is nothing to place. The map is here
-             to show which one, before you say it has gone. -->
-        <div id="status-map" class="pick-map short"></div>
-
+        <div class="report-layout">
+        <div class="report-main">
         <div class="box">
           <label for="s-claim">The camera is</label>
           <select id="s-claim">
@@ -182,13 +200,24 @@
           Not what you meant? <a href="report.html">Report a camera that is
           not on the map instead.</a>
         </p>
-      </div>
+        </div>
 
-      <p class="hint">
-        The easiest way to get coordinates is to open the
-        <a href="../index.html">map</a>, find the spot, and read them off
-        the camera nearest to it &mdash; or use any mapping app.
-      </p>
+        <!-- Read-only: this report is about a camera already on the
+             map, so there is nothing to place. It is here to show
+             which one, before you say it has gone. -->
+        <div class="report-aside">
+          <div class="box">
+            <h3>The camera you are reporting</h3>
+            <div id="status-map" class="pick-map"></div>
+            <p class="hint">
+              Saying a camera has gone takes it off the map for
+              everyone. Worth a look that it is the right one.
+            </p>
+          </div>
+        </div>
+
+        </div>
+      </div>
 
     </div>
 
@@ -202,9 +231,9 @@
 
 </div>
 <script src="../lib/supabase.js"></script>
-<script src="../frontend/shared.js?v=35778d0f"></script>
-<script src="../supabase-config.js?v=35778d0f"></script>
-<script src="../frontend/picker.js?v=35778d0f"></script>
-<script src="../frontend/account.js?v=35778d0f"></script>
+<script src="../frontend/shared.js?v=262d4e6f"></script>
+<script src="../supabase-config.js?v=262d4e6f"></script>
+<script src="../frontend/picker.js?v=262d4e6f"></script>
+<script src="../frontend/account.js?v=262d4e6f"></script>
 </body>
 </html>
