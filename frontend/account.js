@@ -1024,6 +1024,49 @@ function setUpReportPage() {
   }
 }
 
+/* The cameras already on the map, for drawing behind the picker's
+   pin. map.js keeps the same rows under this key for five minutes
+   after it fetches them, so someone who came here from the map is
+   answered out of their own browser. The key and the shape are map.js's;
+   this only ever reads it, and falls back to asking the table. A
+   failure here loses the context dots and nothing else, so it is
+   quiet about it. */
+var CONTEXT_KEY = "cammap.cameras";
+var CONTEXT_TTL = 5 * 60 * 1000;
+
+function contextCameras(onDone) {
+  var raw;
+  var saved;
+
+  try {
+    raw = window.localStorage.getItem(CONTEXT_KEY);
+    saved = raw ? JSON.parse(raw) : null;
+    if (saved && saved.at && Date.now() - saved.at < CONTEXT_TTL && Array.isArray(saved.rows)) {
+      onDone(saved.rows);
+      return;
+    }
+  } catch (err) {
+    /* nothing usable in storage - ask the table instead */
+  }
+
+  if (!configured || !sb) {
+    return;
+  }
+
+  sb.from("cameras")
+    .select("lat,lon,type,status")
+    .eq("visible", true)
+    .limit(5000)
+    .then(function (result) {
+      if (!result.error && Array.isArray(result.data)) {
+        onDone(result.data);
+      }
+    })
+    .catch(function () {
+      /* no context dots this time; the pin still works */
+    });
+}
+
 function setUpNewReport() {
   var typeSel   = document.getElementById("s-type");
   var xpNote    = document.getElementById("s-xp");
@@ -1045,6 +1088,60 @@ function setUpNewReport() {
   typeSel.onchange = showXp;
   showXp();
 
+  /* ---------------- the map and the two boxes ----------------
+
+     Both say the same thing, and either may be used. Dragging the pin
+     writes the numbers; typing numbers moves the pin. The guard below
+     stops the two from talking each other in circles - without it,
+     writing the boxes from a drag fires the input handler, which
+     moves the pin, which fires drag again. */
+  var syncing = false;
+
+  var picker = typeof makePicker === "function" ? makePicker({
+    container: "pick-map",
+    lat: null,
+    lon: null,
+    draggable: true,
+    onMove: function (lat, lon) {
+      syncing = true;
+      latIn.value = lat.toFixed(6);
+      lonIn.value = lon.toFixed(6);
+      syncing = false;
+      note.textContent = "";
+    }
+  }) : null;
+
+  function pinFromBoxes(fly) {
+    var lat = parseFloat(latIn.value);
+    var lon = parseFloat(lonIn.value);
+
+    if (picker && !syncing && !isNaN(lat) && !isNaN(lon)) {
+      picker.setPoint(lat, lon, fly);
+    }
+  }
+
+  /* While the digits are still going in, move the pin but leave the
+     map where it is: flying on every keystroke, through every partial
+     number on the way, is unreadable. On the way out of the box -
+     blur, or Enter - fly to it, because by then the number is meant,
+     and a pin sitting somewhere off the edge of the map is worse than
+     no pin at all. */
+  latIn.oninput = function () { pinFromBoxes(false); };
+  lonIn.oninput = function () { pinFromBoxes(false); };
+  latIn.onchange = function () { pinFromBoxes(true); };
+  lonIn.onchange = function () { pinFromBoxes(true); };
+
+  /* The cameras already on the map, drawn behind the pin so a person
+     can see whether theirs is one of them before sending it in. The
+     map page leaves the same rows in storage for a few minutes, so
+     arriving here from the map usually costs nothing; otherwise this
+     is one small read of a table anyone may read. */
+  if (picker) {
+    contextCameras(function (rows) {
+      picker.cameras(rows);
+    });
+  }
+
   /* The phone's own position, if it will give it. Six decimals is
      about a tenth of a metre, more than any phone can actually do. */
   locate.onclick = function (event) {
@@ -1057,7 +1154,11 @@ function setUpNewReport() {
     navigator.geolocation.getCurrentPosition(function (pos) {
       latIn.value = pos.coords.latitude.toFixed(6);
       lonIn.value = pos.coords.longitude.toFixed(6);
-      locNote.textContent = "Filled in. Move the numbers if the camera is not right where you stand.";
+
+      /* Fly, unlike a keystroke: this is a deliberate jump to
+         somewhere the map is probably not looking. */
+      pinFromBoxes(true);
+      locNote.textContent = "Filled in. Now drag the pin onto the camera - it is where you are standing, not where it is.";
     }, function () {
       locNote.textContent = "Could not get a location.";
     }, { enableHighAccuracy: true, timeout: 10000 });
@@ -1158,6 +1259,19 @@ function setUpStatusReport(cameraId) {
         camera = result.data;
       }
       nameEl.textContent = camera ? camera.name : "camera #" + cameraId;
+
+      /* Read-only: there is nothing to place here, only something to
+         recognise. Saying "it is gone" about the wrong camera takes
+         one off the map that is still there, so it is worth a look
+         before you say it. */
+      if (camera && typeof makePicker === "function") {
+        makePicker({
+          container: "status-map",
+          lat: Number(camera.lat),
+          lon: Number(camera.lon),
+          draggable: false
+        });
+      }
     })
     .catch(function () {
       nameEl.textContent = "camera #" + cameraId;

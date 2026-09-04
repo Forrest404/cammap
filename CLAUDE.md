@@ -39,8 +39,10 @@ page whose buttons do nothing. If you add a file to `frontend/`, add it to
 index.html          the map. At the root, because that is what a web
                     server hands out for the site's own address.
 pages/              about, blog, account, report, moderate, leaderboard
-frontend/shared.js  what map.js and account.js must agree on
+frontend/shared.js  what the other files must agree on: camera types,
+                    London bounds, the base styles and the dark lift
 frontend/map.js     the map: layers, glow, the list, edit mode
+frontend/picker.js  the pin-dropping map on the report form
 frontend/account.js accounts, reports, moderation, leaderboard - runs
                     on every page, because the nav does
 frontend/style.css  all of it
@@ -55,6 +57,10 @@ through `pageHref()` rather than hard-coding `../`. Use it.
 
 ## Things that must not drift apart
 
+- **The base map.** Both maps - the real one and the report form's picker -
+  draw through `MAP_STYLES` and `tidyBaseStyle()` in `frontend/shared.js`. The
+  dark style is drawn for a pure black page and needs lifting against this one;
+  do that there, once, not per map.
 - **The camera types.** `CAMERA_TYPES` in `frontend/shared.js` is the one list.
   The legend, every drop-down, and every label come from it. The database keeps
   its own copy in the `type` check constraints — deliberately, because the

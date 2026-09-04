@@ -73,10 +73,8 @@ var nextId = 1;
    - and a map of a city with no green in the parks and no blue in the
    river is a poorer thing to look at. Bright has colour without
    taking any of the hues the cameras use. */
-var MAP_STYLES = {
-  dark:  "https://tiles.openfreemap.org/styles/dark",
-  light: "https://tiles.openfreemap.org/styles/bright"
-};
+/* MAP_STYLES is in frontend/shared.js: the coordinate picker on the
+   report page draws the same base map. */
 
 /* "dark", "light" or "satellite". The three are one choice, not three
    switches: satellite is imagery over the dark style, so it and light
@@ -291,10 +289,6 @@ loadView();
 var HEAT_FULL = 12.5;   /* at or below this the glow is at full strength */
 var HEAT_GONE = 15;     /* by here it has gone entirely */
 
-function lngLat(lat, lon) {
-  return [lon, lat];
-}
-
 var map = new maplibregl.Map({
   container: "map",
   style: baseStyleOf(view),
@@ -315,86 +309,13 @@ map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-le
    passing our own as well printed it twice. */
 map.addControl(new maplibregl.AttributionControl({ compact: false }));
 
-/* How much to lift each kind of colour. The style is drawn for a pure
-   black page and against this one the roads all but vanish, so the
-   palette is raised once, here, rather than by filtering the canvas on
-   every frame. Halos go the other way - darker - so labels keep their
-   edge against the brighter roads underneath. */
-/* How far to lift each kind of colour, and by how much to raise its
-   floor. The style is drawn for a pure black page; against this one
-   it needs help.
+/* The LIFT table, lift() and its cache are in frontend/shared.js.
+   They moved there when the report page grew a map of its own: the
+   dark style needs the same correction wherever it is drawn, and the
+   rule those numbers answer to - nothing the base map draws may be
+   brighter than the dimmest camera dot - is the same rule on both.
 
-   The rule these numbers answer to: nothing on the base map may be
-   brighter than the dimmest camera dot. The dots are what the map is
-   for; the roads are the backdrop it draws them on. That was got
-   badly wrong once - the casings were lifted to a brightness of 182
-   where the dimmest dot is 134, so London came out as a white web
-   with the cameras lost in it. Under these numbers the brightest
-   thing the base map draws is 92.
-
-   The floor matters as much as the factor. Multiplying alone leaves
-   the dark end crushed - a near-black colour stays near-black however
-   large the factor - and the dark end is where a map keeps its
-   texture. Buildings start at rgb(10,10,10) and need their own entry
-   or they stay invisible; they are meant to be quiet massing behind
-   the streets, not a feature.
-
-   Labels are lifted least of all. They were already the most legible
-   thing on the map, and they are thin glyphs in a few places rather
-   than a web over everything, so they can sit near the dots without
-   competing with them. */
-var LIFT = {
-  line:       { by: 1.4,  floor: 8 },
-  fill:       { by: 1.35, floor: 6 },
-  background: { by: 1.6,  floor: 0 },
-  text:       { by: 1.45, floor: 0 },
-  halo:       { by: 0.55, floor: 0 },
-  building:   { by: 2.4,  floor: 4 }
-};
-
-/* An off-screen scrap of the page, used to let the browser turn
-   whatever notation the style happens to use - #abc, rgb(), hsl() -
-   into numbers that can be scaled. */
-var swatch = document.createElement("div");
-swatch.style.cssText = "position:fixed;left:-9999px;top:0;";
-
-/* Answers already worked out. Setting a colour on the swatch and then
-   reading it back forces the browser to recalculate style there and
-   then, and this runs for every coloured property of every layer in
-   the style - several hundred times on each load of the dark map. A
-   vector style reuses the same handful of colours across dozens of
-   layers, so remembering them turns that into about a dozen real
-   measurements. It outlives a style swap on purpose: the answer
-   depends only on the colour and the lift asked for, not on which
-   style asked, so a return to the dark map costs nothing. */
-var liftCache = {};
-
-function lift(colour, how) {
-  var parts;
-  var by = how.by;
-  var floor = how.floor || 0;
-  var key = colour + "|" + by + "|" + floor;
-  var scale = function (v) {
-    return Math.min(255, Math.round(v * by + floor));
-  };
-
-  if (liftCache.hasOwnProperty(key)) {
-    return liftCache[key];
-  }
-
-  swatch.style.color = "";
-  swatch.style.color = colour;
-  parts = window.getComputedStyle(swatch).color.match(/[\d.]+/g);
-
-  liftCache[key] = parts
-    ? "rgba(" + scale(parts[0]) + "," + scale(parts[1]) + "," +
-      scale(parts[2]) + "," + (parts[3] === undefined ? 1 : parts[3]) + ")"
-    : null;
-
-  return liftCache[key];
-}
-
-/* A heatmap's colour ramp, made in the glow's own colour. Density
+A heatmap's colour ramp, made in the glow's own colour. Density
    0 is the colour with no alpha at all - that stop being anything but
    transparent would wash the whole map - and each higher stop both
    thickens and lifts the colour toward white, so the centre of a
@@ -444,46 +365,6 @@ function heatRamp(hex) {
      pairs, MapLibre refuses the layer ("expected an even number of
      arguments") and the glow silently never draws. */
   return [].concat.apply([], stops);
-}
-
-/* Which paint property carries the colour, for each kind of layer. */
-var COLOUR_OF = {
-  line: ["line-color", "line"],
-  fill: ["fill-color", "fill"],
-  background: ["background-color", "background"]
-};
-
-function repaint(layer) {
-  var pair = COLOUR_OF[layer.type];
-  var paint = layer.paint || {};
-  var lifted;
-  var how;
-
-  if (pair && typeof paint[pair[0]] === "string") {
-    how = layer.id === "building" ? LIFT.building : LIFT[pair[1]];
-    lifted = lift(paint[pair[0]], how);
-    if (lifted) {
-      map.setPaintProperty(layer.id, pair[0], lifted);
-    }
-  }
-
-  if (layer.type !== "symbol") {
-    return;
-  }
-
-  if (typeof paint["text-color"] === "string") {
-    lifted = lift(paint["text-color"], LIFT.text);
-    if (lifted) {
-      map.setPaintProperty(layer.id, "text-color", lifted);
-    }
-  }
-
-  if (typeof paint["text-halo-color"] === "string") {
-    lifted = lift(paint["text-halo-color"], LIFT.halo);
-    if (lifted) {
-      map.setPaintProperty(layer.id, "text-halo-color", lifted);
-    }
-  }
 }
 
 /* Everything the map needs on top of whichever base style is loaded.
@@ -536,42 +417,13 @@ function buildOverStyle() {
 
   clearOurLayersAndSources();
 
-  /* Layers this map has no use for. A map of cameras in one city does
-     not need country borders, the names of countries and counties, ice
-     shelves and glaciers, or the taxiways at Heathrow - and every one
-     of them is a line or a word competing with the thing the map is
-     actually for. With vector tiles they can simply be taken off,
-     which is cheaper than drawing them and then hiding them.
+  /* Take the style's own clutter off, and on the dark one lift what
+     is left against this page. Both are in shared.js now, because the
+     report page's picker draws the same base map and wants the same
+     treatment - see the note there for what the numbers answer to. */
+  tidyBaseStyle(map, !isLight());
 
-     Village and suburb names are kept: in London they are how anyone
-     says where a camera is. */
-  var noisy = [
-    "road_oneway", "road_oneway_opposite",
-    "boundary_country_z0-4", "boundary_country_z5-", "boundary_state",
-    "place_country_major", "place_country_minor", "place_country_other", "place_state",
-    "landcover_ice_shelf", "landcover_glacier",
-    "aeroway-taxiway", "aeroway-runway", "aeroway-runway-casing", "aeroway-area"
-  ];
-
-  for (i = 0; i < noisy.length; i++) {
-    if (map.getLayer(noisy[i])) {
-      map.removeLayer(noisy[i]);
-    }
-  }
-
-  /* The lift below is a correction for the dark style, which is drawn
-     for a pure black page and all but disappears against this one. The
-     light style needs no such help - brightening it would only wash it
-     out - so it is left as its authors drew it. */
   layers = map.getStyle().layers;
-
-  if (!isLight()) {
-    document.body.appendChild(swatch);
-    for (i = 0; i < layers.length; i++) {
-      repaint(layers[i]);
-    }
-    swatch.remove();
-  }
 
   /* Where to slide the glow in: above everything the map draws on the
      ground, below everything it writes on top.
@@ -1001,20 +853,6 @@ function removePoint(id) {
   refreshCameras();
   saveDraft();
   render();
-}
-
-/* The paint expression for "what colour is this dot": non-functional
-   overrides everything, otherwise the type decides. */
-function typeColourExpression() {
-  var match = ["match", ["get", "type"]];
-  var i;
-
-  for (i = 0; i < TYPES.length; i++) {
-    match.push(TYPES[i].type, TYPES[i].colour);
-  }
-  match.push(TYPES[1].colour);   /* fallback: the van colour */
-
-  return ["case", ["==", ["get", "status"], "nonfunctional"], NONFUNCTIONAL_COLOUR, match];
 }
 
 /* ---------------- what is shown ----------------
