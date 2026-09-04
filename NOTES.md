@@ -39,8 +39,9 @@ works this out with `pageHref()` rather than hard-coding either.
 - [x] Make the fixed LFR cameras (not vans) a different color to the vans. (Done: one colour per kind, legend under the map, built from the same table the map paints from.)
 - [x] Add satellite, etc views. (Done: three base views under the map - Dark, Light and Satellite. Light is OpenFreeMap's Bright - blue water, green parks, warm off-white land; Positron was tried first but is colourless by design; Satellite is Esri World Imagery under the dark style's labels. Which one you chose is remembered.)
 - [x] Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password. (Done: the site generates the username - two words, `copper.heron` - and the person sets a password. No email, no name. See "Anonymity" below for what "completely" honestly means.)
+- [ ] Make it so that when reporting the state of a camera, you have to upload an image
 - [ ] Get the Met's 2026 deployment record (met.police.uk blocks scripted downloads; it needs a real browser) and re-run the build.
-- [ ] Other cities. The type identifiers and the schema carry over; the London bounds are three constants in `frontend/map.js` and two `check` constraints in `backend/schema.sql`.
+- [ ] Other cities. The type identifiers and the schema carry over; the London bounds are three constants in `frontend/map.js` and two `check` constraints in `backend/schema.sql`. Wherever the user is located, thats where the map displays by default.
 
 ## Setting the site up
 
