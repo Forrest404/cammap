@@ -116,6 +116,10 @@ Things that look like they would work and do not:
   draw through `MAP_STYLES` and `tidyBaseStyle()` in `frontend/shared.js`. The
   dark style is drawn for a pure black page and needs lifting against this one;
   do that there, once, not per map.
+- **The aerial imagery.** `SATELLITE_TILES`, `addSatellite()` and
+  `showSatellite()` in `shared.js`, used by both maps. If Esri's endpoint ever
+  changes, that block is the whole of what needs touching, and the toggle stops
+  showing imagery rather than breaking anything.
 - **The camera types.** `CAMERA_TYPES` in `frontend/shared.js` is the one list.
   The legend, every drop-down, and every label come from it. The database keeps
   its own copy in the `type` check constraints — deliberately, because the

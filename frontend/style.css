@@ -529,6 +529,19 @@ button.toggle.on:hover {
   background: var(--bg);
 }
 
+/* The picker's own toggles, inserted after the map by picker.js. The
+   map page's bar sits under its map too, so this is the same control
+   in the same place; only the margin differs, because here it is
+   inside a form and has a hint following it. */
+.pick-toggles {
+  margin: -4px 0 10px 0;
+  gap: 0;
+}
+
+.pick-toggles button + button {
+  border-left: none;
+}
+
 /* A crosshair, not a teardrop. A pin points at a spot from above it
    and leaves you guessing which pixel it means; crossed hairs are the
    spot. The ring is filled with the page colour so the arms do not

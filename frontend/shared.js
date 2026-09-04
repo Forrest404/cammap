@@ -353,3 +353,83 @@ function tidyBaseStyle(m, dark) {
   }
   liftSwatch.remove();
 }
+
+/* ------------------------------------------------------------------
+   Aerial imagery
+
+   Esri's World Imagery, as raster tiles slid in under the vector
+   map's labels. No key: the open tile endpoint is free for
+   non-commercial use with attribution, which this is. When it is on,
+   the style's own fills and roads are hidden so the imagery shows
+   through, and the labels stay on top so places can still be read.
+
+   Both maps use it - the map page's Satellite view, and the report
+   form's picker, where seeing the actual roof and pavement is the
+   difference between a pin on the right pole and a pin on the right
+   street. If the endpoint ever changes or goes away, this block is
+   the whole of what needs touching, and the toggle simply stops
+   showing imagery rather than breaking anything.
+   ------------------------------------------------------------------ */
+
+var SATELLITE = "satellite";
+var SATELLITE_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+var SATELLITE_CREDIT = "Imagery &copy; Esri, Maxar, Earthstar Geographics";
+
+/* Everything the style draws on the ground - which is everything that
+   is not a label. These are what get hidden under imagery. */
+function groundLayersOf(m) {
+  var layers = m.getStyle().layers;
+  var ids = [];
+  var i;
+
+  for (i = 0; i < layers.length; i++) {
+    if (layers[i].type !== "symbol") {
+      ids.push(layers[i].id);
+    }
+  }
+
+  return ids;
+}
+
+/* The imagery sits directly above the style's background layer, so it
+   is under every road and label but over the plain colour. Added
+   hidden; showSatellite() is what turns it on. */
+function addSatellite(m) {
+  var layers = m.getStyle().layers;
+
+  if (m.getSource(SATELLITE)) {
+    return;
+  }
+
+  m.addSource(SATELLITE, {
+    type: "raster",
+    tiles: [SATELLITE_TILES],
+    tileSize: 256,
+    maxzoom: 19,
+    attribution: SATELLITE_CREDIT
+  });
+
+  m.addLayer({
+    id: SATELLITE,
+    type: "raster",
+    source: SATELLITE,
+    layout: { visibility: "none" },
+    paint: { "raster-opacity": 1 }
+  }, layers.length > 1 ? layers[1].id : undefined);
+}
+
+/* Imagery on: show the raster and hide the style's ground, so it
+   reads as a photograph with names on it. Off: put it all back. */
+function showSatellite(m, on, ground) {
+  var i;
+
+  if (m.getLayer(SATELLITE)) {
+    m.setLayoutProperty(SATELLITE, "visibility", on ? "visible" : "none");
+  }
+
+  for (i = 0; i < ground.length; i++) {
+    if (m.getLayer(ground[i])) {
+      m.setLayoutProperty(ground[i], "visibility", on ? "none" : "visible");
+    }
+  }
+}

@@ -22,6 +22,20 @@
    a dot already sitting on your corner answers that before you type
    anything.
 
+   Two toggles under it, the same two the map page has:
+
+     Satellite  the one that earns its place here. A street diagram
+                tells you which road; a photograph tells you which
+                pole, which wall, which end of the parade. If you are
+                being asked to put a pin within a few metres, you
+                need to see the few metres.
+
+     Legacy     the context dots are active cameras by default,
+                because a retired camera on your corner does not mean
+                your sighting is a duplicate - it may be the reason
+                you are reporting. Turn it on to see them too, drawn
+                hollow as they are on the map page.
+
    The base map, its styles and the correction the dark one needs are
    all in shared.js, so the picker and the map cannot come to disagree
    about what London looks like.
@@ -53,6 +67,15 @@ function makePicker(options) {
   var map;
   var marker;
   var pin;
+
+  /* What the two toggles are set to, and everything needed to answer
+     them: the ground layers imagery hides, and every context camera
+     as handed over, so switching Legacy is a filter rather than a
+     second trip to the database. */
+  var imagery = false;
+  var withLegacy = false;
+  var ground = [];
+  var allRows = [];
 
   if (!holder || typeof maplibregl === "undefined") {
     return null;
@@ -135,14 +158,19 @@ function makePicker(options) {
 
   map.on("style.load", function () {
     tidyBaseStyle(map, true);
+    ground = groundLayersOf(map);
+    addSatellite(map);
     addContextCameras();
+    applyToggles();
   });
 
   /* The cameras already on the map, as quiet dots. Not clickable and
      under the pin: they are there to be recognised, not used. */
-  var pending = null;
 
   function addContextCameras() {
+    var legacy = ["==", ["get", "status"], "legacy"];
+    var colour = typeColourExpression();
+
     if (!map.getSource(PICK_SOURCE)) {
       map.addSource(PICK_SOURCE, {
         type: "geojson",
@@ -154,18 +182,118 @@ function makePicker(options) {
         source: PICK_SOURCE,
         paint: {
           "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 3, 19, 7],
-          "circle-color": typeColourExpression(),
-          "circle-opacity": 0.55,
-          "circle-stroke-color": "#0d0d0d",
-          "circle-stroke-width": 1,
-          "circle-stroke-opacity": 0.7
+          "circle-color": colour,
+
+          /* The same shorthand the map page uses, so a dot means the
+             same thing in both places: a legacy site is a hollow ring
+             in its own colour, an active one is filled. */
+          "circle-opacity": ["case", legacy, 0.10, 0.55],
+          "circle-stroke-color": ["case", legacy, colour, "#0d0d0d"],
+          "circle-stroke-width": ["case", legacy, 1.2, 1],
+          "circle-stroke-opacity": ["case", legacy, 0.9, 0.7]
         }
       });
     }
-    if (pending) {
-      map.getSource(PICK_SOURCE).setData(pending);
+    drawContext();
+  }
+
+  /* Which context cameras to draw. Active only unless Legacy is on -
+     a retired camera on your corner does not make your sighting a
+     duplicate, so showing it by default would only argue against a
+     report that may well be right. */
+  function drawContext() {
+    var features = [];
+    var row;
+    var i;
+
+    for (i = 0; i < allRows.length; i++) {
+      row = allRows[i];
+      if (!withLegacy && row.status === "legacy") {
+        continue;
+      }
+      features.push({
+        type: "Feature",
+        properties: { type: row.type, status: row.status },
+        geometry: {
+          type: "Point",
+          coordinates: lngLat(Number(row.lat), Number(row.lon))
+        }
+      });
+    }
+
+    if (map.getSource(PICK_SOURCE)) {
+      map.getSource(PICK_SOURCE).setData({
+        type: "FeatureCollection",
+        features: features
+      });
     }
   }
+
+  /* ---------------- the two toggles ----------------
+
+     Built here rather than in the page, so they arrive with the map
+     wherever one is put, and so the read-only map on a status report
+     gets Satellite too - recognising a camera from a photograph is
+     easier than from a street diagram.
+
+     They reuse the map page's own .map-toggles / .toggle classes, so
+     they are the same control in the same place saying the same
+     thing. */
+
+  var satelliteButton = null;
+  var legacyButton = null;
+
+  function markToggle(button, on) {
+    if (!button) {
+      return;
+    }
+    button.className = on ? "toggle on" : "toggle";
+    button.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+
+  function applyToggles() {
+    showSatellite(map, imagery, ground);
+    markToggle(satelliteButton, imagery);
+    markToggle(legacyButton, withLegacy);
+  }
+
+  function toggleButton(text, title) {
+    var b = document.createElement("button");
+    b.type = "button";        /* inside a form, a bare button submits */
+    b.className = "toggle";
+    b.title = title;
+    b.setAttribute("aria-pressed", "false");
+    b.textContent = text;
+    return b;
+  }
+
+  function addToggles() {
+    var bar = document.createElement("div");
+    bar.className = "map-toggles pick-toggles";
+
+    satelliteButton = toggleButton("Satellite", "Aerial imagery under the labels");
+    satelliteButton.onclick = function () {
+      imagery = !imagery;
+      applyToggles();
+    };
+    bar.appendChild(satelliteButton);
+
+    /* Only where there are context cameras to filter. The read-only
+       map on a status report has none, so it would toggle nothing. */
+    if (options.onMove) {
+      legacyButton = toggleButton("Legacy", "Also show cameras no longer in use");
+      legacyButton.onclick = function () {
+        withLegacy = !withLegacy;
+        markToggle(legacyButton, withLegacy);
+        drawContext();
+      };
+      bar.appendChild(legacyButton);
+    }
+
+    holder.parentNode.insertBefore(bar, holder.nextSibling);
+  }
+
+  addToggles();
 
   return {
     /* Move the pin from outside - the number boxes, or the locate
@@ -184,27 +312,14 @@ function makePicker(options) {
 
     /* Hand it the cameras to draw behind the pin. Rows are whatever
        the cameras table returns; only position, type and status are
-       read. Safe to call before the style has loaded - it is kept and
-       drawn when there is something to draw on. */
+       read. Kept whole, so the Legacy toggle is a filter over these
+       rather than another trip to the database. Safe to call before
+       the style has loaded - drawContext finds no source and does
+       nothing, and style.load draws them when there is something to
+       draw on. */
     cameras: function (rows) {
-      var features = [];
-      var i;
-
-      for (i = 0; i < rows.length; i++) {
-        features.push({
-          type: "Feature",
-          properties: { type: rows[i].type, status: rows[i].status },
-          geometry: {
-            type: "Point",
-            coordinates: lngLat(Number(rows[i].lat), Number(rows[i].lon))
-          }
-        });
-      }
-
-      pending = { type: "FeatureCollection", features: features };
-      if (map.getSource(PICK_SOURCE)) {
-        map.getSource(PICK_SOURCE).setData(pending);
-      }
+      allRows = rows || [];
+      drawContext();
     }
 
   };
