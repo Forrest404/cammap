@@ -225,18 +225,10 @@ var sortBy = "name";
 
 /* ---------------- satellite ----------------
 
-   Esri's World Imagery, as raster tiles slid in under the vector
-   map's labels. No key: the open tile endpoint is free for
-   non-commercial use with attribution, which this is. When it is on,
-   the dark map's fills and roads are hidden so the imagery shows
-   through, and the labels stay on top so places can still be read.
-   Everything about it lives here, so if the endpoint ever changes or
-   goes away, this block is the whole of what needs touching. */
-
-var SATELLITE = "satellite";
-var SATELLITE_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
-var SATELLITE_CREDIT = "Imagery &copy; Esri, Maxar, Earthstar Geographics";
-
+   The tiles, the credit and the layer are in shared.js: the report
+   form's picker offers the same view, because seeing the actual roof
+   and pavement is the difference between a pin on the right pole and
+   a pin on the right street. */
 
 /* The style's own layers that get hidden under imagery, worked out
    once when the style loads. Symbols (labels) are never in it. */
@@ -454,31 +446,8 @@ function buildOverStyle() {
     }
   }
 
-  /* Everything that is not a label is ground: it goes under imagery. */
-  groundLayers = [];
-  for (i = 0; i < layers.length; i++) {
-    if (layers[i].type !== "symbol") {
-      groundLayers.push(layers[i].id);
-    }
-  }
-
-  /* The imagery sits directly above the style's background layer, so
-     it is under every road and label but over the plain colour. */
-  map.addSource(SATELLITE, {
-    type: "raster",
-    tiles: [SATELLITE_TILES],
-    tileSize: 256,
-    maxzoom: 19,
-    attribution: SATELLITE_CREDIT
-  });
-
-  map.addLayer({
-    id: SATELLITE,
-    type: "raster",
-    source: SATELLITE,
-    layout: { visibility: "none" },
-    paint: { "raster-opacity": 1 }
-  }, layers.length > 1 ? layers[1].id : undefined);
+  groundLayers = groundLayersOf(map);
+  addSatellite(map);
 
   addCameras(firstLabel);
   applyView();
@@ -974,17 +943,7 @@ function applyView() {
   var paint;
   var i;
 
-  if (map.getLayer(SATELLITE)) {
-    map.setLayoutProperty(SATELLITE, "visibility", imagery ? "visible" : "none");
-  }
-
-  /* Under imagery the style's own ground is hidden and only its labels
-     are kept, so it reads as a photograph with names on it. */
-  for (i = 0; i < groundLayers.length; i++) {
-    if (map.getLayer(groundLayers[i])) {
-      map.setLayoutProperty(groundLayers[i], "visibility", imagery ? "none" : "visible");
-    }
-  }
+  showSatellite(map, imagery, groundLayers);
 
   if (map.getLayer(DOT)) {
     paint = dotPaint();

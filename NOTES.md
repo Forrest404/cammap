@@ -49,6 +49,12 @@ the two coordinate boxes follow. It draws the same base map through the same
 shared code, so the picker and the map cannot come to disagree about what
 London looks like. It is the only other page that loads MapLibre.
 
+It carries the same two toggles the map page has. **Satellite** is the one that
+earns its place on a form: a street diagram tells you which road, a photograph
+tells you which pole. **Legacy** filters the context dots, which are active
+cameras by default - a retired camera on your corner does not make your
+sighting a duplicate, and may be the reason you are reporting it.
+
 **The build script is missing.** `points.js`, `seed.sql` and the TODO below all
 name `build_points.py`, but `tools/` holds only `stamp.py`. Until it turns up
 the two data files are maintained by hand, or through `index.html?edit`, and
@@ -198,3 +204,9 @@ https://www.instagram.com/jared_krauss/reels/
 https://surfshark.com/facial-recognition-map
 https://www.btp.police.uk/police-forces/british-transport-police/areas/about-us/about-us/facial-recognition-technology/?ref=ed_direct
 https://www.google.com/search?q=is+there+a+project+mapping+out+all+london+facial+recognition+camera&client=firefox-b-d&hs=96DB&sxsrf=APpeQnsGjz1cBU2pBPccTpziHPlJMXNubw%3A1788370446786&vsint=&aep=1&ntc=1&cs=1&dpr=1.33&atvm=2&mstk=AUtExfAKoTorR-OWR0S-9UlIn5PwCIawdaxqFnYGBmQ-neUkdTBABiLUCakauTopSQ_O33OAc5cDAL7kh_3IjwfrAoSV396qpc3cyqK2bfy4-026BPh2NBaq43aaiRQ1YCDsRtN7gloDvm8GKcPpPntE1jBG4NnpiZsSiDKyTDRkyf0_1KBIrUhAZI5JPskEaXiydnAMbNCk9-7j5nGcqeGjfISuHWVy1j8XIw2od1YFxaaRbO4oqq7FidClMQ&csuir=1&udm=50
+
+## NAME IDEAS
+- LFR Watch
+- Watch Face
+- Cam Watch
+-   
