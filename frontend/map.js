@@ -336,7 +336,12 @@ function heatRamp(hex) {
   var r = parseInt(hex.slice(1, 3), 16);
   var g = parseInt(hex.slice(3, 5), 16);
   var b = parseInt(hex.slice(5, 7), 16);
-  var at  = [0, 0.20, 0.45, 0.75, 1];
+  /* Nothing is drawn until the density is well up, so that a camera
+     on its own makes no glow at all - it has a dot, and a halo round
+     it would only say the same thing twice. What is left is a map of
+     where cameras gather, which is the only thing a heat map is good
+     for. */
+  var at  = [0, 0.42, 0.62, 0.81, 1];
 
   /* Kept translucent on purpose. The glow sits over the streets and
      the place names, and a map you cannot read is worse than one
@@ -606,7 +611,13 @@ function addCameras(beneath) {
       source: SOURCE + "-heat-" + g,
       maxzoom: HEAT_GONE,
       paint: {
-        "heatmap-weight": 1,
+        /* Square-rooted, not raw. Westminster's twenty-two deployments
+           against a suburb's one is a twenty-one to one range, and used
+           raw that one spot would carry a sixteenth of all the heat in
+           London and flatten everything near it. Rooted, the range is
+           four and a half to one: still plainly the hottest place, with
+           its neighbours still visible. */
+        "heatmap-weight": ["sqrt", ["max", ["get", "deployments"], 1]],
 
         /* This is the hotspot map as well as the glow. There used to
            be a second heatmap under these, in the site accent over
@@ -762,7 +773,14 @@ function tidy(list) {
       /* A hand-typed entry may leave these out. */
       type: typeof entry.type === "string" ? entry.type : "vancam",
       status: typeof entry.status === "string" ? entry.status : "active",
-      last: typeof entry.last === "number" ? entry.last : null
+      last: typeof entry.last === "number" ? entry.last : null,
+
+      /* How many times a source records this spot being used. The glow
+         is weighed by it, so a place a van was sent to twenty times
+         reads hotter than one it visited once. Anything without a
+         count - a shop, a fixed camera, a hand-typed entry - is one. */
+      deployments: typeof entry.deployments === "number" && entry.deployments > 0
+        ? entry.deployments : 1
     });
   }
 
@@ -1035,6 +1053,7 @@ function cameraFeatures(keep) {
         id: points[i].id,
         type: points[i].type,
         status: points[i].status,
+        deployments: points[i].deployments,
         order: DRAW_ORDER[points[i].type] || 0
       },
       geometry: {

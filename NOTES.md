@@ -111,6 +111,28 @@ outright - country borders, ice shelves, Heathrow's taxiways and so
 on. Add to it rather than hiding a layer with CSS: not drawing
 something is cheaper than drawing it and covering it up.
 
+### Tuning the glow
+
+The glow is weighed by `deployments`, the number of times a source
+records a spot being used. It is square-rooted first: Westminster's
+twenty-two against a suburb's one is a twenty-one to one range, and
+raw it would let that one place carry a sixteenth of all the heat in
+London and flatten its neighbours.
+
+Three arrays in `heatRamp()` in `frontend/map.js` control the look:
+
+    at     where each colour stop sits on the density scale. The first
+           coloured stop is deliberately late (0.42) so a camera on its
+           own makes no glow at all - it has a dot, and a halo round it
+           would only say the same thing twice. Lower it and lone
+           cameras start to glow again.
+    alpha  how opaque each stop is. The glow sits over the streets, so
+           even at its hottest it lets about forty per cent through.
+    lift   how far the colour is pushed as cameras pile up - toward
+           white on the dark map, toward black on the light one.
+
+Judge changes to these by looking at the map, not by reading them.
+
 ### Satellite imagery
 
 The satellite view uses Esri's World Imagery from the open tile endpoint, with attribution, which is allowed for non-commercial use. It is not guaranteed. If it stops, the toggle stops showing imagery and nothing else breaks; the whole of it is one block at the top of `frontend/map.js`.

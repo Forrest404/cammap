@@ -301,6 +301,8 @@ create table if not exists public.cameras (
   status      text not null default 'active'
                 check (status in ('active', 'legacy', 'nonfunctional')),
   last_seen   integer,                     -- the last year a source records it, or null
+  deployments integer not null default 1,  -- how many times a source records it being used
+
   source      text not null check (source in ('seed', 'report', 'admin')),
   seed_key    text unique,                 -- name|lat|lon|type, seed rows only
   visible     boolean not null default true,
@@ -318,6 +320,11 @@ create table if not exists public.cameras (
 
 -- version 2.1 widened source to allow 'admin'; on an older table the
 -- check constraint has the old list, so it is replaced.
+-- version 2.2 added deployments, which the map weighs its heat by.
+-- A camera from a user report has no deployment history, so one.
+alter table public.cameras
+  add column if not exists deployments integer not null default 1;
+
 alter table public.cameras drop constraint if exists cameras_source_check;
 alter table public.cameras add constraint cameras_source_check
   check (source in ('seed', 'report', 'admin'));
