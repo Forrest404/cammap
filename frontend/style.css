@@ -1617,11 +1617,15 @@ button.toggle.on:focus-visible {
   font-size: 11px;
 }
 
-/* Paper cannot move the map or copy a link. The search, its results
-   and the note go; the popup was never on paper. */
+/* Paper cannot move the map, copy a link or ask where you are. The
+   search, its results, the note and Near me go; the popup was never
+   on paper. The Nearest sort, if it is the order in force, prints as
+   "Order: Nearest" through the PAPER rule for the sort row, which is
+   right: a list sorted by distance from somewhere is worth saying. */
 @media print {
   .map-search,
-  .map-note {
+  .map-note,
+  #near-me {
     display: none;
   }
 }

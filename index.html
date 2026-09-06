@@ -116,6 +116,17 @@
         <div class="map-toggles">
           <button id="legacy-toggle" class="toggle" aria-pressed="false" title="Also show the LFR van sites - places a van has been sent, not places one is now">Legacy</button>
         </div>
+        <!-- Pressed, never automatic. The browser asks for a location
+             only when this is pressed; the answer is held in memory
+             for this visit, drawn as a ring, and written nowhere.
+             Hidden until map.js has looked for geolocation: without
+             it the button is shown disabled with the reason in its
+             title, and without JavaScript there is no button at all.
+             The privacy line is in NOTES.md, "The map as a tool". -->
+        <div class="map-toggles">
+          <button id="near-me" class="toggle" aria-pressed="false" hidden
+                  title="Centre the map on where you are. Asked for only when you press this, never on its own; nothing is stored or sent anywhere. Press again to clear it.">Near me</button>
+        </div>
         <div class="map-toggles" id="view-buttons">
           <button class="toggle on" data-view="dark" aria-pressed="true" title="The dark map">Dark</button>
           <button class="toggle" data-view="light" aria-pressed="false" title="The light map">Light</button>
@@ -209,6 +220,11 @@
                   title="In the order the record lists them">A&ndash;Z</button>
           <button class="toggle" data-sort="used" aria-pressed="false"
                   title="Where the record shows cameras used most often">Most used</button>
+          <!-- Only while Near me holds a position: there is no
+               distance to sort by until there is somewhere to
+               measure from. -->
+          <button class="toggle" data-sort="near" aria-pressed="false" hidden
+                  title="Closest to where you are first">Nearest</button>
         </div>
         <ul class="points" id="points-list"></ul>
         <p class="empty" id="points-empty">No cameras recorded yet.</p>

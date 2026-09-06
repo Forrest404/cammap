@@ -225,10 +225,14 @@ function sameColours(a, b) {
                 cameras that are actually fixed to something and the
                 van record is a thing you ask for.
    hiddenTypes  kinds switched off in the legend. Empty means all.
-   sortBy       "name" or "used" - see listed(). */
+   sortBy       "name", "used" or - only while Near me holds a
+                position - "near". See listed().
+   sortBefore   the order in force when Near me was pressed, so that
+                clearing it puts the list back as it was. */
 var showLegacy = false;
 var hiddenTypes = {};
 var sortBy = "name";
+var sortBefore = "name";
 
 /* ---------------- satellite ----------------
 
@@ -276,7 +280,11 @@ function saveView() {
       legacy: showLegacy,
       view: view,
       hidden: hiddenTypes,
-      sort: sortBy
+
+      /* Never "near": that order exists only while Near me holds a
+         position, which is never kept past the visit, so what is
+         remembered is the order in force before it was pressed. */
+      sort: sortBy === "near" ? sortBefore : sortBy
     }));
   } catch (err) {
     /* storage refused - the toggles still work for this visit */
@@ -433,7 +441,7 @@ function clearOurLayersAndSources() {
 
   for (i = 0; i < layers.length; i++) {
     id = layers[i].id;
-    if (id === DOT || id === SATELLITE || id.indexOf(HEAT) === 0) {
+    if (id === DOT || id === SATELLITE || id.indexOf(HEAT) === 0 || id.indexOf(HERE) === 0) {
       ours.push(id);
     }
   }
@@ -444,7 +452,7 @@ function clearOurLayersAndSources() {
 
   for (id in sources) {
     if (sources.hasOwnProperty(id) &&
-        (id === SOURCE || id === SATELLITE || id.indexOf(SOURCE + "-heat-") === 0)) {
+        (id === SOURCE || id === SATELLITE || id === HERE || id.indexOf(SOURCE + "-heat-") === 0)) {
       map.removeSource(id);
     }
   }
@@ -499,6 +507,11 @@ function buildOverStyle() {
   addSatellite(map);
 
   addCameras(firstLabel);
+
+  /* Where you are, if Near me was pressed before the style changed:
+     setStyle threw the ring away with everything else of ours. */
+  drawHere();
+
   applyView();
 }
 
@@ -1061,6 +1074,10 @@ function applyView() {
     }
   }
 
+  /* Where you are wears a dark casing over imagery and none
+     elsewhere - see drawHere(), under "Near me". */
+  applyHereView();
+
   markView();
 }
 
@@ -1537,6 +1554,11 @@ function listed() {
     out.sort(function (a, b) {
       return (b.deployments || 1) - (a.deployments || 1);
     });
+  } else if (sortBy === "near" && here) {
+    /* Closest first, from where Near me found you. */
+    out.sort(function (a, b) {
+      return distanceFromHere(a) - distanceFromHere(b);
+    });
   }
 
   return out;
@@ -1602,6 +1624,14 @@ function rowFor(point) {
     coords.textContent = (point.deployments || 1) +
       ((point.deployments || 1) === 1 ? " use · " : " uses · ") +
       coords.textContent;
+  }
+
+  /* How far it is from you, whatever the order, for as long as Near
+     me holds a position: "is there one near my station" is answered
+     by the number, and the number is as useful on an A-Z list as on
+     the one sorted by it. */
+  if (here) {
+    coords.textContent = distanceText(distanceFromHere(point)) + " · " + coords.textContent;
   }
 
   go.appendChild(coords);
@@ -2626,6 +2656,396 @@ window.addEventListener("hashchange", function () {
    pending by applyHash() and answered the moment the database has
    spoken - which, from the cache, is inside this call. */
 loadCamerasFromDatabase();
+
+/* ------------------------------------------------------------------
+   Near me
+
+   Pressed, never automatic. NOTES.md drew the line before this was
+   built: asking every visitor for their location, to centre a map,
+   is a real cost to a site whose whole argument is that it collects
+   nothing, and a refusal has to work as well as a yes. So the browser
+   is asked only when the button is pressed, the answer lives in one
+   variable for this visit, and it is written nowhere - not to
+   storage, not to the database, not to the hash on its own account.
+   (The hash follows the map, and after Near me the map is looking at
+   where you are, as it would be after you panned there; copying the
+   address then is copying a view of your street. The site does not
+   do that for you.)
+
+   What a press does: centres the map on the fix, close in or less so
+   according to how good the fix is; draws where you are as a small
+   ring with a dot in it and the browser's stated accuracy as a larger
+   ring round that; and sorts the list by distance, with the distance
+   on every row. A second press clears all of it and puts the list
+   back in the order it was in.
+
+   The rings answer to the brightness rule like everything else drawn
+   on the map: nothing may be brighter than the dimmest camera dot,
+   which is the fixed-camera red at 134. They are drawn in #5c5c5c,
+   the dark map's own brightest grey, at 92 - the same grey on all
+   three views, because it reads as a quiet outline on the dark map,
+   a plain one on the light, and a neutral one over imagery, and a
+   colour that changed with the view would be a fourth thing to keep
+   in step. The fill is all but transparent: the ring says how far the
+   browser might be wrong, and a filled disc would say "here" with a
+   confidence the browser did not offer.
+
+   What can go wrong, and what the page says: the browser has no
+   geolocation, or the page is not on https, and the button is shown
+   disabled with the reason in its title and label; the person says
+   no, and the map says it works without; the fix does not come in
+   ten seconds, or cannot be made at all, and the map says which.
+   Every path leaves the map exactly as usable as before. A fix
+   outside London is said to be, and the distances are shown all the
+   same - "the nearest is 40 km away" is an answer.
+   ------------------------------------------------------------------ */
+
+var HERE = "cammap-here";   /* the source, and the prefix of its layers */
+var HERE_COLOUR = "#5c5c5c";   /* perceived brightness 92; the rule is 134 */
+
+/* Where Near me found you, or null. Never written anywhere else. */
+var here = null;
+
+var nearButton = document.getElementById("near-me");
+var nearSort = document.querySelector('#points-sort button[data-sort="near"]');
+
+/* Metres between two points on the ground - the haversine formula,
+   on a sphere of the Earth's mean radius. Across London the error
+   against the real ellipsoid is under a metre, which is less than any
+   phone knows where it is to. */
+function metresBetween(lat1, lon1, lat2, lon2) {
+  var toRad = Math.PI / 180;
+  var dLat = (lat2 - lat1) * toRad;
+  var dLon = (lon2 - lon1) * toRad;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function distanceFromHere(point) {
+  return here ? metresBetween(here.lat, here.lon, point.lat, point.lon) : 0;
+}
+
+/* "120 m", "1.4 km", "12 km". Rounded to what a phone can actually
+   know: the nearest ten metres close in, a tenth of a kilometre
+   further out, a whole kilometre beyond ten. */
+function distanceText(metres) {
+  if (metres < 1000) {
+    return String(Math.max(10, Math.round(metres / 10) * 10)) + " m";
+  }
+  if (metres < 10000) {
+    return (metres / 1000).toFixed(1) + " km";
+  }
+  return String(Math.round(metres / 1000)) + " km";
+}
+
+/* A circle of so many metres round a point, as a polygon: 64 sides,
+   which at any zoom the map allows is a circle to the eye. Degrees of
+   latitude are a fixed length; degrees of longitude shrink with the
+   cosine of the latitude. */
+function circleAround(lat, lon, metres) {
+  var ring = [];
+  var dLat = metres / 111320;
+  var dLon = metres / (111320 * Math.cos(lat * Math.PI / 180));
+  var i;
+  var angle;
+
+  for (i = 0; i <= 64; i++) {
+    angle = (i % 64) * 2 * Math.PI / 64;
+    ring.push([lon + dLon * Math.cos(angle), lat + dLat * Math.sin(angle)]);
+  }
+
+  return { type: "Polygon", coordinates: [ring] };
+}
+
+function hereFeatures() {
+  if (!here) {
+    return collection([]);
+  }
+
+  return collection([
+    {
+      type: "Feature",
+      properties: { kind: "accuracy" },
+      geometry: circleAround(here.lat, here.lon, Math.max(here.accuracy || 0, 10))
+    },
+    {
+      type: "Feature",
+      properties: { kind: "you" },
+      geometry: { type: "Point", coordinates: lngLat(here.lat, here.lon) }
+    }
+  ]);
+}
+
+/* Draw, or redraw, where you are. Under the camera dots and over the
+   glow: the cameras are the point, and a ring round you must never
+   cover one. Safe before the style has loaded - there is no layer to
+   put it under, and buildOverStyle() calls this again when there is. */
+function drawHere() {
+  var beneath = DOT;
+
+  /* Nothing to draw until Near me has been pressed, and nothing to
+     draw it under until the cameras are there. */
+  if (!here || !map.getLayer(DOT)) {
+    return;
+  }
+
+  if (!map.getSource(HERE)) {
+    map.addSource(HERE, { type: "geojson", data: hereFeatures() });
+  } else {
+    map.getSource(HERE).setData(hereFeatures());
+  }
+
+  if (map.getLayer(HERE + "-fill")) {
+    return;   /* layers standing; the source above carries the change */
+  }
+
+  /* The accuracy: a faint disc and a thin ring. */
+  map.addLayer({
+    id: HERE + "-fill",
+    type: "fill",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "accuracy"],
+    paint: { "fill-color": HERE_COLOUR, "fill-opacity": 0.08 }
+  }, beneath);
+
+  /* A dark casing under the ring, for the satellite view only: over
+     a photograph a thin mid-grey line is lost, and the rule allows
+     nothing brighter, so the answer is darker - the page's own black
+     round the grey, the way the style's own labels wear a dark halo
+     over imagery. Its opacity is set by applyView(): on the dark map
+     it would be black on black, and on the light map it would turn a
+     quiet grey ring into a heavy dark one. */
+  map.addLayer({
+    id: HERE + "-ring-casing",
+    type: "line",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "accuracy"],
+    paint: { "line-color": "#0d0d0d", "line-width": 3.5, "line-opacity": hereCasingOpacity() }
+  }, beneath);
+
+  map.addLayer({
+    id: HERE + "-ring",
+    type: "line",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "accuracy"],
+    paint: { "line-color": HERE_COLOUR, "line-width": 1.2, "line-opacity": 0.9 }
+  }, beneath);
+
+  /* You: a small ring with a dot in it. Not a plain dot, because a
+     plain grey dot is what a private camera looks like, and a hollow
+     ring is what a legacy site looks like; a ring with a dot in it is
+     neither. The same casing under it as under the accuracy ring. */
+  map.addLayer({
+    id: HERE + "-you-casing",
+    type: "circle",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "you"],
+    paint: {
+      "circle-radius": 7,
+      "circle-opacity": 0,
+      "circle-stroke-color": "#0d0d0d",
+      "circle-stroke-width": 3.5,
+      "circle-stroke-opacity": hereCasingOpacity()
+    }
+  }, beneath);
+
+  map.addLayer({
+    id: HERE + "-you-ring",
+    type: "circle",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "you"],
+    paint: {
+      "circle-radius": 7,
+      "circle-opacity": 0,
+      "circle-stroke-color": HERE_COLOUR,
+      "circle-stroke-width": 1.5,
+      "circle-stroke-opacity": 0.95
+    }
+  }, beneath);
+
+  map.addLayer({
+    id: HERE + "-you-dot",
+    type: "circle",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "you"],
+    paint: { "circle-radius": 2, "circle-color": HERE_COLOUR, "circle-opacity": 0.95 }
+  }, beneath);
+}
+
+/* The casing is for imagery only; see drawHere(). */
+function hereCasingOpacity() {
+  return view === "satellite" ? 0.85 : 0;
+}
+
+/* Called from applyView(), which runs on every change of view and
+   again after every style build, so the casing follows the view. */
+function applyHereView() {
+  if (map.getLayer(HERE + "-ring-casing")) {
+    map.setPaintProperty(HERE + "-ring-casing", "line-opacity", hereCasingOpacity());
+  }
+  if (map.getLayer(HERE + "-you-casing")) {
+    map.setPaintProperty(HERE + "-you-casing", "circle-stroke-opacity", hereCasingOpacity());
+  }
+}
+
+function removeHere() {
+  var ids = [HERE + "-fill", HERE + "-ring-casing", HERE + "-ring",
+             HERE + "-you-casing", HERE + "-you-ring", HERE + "-you-dot"];
+  var i;
+
+  for (i = 0; i < ids.length; i++) {
+    if (map.getLayer(ids[i])) {
+      map.removeLayer(ids[i]);
+    }
+  }
+  if (map.getSource(HERE)) {
+    map.removeSource(HERE);
+  }
+}
+
+/* How close to look, from how sure the browser is: a fix good to
+   fifty metres earns a street, one good to two kilometres earns a
+   district. The zoom is chosen so the accuracy ring is a ring on the
+   map and not the whole of it. */
+function zoomForAccuracy(metres) {
+  if (metres <= 60) { return 16; }
+  if (metres <= 250) { return 15; }
+  if (metres <= 800) { return 14; }
+  if (metres <= 2500) { return 13; }
+  return 12;
+}
+
+function markNear() {
+  if (nearButton) {
+    nearButton.className = here ? "toggle on" : "toggle";
+    nearButton.setAttribute("aria-pressed", here ? "true" : "false");
+  }
+  if (nearSort) {
+    nearSort.hidden = !here;
+  }
+}
+
+function gotHere(lat, lon, accuracy) {
+  var inside = inLondon(lat, lon);
+
+  here = { lat: lat, lon: lon, accuracy: accuracy };
+
+  drawHere();
+
+  if (inside) {
+    moveMap(lat, lon, zoomForAccuracy(accuracy));
+  }
+
+  /* The list: distance first, and the order it was in remembered for
+     when this is cleared. */
+  if (sortBy !== "near") {
+    sortBefore = sortBy;
+  }
+  sortBy = "near";
+  markNear();
+  markSort();
+  render();
+
+  sayUnderMap(inside
+    ? "Centred on where you are, to within about " + distanceText(accuracy) +
+      ". Nothing is stored or sent. Press Near me again to clear it."
+    : "You are outside London, which is all this map covers, so there is nothing to centre on; " +
+      "the list is in order of distance from you all the same. Press Near me again to clear it.");
+}
+
+function clearHere() {
+  here = null;
+  removeHere();
+
+  if (sortBy === "near") {
+    sortBy = sortBefore;
+  }
+  markNear();
+  markSort();
+  render();
+  sayUnderMap("");
+}
+
+/* Whether a request is out. The button is not disabled while it is -
+   disabling a focused button drops the keyboard's focus on the floor,
+   and a person who pressed Enter would find themselves nowhere - so a
+   second press while waiting is simply ignored. */
+var askingHere = false;
+
+function askForHere() {
+  if (askingHere) {
+    return;
+  }
+  askingHere = true;
+  nearButton.setAttribute("aria-busy", "true");
+  sayUnderMap("Asking your browser where you are…");
+
+  window.navigator.geolocation.getCurrentPosition(function (position) {
+    askingHere = false;
+    nearButton.removeAttribute("aria-busy");
+    gotHere(position.coords.latitude, position.coords.longitude, position.coords.accuracy || 0);
+  }, function (err) {
+    askingHere = false;
+    nearButton.removeAttribute("aria-busy");
+
+    /* 1 is refused, 2 is could not be worked out, 3 is took too
+       long; anything else is a browser being inventive. */
+    if (err && err.code === 1) {
+      sayUnderMap("Location refused - that is fine. The map works without it: search for a place instead, or pan to it.");
+    } else if (err && err.code === 3) {
+      sayUnderMap("No fix after ten seconds. Try again in a moment, or search for a place instead.");
+    } else {
+      sayUnderMap("Your browser could not work out where you are. The map works without it: search for a place instead.");
+    }
+  }, {
+    /* A rough fix is enough to say which street, arrives sooner, and
+       costs a phone less; ten seconds is as long as anyone waits; and
+       a fix a few minutes old is the same street. */
+    enableHighAccuracy: false,
+    timeout: 10000,
+    maximumAge: 180000
+  });
+}
+
+/* The button is hidden in the markup until this has looked. Without
+   geolocation, or off https - browsers refuse to ask for a location
+   on a plain http page - it is shown disabled, with the reason where
+   a pointer and a screen reader will each find it. */
+function setUpNearMe() {
+  var reason = null;
+
+  if (!nearButton) {
+    return;
+  }
+
+  if (!window.navigator.geolocation) {
+    reason = "this browser will not share a location";
+  } else if (window.isSecureContext === false) {
+    reason = "a location can only be asked for over https";
+  }
+
+  nearButton.hidden = false;
+
+  if (reason) {
+    nearButton.disabled = true;
+    nearButton.title = "Near me is not available: " + reason + ".";
+    nearButton.setAttribute("aria-label", "Near me, not available: " + reason);
+    return;
+  }
+
+  nearButton.onclick = function () {
+    if (here) {
+      clearHere();
+    } else {
+      askForHere();
+    }
+  };
+}
+
+setUpNearMe();
 
 /* A remembered legacy setting has to show on the button straight away;
    the map side of it is applied when the layers are built. */
