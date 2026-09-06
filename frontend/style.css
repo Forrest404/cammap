@@ -1801,6 +1801,49 @@ button.legend-only.on {
   }
 }
 
+/* "How to read this map", under the legend: a details element whose
+   summary is set in the voice of the boxes' headings, so it reads as
+   a heading that happens to fold, and whose prose is the hint voice
+   - the dim, at the hint's size - because it is a thing to read once.
+   The browser's own marker is kept: it is what says the thing folds.
+   Held to a comfortable measure; the map column is wider than prose
+   should run. Not on paper: the paper has no map to read, and each
+   printed row already says its kind and state in words. */
+details.explain {
+  margin: 12px 0 0 0;
+  max-width: 76ch;
+}
+
+details.explain summary {
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+details.explain summary:hover {
+  color: var(--text);
+}
+
+details.explain p {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dim);
+}
+
+details.explain strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+@media print {
+  details.explain {
+    display: none;
+  }
+}
+
 /* ------------------------------------------------------------------
    PAPER
 

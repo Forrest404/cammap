@@ -135,6 +135,45 @@
         <ul class="legend" id="legend"></ul>
       </div>
 
+      <!-- How to read the map, in words. The legend gives five
+           colours and two fills, and a visitor had to work out for
+           themselves that a hollow ring is a van site and why the
+           map opens with none of them on it. Four sentences: the
+           colours, the ring, the glow, and why van sites sit behind
+           Legacy - each drawn from NOTES.md ("What active means",
+           "Tuning the glow"), none claiming what the data does not.
+           The list of kinds in the first sentence is filled in by
+           map.js from CAMERA_TYPES, so it cannot disagree with the
+           key above it; without JavaScript the sentence still reads,
+           without the list.
+
+           Open in the markup, so a page without JavaScript shows it;
+           map.js closes it on any visit after the first, and
+           remembers a close. Details/summary rather than a button
+           and a box because the browser does the collapsing, the
+           keyboard already knows it (Enter or Space on the summary),
+           and the focus ring covers summary already. -->
+      <details class="explain" id="explain" open>
+        <summary>How to read this map</summary>
+        <p>
+          Colour says what a camera is<span id="explain-kinds"></span>.
+          The key above gives each kind its colour.
+          A solid dot is a camera in use; a hollow ring in the same
+          colour is a legacy site, one no longer in use; a dot filled
+          in the non-functional colour is one reported as not working,
+          whatever its kind.
+          Pull back and the dots pool into a glow, weighed by how many
+          times the record has a spot being used &ndash; so a place a
+          van has been sent twenty times reads hotter than one it
+          visited once &ndash; and a camera on its own makes no glow
+          at all.
+          Every LFR van site sits behind the <strong>Legacy</strong>
+          toggle: a van parks for a shift and drives away, so the
+          record can say where one has been and never where one is
+          now, and the map opens on the cameras fixed to something.
+        </p>
+      </details>
+
       <!-- What the map is a map of, and how old it is: the count of
            cameras in the record, worked out from the record by
            map.js's render(), and the reach of the sources and when

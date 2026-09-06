@@ -2804,6 +2804,87 @@ function startEditing() {
 }
 
 /* ------------------------------------------------------------------
+   How to read this map
+
+   The block under the legend, in index.html. Two things are done to
+   it here. The first sentence's list of kinds is written from
+   CAMERA_TYPES, the one table the key and the dots are painted from,
+   so the prose cannot name a kind the key does not have or miss one
+   it does; the labels are lowered into the sentence where they start
+   with an ordinary word, and left alone where they start with an
+   acronym ("LFR van site"). And it is open by default on the first
+   visit only: the markup says open, so a page without JavaScript
+   shows it, and a visit that finds STORAGE.explained set closes it.
+   The key is set when it has been shown open once and again when it
+   is closed - a visitor who read it and moved on and one who shut it
+   both get one summary line next time. Where storage is refused the
+   key is never found and it is open on every visit, which is the
+   harmless way round. Opening it again on a later visit is not
+   remembered: it is there to be looked at, not to stay open.
+   ------------------------------------------------------------------ */
+
+var explainBox   = document.getElementById("explain");
+var explainKinds = document.getElementById("explain-kinds");
+
+function kindInSentence(label) {
+  /* "Fixed LFR camera" -> "fixed LFR camera"; "LFR van site" stays. */
+  return /^[A-Z][a-z]/.test(label) ? label.charAt(0).toLowerCase() + label.slice(1) : label;
+}
+
+function kindsSentence() {
+  var names = [];
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    names.push(kindInSentence(TYPES[i].label));
+  }
+
+  if (names.length < 2) {
+    return names.length ? ": " + names[0] : "";
+  }
+
+  return ": " + names.slice(0, -1).join(", ") + " or " + names[names.length - 1];
+}
+
+function rememberExplained() {
+  try {
+    window.localStorage.setItem(STORAGE.explained, "1");
+  } catch (err) {
+    /* storage refused - it will be open next time too, and that is fine */
+  }
+}
+
+function setUpExplain() {
+  var seen = false;
+
+  if (explainKinds) {
+    explainKinds.textContent = kindsSentence();
+  }
+
+  if (!explainBox) {
+    return;
+  }
+
+  try {
+    seen = window.localStorage.getItem(STORAGE.explained) === "1";
+  } catch (err) {
+    seen = false;
+  }
+
+  if (seen) {
+    explainBox.removeAttribute("open");
+  } else {
+    rememberExplained();
+  }
+
+  explainBox.addEventListener("toggle", function () {
+    if (!explainBox.open) {
+      rememberExplained();
+    }
+  });
+}
+
+/* ------------------------------------------------------------------
    Start up
    ------------------------------------------------------------------ */
 
@@ -2817,6 +2898,7 @@ if (EDITING) {
 /* The layers are made when the style finishes loading, and take the
    list as it stands then, so there is nothing to draw here. */
 drawLegend();
+setUpExplain();
 render();
 
 /* ------------------------------------------------------------------

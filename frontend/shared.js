@@ -182,6 +182,11 @@ function fillTypeSelect(el, selected) {
                off in the legend, and the list's sort order.
      DRAFT     the ?edit working copy of points.js. Never written
                outside edit mode.
+     EXPLAINED that "How to read this map" under the legend has been
+               shown open once, so later visits open it closed. Set
+               the first time it is shown and again when it is closed;
+               where storage is refused it is open on every visit,
+               which is the harmless way round.
 
    Storage may be refused outright - a private window, a browser set
    to block it - so every read and write of these is wrapped, and the
@@ -189,9 +194,10 @@ function fillTypeSelect(el, selected) {
    ------------------------------------------------------------------ */
 
 var STORAGE = {
-  cameras: "cammap.cameras",
-  view:    "cammap.view",
-  draft:   "cammap.draft"
+  cameras:   "cammap.cameras",
+  view:      "cammap.view",
+  draft:     "cammap.draft",
+  explained: "cammap.explained"
 };
 
 /* Throw the camera cache away. Called after anything that changes what
