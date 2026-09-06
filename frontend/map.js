@@ -1738,12 +1738,6 @@ render();
 var CAMERAS_KEY = STORAGE.cameras;
 var CAMERAS_TTL = 5 * 60 * 1000;   /* five minutes */
 
-/* seed_key is how a database row says which seed entry it is. It is
-   built the same way here as in the build script, so they agree. */
-function seedKeyOf(point) {
-  return point.name + "|" + point.lat.toFixed(6) + "|" + point.lon.toFixed(6) + "|" + point.type;
-}
-
 /* A row's deployment count, or the fallback if it has none. A camera
    that came from a report has never been counted, so it stands at one
    like any hand-typed entry - and the glow is weighed by this, so a

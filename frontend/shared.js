@@ -60,6 +60,12 @@ function inLondon(lat, lon) {
          lon >= LONDON_BOUNDS[0][1] && lon <= LONDON_BOUNDS[1][1];
 }
 
+/* seed_key is how a database row says which seed entry it is. It is
+   built the same way here as in the build script, so they agree. */
+function seedKeyOf(point) {
+  return point.name + "|" + point.lat.toFixed(6) + "|" + point.lon.toFixed(6) + "|" + point.type;
+}
+
 function typeOf(type) {
   var i;
 
