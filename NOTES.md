@@ -26,7 +26,9 @@
                         moderate, leaderboard.
     frontend/           the code that runs in a browser: shared.js, map.js,
                         picker.js, account.js, style.css.
-    data/               points.js, the camera list you edit by hand.
+    data/               cameras.csv, the record - the one file you edit -
+                        and points.js, written out from it by
+                        tools/build_points.py along with backend/seed.sql.
     backend/            schema.sql and seed.sql - the database.
     lib/ fonts/         vendored, pinned by version, not ours to edit.
     tools/              stamp.py and check.js, both run before every
@@ -65,10 +67,14 @@ tells you which pole. **Legacy** filters the context dots, which are active
 cameras by default - a retired camera on your corner does not make your
 sighting a duplicate, and may be the reason you are reporting it.
 
-**The build script is missing.** `points.js`, `seed.sql` and the TODO below all
-name `build_points.py`, but `tools/` holds only `stamp.py`. Until it turns up
-the two data files are maintained by hand, or through `index.html?edit`, and
-they must be kept in step with each other.
+**The build script.** `tools/build_points.py` writes `data/points.js` and
+`backend/seed.sql` from `data/cameras.csv`, which is the record. Edit the
+CSV, run the script, commit all three. `stamp.py` regenerates both outputs
+on every run and fails if either is not what the CSV produces, so neither
+can be hand-edited by accident, and a CSV edit cannot be committed without
+being built. For a long time the script was missing and the two files were
+kept in step by hand; the long version is "The build script and the record"
+below.
 
 ## TODO
 
@@ -80,7 +86,7 @@ they must be kept in step with each other.
 - [x] Add satellite, etc views. (Done: three base views under the map - Dark, Light and Satellite. Light is OpenFreeMap's Bright - blue water, green parks, warm off-white land; Positron was tried first but is colourless by design; Satellite is Esri World Imagery under the dark style's labels. Which one you chose is remembered.)
 - [x] Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password. (Done: the site generates the username - two words, `copper.heron` - and the person sets a password. No email, no name. See "Anonymity" below for what "completely" honestly means.)
 - [ ] Make it so that when reporting the state of a camera, you have to upload an image
-- [ ] Get the Met's 2026 deployment record (met.police.uk blocks scripted downloads; it needs a real browser) and re-run the build.
+- [ ] Get the Met's 2026 deployment record (met.police.uk blocks scripted downloads; it needs a real browser), add its sites to `data/cameras.csv`, and run `python3 tools/build_points.py`.
 - [ ] Other cities. The type identifiers and the schema carry over; the London bounds are now `LONDON_BOUNDS` in `frontend/shared.js` (one place, shared by the map and the report form), the opening centre `LONDON_CENTRE` beside it, the opening zoom in `frontend/map.js`, and three `check` constraints in `backend/schema.sql` - on `cameras`, `reports` and `saved_cameras`. Wherever the user is located, thats where the map displays by default.
 
   Worth saying plainly before that last part is built: asking every visitor for their location, to centre a map, is a real cost to a site whose whole argument is that it collects nothing. `navigator.geolocation` prompts, and a refusal has to work as well as a yes. If it is done, it should be a button the visitor presses rather than something that happens to them on arrival - which is how the report form already does it.
@@ -193,9 +199,12 @@ anywhere.
 
 Two things will quietly undo it:
 
-- **`build_points.py`**, when it turns up. It computed the split, and a re-run
-  would set 97 van sites back to active. It must be made to write every
-  `vancam` as legacy first.
+- **The original `build_points.py`**, if it ever turns up. It computed the
+  split, and a re-run of it would set 97 van sites back to active. The script
+  now in `tools/` is not it and does not compute a status for anything: it
+  writes what `data/cameras.csv` says, treats a blank status on a `vancam` as
+  legacy, and refuses to build a record in which any van site is active. Do
+  not replace it with the old one.
 - **A re-run of `seed.sql` against a database seeded before this change** is
   what applies it, not what breaks it - `status` is in the `on conflict do
   update` list, so the 97 rows are rewritten in place. Do run it.
@@ -208,9 +217,80 @@ To bring those into line too:
 
 ### The build script and the record
 
-*(Written by the Wave 1 generator agent: the source table, what
-`build_points.py` writes and how it is checked, and the shape of the
-per-period deployments, the source columns and the approximate flag.)*
+The record is `data/cameras.csv`: one header row, one camera per line.
+`tools/build_points.py` writes `data/points.js` and `backend/seed.sql` from
+it, and nothing else does. The two outputs were kept in step by hand for a
+long time - both said they were written by a script that was not in the
+repository - and the invariant that they agree was documented in four
+places and enforced in none. Now it is enforced in one: `stamp.py`
+regenerates both from the CSV in memory on every run and fails, naming the
+file and the first differing line, if what is committed is not what the CSV
+produces. A hand edit to either output cannot survive a commit, and neither
+can a CSV edit that was not built.
+
+This is not a build step in the sense the project refuses. The browser runs
+the committed `points.js` exactly as before; nothing has to run for the
+site to be served; CI only reads. It is a generator the maintainer runs by
+hand, the way `stamp.py` is a checker they run by hand.
+
+    python3 tools/build_points.py            write both files from the CSV
+    python3 tools/build_points.py --check    the same comparison stamp.py
+                                             makes, on its own
+    python3 tools/build_points.py --import data/points.js
+                                             read a points.js back into
+                                             the CSV (see below)
+
+**The columns**, in the order they are written: `name`, `type`, `status`,
+`lat`, `lon`, `last`, `deployments`, `note`. The prose is last because it
+is the long one, so a line reads as the structured fields first and the
+note trailing. The script's docstring documents each column; the ones
+worth knowing about before editing:
+
+- `status` may be left blank. A `vancam` is then legacy and anything else
+  active - the same default `tidy()` in `map.js` gives a hand-typed entry.
+  A `vancam` written as `active` is refused, naming the row. The script
+  never computes a status from a year: see "What active means" above.
+- `lat` and `lon` are read as exact decimals, at most six places, and
+  written with exactly six. A spreadsheet that drops a trailing zero is
+  fine; a seventh decimal is refused rather than rounded, because rounding
+  it would be the script deciding where a camera is.
+- `last` blank is null. `deployments` blank is one.
+- Row order does not matter. The outputs are written in a canonical order
+  - by name, case-insensitively, then type, then position - so a row
+  appended at the bottom lands in its alphabetical place in both files, and
+  the same CSV always produces the same bytes. That order is what the
+  published files already had; the first build reproduced them to the byte
+  from the CSV before anything was changed, which is the proof that the
+  script reads the record right.
+
+**What the script will not do.** It does not look anything up, fetch
+anything, or infer anything. Every value in the outputs is a value in the
+CSV, a fixed default named in the docstring, or `seed_key`, which is built
+from three of them. Where the CSV is wrong the build fails and names the
+row; where it is incomplete the output is null or the default, never a
+plausible value. "Nothing here is estimated" is the record's own promise
+and a generator that filled a blank by guessing would break it quietly.
+
+**`--import`** reads a `points.js` - the committed one, or one pasted out
+of `index.html?edit` - and writes the CSV from it. It was used once, to make
+the CSV from the published file, and it is kept because a hand-published
+`points.js` is the one situation in which an output knows more than the
+source, and the way back is to import it, read the diff git shows on the
+CSV, and build. It reads the file with the same patterns `stamp.py` does and
+refuses anything it cannot read rather than skipping it.
+
+**`?edit` and the CSV.** `index.html?edit` still exports a `points.js`.
+Pasting that over the committed file and committing it now fails
+`stamp.py`, correctly: the CSV did not change, so the output should not
+have. Either import it (above) or, better, have `?edit` export CSV rows in
+the column order above and paste those into `data/cameras.csv` instead.
+That change belongs to `map.js` and has not been made yet.
+
+**The download.** When the site publishes the record as a download, the
+file to publish is this one, served as it is. It is already the most
+portable form of the record, it carries nothing that is not public, and a
+file that *is* the record cannot drift from it. A second CSV derived from
+the first would exist only to hide columns, and there are none to hide.
 
 ### Roles
 

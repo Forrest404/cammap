@@ -40,13 +40,20 @@ guards a copy that has drifted, or nearly drifted, once already:
                   above comes straight back for that one file.
   the two data    data/points.js is what the map draws when the
   files           database cannot be reached; backend/seed.sql is what
-                  fills the database. They say they are written out by
-                  build_points.py, which is not in the repository, so
-                  today they are edited by hand and can only agree if
-                  somebody checks. Compared row for row, and each row's
-                  seed_key is recomputed from its own fields - a key
-                  that no longer matches its row makes the next seed
-                  run insert a second camera instead of updating one.
+                  fills the database. Both are written out by
+                  tools/build_points.py from data/cameras.csv and are
+                  never edited by hand. Compared row for row all the
+                  same, and each row's seed_key is recomputed from its
+                  own fields - a key that no longer matches its row
+                  makes the next seed run insert a second camera
+                  instead of updating one.
+  the generator   The two files are then regenerated from the CSV in
+                  memory and compared byte for byte with what is
+                  committed, the first differing line named. This is
+                  what makes "never edited by hand" a rule the commit
+                  enforces rather than one the header asks for, and it
+                  catches the other case too: a CSV edited and
+                  committed without the script being run.
   the bounds      LONDON_BOUNDS in shared.js is what the browser checks
                   a pin against; three check constraints in schema.sql
                   are what the server checks against, kept separately
@@ -57,10 +64,12 @@ guards a copy that has drifted, or nearly drifted, once already:
   vancam legacy   Every van site is legacy - a van parks for a shift
                   and drives away, so no van site claims to be active,
                   and the map opens on the cameras that are fixed to
-                  something. build_points.py used to compute an
-                  active/legacy split and would put 97 sites back to
-                  active if run unchanged. See "What active means" in
-                  NOTES.md; this is the check that makes it stick.
+                  something. The original build_points.py computed an
+                  active/legacy split and would have put 97 sites back
+                  to active; the one in tools/ now refuses to write an
+                  active van site at all. See "What active means" in
+                  NOTES.md; this is the check that makes it stick
+                  whatever wrote the files.
   the types       CAMERA_TYPES in shared.js is the one list the legend
                   and every drop-down are built from; schema.sql keeps
                   its own copy in three check constraints, again so
@@ -622,14 +631,55 @@ if camera_types:
 
 # ---- regenerated output matches committed output ----
 #
-# Not written yet. tools/build_points.py is the generator both data
-# files say they come from, and it is not in the repository. When it
-# is, the check belongs here: run the generator into a temporary
-# directory and compare its points.js and seed.sql byte for byte with
-# the committed ones, naming the first differing line. Until then the
-# row-for-row check above is the whole of what keeps the two files
-# honest, and the vancam check above is what stops a regenerated
-# points.js putting the van sites back to active.
+# tools/build_points.py writes both data files from data/cameras.csv,
+# and from now on that is the only way either is written. So the check
+# is not "do the two files agree with each other" - the row-for-row
+# check above still asks that, and would catch a generator bug that hit
+# one file and not the other - but "are both files exactly what the CSV
+# produces". Regenerated here in memory and compared byte for byte, the
+# first differing line named. A hand edit to points.js fails it; so
+# does a CSV edited and committed without the script being run.
+#
+# The generator is imported as a module rather than run as a
+# subprocess: nothing has to be written to a temporary directory, the
+# comparison happens on strings, and a CSV the generator refuses is
+# reported here with its own message rather than as an exit code to be
+# interpreted. It is standard-library Python like this file, so
+# importing it adds nothing this script did not already need. Bytecode
+# writing is switched off first so that importing it does not leave a
+# __pycache__ in tools/ on every run.
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.join(ROOT, "tools"))
+try:
+    import build_points
+except Exception as e:                       # a syntax error is a failure, not a pass
+    build_points = None
+    fail("cannot import tools/build_points.py", [repr(e)])
+
+if build_points is not None:
+    generated = None
+    try:
+        generated, count = build_points.regenerate()
+    except build_points.BuildError as e:
+        fail("data/cameras.csv WILL NOT BUILD", [str(e)])
+    except Exception as e:
+        fail("tools/build_points.py FAILED", [repr(e)])
+    if generated is not None:
+        lines = []
+        for rel, text in generated.items():
+            diff = build_points.first_difference(text, read(rel))
+            if diff:
+                line, ours, theirs = diff
+                lines.append("%s: first difference at line %d" % (rel, line))
+                lines.append("    generated: %s" % ("<end of file>" if ours is None else ours.rstrip()))
+                lines.append("    committed: %s" % ("<end of file>" if theirs is None else theirs.rstrip()))
+        if lines:
+            fail("GENERATED DRIFT: a data file is not what data/cameras.csv produces", lines +
+                 ["Edit data/cameras.csv and run python3 tools/build_points.py; "
+                  "points.js and seed.sql are never edited by hand."])
+        else:
+            ok("generated: points.js and seed.sql are what cameras.csv builds, %d cameras" % count)
 
 
 # ---- verdict ----
