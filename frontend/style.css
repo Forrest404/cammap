@@ -1551,3 +1551,262 @@ button.toggle.on:focus-visible {
     padding-left: 0;
   }
 }
+
+/* ------------------------------------------------------------------
+   PAPER
+
+   What printing the map page gives you: the list, in one column,
+   black on white, every camera with its coordinates. Before this it
+   gave the dark page as it stood: a dark rectangle where the map is
+   (a WebGL canvas that was never asked to keep its drawing prints as
+   nothing) and the list cut off at the bottom of the box it scrolls
+   in, seventeen rows and no more.
+
+   "Usable on the street" set the choices. The paper is for someone
+   walking a borough with it: a name to look for, a line saying what
+   the thing is, and coordinates to type into a phone. So the
+   coordinates print at the size of the name rather than as the
+   footnote they are on screen; the swatch keeps its colour (the
+   printer is told to print it) but nothing depends on the colour,
+   because the printer may be black and white - the swatch's title,
+   "LFR van site · legacy · last seen 2025", is printed out at the end
+   of the row; and no row is split across a page.
+
+   What the list is a list OF prints with it: the count, the legend
+   with the kinds switched off struck through, whether the legacy van
+   sites are included, the order in force, and the search term if
+   there is one. That is the filter state. It is already in the DOM,
+   because the list is rendered from the same state as the dots, so
+   the print view only has to keep it and say it plainly.
+
+   Dropped, because they are no use on paper: the map, its view
+   buttons, the search box while it is empty, the sort button not in
+   force, the nav, the star and remove buttons on rows, Donate, and
+   the editing boxes even in edit mode. The map's attribution goes
+   with the map: it credits tiles that are not on the page.
+
+   The other pages get the same paper and the same black, and nothing
+   else: prose prints as prose.
+   ------------------------------------------------------------------ */
+
+@media print {
+
+  /* Paper is white, so the palette flips here, once, and every rule
+     that names a variable follows. The accent goes to black: at 3.6:1
+     on white it cannot carry text, and there is nothing on paper for
+     a link colour to mean. What it marked - headings, the names in the
+     list - is set bold instead. --rule is for borders, and #999 is
+     fine for a border; the one place it is text is a legend key that
+     has been switched off, which is struck through below so it does
+     not depend on being faint. */
+  :root {
+    --bg:     #ffffff;
+    --text:   #000000;
+    --dim:    #555555;   /* 7.5:1 on white */
+    --accent: #000000;
+    --rule:   #999999;
+    --field:  #ffffff;
+  }
+
+  @page {
+    margin: 15mm;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    padding: 0;
+  }
+
+  /* The scanlines are position: fixed, and a fixed element prints on
+     every page. */
+  body::before {
+    display: none;
+  }
+
+  .sheet {
+    max-width: none;
+  }
+
+  /* No use on paper, or gone with the map. */
+  nav.bar,
+  a.donate,
+  #map,
+  .pick-map,
+  .pick-toggles,
+  #view-buttons,
+  button.star,
+  button.remove,
+  .edit-only,
+  body.editing .edit-only {
+    display: none;
+  }
+
+  /* ---------- the map page ---------- */
+
+  .map-layout,
+  .map-bar,
+  .map-toggles {
+    display: block;
+  }
+
+  .map-bar {
+    margin: 0 0 14px 0;
+    font-size: 13px;
+    color: var(--text);
+    break-after: avoid;
+  }
+
+  /* The Legacy switch is the one filter the count alone does not
+     explain - "17 of 187" could as well be a search - so it prints as
+     a sentence, its own word first. */
+  #legacy-toggle {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text);
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  #legacy-toggle::after {
+    content: " van sites: not included";
+  }
+
+  #legacy-toggle.on::after {
+    content: " van sites: included";
+  }
+
+  ul.legend {
+    justify-content: flex-start;
+    margin-top: 6px;
+  }
+
+  button.legend-key {
+    color: var(--text);
+  }
+
+  /* Switched off: struck through, so it reads as off on a printer
+     that would drop a faint grey. */
+  button.legend-key.off {
+    color: var(--dim);
+    text-decoration: line-through;
+  }
+
+  .side-column {
+    margin: 0;
+  }
+
+  #cameras-box {
+    height: auto;
+    display: block;
+    padding: 0;
+    border: none;
+  }
+
+  #cameras-box .list-head {
+    justify-content: flex-start;
+    gap: 2ch;
+    break-after: avoid;
+  }
+
+  #cameras-box .count {
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  /* The search term, if there is one, is part of what the list is;
+     an empty box is not. */
+  input.find:placeholder-shown {
+    display: none;
+  }
+
+  /* The order in force, as a line; the other button goes. */
+  #points-sort button {
+    display: none;
+  }
+
+  #points-sort button.on {
+    display: block;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--dim);
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  #points-sort button.on::before {
+    content: "Order: ";
+  }
+
+  #cameras-box ul.points {
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* A little denser than the screen list. On screen a row has room
+     because a finger has to land on it; on paper it has to share an
+     A4 side with the rest of its borough, and at the screen spacing
+     Croydon's nine spilled the last onto a page of its own. */
+  ul.points li {
+    position: relative;   /* for the kind, below */
+    padding: 6px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  button.goto {
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  button.goto .name {
+    font-weight: 600;
+  }
+
+  /* The coordinates are the part you type into a phone, so they are
+     the size of the name and in the same black. */
+  button.goto .coords {
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  /* The swatch is coloured by an inline style from CAMERA_TYPES, and
+     printers drop backgrounds unless told not to. */
+  .swatch {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* What the swatch's colour means, in words, at the end of the row,
+     for the black-and-white printer. rowFor() in map.js puts the kind
+     and state on the swatch as its title - "Transport police", "LFR
+     van site · legacy · last seen 2025" - and attr() reads it back.
+     The row is positioned so the words can sit at its right edge,
+     level with the coordinates, where nothing else is. Scoped to the
+     map's list: the saved list on the account page already says the
+     kind in its coordinates line. */
+  #points-list li .swatch::after {
+    content: attr(title);
+    position: absolute;
+    right: 0;
+    bottom: 10px;
+    font-size: 12px;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+
+  /* ---------- the other pages ---------- */
+
+  /* Wide content scrolls inside its box on screen; on paper it can
+     only be cut off. */
+  .table-box {
+    overflow: visible;
+  }
+}
