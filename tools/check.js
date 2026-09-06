@@ -1,0 +1,579 @@
+#!/usr/bin/env node
+/* ------------------------------------------------------------------
+   cammap - the checks that need no browser
+
+   Run it as  node tools/check.js  from anywhere. Plain Node, nothing
+   installed, no framework: it loads data/points.js and
+   frontend/shared.js exactly as the browser would and asks them the
+   questions that have already been answered wrong once. There is no
+   build step here and this does not add one. It is a checker, not a
+   compiler - what is in the repository is still what the browser
+   runs, and this only reads it.
+
+   Each check names its case, and where the case is a camera it names
+   the camera: "assertion failed" in a record of two hundred entries
+   is not a finding. On success it prints one line. On failure it
+   prints every failing case and exits non-zero, which is what lets a
+   workflow refuse the commit.
+
+   What is guarded, and why each one is here:
+
+   The type table. CAMERA_TYPES is the one copy of what kinds of
+   camera there are: the legend, every drop-down and every dot are
+   painted from it, and style.css once held a second copy that
+   nothing read. Two functions fall back to CAMERA_TYPES[1] *by
+   position*, meaning the van colour - reorder the table and an
+   unknown type quietly turns another colour, and nothing would say
+   so. So the table's shape, its uniqueness, its colours and what
+   sits in its second row are all pinned here.
+
+   The paint expression. The map and the report form's picker colour
+   their dots through typeColourExpression(), and a dot can never be
+   a colour the legend does not show only for as long as that
+   expression is built from the table, stop for stop. Its shape is
+   checked as MapLibre will read it.
+
+   The bounds. LONDON_BOUNDS is south-west then north-east, and the
+   database repeats the numbers in three check constraints. MapLibre
+   wants longitude first and everything else here wants latitude
+   first, so a point with its coordinates the wrong way round has to
+   fail inLondon(), not pass it; the corners, the edges and the swap
+   are all tried.
+
+   seed_key. It is how a database row says which published entry it
+   is, built in JavaScript for the map and in SQL for the seed. The
+   two have to agree to the character: a key that differs is a second
+   row on the next seed run, and a moderator's correction lost on the
+   next page load. They are documented as agreeing and were checked
+   nowhere, so every row of seed.sql is read and its key rebuilt with
+   seedKeyOf(). Six decimals, because that is how the record is
+   written and a key with more would match nothing.
+
+   The record. Every entry carries every field the seed carries, with
+   the right kind of value; every camera is inside London; every van
+   site is legacy - the choice "What active means" in NOTES.md
+   explains, and the one build_points.py would undo if it turned up
+   unchanged; and no two entries share a key.
+
+   The count of cameras is not asserted. It changes, and a number in
+   a check that is expected to change is a number nobody keeps
+   honest.
+   ------------------------------------------------------------------ */
+
+var fs = require("fs");
+var path = require("path");
+var vm = require("vm");
+
+var ROOT = path.resolve(__dirname, "..");
+
+/* The fields the published record carries, and the seed with it. An
+   entry missing one is a row the seed cannot write; an entry with one
+   more is a field the seed silently drops. Add here when a field is
+   added to both - and only then. */
+var FIELDS = ["name", "note", "lat", "lon", "type", "status", "last", "deployments"];
+
+/* What the record says about status. The database also knows
+   "nonfunctional", but that is a state a moderator sets on a row,
+   never something the published file asserts about a camera. */
+var STATUSES = ["active", "legacy"];
+
+var HEX_COLOUR = /^#[0-9a-f]{6}$/i;
+
+/* Where seedKeyOf must not be: the files that load after shared.js.
+   A second copy in any of them would shadow the shared one and could
+   drift from it without a word. */
+var LATER_FILES = ["frontend/map.js", "frontend/picker.js", "frontend/account.js"];
+
+/* ------------------------------------------------------------------
+   Loading the site's files outside a browser
+
+   shared.js makes one scrap of the page as it loads - the swatch the
+   dark-map lift measures colours with - so it will not run in bare
+   Node. This is the least of a browser that gets it through load,
+   and deliberately no more: if shared.js grows another touch of the
+   page at load time this fails, and that is the right moment to ask
+   whether the new thing belongs in a shared file at all.
+   ------------------------------------------------------------------ */
+
+function browserStub() {
+  var sandbox = {
+    document: {
+      createElement: function () { return { style: {} }; },
+      body: { appendChild: function () {} }
+    }
+  };
+  sandbox.window = sandbox;
+  return vm.createContext(sandbox);
+}
+
+function readFile(file) {
+  return fs.readFileSync(path.join(ROOT, file), "utf8");
+}
+
+function load(context, file) {
+  try {
+    vm.runInContext(readFile(file), context, { filename: file });
+    return true;
+  } catch (err) {
+    check("load " + file, false, err && err.message ? err.message : String(err));
+    return false;
+  }
+}
+
+/* ------------------------------------------------------------------
+   The smallest possible harness
+
+   check() records a verdict. section() runs a group of them and turns
+   an exception into a named failure rather than a dead checker, so
+   one broken thing never hides the others.
+   ------------------------------------------------------------------ */
+
+var checks = 0;
+var failures = [];
+
+function check(name, ok, detail) {
+  checks++;
+  if (!ok) {
+    failures.push(name + (detail ? " - " + detail : ""));
+  }
+}
+
+function section(name, fn) {
+  try {
+    fn();
+  } catch (err) {
+    checks++;
+    failures.push(name + " - threw: " + (err && err.message ? err.message : String(err)));
+  }
+}
+
+function sameJSON(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/* Offenders are listed by name, the first few of them; a hundred
+   names on one line say less than eight and a count. */
+function listOf(items) {
+  var shown = items.slice(0, 8).join(", ");
+  return items.length > 8 ? shown + " and " + (items.length - 8) + " more" : shown;
+}
+
+function nameOf(entry, i) {
+  return entry && typeof entry.name === "string" && entry.name ? entry.name : "entry #" + i;
+}
+
+function duplicatesIn(values) {
+  var seen = {};
+  var dups = [];
+  var i;
+
+  for (i = 0; i < values.length; i++) {
+    if (seen[values[i]] === 1) {
+      dups.push(values[i]);
+    }
+    seen[values[i]] = (seen[values[i]] || 0) + 1;
+  }
+
+  return dups;
+}
+
+function isInteger(v) {
+  return typeof v === "number" && isFinite(v) && Math.floor(v) === v;
+}
+
+/* True when the number is what a six-decimal literal parses to, so
+   toFixed(6) gives it back unchanged and the key is lossless. */
+function sixDecimals(v) {
+  return typeof v === "number" && isFinite(v) && Number(v.toFixed(6)) === v;
+}
+
+/* One row of seed.sql's insert, as far as this needs to read it: the
+   name, the two coordinates, the type, and the seed_key it ends with.
+   The note in between may hold anything - brackets, and apostrophes
+   doubled the SQL way - so it is skipped rather than parsed, and the
+   key is found by the 'seed' source column that always sits just
+   before it. Finding it from the right instead would let a doubled
+   apostrophe in a name (King''s Cross) start the key one quote too
+   late. A row that no longer fits this shape is itself reported: it
+   means the insert changed. */
+var SEED_ROW = /^\s*\('((?:[^']|'')*)',\s*'(?:[^']|'')*',\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?),\s*'([a-z]+)',.*'seed',\s*'((?:[^']|'')*)'\),?\s*$/gm;
+
+function seedRows() {
+  var sql = readFile("backend/seed.sql");
+  var rows = [];
+  var m;
+
+  SEED_ROW.lastIndex = 0;
+  while ((m = SEED_ROW.exec(sql)) !== null) {
+    rows.push({
+      name: m[1].replace(/''/g, "'"),
+      lat: Number(m[2]),
+      lon: Number(m[3]),
+      type: m[4],
+      key: m[5].replace(/''/g, "'")
+    });
+  }
+
+  return rows;
+}
+
+/* ------------------------------------------------------------------
+   Load, then ask
+   ------------------------------------------------------------------ */
+
+var site = browserStub();
+var havePoints = load(site, "data/points.js");
+var haveShared = load(site, "frontend/shared.js");
+
+if (havePoints && haveShared) {
+
+  section("the type table", function () {
+    var T = site.CAMERA_TYPES;
+    var types = [];
+    var colours = [];
+    var labels = [];
+    var badRows = [];
+    var badColours = [];
+    var i;
+    var t;
+
+    check("CAMERA_TYPES is a non-empty array", Array.isArray(T) && T.length > 0);
+    if (!Array.isArray(T)) {
+      return;
+    }
+
+    for (i = 0; i < T.length; i++) {
+      t = T[i];
+      if (!t || typeof t.type !== "string" || !t.type ||
+          typeof t.colour !== "string" || typeof t.label !== "string" || !t.label) {
+        badRows.push("row " + i + " " + JSON.stringify(t));
+        continue;
+      }
+      types.push(t.type);
+      colours.push(t.colour.toLowerCase());
+      labels.push(t.label);
+      if (!HEX_COLOUR.test(t.colour)) {
+        badColours.push(t.type + " has colour " + JSON.stringify(t.colour));
+      }
+    }
+
+    check("every CAMERA_TYPES row is {type, colour, label} strings", badRows.length === 0, listOf(badRows));
+    check("CAMERA_TYPES colours are #rrggbb", badColours.length === 0, listOf(badColours));
+    check("CAMERA_TYPES types are unique", duplicatesIn(types).length === 0, listOf(duplicatesIn(types)));
+    check("CAMERA_TYPES colours are unique", duplicatesIn(colours).length === 0, listOf(duplicatesIn(colours)));
+    check("CAMERA_TYPES labels are unique", duplicatesIn(labels).length === 0, listOf(duplicatesIn(labels)));
+
+    /* colourOf() and typeColourExpression() both reach for the van
+       colour as CAMERA_TYPES[1]. That is only the van colour while
+       the van sits in the second row. */
+    check("CAMERA_TYPES[1] is vancam, the fallback colour taken by position",
+      T[1] && T[1].type === "vancam", "row 1 is " + (T[1] ? T[1].type : "missing"));
+
+    check("NONFUNCTIONAL_COLOUR is #rrggbb", HEX_COLOUR.test(site.NONFUNCTIONAL_COLOUR),
+      JSON.stringify(site.NONFUNCTIONAL_COLOUR));
+    check("NONFUNCTIONAL_COLOUR is not also a kind's colour",
+      colours.indexOf(String(site.NONFUNCTIONAL_COLOUR).toLowerCase()) === -1,
+      site.NONFUNCTIONAL_COLOUR);
+
+    /* It is a state, not a kind. In the table it would get a legend
+       swatch and a drop-down entry, and be reportable as a type. */
+    check("NONFUNCTIONAL_TYPE is a state, not a row in CAMERA_TYPES",
+      typeof site.NONFUNCTIONAL_TYPE === "string" && types.indexOf(site.NONFUNCTIONAL_TYPE) === -1,
+      String(site.NONFUNCTIONAL_TYPE));
+  });
+
+  section("colourOf", function () {
+    var T = site.CAMERA_TYPES;
+    var van = site.typeOf("vancam").colour;
+    var unknowns = ["unicorncam", site.NONFUNCTIONAL_TYPE, "", undefined, null];
+    var wrong = [];
+    var strays = [];
+    var i;
+    var got;
+
+    for (i = 0; i < T.length; i++) {
+      got = site.colourOf(T[i].type);
+      if (got !== T[i].colour) {
+        wrong.push(T[i].type + " gave " + JSON.stringify(got));
+      }
+    }
+    check("colourOf gives every kind its own colour", wrong.length === 0, listOf(wrong));
+
+    for (i = 0; i < unknowns.length; i++) {
+      got = site.colourOf(unknowns[i]);
+      if (got !== van) {
+        strays.push(JSON.stringify(unknowns[i]) + " gave " + JSON.stringify(got));
+      }
+    }
+    check("colourOf falls back to the van colour for anything unknown", strays.length === 0, listOf(strays));
+  });
+
+  section("typeLabel", function () {
+    var T = site.CAMERA_TYPES;
+    var wrong = [];
+    var i;
+    var got;
+
+    for (i = 0; i < T.length; i++) {
+      got = site.typeLabel(T[i].type);
+      if (got !== T[i].label) {
+        wrong.push(T[i].type + " gave " + JSON.stringify(got));
+      }
+    }
+    check("typeLabel gives every kind its own label", wrong.length === 0, listOf(wrong));
+    check("typeLabel names the non-functional state",
+      site.typeLabel(site.NONFUNCTIONAL_TYPE) === "Non-functional",
+      JSON.stringify(site.typeLabel(site.NONFUNCTIONAL_TYPE)));
+    check("typeLabel hands back an unknown identifier and blanks a missing one",
+      site.typeLabel("unicorncam") === "unicorncam" &&
+      site.typeLabel(undefined) === "" && site.typeLabel(null) === "" && site.typeLabel("") === "",
+      JSON.stringify([site.typeLabel("unicorncam"), site.typeLabel(undefined), site.typeLabel(null)]));
+  });
+
+  section("the London box", function () {
+    var B = site.LONDON_BOUNDS;
+    var C = site.LONDON_CENTRE;
+    var e = 0.0001;
+    var sw;
+    var ne;
+    var corners;
+    var outside;
+    var i;
+    var bad;
+
+    var shape = Array.isArray(B) && B.length === 2 &&
+      Array.isArray(B[0]) && Array.isArray(B[1]) && B[0].length === 2 && B[1].length === 2 &&
+      isFinite(B[0][0]) && isFinite(B[0][1]) && isFinite(B[1][0]) && isFinite(B[1][1]);
+    check("LONDON_BOUNDS is two [lat, lon] pairs", shape, JSON.stringify(B));
+    if (!shape) {
+      return;
+    }
+    sw = B[0];
+    ne = B[1];
+
+    check("LONDON_BOUNDS south-west corner is south and west of the north-east one",
+      sw[0] < ne[0] && sw[1] < ne[1], JSON.stringify(B));
+    check("LONDON_CENTRE is a [lat, lon] pair inside LONDON_BOUNDS",
+      Array.isArray(C) && C.length === 2 && site.inLondon(C[0], C[1]), JSON.stringify(C));
+
+    corners = [[sw[0], sw[1]], [sw[0], ne[1]], [ne[0], sw[1]], [ne[0], ne[1]]];
+    bad = [];
+    for (i = 0; i < corners.length; i++) {
+      if (!site.inLondon(corners[i][0], corners[i][1])) {
+        bad.push(JSON.stringify(corners[i]));
+      }
+    }
+    check("inLondon accepts all four corners of the box", bad.length === 0, listOf(bad));
+
+    outside = [[sw[0] - e, C[1]], [ne[0] + e, C[1]], [C[0], sw[1] - e], [C[0], ne[1] + e]];
+    bad = [];
+    for (i = 0; i < outside.length; i++) {
+      if (site.inLondon(outside[i][0], outside[i][1])) {
+        bad.push(JSON.stringify(outside[i]));
+      }
+    }
+    check("inLondon rejects a point just past each edge", bad.length === 0, listOf(bad));
+
+    /* MapLibre is longitude-first; the rest of the project is not.
+       A swap has to fail here, or it fails on the map instead. */
+    check("inLondon rejects the centre with lat and lon swapped", !site.inLondon(C[1], C[0]));
+  });
+
+  section("typeColourExpression", function () {
+    var T = site.CAMERA_TYPES;
+    var before = JSON.stringify(T);
+    var expr = site.typeColourExpression();
+    var again = site.typeColourExpression();
+    var match;
+    var wrong = [];
+    var i;
+
+    check("typeColourExpression is a case on status nonfunctional first",
+      Array.isArray(expr) && expr.length === 4 && expr[0] === "case" &&
+      sameJSON(expr[1], ["==", ["get", "status"], "nonfunctional"]) &&
+      expr[2] === site.NONFUNCTIONAL_COLOUR,
+      JSON.stringify(expr && expr.slice(0, 3)));
+    match = Array.isArray(expr) ? expr[3] : null;
+
+    check("typeColourExpression then matches on type",
+      Array.isArray(match) && match[0] === "match" && sameJSON(match[1], ["get", "type"]),
+      JSON.stringify(match && match.slice(0, 2)));
+    if (!Array.isArray(match)) {
+      return;
+    }
+
+    check("typeColourExpression has one type and one colour per kind, then a fallback",
+      match.length === 2 + 2 * T.length + 1,
+      "length " + match.length + " for " + T.length + " kinds");
+    for (i = 0; i < T.length; i++) {
+      if (match[2 + 2 * i] !== T[i].type || match[3 + 2 * i] !== T[i].colour) {
+        wrong.push(T[i].type + " at stop " + i + ": " + JSON.stringify([match[2 + 2 * i], match[3 + 2 * i]]));
+      }
+    }
+    check("typeColourExpression lists every kind with its colour, in table order", wrong.length === 0, listOf(wrong));
+    check("typeColourExpression falls back to the van colour",
+      match[match.length - 1] === site.typeOf("vancam").colour,
+      JSON.stringify(match[match.length - 1]));
+    check("typeColourExpression is pure",
+      sameJSON(expr, again) && JSON.stringify(T) === before);
+  });
+
+  section("seedKeyOf", function () {
+    var rows;
+    var wrong = [];
+    var copies = [];
+    var i;
+    var k;
+
+    check("seedKeyOf is a function in shared.js", typeof site.seedKeyOf === "function");
+    if (typeof site.seedKeyOf !== "function") {
+      return;
+    }
+
+    check("seedKeyOf writes name|lat|lon|type",
+      site.seedKeyOf({ name: "Acton", lat: 51.508140, lon: -0.273261, type: "vancam" }) === "Acton|51.508140|-0.273261|vancam",
+      site.seedKeyOf({ name: "Acton", lat: 51.508140, lon: -0.273261, type: "vancam" }));
+    check("seedKeyOf pads and rounds to six decimals",
+      site.seedKeyOf({ name: "X", lat: 51.5, lon: -0.1, type: "fixedcam" }) === "X|51.500000|-0.100000|fixedcam" &&
+      site.seedKeyOf({ name: "X", lat: 51.12345678, lon: -0.98765432, type: "fixedcam" }) === "X|51.123457|-0.987654|fixedcam",
+      site.seedKeyOf({ name: "X", lat: 51.5, lon: -0.1, type: "fixedcam" }) + " / " +
+      site.seedKeyOf({ name: "X", lat: 51.12345678, lon: -0.98765432, type: "fixedcam" }));
+
+    for (i = 0; i < LATER_FILES.length; i++) {
+      if (/function\s+seedKeyOf\s*\(/.test(readFile(LATER_FILES[i]))) {
+        copies.push(LATER_FILES[i]);
+      }
+    }
+    check("seedKeyOf is defined once, in shared.js", copies.length === 0, "also in " + listOf(copies));
+
+    rows = seedRows();
+    check("seed.sql has rows this checker can read", rows.length > 0);
+    for (i = 0; i < rows.length; i++) {
+      k = site.seedKeyOf(rows[i]);
+      if (k !== rows[i].key) {
+        wrong.push(rows[i].name + ": js " + k + " / sql " + rows[i].key);
+      }
+    }
+    check("every seed.sql key is what seedKeyOf writes for that row", wrong.length === 0, listOf(wrong));
+  });
+
+  section("the record", function () {
+    var P = site.POINTS;
+    var T = site.CAMERA_TYPES;
+    var known = {};
+    var keys = {};
+    var off = {
+      fields: [], name: [], note: [], coords: [], type: [], status: [],
+      last: [], deployments: [], london: [], van: [], dupKey: []
+    };
+    var i;
+    var e;
+    var who;
+    var f;
+    var missing;
+    var extra;
+    var k;
+
+    check("POINTS is a non-empty array", Array.isArray(P) && P.length > 0);
+    if (!Array.isArray(P)) {
+      return;
+    }
+    for (i = 0; i < T.length; i++) {
+      known[T[i].type] = true;
+    }
+
+    for (i = 0; i < P.length; i++) {
+      e = P[i];
+      who = nameOf(e, i);
+
+      if (!e || typeof e !== "object") {
+        off.fields.push(who + " is not an object");
+        continue;
+      }
+
+      missing = [];
+      extra = [];
+      for (f = 0; f < FIELDS.length; f++) {
+        if (!Object.prototype.hasOwnProperty.call(e, FIELDS[f])) {
+          missing.push(FIELDS[f]);
+        }
+      }
+      for (f in e) {
+        if (Object.prototype.hasOwnProperty.call(e, f) && FIELDS.indexOf(f) === -1) {
+          extra.push(f);
+        }
+      }
+      if (missing.length || extra.length) {
+        off.fields.push(who + (missing.length ? " missing " + missing.join("/") : "") +
+          (extra.length ? " extra " + extra.join("/") : ""));
+      }
+
+      if (typeof e.name !== "string" || e.name === "" || e.name !== e.name.trim()) {
+        off.name.push(who + " " + JSON.stringify(e.name));
+      }
+      if (typeof e.note !== "string") {
+        off.note.push(who);
+      }
+      if (!sixDecimals(e.lat) || !sixDecimals(e.lon)) {
+        off.coords.push(who + " " + JSON.stringify([e.lat, e.lon]));
+      }
+      if (!known[e.type]) {
+        off.type.push(who + " " + JSON.stringify(e.type));
+      }
+      if (STATUSES.indexOf(e.status) === -1) {
+        off.status.push(who + " " + JSON.stringify(e.status));
+      }
+      if (!(e.last === null || (isInteger(e.last) && e.last >= 2000 && e.last <= 2100))) {
+        off.last.push(who + " " + JSON.stringify(e.last));
+      }
+      if (!(isInteger(e.deployments) && e.deployments >= 1)) {
+        off.deployments.push(who + " " + JSON.stringify(e.deployments));
+      }
+      if (typeof e.lat === "number" && typeof e.lon === "number" && !site.inLondon(e.lat, e.lon)) {
+        off.london.push(who + " " + JSON.stringify([e.lat, e.lon]));
+      }
+      if (e.type === "vancam" && e.status !== "legacy") {
+        off.van.push(who + " is vancam but " + JSON.stringify(e.status));
+      }
+      if (typeof e.name === "string" && typeof e.lat === "number" && typeof e.lon === "number" &&
+          typeof site.seedKeyOf === "function") {
+        k = site.seedKeyOf(e);
+        if (keys[k]) {
+          off.dupKey.push(k);
+        }
+        keys[k] = true;
+      }
+    }
+
+    check("every entry has exactly the fields the seed carries", off.fields.length === 0, listOf(off.fields));
+    check("every name is a non-empty string with no surrounding whitespace", off.name.length === 0, listOf(off.name));
+    check("every note is a string", off.note.length === 0, listOf(off.note));
+    check("every lat and lon is a finite number of at most six decimals", off.coords.length === 0, listOf(off.coords));
+    check("every type is in CAMERA_TYPES", off.type.length === 0, listOf(off.type));
+    check("every status is active or legacy", off.status.length === 0, listOf(off.status));
+    check("every last is null or an integer year", off.last.length === 0, listOf(off.last));
+    check("every deployments is an integer of at least 1", off.deployments.length === 0, listOf(off.deployments));
+    check("every camera is in London", off.london.length === 0, listOf(off.london));
+    check("every vancam is legacy", off.van.length === 0, listOf(off.van));
+    check("seed keys are unique across the record", off.dupKey.length === 0, listOf(off.dupKey));
+  });
+}
+
+/* ------------------------------------------------------------------
+   The verdict. One line when everything holds; every failing case
+   when it does not, and a non-zero exit so nothing downstream can
+   mistake the second for the first.
+   ------------------------------------------------------------------ */
+
+var cameras = Array.isArray(site.POINTS) ? site.POINTS.length : 0;
+var i;
+
+if (failures.length) {
+  for (i = 0; i < failures.length; i++) {
+    console.log("FAIL " + failures[i]);
+  }
+  console.log("check: " + failures.length + " of " + checks + " checks failed");
+  process.exitCode = 1;
+} else {
+  console.log("check: " + checks + " checks over " + cameras + " cameras, all pass");
+}
