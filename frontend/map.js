@@ -360,11 +360,11 @@ map.addControl(new maplibregl.AttributionControl({ compact: false }));
 
    Every deliberate move the page makes - a list row, a search result,
    Near me, the reset in edit mode - goes through this one function,
-   so that how the map moves is decided in one place. Today it flies:
-   a flight across London says where you came from as well as where
-   you are going, which a cut does not. When the page comes to honour
-   prefers-reduced-motion, this is the line that changes, and nothing
-   else has to know.
+   so that how the map moves is decided in one place. It flies: a
+   flight across London says where you came from as well as where you
+   are going, which a cut does not. Unless the visitor has asked their
+   system for less motion, in which case it cuts - see "reduced
+   motion" just below - and nothing else on the page has to know.
 
    Not for the hash on load: that is a jumpTo, on purpose - the page
    has not drawn yet, so there is nowhere to fly from.
@@ -375,16 +375,64 @@ map.addControl(new maplibregl.AttributionControl({ compact: false }));
    phone - where the map is 460 pixels tall and a popup with a note in
    it is half that - MapLibre finds no room above the dot, hangs the
    popup below it instead, and the bottom rows are cut off by the
-   map's edge. popupRoom() is the number to pass. If this is ever
-   made a cut rather than a flight, it must be easeTo with a duration
-   of 0 and not jumpTo: jumpTo ignores `offset`, silently.
+   map's edge. popupRoom() is the number to pass. That is why the cut
+   is easeTo with a duration of 0 and not jumpTo: jumpTo ignores
+   `offset`, silently, and the popup would land at the map's centre
+   with nowhere to stand.
 
    Worth knowing before believing a flight is broken: MapLibre advances
    a flight on requestAnimationFrame, which a hidden or headless tab
    never runs, so in a harness the map appears not to move. It has;
    it is waiting for a frame. */
 function moveMap(lat, lon, zoom, below) {
-  map.flyTo({ center: lngLat(lat, lon), zoom: zoom, speed: 1.6, offset: [0, below || 0] });
+  var to = { center: lngLat(lat, lon), zoom: zoom, offset: [0, below || 0] };
+
+  if (reduceMotion) {
+    to.duration = 0;
+    map.easeTo(to);
+    return;
+  }
+
+  to.speed = 1.6;
+  map.flyTo(to);
+}
+
+/* ---------------- reduced motion ----------------
+
+   A person who has asked their system for less motion - a setting on
+   every phone and desktop, kept by people for whom a map sweeping
+   across London is a physical thing, not a flourish - is asked once
+   here, and asked again whenever the answer changes: the media query
+   fires "change" when the setting is flipped with the page open, and
+   a page that only looked at load would keep flying for the rest of
+   the visit. addEventListener is the standard call; the older
+   addListener is kept as the fallback, because this is plain browser
+   JavaScript for old browsers too and Safari before 14 knows only
+   the old name. Without matchMedia at all there is no way to ask,
+   and the answer is no.
+
+   Why this exists when MapLibre reads the same query itself: it
+   does, live, and under it turns every flyTo into a jumpTo - which
+   is the one call that drops `offset` (see moveMap above), so under
+   reduced motion the popup a list row opens would be cut off at the
+   bottom of a phone's map. The variable here is what moveMap checks
+   before MapLibre gets the chance, and it chooses the cut that keeps
+   the offset. MapLibre's own reading still covers what it animates
+   on its own account - the zoom buttons, which go through easeTo and
+   get a duration of 0 from it - so that side needs nothing here. */
+var motionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+var reduceMotion = motionQuery ? motionQuery.matches === true : false;
+
+function readMotion() {
+  reduceMotion = motionQuery.matches === true;
+}
+
+if (motionQuery) {
+  if (typeof motionQuery.addEventListener === "function") {
+    motionQuery.addEventListener("change", readMotion);
+  } else if (typeof motionQuery.addListener === "function") {
+    motionQuery.addListener(readMotion);
+  }
 }
 
 /* How far below the middle a dot should sit for its popup to fit
