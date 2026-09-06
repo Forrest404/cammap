@@ -441,7 +441,7 @@ def parse_points():
 
 
 SQL_STRING = r"'(?:[^']|'')*'"
-SQL_VALUE = SQL_STRING + r"|-?\d+(?:\.\d+)?|null"
+SQL_VALUE = SQL_STRING + r"|-?\d+(?:\.\d+)?|null|true|false"
 SQL_ROW = re.compile(r"\(((?:[^()']|" + SQL_STRING + r")*)\)", re.S)
 SQL_ITEM = re.compile(r"\s*(" + SQL_VALUE + r")\s*,?", re.S)
 
@@ -449,6 +449,10 @@ SQL_ITEM = re.compile(r"\s*(" + SQL_VALUE + r")\s*,?", re.S)
 def sql_value(raw):
     if raw == "null":
         return None
+    if raw == "true":
+        return True
+    if raw == "false":
+        return False
     if raw.startswith("'"):
         return raw[1:-1].replace("''", "'")
     return float(raw) if "." in raw else int(raw)
@@ -514,7 +518,8 @@ def describe(row):
 PAIRED = [("name", "name"), ("note", "note"), ("lat", "lat"), ("lon", "lon"),
           ("type", "type"), ("status", "status"), ("last", "last_seen"),
           ("deployments", "deployments"), ("periods", "periods"),
-          ("source_label", "source_label"), ("source_url", "source_url")]
+          ("source_label", "source_label"), ("source_url", "source_url"),
+          ("approximate", "approximate")]
 
 # Columns the seed writes as a string literal that the database reads
 # as something else. periods is jsonb, written as its JSON text, so it

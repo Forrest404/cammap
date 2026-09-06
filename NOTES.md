@@ -241,9 +241,10 @@ hand, the way `stamp.py` is a checker they run by hand.
                                              the CSV (see below)
 
 **The columns**, in the order they are written: `name`, `type`, `status`,
-`lat`, `lon`, `last`, `periods`, `deployments`, `source_label`,
-`source_url`, `note`. The prose is last because it is the long one, so a
-line reads as the structured fields first and the note trailing. The
+`lat`, `lon`, `approximate`, `last`, `periods`, `deployments`,
+`source_label`, `source_url`, `note`. The prose is last because it is the
+long one, so a line reads as the structured fields first and the note
+trailing; `approximate` sits beside the position it qualifies. The
 script's docstring documents each column; the ones worth knowing about
 before editing:
 
@@ -390,6 +391,40 @@ Adding the columns to the database is `backend/migrations/002_source.sql`,
 after 001, then a re-run of `seed.sql`. `schema.sql` carries the same block
 as version 2.4. What the popup shows for them is the next wave's; today the
 data is exact and nothing on the page reads it yet.
+
+**What is not known.** The Met's record gives some van sites as a borough
+or a district rather than a street, and the pin for those sits at the
+middle of the area. The note has always said so - "(pin marks the
+surrounding area, not an exact spot)", 43 sites - and the map drew them
+exactly like a pin on a known pole. `approximate` is that fact as a
+column: `true`/`false` in the CSV (blank is false, and TRUE from a
+spreadsheet is read), a boolean in `points.js`, `boolean not null default
+false` in the database. It was filled once at import from the phrase, and
+from here on it is a cell: a pin the maintainer knows to be approximate for
+another reason is a cell to set, not a phrase to match. **Station Parade**
+is the case in point - its note says "this pin is a guess", which is a
+stronger admission than the phrase, and it is not flagged only because the
+import read the one phrase the brief named. Setting it is one cell.
+
+The note keeps its phrase, because the prose is preserved and a reader of
+the popup should still be told. `check.js` holds the two together in one
+direction: a note that carries the phrase while the field says false is a
+column somebody blanked, and fails; the other direction is allowed, for
+Station Parade's reason. The map must never search the note for the
+phrase; the field is what it draws from. Drawing the difference - a wider,
+softer dot or a ring, under the brightness rule - and the legend entry are
+the next wave's, in `map.js` and `shared.js`.
+
+Default false because a camera that came from a report is where the
+reporter dropped the pin, and that is a claim about a spot. A moderator
+who corrects a seed pin with **Move** can then clear the flag - a cell, not
+an edit to prose - and the seed's re-run will not put it back, because a
+re-run rewrites `approximate` from the record, and the record's cell is the
+one that was cleared.
+
+Adding it is `backend/migrations/003_approximate.sql`, after 001 and 002,
+then a re-run of `seed.sql`. `schema.sql` carries the same block as version
+2.5.
 
 **`--import`** reads a `points.js` - the committed one, or one pasted out
 of `index.html?edit` - and writes the CSV from it. It was used once, to make

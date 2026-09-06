@@ -71,7 +71,15 @@ var ROOT = path.resolve(__dirname, "..");
    more is a field the seed silently drops. Add here when a field is
    added to both - and only then. */
 var FIELDS = ["name", "note", "lat", "lon", "type", "status", "last", "deployments", "periods",
-  "source_label", "source_url"];
+  "source_label", "source_url", "approximate"];
+
+/* How the record's prose has always said a pin is not exact. The map
+   must never have to look for this - that is what the approximate
+   field is for - but the two must not disagree: a note that says it
+   while the field says false is a column somebody blanked. The other
+   direction is allowed, because a pin can be approximate for a reason
+   the phrase does not cover ("this pin is a guess"). */
+var APPROXIMATE_PHRASE = "(pin marks the surrounding area, not an exact spot)";
 
 /* A source URL is https and has no whitespace in it. http is not
    accepted: every source this record cites is served over https, and
@@ -480,7 +488,7 @@ if (havePoints && haveShared) {
     var off = {
       fields: [], name: [], note: [], coords: [], type: [], status: [],
       last: [], deployments: [], periods: [], periodsSum: [], sourceLabel: [], sourceUrl: [],
-      london: [], van: [], dupKey: []
+      approximate: [], approximateNote: [], london: [], van: [], dupKey: []
     };
     var i;
     var e;
@@ -595,6 +603,12 @@ if (havePoints && haveShared) {
         off.sourceUrl.push(who + " has a source_url and no source_label");
       }
 
+      if (typeof e.approximate !== "boolean") {
+        off.approximate.push(who + " " + JSON.stringify(e.approximate));
+      } else if (!e.approximate && typeof e.note === "string" && e.note.indexOf(APPROXIMATE_PHRASE) !== -1) {
+        off.approximateNote.push(who);
+      }
+
       if (typeof e.lat === "number" && typeof e.lon === "number" && !site.inLondon(e.lat, e.lon)) {
         off.london.push(who + " " + JSON.stringify([e.lat, e.lon]));
       }
@@ -623,6 +637,8 @@ if (havePoints && haveShared) {
     check("every deployments is the sum of its periods where periods is given", off.periodsSum.length === 0, listOf(off.periodsSum));
     check("every source_label is null or a trimmed non-empty string", off.sourceLabel.length === 0, listOf(off.sourceLabel));
     check("every source_url is null or https, and never without a label", off.sourceUrl.length === 0, listOf(off.sourceUrl));
+    check("every approximate is a boolean", off.approximate.length === 0, listOf(off.approximate));
+    check("every note that says the pin marks the surrounding area has approximate true", off.approximateNote.length === 0, listOf(off.approximateNote));
     check("every camera is in London", off.london.length === 0, listOf(off.london));
     check("every vancam is legacy", off.van.length === 0, listOf(off.van));
     check("seed keys are unique across the record", off.dupKey.length === 0, listOf(off.dupKey));

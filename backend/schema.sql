@@ -311,6 +311,7 @@ create table if not exists public.cameras (
   periods     jsonb,                       -- those uses by the period the source gives, {"2023-24": 1}; null when it gives none
   source_label text,                       -- the record or report the row rests on, named; null when none is known
   source_url  text,                        -- where that record or report is, https; null when unknown, never without a label
+  approximate boolean not null default false,  -- the pin marks the surrounding area, not an exact spot
 
   source      text not null check (source in ('seed', 'report', 'admin')),
   seed_key    text unique,                 -- name|lat|lon|type, seed rows only
@@ -434,6 +435,25 @@ comment on column public.cameras.source_label is
   'The record or report the row rests on, named. null where none is known; the map then says nothing.';
 comment on column public.cameras.source_url is
   'Where the record or report named in source_label is, as an https URL. null where unknown; never set without a label.';
+
+-- version 2.5 added approximate: true where the pin marks the
+-- surrounding area rather than an exact spot. The Met's record gives
+-- some van sites as a borough or a district, not a street, and the
+-- pin for those sits at the middle of the area; 43 sites at the time
+-- of writing. The note has always said so in prose - "(pin marks the
+-- surrounding area, not an exact spot)" - and the map drew those pins
+-- exactly like a pin on a known pole. A column, so that the map can
+-- draw the difference from a field rather than by searching the note
+-- for a phrase, and so that a moderator's Move, which corrects the
+-- position, can be followed by clearing the flag rather than editing
+-- prose. Not null, default false: a camera from a report is where the
+-- reporter dropped the pin, and that is a claim about a spot.
+-- (backend/migrations/003_approximate.sql is this block on its own.)
+alter table public.cameras
+  add column if not exists approximate boolean not null default false;
+
+comment on column public.cameras.approximate is
+  'true where the pin marks the surrounding area rather than an exact spot - the record gave a borough or district, not a street.';
 
 create index if not exists cameras_visible_idx on public.cameras (visible);
 

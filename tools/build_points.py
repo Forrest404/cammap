@@ -64,6 +64,17 @@ record"). Columns, in the order they are written:
                zeros ("51.50814") is fine; a seventh decimal is refused
                naming the row, because rounding it would be this script
                deciding where a camera is.
+  approximate  true where the pin marks the surrounding area rather
+               than an exact spot - the Met's record gives some van
+               sites as a borough or a district, not a street, and
+               the pin for those sits at the middle of the area. Blank
+               is false; "true" and "false" are read whatever their
+               case, because a spreadsheet writes TRUE. This is a
+               column so that the map can draw the difference from a
+               field rather than by searching the note for a phrase;
+               the note keeps its phrase all the same, because the
+               prose is preserved and a reader of the popup should
+               still be told.
   last         The last year the source records the camera, or blank
                for null.
   periods      The uses, counted by the period the source gives them
@@ -181,6 +192,12 @@ note states outright:
                and each is listed in NOTES.md. That is what the CSV is
                for; a table of camera names in this script would be
                data hiding in code.
+  approximate  true where the note carries the phrase "(pin marks the
+               surrounding area, not an exact spot)", which is how the
+               record has always said it; false otherwise. Once
+               imported it is a column, and a pin the maintainer knows
+               to be approximate for some other reason - "this pin is
+               a guess" - is a cell to set, not a phrase to match.
 """
 import csv
 import io
@@ -203,11 +220,26 @@ USAGE = "usage: python3 tools/build_points.py [--check | --import POINTS_JS]"
 # header row is checked against this on every read, so a column renamed
 # or reordered in a spreadsheet is a failure that names itself rather
 # than a silent shift of every value one place to the left.
-COLUMNS = ["name", "type", "status", "lat", "lon", "last", "periods", "deployments",
+COLUMNS = ["name", "type", "status", "lat", "lon", "approximate", "last", "periods", "deployments",
            "source_label", "source_url", "note"]
 
 # A source URL: https, and nothing that could be two things.
 SOURCE_URL = re.compile(r'^https://\S+$')
+
+# How the record has always said a pin is not exact. The import reads
+# it once to fill the approximate column; the build never looks.
+APPROXIMATE_PHRASE = "(pin marks the surrounding area, not an exact spot)"
+
+
+def boolean(raw, what, where):
+    """true, false or blank (false), in any case - a spreadsheet
+    writes TRUE - and nothing else."""
+    value = raw.strip().lower()
+    if value in ("", "false"):
+        return False
+    if value == "true":
+        return True
+    raise BuildError("%s: %s %r is not true, false or blank" % (where, what, raw))
 
 # The statuses the published record may assert. The database also knows
 # "nonfunctional", but that is a state a moderator sets on a row, never
@@ -446,6 +478,7 @@ def read_csv(text=None):
         lon = coordinate(raw["lon"], "lon", where)
         if not (south <= lat <= north and west <= lon <= east):
             raise BuildError("%s: %s, %s is outside LONDON_BOUNDS" % (where, lat, lon))
+        approximate = boolean(raw["approximate"], "approximate", where)
 
         last = None if raw["last"].strip() == "" else integer(raw["last"], "last", where, 1900)
 
@@ -481,6 +514,7 @@ def read_csv(text=None):
             "status": status,
             "lat": lat,
             "lon": lon,
+            "approximate": approximate,
             "last": last,
             "periods": periods,
             "deployments": deployments,
@@ -532,9 +566,10 @@ POINTS_HEADER = """\
    deployment records (2020-2025), the British Transport Police
    deployment register (2026), and named press reporting for the
    shops. Nothing here is estimated. Where a source gave only a
-   borough, the note says the pin is approximate.
+   borough, the note says the pin is approximate and `approximate`
+   is true.
 
-   Nine fields:
+   Ten fields:
      name, note, lat, lon   as before
      type    fixedcam | vancam | transportcam | facewatchcam | privatecam
      status  active | legacy
@@ -559,6 +594,11 @@ POINTS_HEADER = """\
      source_url    where that record or report is, or null. Only
                    ever the document itself or the page it is
                    published on; never a homepage, never a guess.
+     approximate   true where the pin marks the surrounding area
+                   rather than an exact spot - the record gave a
+                   borough or a district, and the pin sits at the
+                   middle of it. A field, so the map can draw the
+                   difference without reading the note for it.
 
    Every van site is legacy, and that is not a statement about age.
    An LFR van parks for a shift and drives away, so there is no hour
@@ -622,7 +662,8 @@ def render_points(rows):
         lines.append("    deployments: %d," % row["deployments"])
         lines.append("    periods: %s," % periods_json(row["periods"]))
         lines.append("    source_label: %s," % js_nullable(row["source_label"]))
-        lines.append("    source_url: %s" % js_nullable(row["source_url"]))
+        lines.append("    source_url: %s," % js_nullable(row["source_url"]))
+        lines.append("    approximate: %s" % ("true" if row["approximate"] else "false"))
         lines.append("  }" if i == len(rows) - 1 else "  },")
     lines.append("")
     lines.append("];")
@@ -664,16 +705,20 @@ SEED_HEADER = """\
 --    period. deployments is its sum, and the table checks that.
 --    source_label names the record or report a row rests on and
 --    source_url is where it is; both null where none is known, and a
---    URL is never written without a label.
+--    URL is never written without a label. approximate is true where
+--    the pin marks the surrounding area rather than an exact spot.
 -- ------------------------------------------------------------------
 """
 
 SEED_COLUMNS = ["name", "note", "lat", "lon", "type", "status", "last_seen", "deployments", "periods",
-                "source_label", "source_url", "source", "seed_key"]
+                "source_label", "source_url", "approximate", "source", "seed_key"]
 
 # What a re-run may rewrite on a row it already wrote. Position is not
-# here, and must not be.
-SEED_UPDATES = ["name", "note", "status", "last_seen", "deployments", "periods", "source_label", "source_url"]
+# here, and must not be. approximate is: it describes the published
+# position, and a moderator's Move does not change what the record
+# said about how exact the record's own pin was.
+SEED_UPDATES = ["name", "note", "status", "last_seen", "deployments", "periods", "source_label", "source_url",
+                "approximate"]
 
 
 def sql_string(s):
@@ -698,7 +743,7 @@ def seed_values(row):
     periods = None if row["periods"] is None else json.dumps(row["periods"])
     return [row["name"], row["note"], row["lat"], row["lon"], row["type"], row["status"],
             row["last"], row["deployments"], periods, row["source_label"], row["source_url"],
-            "seed", row["seed_key"]]
+            row["approximate"], "seed", row["seed_key"]]
 
 
 def render_seed(rows):
@@ -876,12 +921,17 @@ def csv_text(entries):
             source_label, source_url = e.get("source_label"), e.get("source_url")
         else:
             source_label, source_url = source_from_note(e["note"], periods)
+        if "approximate" in e:
+            approximate = e["approximate"] is True
+        else:
+            approximate = APPROXIMATE_PHRASE in e["note"]
         writer.writerow([
             e["name"],
             kind,
             status,
             str(e["lat"]),
             str(e["lon"]),
+            "true" if approximate else "false",
             "" if last is None else str(last),
             periods_text(periods),
             "1" if deployments is None else str(deployments),
