@@ -1214,6 +1214,12 @@ function applyFilters() {
 
 function setLegacy(on) {
   showLegacy = on;
+
+  /* The visitor's own press: whatever a solo switched on is theirs
+     now, and ending the solo will not switch it back. */
+  legacyBySolo = false;
+  clearSoloNote();
+
   applyFilters();
   saveView();
   markLegacy();
@@ -1227,12 +1233,153 @@ function markLegacy() {
 }
 
 /* Clicking a kind in the legend takes it off the map and out of the
-   list. Clicking it again puts it back. */
+   list. Clicking it again puts it back. Clicking the one kind that
+   is on its own - a solo, below - puts every kind back instead: the
+   alternative is a map with nothing on it. */
 function toggleType(type) {
-  hiddenTypes[type] = !hiddenTypes[type];
+  if (soloType() === type) {
+    hiddenTypes = {};
+  } else {
+    hiddenTypes[type] = !hiddenTypes[type];
+  }
+  kindsChanged();
+}
+
+/* ---------------- solo: only this kind ----------------
+
+   "Only the shops" was four clicks in the legend and could not be
+   undone in one. Each key now has a small "only" beside it: a press
+   shows that kind and hides the rest; a press on it again, or on the
+   soloed key itself, shows every kind again.
+
+   The solo is not a state of its own. It is the legend showing one
+   kind and hiding the others, read back from hiddenTypes - so it is
+   remembered between visits through the same `hidden` map the view
+   has always saved, an older saved view loads exactly as before, and
+   the two cannot disagree about what is shown. The price is small
+   and deliberate: hiding four kinds one at a time arrives at the
+   same place as pressing "only" on the fifth, and the legend says so.
+
+   Every van site is legacy ("What active means" in NOTES.md), so
+   "only the van sites" with Legacy off would show nothing at all.
+   The person asked for the van sites; showing them is the answer.
+   So when the kinds narrow to one whose every camera is legacy -
+   worked out from the points, not assumed of vans, because a
+   database that still carries active van rows changes the answer -
+   Legacy is switched on for them and the line under the map says
+   so. It is switched back off when the solo ends, unless the
+   visitor has pressed Legacy themselves in between, which makes it
+   theirs. This is saved with the view like any other press: the
+   visitor asked, which is the difference from a deep link's
+   unsaved switch. */
+
+/* The one kind shown when every other kind is hidden; null when two
+   or more are shown, and null when none is. */
+function soloType() {
+  var shown = null;
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    if (typeShown(TYPES[i].type)) {
+      if (shown !== null) {
+        return null;
+      }
+      shown = TYPES[i].type;
+    }
+  }
+
+  return shown;
+}
+
+/* Whether a kind has cameras and every one of them is legacy. */
+function allLegacy(type) {
+  var any = false;
+  var i;
+
+  for (i = 0; i < points.length; i++) {
+    if (points[i].type === type) {
+      if (points[i].status !== "legacy") {
+        return false;
+      }
+      any = true;
+    }
+  }
+
+  return any;
+}
+
+/* Whether the Legacy switch was turned on by a solo rather than by
+   a press on it, and what the line under the map was told when it
+   was - so that only that sentence is taken back, and not whatever
+   Near me or a link has said there since. */
+var legacyBySolo = false;
+var soloNote = null;
+
+function clearSoloNote() {
+  if (soloNote !== null && mapNote && mapNote.textContent === soloNote) {
+    sayUnderMap("");
+  }
+  soloNote = null;
+}
+
+/* A press on a key's "only". */
+function soloKind(type) {
+  var i;
+
+  if (soloType() === type) {
+    hiddenTypes = {};
+  } else {
+    for (i = 0; i < TYPES.length; i++) {
+      hiddenTypes[TYPES[i].type] = TYPES[i].type !== type;
+    }
+  }
+  kindsChanged();
+}
+
+/* After any change to which kinds are shown, by key or by "only":
+   the Legacy rule above, the map and the list, the saved view, the
+   legend redrawn with its pressed states, and a word for a screen
+   reader before the count. */
+function kindsChanged() {
+  var solo = soloType();
+  var prefix = "";
+
+  if (solo !== null && !showLegacy && allLegacy(solo)) {
+    showLegacy = true;
+    legacyBySolo = true;
+    markLegacy();
+    soloNote = "Every " + (typeLabel(solo) || solo) +
+      " in the record is legacy, so Legacy has been switched on to show them.";
+    sayUnderMap(soloNote);
+  } else if (solo === null && legacyBySolo) {
+    showLegacy = false;
+    legacyBySolo = false;
+    markLegacy();
+    clearSoloNote();
+  }
+
+  if (solo !== null) {
+    prefix = "Only one kind, " + (typeLabel(solo) || solo);
+  } else if (isEveryKindShown()) {
+    prefix = "Every kind";
+  }
+
   applyFilters();
   saveView();
   drawLegend();
+  announceThenCount(prefix);
+}
+
+function isEveryKindShown() {
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    if (!typeShown(TYPES[i].type)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /* Imagery on: show the raster, hide the ground, ring every dot in the
@@ -1338,14 +1485,31 @@ function legendNote(colour, text, hollow) {
    place to say "just these". A kind that is switched off dims here and
    goes from both the map and the list. */
 function drawLegend() {
+  var solo;
   var item;
   var button;
+  var only;
   var swatch;
+  var had;
+  var again;
   var i;
 
   if (!legend) {
     return;
   }
+
+  solo = soloType();
+
+  /* The legend is built afresh after every press, and the button
+     that was pressed goes with it - so a keyboard that had pressed
+     Space on a key found itself back at the top of the page, with
+     the legend somewhere below. Whichever key or "only" had focus is
+     noted by its kind and given focus again once rebuilt. */
+  had = document.activeElement;
+  had = had && legend.contains(had) ? {
+    type: had.getAttribute("data-type"),
+    only: had.className.indexOf("legend-only") !== -1
+  } : null;
 
   legend.innerHTML = "";
 
@@ -1354,10 +1518,11 @@ function drawLegend() {
 
     button = document.createElement("button");
     button.className = typeShown(TYPES[i].type) ? "legend-key" : "legend-key off";
+    button.setAttribute("data-type", TYPES[i].type);
     button.setAttribute("aria-pressed", typeShown(TYPES[i].type) ? "true" : "false");
-    button.title = typeShown(TYPES[i].type)
-      ? "Hide these"
-      : "Show these again";
+    button.title = solo === TYPES[i].type
+      ? "Show every kind again"
+      : (typeShown(TYPES[i].type) ? "Hide these" : "Show these again");
 
     swatch = document.createElement("span");
     swatch.className = "swatch";
@@ -1372,6 +1537,27 @@ function drawLegend() {
     })(TYPES[i].type);
 
     item.appendChild(button);
+
+    /* "only", beside the key: a second button, because a keyboard
+       needs something it can reach and a modifier key is invisible.
+       Its name says which kind, since "only" five times over says
+       nothing on its own; its pressed state is the solo. */
+    only = document.createElement("button");
+    only.type = "button";
+    only.className = solo === TYPES[i].type ? "legend-only on" : "legend-only";
+    only.setAttribute("data-type", TYPES[i].type);
+    only.textContent = "only";
+    only.setAttribute("aria-label", "Only " + TYPES[i].label);
+    only.setAttribute("aria-pressed", solo === TYPES[i].type ? "true" : "false");
+    only.title = solo === TYPES[i].type ? "Show every kind again" : "Show only these";
+
+    only.onclick = (function (type) {
+      return function () {
+        soloKind(type);
+      };
+    })(TYPES[i].type);
+
+    item.appendChild(only);
     legend.appendChild(item);
   }
 
@@ -1379,6 +1565,14 @@ function drawLegend() {
      the colour, so there is nothing here to switch off. */
   legend.appendChild(legendNote(NONFUNCTIONAL_COLOUR, "Non-functional", false));
   legend.appendChild(legendNote(TYPES[1].colour, "Legacy (no longer in use)", true));
+
+  if (had && had.type) {
+    again = legend.querySelector((had.only ? "button.legend-only" : "button.legend-key") +
+                                 "[data-type=\"" + had.type + "\"]");
+    if (again) {
+      again.focus();
+    }
+  }
 }
 
 /* Everything the layers need, worked out in one walk of the list.

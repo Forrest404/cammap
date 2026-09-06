@@ -1757,6 +1757,50 @@ button.toggle.on:focus-visible {
   overflow: hidden;
 }
 
+/* "only", beside each key in the legend: press it and that kind is
+   the only one shown; press it again, or the key, and every kind is
+   back. A second button rather than a modifier on the key because a
+   keyboard needs something it can land on. It is styled as the key
+   is - no border, no fill, no capitals - and a size smaller, in the
+   dim, so the legend still reads as a key first; the brackets are
+   the nav's, and are what stops "LFR van site only" reading as one
+   phrase. Pressed, it takes the accent and an underline, so the
+   state is not carried by colour alone (the other keys emptying to
+   outlines says it as well). The dim and the accent are the page's
+   own 5.6:1 and 5.4:1. */
+button.legend-only {
+  padding: 1px 2px;
+  border: none;
+  background: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+button.legend-only::before { content: "["; }
+button.legend-only::after  { content: "]"; }
+
+button.legend-only:hover {
+  background: none;
+  color: var(--accent);
+}
+
+button.legend-only.on {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* Paper cannot press it, and the struck-through keys already say
+   what is shown. */
+@media print {
+  button.legend-only {
+    display: none;
+  }
+}
+
 /* ------------------------------------------------------------------
    PAPER
 
