@@ -2,9 +2,11 @@
 --    cammap - supabase schema, version 2
 --
 --    Backs the whole site now, not just the accounts page. The map
---    reads its pins from the cameras table; points.js is the seed for
---    that table (see seed.sql, written out by build_points.py) and the
---    offline fallback if the database cannot be reached.
+--    reads its pins from the cameras table; seed.sql fills that table
+--    from the published record, and points.js is the same record as
+--    the offline fallback if the database cannot be reached. Both are
+--    written out by tools/build_points.py from data/cameras.csv and
+--    are never edited by hand.
 --
 --    What a signed-in person can do through the anon key:
 --      - save cameras to a private list (as before)
@@ -306,6 +308,7 @@ create table if not exists public.cameras (
                 check (status in ('active', 'legacy', 'nonfunctional')),
   last_seen   integer,                     -- the last year a source records it, or null
   deployments integer not null default 1,  -- how many times a source records it being used
+  periods     jsonb,                       -- those uses by the period the source gives, {"2023-24": 1}; null when it gives none
 
   source      text not null check (source in ('seed', 'report', 'admin')),
   seed_key    text unique,                 -- name|lat|lon|type, seed rows only
@@ -332,6 +335,72 @@ alter table public.cameras
 alter table public.cameras drop constraint if exists cameras_source_check;
 alter table public.cameras add constraint cameras_source_check
   check (source in ('seed', 'report', 'admin'));
+
+-- version 2.3 added periods: the deployments count broken down by the
+-- period the source gives it in - {"2023-24": 1}, {"2023-2025": 3},
+-- {"2026": 4}. The key is the period exactly as the record states it.
+-- The Met publishes "3 deployments 2023-2025" and not which year each
+-- fell in, so a column keyed by year would hold an estimate, and this
+-- project does not estimate; a reader who wants years goes back to the
+-- deployment-record PDFs, which carry dates. null means the source
+-- names no period - a shop, a fixed install, a camera from a report -
+-- and never an empty object. deployments stays, because the glow and
+-- the Most-used sort read it and a report's camera has no history to
+-- break down, and where periods is given it is its sum. Both facts are
+-- checked here, not only in the build script: the server refuses a
+-- malformed breakdown, or one whose total disagrees with the count,
+-- without trusting whatever wrote the row.
+--
+-- The two helpers are plain SQL and immutable, which is what lets a
+-- check constraint call them. The key pattern is the same one
+-- build_points.py and check.js use; change one, change the three.
+-- (backend/migrations/001_periods.sql is this block on its own, for a
+-- database that already has the table.)
+create or replace function public.periods_valid(p jsonb)
+returns boolean
+language sql
+immutable
+as $$
+  select p is null
+      or (jsonb_typeof(p) = 'object'
+          and p <> '{}'::jsonb
+          and not exists (
+            select 1
+              from jsonb_each(p) as kv(key, value)
+             where kv.key !~ '^\d{4}(-\d{2}|-\d{4})?$'
+                or jsonb_typeof(kv.value) <> 'number'
+                or kv.value::text !~ '^[1-9]\d*$'));
+$$;
+
+-- The sum of a valid breakdown, or null for anything else - so that
+-- the constraint below compares deployments with a number, or with
+-- null, and never raises a cast error on a value periods_valid would
+-- already have refused.
+create or replace function public.periods_total(p jsonb)
+returns integer
+language sql
+immutable
+as $$
+  select case
+           when p is not null and public.periods_valid(p)
+           then (select sum((kv.value::text)::integer)::integer
+                   from jsonb_each(p) as kv(key, value))
+         end;
+$$;
+
+alter table public.cameras
+  add column if not exists periods jsonb;
+
+alter table public.cameras drop constraint if exists cameras_periods_check;
+alter table public.cameras add constraint cameras_periods_check
+  check (public.periods_valid(periods));
+
+alter table public.cameras drop constraint if exists cameras_periods_total_check;
+alter table public.cameras add constraint cameras_periods_total_check
+  check (periods is null or deployments = public.periods_total(periods));
+
+comment on column public.cameras.periods is
+  'Deployments counted by the period the source gives them in, {"2023-24": 1}; null where the source names no period. deployments is the sum.';
 
 create index if not exists cameras_visible_idx on public.cameras (visible);
 

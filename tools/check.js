@@ -70,12 +70,20 @@ var ROOT = path.resolve(__dirname, "..");
    entry missing one is a row the seed cannot write; an entry with one
    more is a field the seed silently drops. Add here when a field is
    added to both - and only then. */
-var FIELDS = ["name", "note", "lat", "lon", "type", "status", "last", "deployments"];
+var FIELDS = ["name", "note", "lat", "lon", "type", "status", "last", "deployments", "periods"];
 
 /* What the record says about status. The database also knows
    "nonfunctional", but that is a state a moderator sets on a row,
    never something the published file asserts about a camera. */
 var STATUSES = ["active", "legacy"];
+
+/* A period as the sources write one: a year, or a span written either
+   way the Met writes it - "2023-24", "2023-2025". The same expression
+   is the check constraint in schema.sql and PERIOD_KEY in
+   build_points.py; change one, change the three. The key is the period
+   exactly as the record states it, never a year the record does not
+   give, which is why a per-year shape is not accepted here. */
+var PERIOD_KEY = /^\d{4}(-\d{2}|-\d{4})?$/;
 
 var HEX_COLOUR = /^#[0-9a-f]{6}$/i;
 
@@ -464,7 +472,7 @@ if (havePoints && haveShared) {
     var keys = {};
     var off = {
       fields: [], name: [], note: [], coords: [], type: [], status: [],
-      last: [], deployments: [], london: [], van: [], dupKey: []
+      last: [], deployments: [], periods: [], periodsSum: [], london: [], van: [], dupKey: []
     };
     var i;
     var e;
@@ -473,6 +481,9 @@ if (havePoints && haveShared) {
     var missing;
     var extra;
     var k;
+    var total;
+    var keysSeen;
+    var badPeriod;
 
     check("POINTS is a non-empty array", Array.isArray(P) && P.length > 0);
     if (!Array.isArray(P)) {
@@ -529,6 +540,38 @@ if (havePoints && haveShared) {
       if (!(isInteger(e.deployments) && e.deployments >= 1)) {
         off.deployments.push(who + " " + JSON.stringify(e.deployments));
       }
+
+      /* periods is null, or a plain object of period keys to positive
+         integers with at least one of them; and where it is given,
+         deployments is its sum - the glow and "Most used" read the
+         total, the popup will read the breakdown, and a record where
+         the two disagreed would be showing two different histories
+         for one camera. */
+      if (e.periods !== null) {
+        if (!e.periods || typeof e.periods !== "object" || Array.isArray(e.periods)) {
+          off.periods.push(who + " " + JSON.stringify(e.periods));
+        } else {
+          total = 0;
+          keysSeen = 0;
+          badPeriod = false;
+          for (k in e.periods) {
+            if (Object.prototype.hasOwnProperty.call(e.periods, k)) {
+              keysSeen++;
+              if (!PERIOD_KEY.test(k) || !isInteger(e.periods[k]) || e.periods[k] < 1) {
+                badPeriod = true;
+              } else {
+                total += e.periods[k];
+              }
+            }
+          }
+          if (keysSeen === 0 || badPeriod) {
+            off.periods.push(who + " " + JSON.stringify(e.periods));
+          } else if (total !== e.deployments) {
+            off.periodsSum.push(who + " periods add up to " + total + " but deployments is " + JSON.stringify(e.deployments));
+          }
+        }
+      }
+
       if (typeof e.lat === "number" && typeof e.lon === "number" && !site.inLondon(e.lat, e.lon)) {
         off.london.push(who + " " + JSON.stringify([e.lat, e.lon]));
       }
@@ -553,6 +596,8 @@ if (havePoints && haveShared) {
     check("every status is active or legacy", off.status.length === 0, listOf(off.status));
     check("every last is null or an integer year", off.last.length === 0, listOf(off.last));
     check("every deployments is an integer of at least 1", off.deployments.length === 0, listOf(off.deployments));
+    check("every periods is null or an object of period keys to positive integers", off.periods.length === 0, listOf(off.periods));
+    check("every deployments is the sum of its periods where periods is given", off.periodsSum.length === 0, listOf(off.periodsSum));
     check("every camera is in London", off.london.length === 0, listOf(off.london));
     check("every vancam is legacy", off.van.length === 0, listOf(off.van));
     check("seed keys are unique across the record", off.dupKey.length === 0, listOf(off.dupKey));

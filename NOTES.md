@@ -241,10 +241,10 @@ hand, the way `stamp.py` is a checker they run by hand.
                                              the CSV (see below)
 
 **The columns**, in the order they are written: `name`, `type`, `status`,
-`lat`, `lon`, `last`, `deployments`, `note`. The prose is last because it
-is the long one, so a line reads as the structured fields first and the
-note trailing. The script's docstring documents each column; the ones
-worth knowing about before editing:
+`lat`, `lon`, `last`, `periods`, `deployments`, `note`. The prose is last
+because it is the long one, so a line reads as the structured fields first
+and the note trailing. The script's docstring documents each column; the
+ones worth knowing about before editing:
 
 - `status` may be left blank. A `vancam` is then legacy and anything else
   active - the same default `tidy()` in `map.js` gives a hand-typed entry.
@@ -254,7 +254,8 @@ worth knowing about before editing:
   written with exactly six. A spreadsheet that drops a trailing zero is
   fine; a seventh decimal is refused rather than rounded, because rounding
   it would be the script deciding where a camera is.
-- `last` blank is null. `deployments` blank is one.
+- `last` blank is null. `deployments` blank is one, or the sum of `periods`
+  where that is given - see below.
 - Row order does not matter. The outputs are written in a canonical order
   - by name, case-insensitively, then type, then position - so a row
   appended at the bottom lands in its alphabetical place in both files, and
@@ -271,13 +272,69 @@ row; where it is incomplete the output is null or the default, never a
 plausible value. "Nothing here is estimated" is the record's own promise
 and a generator that filled a blank by guessing would break it quietly.
 
+**Deployments by period.** `deployments` is a single count, and until now
+it was the whole of what the record held about how often a site was used:
+"8 deployments 2023-2025" could not be broken down. The obvious column,
+one count per calendar year, is not one the record can fill. The Met
+publishes "3 deployments 2023-2025" and not which year each fell in, and
+the record's own vocabulary, read off the notes, is `2023-24`, `2025`,
+`2023-2025`, `2020-2025`, `2020-24`, `2020-22` and "the 2026 station
+trial". Splitting any of the spans by year would be estimating, which is
+the one thing this map promises not to do. So the breakdown is **by the
+period the source gives**, exactly as it gives it.
+
+- In the CSV, `periods` is `PERIOD:COUNT` items separated by semicolons -
+  `2023-24:1`, `2023-2025:3`, `2026:4`, or `2023-24:1;2025:3` once a site
+  has counts from more than one record. Text, so it survives a spreadsheet.
+  Blank is null: the source names no period, which is every shop, both
+  fixed installs and the King's Cross estate.
+- In `points.js` it is a JSON object, `periods: {"2023-24": 1}`, keys
+  earliest first; in the database a `jsonb` column of the same shape. A
+  key is `YYYY`, `YYYY-YY` or `YYYY-YYYY` and nothing else, and the same
+  expression checks that in `build_points.py`, `check.js` and the
+  `cameras_periods_check` constraint - change one, change the three.
+- `deployments` stays, because the glow is weighed by it, **Most used**
+  sorts by it, and a camera that came from a report has no history to
+  break down. Where `periods` is given, `deployments` is its sum by
+  construction: the script fills it in if blank and refuses a value that
+  disagrees, `check.js` asserts it, and `cameras_periods_total_check`
+  refuses the row on the server. The old integer is therefore always
+  derivable from the new column, and the two cannot drift.
+- The first values were read off the notes at import - "N deployment(s)
+  PERIOD" for a Met van site, "N deployment(s) in the YYYY station trial"
+  for a BTP one - which is reading the record's own sentence about a
+  site, not guessing at it. Every note in either form agreed with its
+  `deployments`; the import refuses to write a row where they do not.
+  From here on it is a column, edited in the CSV like any other.
+- One row is worth knowing about: **High Road, Haringey** says
+  "3 deployments 2023-24" in its note and `2025` in `last`. Both are
+  preserved exactly as they were; the period is `2023-24` because that is
+  what the note says. One of the two is wrong and the record itself does
+  not say which.
+
+What a per-period column makes possible is a time filter that shows a
+site in every year its period covers and never in one it does not, and a
+popup that lists "1 in 2023-24, 3 in 2025" rather than "4". What it does
+not make possible is a bar per year for a site the record only gives as a
+span - and that is the point. The Met's deployment-record PDFs carry a
+date per deployment, so a finer breakdown is a data-collection task for
+whoever next sits down with those PDFs, not something the script can
+manufacture.
+
+Adding it to the database is `backend/migrations/001_periods.sql`, run in
+the SQL editor and followed by a re-run of `seed.sql`, whose on-conflict
+update fills the column on every seed row. `schema.sql` carries the same
+block as version 2.3 so a fresh database ends up identical.
+
 **`--import`** reads a `points.js` - the committed one, or one pasted out
 of `index.html?edit` - and writes the CSV from it. It was used once, to make
 the CSV from the published file, and it is kept because a hand-published
 `points.js` is the one situation in which an output knows more than the
 source, and the way back is to import it, read the diff git shows on the
 CSV, and build. It reads the file with the same patterns `stamp.py` does and
-refuses anything it cannot read rather than skipping it.
+refuses anything it cannot read rather than skipping it. A field the entry
+carries is taken as it is; a field it lacks is read off the note where the
+note states it outright (`periods`, above), and is null otherwise.
 
 **`?edit` and the CSV.** `index.html?edit` still exports a `points.js`.
 Pasting that over the committed file and committing it now fails

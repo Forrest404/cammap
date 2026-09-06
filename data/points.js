@@ -7,7 +7,7 @@
    shops. Nothing here is estimated. Where a source gave only a
    borough, the note says the pin is approximate.
 
-   Six fields:
+   Seven fields:
      name, note, lat, lon   as before
      type    fixedcam | vancam | transportcam | facewatchcam | privatecam
      status  active | legacy
@@ -15,6 +15,15 @@
      deployments  how many times a source records it being used;
                   the map weighs its heat by this, so a spot used
                   twenty times reads hotter than one used once
+     periods  those uses counted by the period the source gives
+              them in - {"2023-24": 1}, {"2023-2025": 3},
+              {"2026": 4} - or null where the source names no
+              period, which is every shop and fixed install. The
+              key is the period exactly as the record states it.
+              The Met publishes "3 deployments 2023-2025", not
+              which year each fell in, and a per-year breakdown
+              of that would be an estimate dressed as a record.
+              deployments is always the sum of the values.
 
    Every van site is legacy, and that is not a statement about age.
    An LFR van parks for a shift and drives away, so there is no hour
@@ -39,12 +48,15 @@
    fixedcam entries. Croydon appears twice on purpose: once as the
    fixed install and once as the van hotspot it also is.
 
-   Written out by build_points.py - which is not in this repository,
-   and which computed the split described above. Whoever finds it
-   again: it must not be allowed to set a van site active, or the
-   next build undoes all of this. A hand-typed entry may leave out
-   type, status and last - the map assumes vancam, and a vancam
-   without a status is legacy.
+   Written out by tools/build_points.py from data/cameras.csv, which
+   is the record, and never edited by hand: edit the CSV, run the
+   script, commit both. tools/stamp.py regenerates this file on every
+   run and fails if it is not what the CSV produces. The script
+   writes every van site legacy and refuses to build a record that
+   says otherwise - the original build_points.py computed the split
+   described above, and this one will not, whatever it is given. A
+   hand-typed entry may leave out type, status and last - the map
+   assumes vancam, and a vancam without a status is legacy.
    ------------------------------------------------------------------ */
 
 var POINTS = [
@@ -57,7 +69,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -68,7 +81,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -79,7 +93,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -90,7 +105,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -101,7 +117,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -112,7 +129,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -123,7 +141,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -134,7 +153,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2025": 4}
   },
 
   {
@@ -145,7 +165,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -156,7 +177,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -167,7 +189,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2}
   },
 
   {
@@ -178,7 +201,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2}
   },
 
   {
@@ -189,7 +213,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -200,7 +225,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -211,7 +237,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -222,7 +249,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -233,7 +261,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2023-2025": 4}
   },
 
   {
@@ -244,7 +273,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-2025": 2}
   },
 
   {
@@ -255,7 +285,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3}
   },
 
   {
@@ -266,7 +297,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 6
+    deployments: 6,
+    periods: {"2023-24": 6}
   },
 
   {
@@ -277,7 +309,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -288,7 +321,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -299,7 +333,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2025": 4}
   },
 
   {
@@ -310,7 +345,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -321,7 +357,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -332,7 +369,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -343,7 +381,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 5
+    deployments: 5,
+    periods: {"2023-24": 5}
   },
 
   {
@@ -354,7 +393,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -365,7 +405,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2}
   },
 
   {
@@ -376,7 +417,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -387,7 +429,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -398,7 +441,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2025": 4}
   },
 
   {
@@ -409,7 +453,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2}
   },
 
   {
@@ -420,7 +465,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2023-2025": 5}
   },
 
   {
@@ -431,7 +477,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -442,7 +489,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -453,7 +501,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -464,7 +513,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -475,7 +525,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2025": 6}
   },
 
   {
@@ -486,7 +537,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2023-2025": 4}
   },
 
   {
@@ -497,7 +549,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2025": 3}
   },
 
   {
@@ -508,7 +561,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -519,7 +573,8 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 4
+    deployments: 4,
+    periods: {"2026": 4}
   },
 
   {
@@ -530,7 +585,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -541,7 +597,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 8
+    deployments: 8,
+    periods: {"2023-2025": 8}
   },
 
   {
@@ -552,7 +609,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2025": 5}
   },
 
   {
@@ -563,7 +621,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -574,7 +633,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -585,7 +645,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -596,7 +657,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -607,7 +669,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3}
   },
 
   {
@@ -618,7 +681,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-2025": 2}
   },
 
   {
@@ -629,7 +693,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -640,7 +705,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -651,7 +717,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3}
   },
 
   {
@@ -662,7 +729,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -673,7 +741,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -684,7 +753,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -695,7 +765,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -706,7 +777,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -717,7 +789,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2023-2025": 6}
   },
 
   {
@@ -728,7 +801,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -739,7 +813,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2023-2025": 4}
   },
 
   {
@@ -750,7 +825,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -761,7 +837,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -772,7 +849,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 4
+    deployments: 4,
+    periods: {"2023-24": 4}
   },
 
   {
@@ -783,7 +861,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -794,7 +873,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3}
   },
 
   {
@@ -805,7 +885,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -816,7 +897,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -827,7 +909,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2025": 5}
   },
 
   {
@@ -838,7 +921,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2}
   },
 
   {
@@ -849,7 +933,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -860,7 +945,8 @@ var POINTS = [
     type: "privatecam",
     status: "legacy",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null
   },
 
   {
@@ -871,7 +957,8 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 1
+    deployments: 1,
+    periods: {"2026": 1}
   },
 
   {
@@ -882,7 +969,8 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 4
+    deployments: 4,
+    periods: {"2026": 4}
   },
 
   {
@@ -893,7 +981,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -904,7 +993,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -915,7 +1005,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -926,7 +1017,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -937,7 +1029,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -948,7 +1041,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2022,
-    deployments: 1
+    deployments: 1,
+    periods: {"2020-22": 1}
   },
 
   {
@@ -959,7 +1053,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2025": 4}
   },
 
   {
@@ -970,7 +1065,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3}
   },
 
   {
@@ -981,7 +1077,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2025": 3}
   },
 
   {
@@ -992,7 +1089,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1003,7 +1101,8 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 2
+    deployments: 2,
+    periods: {"2026": 2}
   },
 
   {
@@ -1014,7 +1113,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3}
   },
 
   {
@@ -1025,7 +1125,8 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 1
+    deployments: 1,
+    periods: {"2026": 1}
   },
 
   {
@@ -1036,7 +1137,8 @@ var POINTS = [
     type: "fixedcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null
   },
 
   {
@@ -1047,7 +1149,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-2025": 2}
   },
 
   {
@@ -1058,7 +1161,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1069,7 +1173,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -1080,7 +1185,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1091,7 +1197,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -1102,7 +1209,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 7
+    deployments: 7,
+    periods: {"2025": 7}
   },
 
   {
@@ -1113,7 +1221,8 @@ var POINTS = [
     type: "fixedcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null
   },
 
   {
@@ -1124,7 +1233,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 21
+    deployments: 21,
+    periods: {"2023-2025": 21}
   },
 
   {
@@ -1135,7 +1245,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1146,7 +1257,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -1157,7 +1269,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 16
+    deployments: 16,
+    periods: {"2020-2025": 16}
   },
 
   {
@@ -1168,7 +1281,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1179,7 +1293,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2025": 3}
   },
 
   {
@@ -1190,7 +1305,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1201,7 +1317,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3}
   },
 
   {
@@ -1212,7 +1329,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2}
   },
 
   {
@@ -1223,7 +1341,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2020-2025": 3}
   },
 
   {
@@ -1234,7 +1353,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2}
   },
 
   {
@@ -1245,7 +1365,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1256,7 +1377,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1267,7 +1389,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 9
+    deployments: 9,
+    periods: {"2023-2025": 9}
   },
 
   {
@@ -1278,7 +1401,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1289,7 +1413,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1300,7 +1425,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1311,7 +1437,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2023-2025": 5}
   },
 
   {
@@ -1322,7 +1449,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1333,7 +1461,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2025": 5}
   },
 
   {
@@ -1344,7 +1473,8 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null
   },
 
   {
@@ -1355,7 +1485,8 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null
   },
 
   {
@@ -1366,7 +1497,8 @@ var POINTS = [
     type: "facewatchcam",
     status: "legacy",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null
   },
 
   {
@@ -1377,7 +1509,8 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null
   },
 
   {
@@ -1388,7 +1521,8 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null
   },
 
   {
@@ -1399,7 +1533,8 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null
   },
 
   {
@@ -1410,7 +1545,8 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null
   },
 
   {
@@ -1421,7 +1557,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1432,7 +1569,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1443,7 +1581,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1454,7 +1593,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2}
   },
 
   {
@@ -1465,7 +1605,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -1476,7 +1617,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2025": 3}
   },
 
   {
@@ -1487,7 +1629,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1498,7 +1641,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1509,7 +1653,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2023-2025": 6}
   },
 
   {
@@ -1520,7 +1665,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-2025": 2}
   },
 
   {
@@ -1531,7 +1677,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1542,7 +1689,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -1553,7 +1701,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1564,7 +1713,8 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 1
+    deployments: 1,
+    periods: {"2026": 1}
   },
 
   {
@@ -1575,7 +1725,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1586,7 +1737,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2025": 4}
   },
 
   {
@@ -1597,7 +1749,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -1608,7 +1761,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1619,7 +1773,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2020-24": 2}
   },
 
   {
@@ -1630,7 +1785,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 7
+    deployments: 7,
+    periods: {"2025": 7}
   },
 
   {
@@ -1641,7 +1797,8 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 1
+    deployments: 1,
+    periods: {"2026": 1}
   },
 
   {
@@ -1652,7 +1809,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2023-2025": 6}
   },
 
   {
@@ -1663,7 +1821,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1674,7 +1833,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1685,7 +1845,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2}
   },
 
   {
@@ -1696,7 +1857,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1707,7 +1869,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 9
+    deployments: 9,
+    periods: {"2023-2025": 9}
   },
 
   {
@@ -1718,7 +1881,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2023-2025": 5}
   },
 
   {
@@ -1729,7 +1893,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1740,7 +1905,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1751,7 +1917,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2}
   },
 
   {
@@ -1762,7 +1929,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1773,7 +1941,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-2025": 2}
   },
 
   {
@@ -1784,7 +1953,8 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 5
+    deployments: 5,
+    periods: {"2026": 5}
   },
 
   {
@@ -1795,7 +1965,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2}
   },
 
   {
@@ -1806,7 +1977,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -1817,7 +1989,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2025": 6}
   },
 
   {
@@ -1828,7 +2001,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1839,7 +2013,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2023-2025": 6}
   },
 
   {
@@ -1850,7 +2025,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1861,7 +2037,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1872,7 +2049,8 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 3
+    deployments: 3,
+    periods: {"2026": 3}
   },
 
   {
@@ -1883,7 +2061,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1894,7 +2073,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1905,7 +2085,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2025": 6}
   },
 
   {
@@ -1916,7 +2097,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -1927,7 +2109,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -1938,7 +2121,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 22
+    deployments: 22,
+    periods: {"2023-24": 22}
   },
 
   {
@@ -1949,7 +2133,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1960,7 +2145,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1971,7 +2157,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1982,7 +2169,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -1993,7 +2181,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -2004,7 +2193,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3}
   },
 
   {
@@ -2015,7 +2205,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1}
   },
 
   {
@@ -2026,7 +2217,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2025": 3}
   },
 
   {
@@ -2037,7 +2229,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1}
   },
 
   {
@@ -2048,7 +2241,8 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 8
+    deployments: 8,
+    periods: {"2023-2025": 8}
   }
 
 ];

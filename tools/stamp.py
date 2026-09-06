@@ -389,8 +389,13 @@ if not nonfunctional_type:
 # entry, not a row silently skipped.
 
 JS_STRING = r'"(?:[^"\\]|\\.)*"'
-JS_VALUE = JS_STRING + r'|-?\d+(?:\.\d+)?|null|true|false'
-JS_OBJECT = re.compile(r'\{((?:[^{}"]|' + JS_STRING + r')*)\}')
+# One level of nesting, for the periods object - {"2023-24": 1} - which
+# holds strings and numbers and never another object. Without it the
+# entry pattern below would stop at the first inner brace and read the
+# periods object as an entry of its own.
+JS_NESTED = r'\{(?:[^{}"]|' + JS_STRING + r')*\}'
+JS_VALUE = JS_STRING + r'|' + JS_NESTED + r'|-?\d+(?:\.\d+)?|null|true|false'
+JS_OBJECT = re.compile(r'\{((?:[^{}"]|' + JS_STRING + r'|' + JS_NESTED + r')*)\}')
 JS_PAIR = re.compile(r'\s*(\w+)\s*:\s*(' + JS_VALUE + r')\s*,?')
 
 
@@ -401,8 +406,8 @@ def js_value(raw):
         return True
     if raw == "false":
         return False
-    if raw.startswith('"'):
-        return json.loads(raw)
+    if raw.startswith('"') or raw.startswith('{'):
+        return json.loads(raw)       # the file writes both in JSON form
     return float(raw) if "." in raw else int(raw)
 
 
@@ -508,7 +513,23 @@ def describe(row):
 
 PAIRED = [("name", "name"), ("note", "note"), ("lat", "lat"), ("lon", "lon"),
           ("type", "type"), ("status", "status"), ("last", "last_seen"),
-          ("deployments", "deployments")]
+          ("deployments", "deployments"), ("periods", "periods")]
+
+# Columns the seed writes as a string literal that the database reads
+# as something else. periods is jsonb, written as its JSON text, so it
+# is decoded here before being compared with the object points.js has.
+JSON_IN_SEED = ["periods"]
+
+
+def seed_field(r, sf):
+    v = r.get(sf)
+    if sf in JSON_IN_SEED and isinstance(v, str):
+        try:
+            return json.loads(v)
+        except ValueError:
+            return ("not JSON", v)
+    return v
+
 
 if points is not None and seed is not None:
     lines = []
@@ -518,7 +539,7 @@ if points is not None and seed is not None:
         p, r = points[i], seed[i]
         diffs = []
         for pf, sf in PAIRED:
-            if p.get(pf) != r.get(sf):
+            if p.get(pf) != seed_field(r, sf):
                 diffs.append("%s: points.js has %r, seed.sql has %r" % (pf, p.get(pf), r.get(sf)))
         if r.get("source") != "seed":
             diffs.append("source: seed.sql has %r, every seeded row is 'seed'" % r.get("source"))
