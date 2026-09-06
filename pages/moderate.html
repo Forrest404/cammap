@@ -28,6 +28,14 @@
   form-action 'none';
   frame-ancestors 'none'">
 <title>Moderate &mdash; cammap</title>
+<!-- Not a page to find in a search: it is empty for anyone who is not
+     a moderator, and a search result that opens on "This page is for
+     moderators" helps nobody. Kept out with this rather than with a
+     Disallow in robots.txt, which would stop a crawler from ever
+     reading it - robots.txt says why. It is left out of sitemap.xml
+     for the same reason. The server still gates every action here;
+     this only decides whether search engines list the address. -->
+<meta name="robots" content="noindex">
 <!-- MapLibre, vendored in lib/ like everywhere else on this site.
      The map, the report form and this page are the three that pull it
      in: the Cameras tab opens the same pin-dropping map to correct

@@ -1,0 +1,23 @@
+# cammap - what crawlers may fetch.
+#
+# Everything. The site is a public record and the point of it is to be
+# found, so nothing is kept from a search engine here.
+#
+# The moderation page is the one page not meant to turn up in a search
+# - it is empty for anyone who is not a moderator - and it is kept out
+# with a <meta name="robots" content="noindex"> in its own <head>, NOT
+# with a Disallow line here. The two are not interchangeable: a crawler
+# that is told not to fetch a page never reads the noindex inside it,
+# and can still list the address from links elsewhere, so a Disallow
+# would keep the page in search results rather than out of them. The
+# sitemap leaves it out for the same reason.
+#
+# The absolute address below is the site's home on GitHub Pages. If it
+# ever moves to a domain of its own, this line, sitemap.xml and the
+# og:url / og:image tags in every page's <head> all change together -
+# NOTES.md, "Sharing the site", lists every place it is written.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://forrest404.github.io/cammap/sitemap.xml
