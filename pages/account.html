@@ -206,6 +206,24 @@
         </p>
       </div>
 
+      <!-- The leaderboard is public to anyone. The switch is a real
+           checkbox in a real label; the server enforces it in the
+           view definitions, so the page only reports and asks. -->
+      <div class="box" id="leaderboard-box">
+        <h3>On the leaderboard</h3>
+        <p class="hint">
+          The <a href="leaderboard.html">leaderboard</a> is public: anyone
+          can read it, signed in or not. Your username says nothing about
+          you, but what someone has reported, and how much, is a pattern.
+          You can keep yours off the list; the points still count.
+        </p>
+        <label class="tick" for="leaderboard-switch">
+          <input type="checkbox" id="leaderboard-switch" checked>
+          <span>Show me on the leaderboard</span>
+        </label>
+        <p class="note" id="leaderboard-note"></p>
+      </div>
+
       <!-- The current password is asked for and checked first, by
            signing in with it, because Supabase's own password change
            does not ask: without this a session left open on someone

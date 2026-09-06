@@ -951,9 +951,99 @@ function showAccountPage() {
     if (everywhereWho) {
       everywhereWho.textContent = usernameOf(currentUser);
     }
+    loadLeaderboardSwitch();
   }
 
   showSavedList();
+}
+
+/* ---------------- the leaderboard switch ----------------
+
+   The leaderboard is public: a username, a total and a count, a
+   hundred rows to anyone at all, signed in or not. The names carry
+   nothing personal, but what someone has reported, and how much, is
+   itself a pattern, and on this site that can be enough. So a person
+   can keep their row off it.
+
+   The switch is enforced on the server, in the definitions of the
+   three leaderboard views: a profile with show_on_leaderboard false
+   never enters the table the page reads (why the view and not a
+   policy is in schema.sql, version 2.9). The page only reports the
+   value and asks to change it, through set_leaderboard_visibility(),
+   which takes a boolean and acts on the caller's own row - the one
+   thing on a profile a person may change, and the only way to. The
+   views are rebuilt every five minutes, and the note says so rather
+   than promising "now".
+
+   The value is fetched on its own and not with the role: PostgREST
+   refuses a whole select for one column it does not know, so asking
+   for it alongside role and xp_total would, on a database that has
+   not had migration 007 run, cost a moderator their Moderate link.
+   Here the same refusal is caught by code - 42703, undefined column -
+   and the box says which migration to run. */
+function loadLeaderboardSwitch() {
+  var box  = document.getElementById("leaderboard-switch");
+  var note = document.getElementById("leaderboard-note");
+
+  if (!box || !currentUser) {
+    return;
+  }
+
+  box.disabled = true;
+  note.textContent = "";
+
+  sb.from("profiles").select("show_on_leaderboard").eq("id", currentUser.id).single()
+    .then(function (result) {
+      if (result.error) {
+        if (result.error.code === "42703") {
+          note.textContent = "The switch is not in the database yet: run backend/migrations/007_leaderboard_opt_out.sql in the SQL editor.";
+        } else {
+          note.textContent = "Could not read the setting.";
+        }
+        return;
+      }
+      box.checked = result.data.show_on_leaderboard !== false;
+      box.disabled = false;
+    })
+    .catch(function () {
+      note.textContent = "Could not read the setting.";
+    });
+}
+
+/* Wired once. A change is sent as it is made - there is nothing else
+   to fill in - and a refusal puts the box back the way it was, so it
+   never shows a state the server did not accept. */
+function setUpLeaderboardSwitch() {
+  var box  = document.getElementById("leaderboard-switch");
+  var note = document.getElementById("leaderboard-note");
+
+  if (!box) {
+    return;
+  }
+
+  box.onchange = function () {
+    var shown = box.checked;
+
+    box.disabled = true;
+    note.textContent = "Saving…";
+
+    sb.rpc("set_leaderboard_visibility", { shown: shown }).then(function (result) {
+      box.disabled = false;
+      if (result.error) {
+        box.checked = !shown;
+        note.textContent = result.error.code === "42883"
+          ? "The switch is not in the database yet: run backend/migrations/007_leaderboard_opt_out.sql in the SQL editor."
+          : (result.error.message || "That did not go through.");
+        return;
+      }
+      note.textContent = (shown ? "Saved: you will be on the list. " : "Saved: you are off the list. ") +
+        "The leaderboard is rebuilt every five minutes, so the change shows within that.";
+    }).catch(function () {
+      box.disabled = false;
+      box.checked = !shown;
+      note.textContent = "That did not go through. Try again in a moment.";
+    });
+  };
 }
 
 /* The "Change your password" box. The checks a person can be told
@@ -1099,6 +1189,7 @@ function setUpAccountPage() {
   var signinBtn  = document.getElementById("signin-button");
   var signinNote = document.getElementById("signin-note");
 
+  setUpLeaderboardSwitch();
   showAccountPage();
   setUpChangePassword();
   setUpEverywhere();

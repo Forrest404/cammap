@@ -139,12 +139,15 @@ grant execute on function public.proof_path_pending(text) to authenticated, serv
 -- which are left as they are. role is user, moderator or admin and
 -- only the service role can change it - see the column grant below.
 -- xp_total is a running total kept in step by a trigger on xp_events,
--- so the leaderboard never has to add anything up.
+-- so the leaderboard never has to add anything up. show_on_leaderboard
+-- (version 2.9) is the one thing a person may change themselves, and
+-- only through set_leaderboard_visibility() below.
 create table if not exists public.profiles (
   id         uuid primary key references auth.users(id) on delete cascade,
   username   text,
   role       text not null default 'user',
   xp_total   integer not null default 0,
+  show_on_leaderboard boolean not null default true,
   created_at timestamptz not null default now()
 );
 
@@ -213,6 +216,67 @@ drop policy if exists "profiles: update own" on public.profiles;
 -- their own row; this makes sure there is no way to try.
 revoke all on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
+
+-- version 2.9: a way off the leaderboard. Every contributor's
+-- username, XP and count of approved reports were public and
+-- enumerable, a hundred at a time, to anyone at all. The names carry
+-- nothing personal - two random words - but what someone has
+-- reported, and how much, is itself a pattern, and on this site that
+-- can be enough. A person should be able to keep their name off the
+-- list without giving up the account or the points.
+--
+-- Default true: the list is the reward the site offers, and a new
+-- account expects to appear on it. Not null, because a view
+-- definition that has to handle "unknown" is a view definition that
+-- will one day handle it wrong.
+--
+-- Where it is enforced, and why not in row-level security: the
+-- three leaderboards further down are materialized views, and
+-- PostgreSQL does not apply RLS to a materialized view - a policy on
+-- profiles is never consulted when the view is refreshed, and a view
+-- cannot carry a policy of its own. The equivalent that meets the
+-- intent (server-side, never the client's query) is the view
+-- definition itself: an opted-out row never enters the table the
+-- page reads, so no query the browser could write, and no future
+-- page that forgets to filter, can show it. QUESTIONS.md item 6
+-- records the substitution. (backend/migrations/007_leaderboard_opt_out.sql
+-- is this block and the rebuilt views on their own.)
+alter table public.profiles
+  add column if not exists show_on_leaderboard boolean not null default true;
+
+comment on column public.profiles.show_on_leaderboard is
+  'false keeps the account off leaderboard_all, _daily and _weekly; enforced in the view definitions, since RLS does not reach a materialized view. Set only through set_leaderboard_visibility().';
+
+-- The one thing on a profile a person may change themselves, and
+-- the only way they may change it: the client roles have no update
+-- privilege on profiles at all (the revoke above), on purpose, so a
+-- column-level grant is not the door. This is. It takes a boolean
+-- and nothing else, and writes it to the caller's own row, found by
+-- auth.uid(); there is no parameter that could name another account,
+-- and nothing comes back.
+--
+-- The anonymity test: what does a stranger learn by calling this
+-- repeatedly with guesses? Nothing. It carries no username, no id,
+-- answers nothing, and acts only on the account whose token made
+-- the call. Signed out, auth.uid() is null and it refuses.
+create or replace function public.set_leaderboard_visibility(shown boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  if auth.uid() is null then
+    raise exception 'not signed in' using errcode = '42501';
+  end if;
+  update public.profiles
+     set show_on_leaderboard = coalesce(shown, true)
+   where id = auth.uid();
+end;
+$fn$;
+
+revoke all on function public.set_leaderboard_visibility(boolean) from public, anon, authenticated;
+grant execute on function public.set_leaderboard_visibility(boolean) to authenticated, service_role;
 
 -- ---------------- settings ----------------
 
@@ -2026,6 +2090,12 @@ create policy "proof: delete own while pending"
 -- derived data, so nothing is lost) so that a change to a definition
 -- here always takes. Read them with "order by xp_total desc" - a
 -- concurrent refresh does not promise to keep rows in order.
+--
+-- "and p.show_on_leaderboard" (version 2.9) is where the opt-out is
+-- enforced, in all three: a row that has switched it off never
+-- enters the table the page reads. It is here and not in a policy
+-- because PostgreSQL applies no row-level security to a materialized
+-- view - see the column's comment under profiles.
 
 drop materialized view if exists public.leaderboard_all;
 create materialized view public.leaderboard_all as
@@ -2039,6 +2109,7 @@ create materialized view public.leaderboard_all as
                 group by user_id) a on a.user_id = p.id
    where p.username is not null
      and p.xp_total > 0
+     and p.show_on_leaderboard
    order by p.xp_total desc, p.username
    limit 100;
 
@@ -2056,6 +2127,7 @@ create materialized view public.leaderboard_daily as
     join public.profiles p on p.id = e.user_id
    where e.created_at > now() - interval '1 day'
      and p.username is not null
+     and p.show_on_leaderboard
    group by p.username
    order by xp_total desc, p.username
    limit 100;
@@ -2069,6 +2141,7 @@ create materialized view public.leaderboard_weekly as
     join public.profiles p on p.id = e.user_id
    where e.created_at > now() - interval '7 days'
      and p.username is not null
+     and p.show_on_leaderboard
    group by p.username
    order by xp_total desc, p.username
    limit 100;

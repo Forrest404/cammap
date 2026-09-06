@@ -1325,6 +1325,35 @@ be wrong; success says "Password changed." and nothing else. What a
 stranger learns: whatever the sign-in form already tells them, at the
 sign-in form's rate - nothing more.
 
+**Off the leaderboard.** Every contributor's username, XP and count of
+approved reports were public and enumerable, a hundred at a time, to
+anyone at all. The names carry nothing personal, but what someone has
+reported, and how much, is a pattern, and on this site that can be
+enough. `profiles.show_on_leaderboard` (migration 007, schema version
+2.9) is true by default - the list is the reward the site offers - and
+a tick box on the account page turns it off; the points still count.
+The brief asked for the opt-out to be enforced by row-level security
+rather than by the query, and it is enforced neither way: the three
+leaderboards are materialized views, and PostgreSQL applies no RLS to a
+materialized view - a policy on `profiles` is never consulted when the
+view is refreshed, and a view cannot carry one of its own. The
+equivalent that meets the intent is the view definition itself, which
+is where the site's opt-out lives: `and p.show_on_leaderboard` in all
+three, so an opted-out row never enters the table the page reads, and
+no query a browser could write, and no future page that forgets to
+filter, can show it (QUESTIONS.md, item 6). The views are rebuilt every
+five minutes, and the page says so rather than promising "now". The
+switch is set through `set_leaderboard_visibility(shown boolean)`, the
+one thing on a profile a person may change and the only way to: the
+client roles have no update privilege on `profiles` at all, and the
+function writes the caller's own row by `auth.uid()`, takes no name or
+id, and returns nothing. What a stranger learns by calling it: nothing.
+The page reads the value on its own and not alongside the role, because
+PostgREST refuses a whole select for one column it does not know, and
+until the migration is run that refusal would otherwise cost a
+moderator their Moderate link; the box catches it and names the
+migration instead.
+
 ## Forrest404
 
 - Leaderboard

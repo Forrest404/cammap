@@ -2243,3 +2243,27 @@ code.username-inline {
   font-weight: 500;
   color: var(--accent);
 }
+
+/* A tick box with its words beside it - the leaderboard switch, and
+   "I have saved this" under the recovery card. The label rule under
+   FORMS makes every label a line of small capitals over a field,
+   which is wrong for a box that sits inside its own sentence; this
+   is label.pick from the moderation queue, written for a label whose
+   words are meant to be seen. The box takes the ring from KEYBOARD
+   FOCUS like any other checkbox. */
+label.tick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+label.tick input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
