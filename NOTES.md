@@ -624,6 +624,8 @@ from a non-moderator is a courtesy, never the lock.
                    rejection, hide or unhide a camera      moderate_undo
     cameras        put one on the map by hand              moderate_add_camera
     cameras        correct where one is                    moderate_move_camera
+    cameras        correct its name, note, kind or state   moderate_edit_camera
+    cameras        merge two rows that are one camera      moderate_merge_cameras
 
 **Move** is the newest of those and the one worth explaining. A pin in the
 wrong place is the commonest thing wrong with a camera that is otherwise right:
@@ -659,9 +661,211 @@ SQL editor before the button works. It is safe to run again, as always.
 
 ### Moderating at scale
 
-*(Written by the Wave 2 moderation agent: pagination, the backlog count,
-editing and merging cameras, bulk decisions, sorting the queue, and the
-activity view.)*
+The moderation page was built for a queue of a dozen and will be used,
+if the site does what it is for, on a queue of hundreds. Every change
+in this section is judged by one measure: decisions per minute.
+Moderation is volunteer time, and it is the scarcest thing the project
+has.
+
+**Every list goes on past thirty.** For a long time the queue and the
+history each asked the database for thirty rows and stopped -
+`.limit(30)`, no `.range()` anywhere - so report thirty-one was not
+hidden or collapsed but simply never fetched, and nobody noticed
+because nobody had sent thirty-one reports. That is the failure that
+arrives exactly when the project succeeds. Every list in `account.js`
+that can grow is now a pager: `makePager()` fetches a page, appends
+the rows and offers **Load more** until a page comes back short;
+`loadPage()` is the request under it, `.range(offset, offset + 29)`
+on whatever query the list needs. Thirty is still the page, because a
+page that fits a screen is the one a moderator can act on without
+scrolling back up for the button. The two are separate so a list can
+fetch a page however it likes - straight from a table, or by id from
+a set it sorted itself (the queue, below) - and the button, the empty
+message and the "Loading…" note behave the same either way. The
+**Your reports** list that the account page is due to gain should be
+built on the same pager; the comment above it in `account.js` says
+how. The two `.limit(5000)` calls on the cameras table are not lists
+and are left alone: they are a ceiling on a fetch that is meant to
+bring everything, and the moderation page holds all the cameras in
+memory on purpose so that a search for "Croydon" does not cost a
+round trip per letter.
+
+**The backlog is counted.** The Moderate link in the nav reads
+"Moderate (12)" on every page, and the top of the queue says how long
+the oldest report has waited - which is the number that says whether
+the queue is being kept up with, more than the count is. The count is
+a head request (`count: "exact", head: true` on the pending reports;
+no rows come back), so a moderator pays for one small answer per page
+load and never for the queue itself; the oldest is one row, sorted
+the other way from the queue. Both run only for a moderator, and not
+only because the number means nothing to anyone else: the reports
+read policy lets a person see their own reports, so the same query
+from a plain account would count *theirs* and the nav would show it
+as the site's. `isModerator()` in `account.js` is the guard; the
+server's policy is what makes the count a moderator's. `refreshBacklog()`
+runs again after every decision, after a bulk run, and after an
+approval is taken back (which is a report pending again).
+
+**Edit** is the sibling of Move, for the rest of the row: the name,
+the note, the kind and the state. A typo in a name used to be
+permanent - the only thing that rewrote one was the seed, which cannot
+reach a camera that came from a report. `moderate_edit_camera` is the
+same shape as `moderate_move_camera`: an inner `edit_camera` for the
+service role, a wrapper that checks the role first, the same
+inline panel under the row. It refuses a blank name and a wrong id
+the way Add and Move do, leaves a bad kind or state to the table's
+check constraints for the reason Move leaves the bounds to them, and
+refuses one thing of its own: a van site marked active. Every van
+site is legacy ("What active means", above); the build script refuses
+it in the CSV and this refuses it on the row. It is not a check
+constraint on the table because the live database still carries van
+rows that say active from before the change (QUESTIONS.md, item 9)
+and adding the constraint would fail on them; `approve_report` also
+still writes a reported van as active, and the one-line update above
+is still the way to bring those into line.
+
+`seed_key` is left alone, for Move's reason - it is how the seed finds
+a row it has already written - and the consequence is the opposite of
+Move's, so it is said in the panel: the seed's `on conflict` rewrites
+`name`, `note` and `status` from the record, so an edit to a seed
+camera holds only until the next re-run of `seed.sql`. Make the
+correction in `data/cameras.csv` as well, or it will be undone. (A
+corrected *type* survives a re-seed, because the type is part of the
+key and not in the update list - which is the same reason to fix the
+CSV, or the row is orphaned from its line the day the record is next
+built.)
+
+**Who did what** is now a table. A report's decision was always
+recorded on the report - `resolved_by`, `resolved_at`,
+`resolution_note` - but a camera's had nowhere to go: hiding one left
+a note on its approved reports if it had any, and moving, unhiding
+or editing one left only `updated_at`, which says when and not who or
+what. `moderation_log` (migration 004, schema version 2.6) holds one
+row per thing a moderator does to a camera by hand - add, edit, move,
+hide, unhide, merge - with the moderator's id, the camera, a note and
+the time, and nothing more; nothing about a reporter that `reports`
+does not already hold. The functions that do those things write it
+through their existing `actor` parameter (`move_camera` gained one,
+which is a new signature, so the migration drops the old one by name
+first). The note carries what an audit needs and the row no longer
+does: a move says where the pin was, an edit says which fields changed
+and what they said, a hide says why. Moderators read it through RLS
+(`is_moderator()`); no client role can write it, so it is a record and
+not a notebook. Report decisions are deliberately not copied into it -
+two records of one decision are two things to keep in step - and the
+Activity tab reads both.
+
+**Many decisions in one press.** Twenty approvals were twenty clicks
+and twenty round trips. Every queue row now has a tick box - a real
+checkbox in a real label, its words for a screen reader - and a bar
+over the list holds *Select all on this page*, *Approve selected* and
+*Reject selected*, with one note for a batch of rejections. Two rules
+hold it honest. It is not a second way in: `bulkDecide()` calls
+`moderate_report` once per report, through the row's own `act()`,
+which is the same call the row's own buttons make - the same function,
+the same role check on the server. There is deliberately no server
+function that takes a list; one would be a second door to keep locked,
+and the per-report function already does the clustering, the merging
+and the XP that an approval means. Four requests go at a time, so
+twenty take about as long as five. And it does not fail quietly: each
+row reports its own outcome, a row that went through leaves the list
+when the batch is in, a row that did not stays where it was with the
+server's reason beside it, and the line under the buttons says how
+many of each. "Select all" reaches only the rows that are loaded: a
+moderator should not be able to approve what they have not seen.
+
+**The queue can be sorted and filtered, and the sort sees all of
+it.** Newest first, everything mixed, was the only order there was.
+The order a moderator wants is *the likely duplicates first*: a report
+dropped on top of a camera the map already has is the quickest
+decision on the page and the commonest. So the queue is now two
+fetches. The first is an index - every pending report's small columns
+(id, kind, type, position, time) in one request, under the same 5,000
+ceiling the cameras fetch uses and for the same reason: those rows
+are a few dozen bytes each, five thousand of them are smaller than one
+proof photograph, and a queue that long is a problem the page will
+have earned. The index is measured, filtered and sorted in the
+browser, and the pager fetches each page's full rows - note, reporter,
+proof - by id from the order it settled on. Sorting thirty loaded rows
+and then loading thirty more that are nearer would be worse than no
+sort, which is why the whole set is sorted and not the page.
+
+Filter by what a report is (a new camera, a state report) and by kind
+(from `CAMERA_TYPES`; a state report's kind is its camera's, which is
+why the cameras are loaded first). Sort newest, oldest, or nearest to
+a camera on the map; nearest puts state reports last, since they sit
+on the camera they are about and the distance says nothing. Every
+new-camera row shows its nearest camera and the distance whatever the
+order, so a report 15 m from a camera of the same kind announces
+itself.
+
+The distance is `metresBetween()` in `account.js`, the twin of
+`metres_between` in `schema.sql` - same formula, same radius, written
+once in each. It is computed in the browser and not by a new server
+function on purpose. An endpoint answering "how far is this report
+from the nearest camera" would say nothing about accounts and so would
+pass the anonymity test; but it would be a new surface, with a grant
+to get right and a policy to keep in step, for a number the browser
+already has both halves of. Paging by id also closes a gap offset
+paging had: a *Load more* pressed after rows have left the page - in a
+batch, say - does not skip the rows that shifted up to fill the gap,
+and an id decided since the index was taken comes back empty rather
+than as a decided row with live buttons.
+
+**Activity: who did what.** A fourth tab. The upper list is every
+decided report read the other way round from the history tab - by the
+moderator who decided it: who, when, what they said, and what it was
+about, through a second join on `profiles` told apart from the
+reporter's by its foreign key (`profiles!reports_resolved_by_fkey`).
+A report that approved itself, because enough people agreed, says so
+in as many words: it is the one kind of approval nobody made, and an
+audit should be able to tell. The lower list is `moderation_log`: every
+change made to a camera by hand, with the moderator, the time, and the
+note that keeps what the row no longer has. Two lists rather than one
+stream because they are two tables with two clocks, and a single
+stream in time order would need both fetched whole to page honestly;
+each is a pager of its own. Moderators only, and the server says so -
+the reports, profiles and log policies all ask `is_moderator()`; the
+tab hiding itself is the courtesy. Until migration 004 is run the
+lower list says which migration to run, and the upper list is
+unaffected.
+
+**Merge** is for two rows that are one camera. `approve_report`
+clusters and merges *incoming* reports, so two people reporting one
+van site make one camera; two rows already on the map - a seed entry
+and a reported one at the same spot, two reports approved a month
+apart at 150 m - had no way to become one, and hiding one lost its
+reports to a hidden row nobody would look at again.
+`moderate_merge_cameras(loser, survivor)` (migration 006, schema
+version 2.8) repoints the loser's reports at the survivor, hides the
+loser through the existing `hide_camera` with a note naming the
+survivor, logs it, and returns which row survived and how many reports
+moved. Nothing is deleted: the loser is still in the table, off the
+map. It refuses the same id twice, a missing id, a loser that is
+already hidden (its reports belong to whatever took it off - a merge
+already done, a "removed" claim approved - and moving them now could
+put them under a camera they were never about; put it back first if
+it really is a duplicate) and a survivor that is hidden (two cameras
+lost for one). One report may stay behind: a state report by someone
+who has also reported the survivor's state, because
+`reports_one_status_per_camera_idx` allows one per person per camera
+and it is still their evidence about the loser; the result counts
+those as *kept*. `saved_cameras` holds no camera id by design, so
+nothing there is touched, and the survivor's own `deployments`,
+`periods` and source are left as the record gave them - a sum of two
+records of one site would be a count the source never gave. It takes
+the same two advisory locks `approve_report` does, so an approval
+racing it cannot point a fresh report at a camera that is about to
+go.
+
+The panel opens under the row that will go. It asks for the survivor
+by name, offering the nearest cameras first because the nearest is
+the likeliest duplicate, and before anything is sent it says in one
+sentence which row survives, which is hidden, and how many reports
+move, and waits for a press on a button that says the same. A merge
+is the one action here without an undo button - the loser can be put
+back on the map, but its reports have moved - so the statement is the
+confirmation.
 
 ### Housekeeping SQL
 

@@ -247,7 +247,13 @@ function renderNav() {
 
   if (isModerator()) {
     navAccount.appendChild(navSeparator());
-    navAccount.appendChild(navLink(pageHref("moderate.html"), "Moderate", PAGE === "moderate.html"));
+    navModerate = navLink(pageHref("moderate.html"), "Moderate", PAGE === "moderate.html");
+    navAccount.appendChild(navModerate);
+
+    /* The count comes a moment after the link, in its own request,
+       so the nav is drawn once and the number is filled in when it
+       is known rather than the whole nav waiting on it. */
+    refreshBacklog();
   }
 
   navAccount.appendChild(navSeparator());
@@ -258,6 +264,123 @@ function renderNav() {
     signOut();
   };
   navAccount.appendChild(out);
+}
+
+/* ---------------- what is waiting ----------------
+
+   A queue nobody can see the length of is a queue nobody can plan
+   around. Before this, the only way to know whether anything was
+   waiting was to open the moderation page and look, which meant a
+   moderator who was not already looking never knew - and the reports
+   sat. Now the Moderate link carries the count, "Moderate (12)", on
+   every page, and the top of the queue says how long the oldest one
+   has been waiting, which is the number that says whether the queue
+   is being kept up with.
+
+   The count is a head request - count only, no rows - so on every
+   page load a moderator pays for one small answer and not for the
+   queue itself. It runs only when the person is a moderator, and not
+   only because the number means nothing to anyone else: the reports
+   read policy lets a person see their own reports, so the same query
+   from a plain account would come back with a count of theirs and
+   the nav would show it as the site's. isModerator() is the guard,
+   and the server's policy is what makes the count a moderator's. */
+
+var navModerate = null;    /* the Moderate link, once the nav has drawn it */
+var pendingCount = null;   /* the last count, or null while unknown */
+
+function countPending(onDone) {
+  sb.from("reports")
+    .select("id", { count: "exact", head: true })
+    .eq("state", "pending")
+    .then(function (result) {
+      onDone(result.error ? null : result.count);
+    })
+    .catch(function () {
+      onDone(null);
+    });
+}
+
+/* When the oldest pending report was sent, or null. One row, sorted
+   the other way from the queue. */
+function oldestPending(onDone) {
+  sb.from("reports")
+    .select("created_at")
+    .eq("state", "pending")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .then(function (result) {
+      onDone(!result.error && result.data && result.data[0] ? result.data[0].created_at : null);
+    })
+    .catch(function () {
+      onDone(null);
+    });
+}
+
+/* "3 minutes", "5 hours", "2 days", "3 weeks": how long ago an ISO
+   time was, in the one unit a person would say. Never more precise
+   than that - the age of the oldest report is a measure of whether
+   the queue is being kept up with, and minutes past two days are
+   not part of that answer. */
+function ageOf(iso) {
+  var seconds = (Date.now() - new Date(iso).getTime()) / 1000;
+  var n;
+  var unit;
+
+  if (seconds < 3600) {
+    n = Math.max(1, Math.round(seconds / 60));
+    unit = "minute";
+  } else if (seconds < 48 * 3600) {
+    n = Math.round(seconds / 3600);
+    unit = "hour";
+  } else if (seconds < 14 * 86400) {
+    n = Math.round(seconds / 86400);
+    unit = "day";
+  } else {
+    n = Math.round(seconds / (7 * 86400));
+    unit = "week";
+  }
+
+  return n + " " + unit + (n === 1 ? "" : "s");
+}
+
+/* Redraws the count wherever it shows: on the nav link, and - on the
+   moderation page - the line above the queue with the oldest's age.
+   Called when the nav is drawn and after anything that changes what
+   is pending: a decision, a bulk run, an approval taken back. A
+   failed count leaves the link reading "Moderate" with no number,
+   which is the honest state rather than a stale one. */
+function refreshBacklog() {
+  var line = document.getElementById("queue-backlog");
+
+  if (!configured || !isModerator()) {
+    return;
+  }
+
+  countPending(function (n) {
+    pendingCount = n;
+
+    if (navModerate) {
+      navModerate.textContent = "Moderate" + (n ? " (" + n + ")" : "");
+    }
+
+    if (!line) {
+      return;
+    }
+    if (n === null) {
+      line.textContent = "";
+      return;
+    }
+    if (n === 0) {
+      line.textContent = "Nothing waiting.";
+      return;
+    }
+
+    oldestPending(function (since) {
+      line.textContent = n + " waiting" +
+        (since ? " · the oldest has waited " + ageOf(since) : "") + ".";
+    });
+  });
 }
 
 /* ------------------------------------------------------------------
@@ -1340,7 +1463,168 @@ function setUpStatusReport(cameraId) {
    a non-moderator is a courtesy, not the lock.
    ------------------------------------------------------------------ */
 
+/* ---------------- a page at a time ----------------
+
+   Every list on this page grows with the site, and for a long time
+   each of them asked for thirty rows and stopped. Report thirty-one
+   was simply unreachable from the interface - not hidden, not
+   collapsed, just never fetched - and nobody noticed because nobody
+   had sent thirty-one reports yet. It is the failure that arrives
+   precisely when the project succeeds, which is the worst time for
+   it.
+
+   So a list here is a pager: it fetches one page, appends the rows,
+   and offers "Load more" until a page comes back short. Thirty is
+   still the page, because a moderator reads a queue a screen at a
+   time and a page that fits a screen is the one they can act on
+   without scrolling back up to find the button they meant.
+
+   loadPage() is the request; makePager() is the list around it. The
+   two are separate so that a list can fetch its page however it
+   likes - straight from a table with .range(), or by id from a set
+   it sorted itself - and the button, the empty message and the
+   "Loading…" note behave the same either way.
+
+   Wave 4's "Your reports" list on the account page should be built
+   with makePager() too, with a fetch that does
+     loadPage(sb.from("reports").select(...).eq("user_id", currentUser.id)
+                .order("created_at", { ascending: false }), offset, onDone)
+   - the .eq() on user_id is the one thing that list must not leave
+   out (see the reports read policy in schema.sql for why). */
+
 var QUEUE_PAGE = 30;
+
+/* One page of a query. `query` is a supabase-js builder with its
+   filters and order already on it; this puts the window on the end
+   and runs it. Calls back with (error, rows, more): error is the
+   supabase error or null, rows is what came back, and more says
+   whether another page is worth asking for - true only when this
+   one came back full. A total that is an exact multiple of the page
+   size therefore costs one extra request that returns nothing, which
+   is cheaper than a count query on every page to avoid it. */
+function loadPage(query, offset, onDone) {
+  query.range(offset, offset + QUEUE_PAGE - 1)
+    .then(function (result) {
+      var rows;
+
+      if (result.error) {
+        onDone(result.error, [], false);
+        return;
+      }
+      rows = result.data || [];
+      onDone(null, rows, rows.length === QUEUE_PAGE);
+    })
+    .catch(function () {
+      onDone({ message: "Could not reach the server." }, [], false);
+    });
+}
+
+/* A list that loads a page at a time.
+
+     list    the <ul> rows are appended to
+     empty   the "nothing here" line, shown when the first page is empty
+     note    where "Loading…" and a failure go
+     more    the Load more button; hidden when the last page is in
+     fetch   function (offset, onDone) - asks for the rows from
+             `offset`; onDone(problem, rows, more) as loadPage gives it,
+             where problem may also be a plain string to show as it is
+     row     function (r) - builds the <li> for one row
+     failed  what to say when fetch fails and gives no string
+     onPage  optional; called after each page lands, with the rows
+
+   reset() empties the list and loads the first page; load() loads the
+   next. One load at a time - a second click on the button while the
+   first is still out would append the same page twice - and a reset
+   while a page is out throws that page away when it lands: the list
+   it was fetched for has been emptied, and the rows would otherwise
+   arrive in a list that now means something else (a filter changed
+   twice in a second showed the first filter's rows under the second
+   filter's count, which is how this was found). */
+function makePager(opts) {
+  var offset = 0;
+  var loading = false;
+  var generation = 0;
+  var pager = {};
+
+  function show(el, on) {
+    if (el) {
+      el.style.display = on ? "" : "none";
+    }
+  }
+
+  function load() {
+    var mine = generation;
+
+    if (loading) {
+      return;
+    }
+    loading = true;
+    opts.note.textContent = "Loading…";
+    if (opts.more) {
+      opts.more.disabled = true;
+    }
+
+    opts.fetch(offset, function (problem, rows, more) {
+      var i;
+
+      /* A reset happened while this page was out: it belongs to a
+         list that is gone. The reset's own load is what the note and
+         the button now answer to. */
+      if (mine !== generation) {
+        return;
+      }
+
+      loading = false;
+      if (opts.more) {
+        opts.more.disabled = false;
+      }
+
+      if (problem) {
+        opts.note.textContent = typeof problem === "string"
+          ? problem
+          : (opts.failed || "Could not load this list.");
+        show(opts.more, false);
+        return;
+      }
+
+      opts.note.textContent = "";
+      for (i = 0; i < rows.length; i++) {
+        opts.list.appendChild(opts.row(rows[i]));
+      }
+      offset += rows.length;
+      show(opts.empty, offset === 0);
+      show(opts.more, more);
+
+      if (opts.onPage) {
+        opts.onPage(rows, offset);
+      }
+    });
+  }
+
+  pager.reset = function () {
+    generation++;
+    loading = false;
+    offset = 0;
+    opts.list.innerHTML = "";
+    show(opts.empty, false);
+    show(opts.more, false);
+    load();
+  };
+
+  pager.load = load;
+
+  /* How many rows are in the list, which is also the offset the next
+     page starts from. */
+  pager.loaded = function () {
+    return offset;
+  };
+
+  if (opts.more) {
+    opts.more.onclick = load;
+  }
+
+  return pager;
+}
 
 function setUpModeratePage() {
   var locked = document.getElementById("moderate-locked");
@@ -1373,6 +1657,8 @@ function setUpModeratePage() {
            it. Coming back the other way is covered - that reloads
            the list, which rebuilds every row. */
         closeMove();
+        closeEdit();
+        closeMerge();
 
         for (j = 0; j < tabs.length; j++) {
           tabs[j].className = tabs[j] === button ? "toggle on" : "toggle";
@@ -1380,10 +1666,13 @@ function setUpModeratePage() {
         document.getElementById("mod-queue").style.display = which === "queue" ? "block" : "none";
         document.getElementById("mod-history").style.display = which === "history" ? "block" : "none";
         document.getElementById("mod-cameras").style.display = which === "cameras" ? "block" : "none";
+        document.getElementById("mod-activity").style.display = which === "activity" ? "block" : "none";
         if (which === "history") {
           loadHistory();
         } else if (which === "cameras") {
           setUpCamerasTab();
+        } else if (which === "activity") {
+          loadActivity();
         } else {
           loadQueue();
         }
@@ -1391,6 +1680,8 @@ function setUpModeratePage() {
     })(tabs[i]);
   }
 
+  setUpBulk();
+  setUpQueueTools();
   loadQueue();
 }
 
@@ -1404,6 +1695,7 @@ function setUpModeratePage() {
 
 var allCameras = [];
 var camerasLoaded = false;
+var camerasTabWired = false;
 var showHiddenCameras = false;
 
 /* The one camera whose position is open for correcting, and the map
@@ -1413,6 +1705,15 @@ var showHiddenCameras = false;
 var movingCamera = null;
 var movePicker = null;
 
+/* Likewise the one camera whose name, note, kind or state is open
+   for correcting, and the one being merged into another. One panel
+   of any kind at a time, across Move, Edit and Merge: opening any
+   closes the others, because one thing being changed is one thing
+   to save wrong, and a panel left open off screen is a panel a
+   moderator forgets they opened. */
+var editingCamera = null;
+var mergingCamera = null;
+
 function setUpCamerasTab() {
   var search = document.getElementById("c-search");
   var hiddenToggle = document.getElementById("c-hidden-toggle");
@@ -1420,7 +1721,14 @@ function setUpCamerasTab() {
 
   fillTypeSelect(document.getElementById("c-type"), "fixedcam");
 
-  if (!camerasLoaded) {
+  /* Wired once, on the tab's own flag: the cameras may already be
+     loaded by the time the tab is first opened, because the queue
+     fetches them for its distances, and "loaded" used to be the
+     flag this leaned on - which left the search box, the hidden
+     toggle and the Add button doing nothing on a page that had
+     opened on the queue. */
+  if (!camerasTabWired) {
+    camerasTabWired = true;
     search.oninput = function () { renderCameras(); };
     hiddenToggle.onclick = function () {
       showHiddenCameras = !showHiddenCameras;
@@ -1434,30 +1742,60 @@ function setUpCamerasTab() {
   loadAllCameras();
 }
 
-function loadAllCameras() {
-  var note = document.getElementById("cameras-note");
+/* The fetch on its own, for the two tabs that want the cameras: the
+   Cameras tab, which lists them, and the queue, which measures each
+   report's distance to the nearest one (see "sorting the whole
+   queue", below). Calls back with an error or null once allCameras
+   is filled.
 
-  note.textContent = "Loading…";
-
-  /* A moderator's select on cameras returns hidden ones too, by the
-     read policy. Ordered by name so the list reads like the map's. */
+   A moderator's select on cameras returns hidden ones too, by the
+   read policy. Ordered by name so the list reads like the map's.
+   The 5000 is a ceiling, not a page: the list is meant to bring
+   everything, and 182 cameras plus whatever is reported will not
+   reach it for a long time - and if it ever does, the search box
+   and the distance sort will both be quietly short of the rest,
+   which is the moment to make this a pager too. */
+function fetchCameras(onDone) {
   sb.from("cameras")
     .select("id,name,note,lat,lon,type,status,source,visible")
     .order("name")
     .limit(5000)
     .then(function (result) {
-      note.textContent = "";
       if (result.error) {
-        note.textContent = "Could not load the cameras.";
+        onDone(result.error);
         return;
       }
       allCameras = result.data;
       camerasLoaded = true;
-      renderCameras();
+      onDone(null);
     })
     .catch(function () {
-      note.textContent = "Could not load the cameras.";
+      onDone({ message: "Could not reach the server." });
     });
+}
+
+/* The cameras, if they are not already here. The Cameras tab
+   reloads on every visit so a change made elsewhere shows; the queue
+   only needs them once, for the distances. */
+function ensureCameras(onDone) {
+  if (camerasLoaded) {
+    onDone(null);
+    return;
+  }
+  fetchCameras(onDone);
+}
+
+function loadAllCameras() {
+  var note = document.getElementById("cameras-note");
+
+  note.textContent = "Loading…";
+
+  fetchCameras(function (problem) {
+    note.textContent = problem ? "Could not load the cameras." : "";
+    if (!problem) {
+      renderCameras();
+    }
+  });
 }
 
 function renderCameras() {
@@ -1473,6 +1811,8 @@ function renderCameras() {
      its map down properly first, or the discarded element keeps a
      live WebGL context and a set of tile workers behind it. */
   closeMove();
+  closeEdit();
+  closeMerge();
 
   list.innerHTML = "";
 
@@ -1507,8 +1847,15 @@ function cameraRow(c) {
   meta.textContent = cameraMeta(c);
   head.appendChild(meta);
 
+  /* The note has an element of its own so an edit can rewrite it in
+     place, the way a move rewrites the coordinates line, without
+     rebuilding the row under the panel. Empty when there is none;
+     the <br> is left out then so the link sits where the note would. */
+  var noteEl = document.createElement("span");
+  noteEl.className = "cam-note";
+  noteEl.textContent = c.note || "";
+  body.appendChild(noteEl);
   if (c.note) {
-    body.textContent = c.note;
     body.appendChild(document.createElement("br"));
   }
   var onMap = document.createElement("a");
@@ -1559,7 +1906,44 @@ function cameraRow(c) {
     openMove(c, row);
   };
 
+  /* Correcting what it says, which is the other half of "the camera
+     is right, the record of it is not": a typo in the name, a note
+     that says the wrong road, a shop entered as a fixed install, a
+     reported van site that came through as active. Until this the
+     only edit path for any of those was the seed, which cannot reach
+     a camera that came from a report. */
+  var edit = document.createElement("button");
+  edit.className = "quiet";
+  edit.textContent = "Edit";
+  edit.onclick = function () {
+    if (editingCamera === c.id) {
+      closeEdit();
+      return;
+    }
+    openEdit(c, row);
+  };
+
+  /* Two rows that are one camera. Hiding one would lose its reports
+     to a hidden row; merging moves them to the row that stays, and
+     then hides this one with a note saying where it went. Only for
+     a camera on the map: the server refuses a hidden loser, and the
+     row says why in openMerge(). */
+  var merge = document.createElement("button");
+  merge.className = "quiet";
+  merge.textContent = "Merge into…";
+  merge.onclick = function () {
+    if (mergingCamera === c.id) {
+      closeMerge();
+      return;
+    }
+    openMerge(c, row);
+  };
+
+  actions.appendChild(edit);
   actions.appendChild(move);
+  if (c.visible) {
+    actions.appendChild(merge);
+  }
   actions.appendChild(b);
   actions.appendChild(outcome);
   row.appendChild(head);
@@ -1656,6 +2040,8 @@ function openMove(c, row) {
   var lonIn   = lonBox.querySelector("input");
 
   closeMove();
+  closeEdit();
+  closeMerge();
   movingCamera = c.id;
 
   panel.className = "move-panel";
@@ -1799,6 +2185,475 @@ function openMove(c, row) {
   };
 }
 
+/* ---------------- editing a camera ----------------
+
+   The sibling of Move, for the rest of the row: the name, the note,
+   the kind and the state. A pin in the wrong place was the commonest
+   thing wrong with a camera that is otherwise right, and a name
+   spelt wrong is the next - and until this a typo was permanent,
+   because the only path that rewrote a name was the seed, which
+   cannot reach a camera that came from a report at all.
+
+   It saves through moderate_edit_camera, which checks the role again
+   and refuses the one thing this panel will not offer: a van site
+   marked active. Every van site is legacy - a van parks for a shift
+   and drives away - and the panel greys the option out and says why
+   rather than letting a moderator find out from the server.
+
+   The same panel shape as Move: opened inside the row, one at a
+   time, saved with a button, the row's own lines rewritten in place
+   so the panel stays open for a second correction. The server
+   records which fields changed and what they said before, so an
+   edit can be read back and, by hand, reversed.
+
+   One consequence is worth a line in the panel itself. A camera
+   from the published record keeps its seed_key (see move_camera in
+   schema.sql for why), and the seed's on-conflict update rewrites
+   the name, note and state from data/cameras.csv - so for a seed
+   camera an edit here holds only until the next re-run of the seed.
+   The correction is made in the CSV as well, or it will be undone;
+   the panel says so above Save for exactly those cameras. */
+
+function closeEdit() {
+  var panel = document.getElementById("c-edit-panel");
+
+  if (panel) {
+    panel.parentNode.removeChild(panel);
+  }
+  editingCamera = null;
+}
+
+/* A label over a field, for a text box, a textarea or a select
+   alike. moveField() is the number-box version of this; the two are
+   separate because a number box carries a step and an inputmode
+   that none of these want. */
+function labelled(id, label, input) {
+  var wrap = document.createElement("div");
+  var tag = document.createElement("label");
+
+  tag.setAttribute("for", id);
+  tag.textContent = label;
+  input.id = id;
+
+  wrap.appendChild(tag);
+  wrap.appendChild(input);
+  return wrap;
+}
+
+/* The three states a camera can be in, as the Add form offers them.
+   Written here once for the panel rather than read off the Add
+   form's <select>, which is on the page only because this tab is. */
+var CAMERA_STATES = [
+  { value: "active",        label: "Active" },
+  { value: "legacy",        label: "Legacy - no longer in use" },
+  { value: "nonfunctional", label: "Non-functional" }
+];
+
+function openEdit(c, row) {
+  var panel    = document.createElement("div");
+  var nameIn   = document.createElement("input");
+  var noteIn   = document.createElement("textarea");
+  var typeSel  = document.createElement("select");
+  var stateSel = document.createElement("select");
+  var pair     = document.createElement("div");
+  var vanHint  = document.createElement("p");
+  var seedHint = document.createElement("p");
+  var buttons  = document.createElement("div");
+  var save     = document.createElement("button");
+  var cancel   = document.createElement("button");
+  var note     = document.createElement("p");
+  var option;
+  var i;
+
+  closeMove();
+  closeEdit();
+  closeMerge();
+  editingCamera = c.id;
+
+  panel.className = "edit-panel";
+  panel.id = "c-edit-panel";
+
+  nameIn.type = "text";
+  nameIn.value = c.name;
+  panel.appendChild(labelled("c-edit-name", "Name", nameIn));
+
+  noteIn.value = c.note || "";
+  noteIn.placeholder = "optional - shown in the popup";
+  panel.appendChild(labelled("c-edit-note", "Note", noteIn));
+
+  /* The kinds from CAMERA_TYPES, like every other drop-down. A row
+     can also carry the one type that is not a kind - nonfunccam,
+     from the older report rows - and fillTypeSelect() does not list
+     it, so it is added for that row alone; otherwise the select
+     would open on the first kind and a Save would quietly make a
+     fixed camera of it. */
+  fillTypeSelect(typeSel, c.type);
+  if (!typeOf(c.type)) {
+    option = document.createElement("option");
+    option.value = c.type;
+    option.textContent = typeLabel(c.type);
+    option.selected = true;
+    typeSel.appendChild(option);
+  }
+
+  for (i = 0; i < CAMERA_STATES.length; i++) {
+    option = document.createElement("option");
+    option.value = CAMERA_STATES[i].value;
+    option.textContent = CAMERA_STATES[i].label;
+    option.selected = CAMERA_STATES[i].value === c.status;
+    stateSel.appendChild(option);
+  }
+
+  pair.className = "pair";
+  pair.appendChild(labelled("c-edit-type", "What kind", typeSel));
+  pair.appendChild(labelled("c-edit-status", "State", stateSel));
+  panel.appendChild(pair);
+
+  /* Every van site is legacy. The Active option is greyed out while
+     the kind is a van site, and this line says why; the server
+     refuses the pair as well, so the greying is a courtesy and the
+     refusal is the lock. A van site that already reads active - a
+     reported one, on a database seeded before the change - shows
+     as it is, so the moderator can see it and set it right. */
+  vanHint.className = "hint";
+  vanHint.textContent = "A van site cannot be active: a van parks for a shift and drives away, " +
+    "so no van site claims to be there today. Set it to Legacy.";
+  panel.appendChild(vanHint);
+
+  function vanRule() {
+    var isVan = typeSel.value === "vancam";
+    stateSel.options[0].disabled = isVan;
+    vanHint.style.display = isVan ? "" : "none";
+  }
+  typeSel.onchange = vanRule;
+  vanRule();
+
+  if (c.source === "seed") {
+    seedHint.className = "hint";
+    seedHint.textContent = "This camera is from the published record. Its name, note and state are " +
+      "rewritten from data/cameras.csv every time the seed is run, so a correction made here " +
+      "holds only until then: make it in the CSV as well, or it will be undone.";
+    panel.appendChild(seedHint);
+  }
+
+  buttons.className = "row";
+  save.textContent = "Save";
+  cancel.className = "quiet";
+  cancel.textContent = "Cancel";
+  buttons.appendChild(save);
+  buttons.appendChild(cancel);
+  panel.appendChild(buttons);
+
+  note.className = "note";
+  panel.appendChild(note);
+
+  row.appendChild(panel);
+  nameIn.focus();
+
+  cancel.onclick = function () {
+    closeEdit();
+  };
+
+  save.onclick = function () {
+    var name = nameIn.value.trim();
+    var text = noteIn.value.trim();
+    var type = typeSel.value;
+    var status = stateSel.value;
+
+    note.textContent = "";
+
+    if (name === "") {
+      note.textContent = "A camera needs a name.";
+      nameIn.focus();
+      return;
+    }
+    if (type === "vancam" && status === "active") {
+      note.textContent = "A van site cannot be active. Set it to Legacy.";
+      stateSel.focus();
+      return;
+    }
+    if (name === c.name && text === (c.note || "") && type === c.type && status === c.status) {
+      note.textContent = "Nothing changed.";
+      return;
+    }
+
+    save.disabled = true;
+    note.textContent = "Saving…";
+
+    sb.rpc("moderate_edit_camera", {
+      cam_id: c.id,
+      cam_name: name,
+      cam_note: text,
+      cam_type: type,
+      cam_status: status
+    }).then(function (result) {
+      save.disabled = false;
+      if (result.error) {
+        note.textContent = result.error.message || "That did not go through.";
+        return;
+      }
+      forgetCameraCache();
+      c.name = name;
+      c.note = text;
+      c.type = type;
+      c.status = status;
+
+      /* The row above the panel is rewritten rather than the list
+         rebuilt, for Move's reason: rebuilding would close the panel
+         under a moderator who may have a second correction to make. */
+      row.querySelector(".queue-head strong").textContent = c.name;
+      row.querySelector(".coords").textContent = cameraMeta(c);
+      row.querySelector(".cam-note").textContent = c.note;
+      note.textContent = "Saved.";
+    }).catch(function () {
+      save.disabled = false;
+      note.textContent = "That did not go through. Try again in a moment.";
+    });
+  };
+}
+
+/* ---------------- merging two cameras ----------------
+
+   approve_report clusters and merges incoming reports, so two people
+   reporting one van site make one camera. Two rows already on the
+   map - a seed entry and a reported one at the same spot, or two
+   reports approved a month apart at 150 m - had no way to become
+   one. A moderator could hide one, and lose its reports to a hidden
+   row nobody would look at again.
+
+   Merge repoints the loser's reports at the survivor, then hides the
+   loser with a note naming the survivor. Nothing is deleted: the
+   loser is still in the table, off the map, and the moderation_log
+   says where its reports went. moderate_merge_cameras does it in one
+   call, gated on the server like everything else here, and refuses
+   a loser or a survivor that is already off the map - the comment
+   on merge_cameras in schema.sql says why.
+
+   The panel opens under the row that will go. It asks for the
+   survivor by name, offering the nearest cameras first because the
+   nearest one is the likeliest duplicate, and before anything is
+   sent it says in one sentence which row survives, which is hidden,
+   and how many reports move - and waits for a press on a button
+   that says the same thing. A merge is the one action here that a
+   moderator cannot undo with a button (the loser can be put back on
+   the map, but its reports have moved), so the statement is the
+   confirmation, and the button is not pressed by accident. */
+
+var MERGE_MATCHES = 8;
+
+function closeMerge() {
+  var panel = document.getElementById("c-merge-panel");
+
+  if (panel) {
+    panel.parentNode.removeChild(panel);
+  }
+  mergingCamera = null;
+}
+
+/* How many reports point at a camera, for the statement. The queue
+   and the history hold reports, not the camera list, so it is one
+   small count request - a head request, like the backlog's - made
+   only when a panel opens. */
+function countReportsOn(cameraId, onDone) {
+  sb.from("reports")
+    .select("id", { count: "exact", head: true })
+    .eq("camera_id", cameraId)
+    .then(function (result) {
+      onDone(result.error ? null : result.count);
+    })
+    .catch(function () {
+      onDone(null);
+    });
+}
+
+function openMerge(c, row) {
+  var panel    = document.createElement("div");
+  var hint     = document.createElement("p");
+  var search   = document.createElement("input");
+  var results  = document.createElement("ul");
+  var chosen   = document.createElement("p");
+  var buttons  = document.createElement("div");
+  var go       = document.createElement("button");
+  var cancel   = document.createElement("button");
+  var note     = document.createElement("p");
+  var survivor = null;
+  var reportsOnLoser = null;
+
+  closeMove();
+  closeEdit();
+  closeMerge();
+  mergingCamera = c.id;
+
+  panel.className = "merge-panel";
+  panel.id = "c-merge-panel";
+
+  hint.className = "hint";
+  hint.textContent = "For two rows that are one camera. Pick the row that survives: this one " +
+    "is taken off the map and every report that pointed at it moves to the survivor. " +
+    "Nothing is deleted, and the log records where its reports went. " +
+    "The nearest cameras are offered first, because the nearest is the likeliest duplicate.";
+  panel.appendChild(hint);
+
+  search.type = "text";
+  search.id = "c-merge-search";
+  search.placeholder = "The camera that survives, by name";
+  search.setAttribute("aria-label", "The camera that survives, by name");
+  panel.appendChild(search);
+
+  results.className = "results";
+  results.id = "c-merge-results";
+  panel.appendChild(results);
+
+  chosen.className = "statement";
+  chosen.id = "c-merge-statement";
+  panel.appendChild(chosen);
+
+  buttons.className = "row";
+  go.id = "c-merge-go";
+  go.style.display = "none";
+  cancel.className = "quiet";
+  cancel.textContent = "Cancel";
+  buttons.appendChild(go);
+  buttons.appendChild(cancel);
+  panel.appendChild(buttons);
+
+  note.className = "note";
+  panel.appendChild(note);
+
+  row.appendChild(panel);
+  search.focus();
+
+  countReportsOn(c.id, function (n) {
+    reportsOnLoser = n;
+    if (survivor) {
+      state();
+    }
+  });
+
+  /* The candidates: every other camera on the map whose name has the
+     typed text in it, nearest first, MERGE_MATCHES of them. Hidden
+     cameras are left out because the server would refuse them as a
+     survivor, and this camera itself because a merge into itself is
+     nothing. */
+  function candidates() {
+    var q = search.value.trim().toLowerCase();
+    var found = [];
+    var i;
+    var other;
+
+    for (i = 0; i < allCameras.length; i++) {
+      other = allCameras[i];
+      if (!other.visible || other.id === c.id) {
+        continue;
+      }
+      if (q && other.name.toLowerCase().indexOf(q) === -1) {
+        continue;
+      }
+      found.push({
+        camera: other,
+        metres: metresBetween(Number(c.lat), Number(c.lon), Number(other.lat), Number(other.lon))
+      });
+    }
+    found.sort(function (a, b) { return a.metres - b.metres; });
+    return found.slice(0, MERGE_MATCHES);
+  }
+
+  function showCandidates() {
+    var list = candidates();
+    var i;
+
+    results.innerHTML = "";
+    for (i = 0; i < list.length; i++) {
+      results.appendChild(candidateRow(list[i]));
+    }
+  }
+
+  function candidateRow(cand) {
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+
+    b.className = "pick";
+    b.textContent = "#" + cand.camera.id + " " + cand.camera.name + " · " +
+      typeLabel(cand.camera.type) + " · " + cand.camera.status + " · " +
+      Math.round(cand.metres) + " m away";
+    b.onclick = function () {
+      survivor = cand;
+      state();
+    };
+    li.appendChild(b);
+    return li;
+  }
+
+  /* The sentence the moderator confirms. Which row goes, which
+     stays, and how many reports move - or "its reports", until the
+     count is back. */
+  function state() {
+    var n = reportsOnLoser;
+    var reports = n === null ? "its reports" : (n === 1 ? "its 1 report" : "its " + n + " reports");
+
+    chosen.textContent = "#" + c.id + " " + c.name + " (" + typeLabel(c.type) + ") will be taken off the map and " +
+      reports + " moved to #" + survivor.camera.id + " " + survivor.camera.name +
+      " (" + typeLabel(survivor.camera.type) + "), which survives as it is.";
+    go.textContent = "Merge #" + c.id + " into #" + survivor.camera.id;
+    go.style.display = "";
+    note.textContent = "";
+  }
+
+  search.oninput = showCandidates;
+  showCandidates();
+
+  cancel.onclick = function () {
+    closeMerge();
+  };
+
+  go.onclick = function () {
+    if (!survivor) {
+      return;
+    }
+    go.disabled = true;
+    note.textContent = "Merging…";
+
+    sb.rpc("moderate_merge_cameras", {
+      loser: c.id,
+      survivor: survivor.camera.id
+    }).then(function (result) {
+      var r = result.data || {};
+      var rowButtons;
+      var i;
+
+      if (result.error) {
+        go.disabled = false;
+        note.textContent = result.error.message || "That did not go through.";
+        return;
+      }
+      forgetCameraCache();
+      c.visible = false;
+
+      /* The row stays, at full strength so the result can be read,
+         with its own buttons switched off: it is a hidden camera now
+         and Edit, Move and Remove on it would be edits to a row that
+         is off the map. The next render draws it as hidden, or drops
+         it unless hidden cameras are shown. The survivor's row is
+         untouched, because nothing about it changed. */
+      row.querySelector(".coords").textContent = cameraMeta(c);
+      rowButtons = row.querySelector(".row").querySelectorAll("button");
+      for (i = 0; i < rowButtons.length; i++) {
+        rowButtons[i].disabled = true;
+      }
+      results.innerHTML = "";
+      go.style.display = "none";
+      chosen.textContent = "";
+      note.textContent = "Merged into #" + r.survivor + ". " +
+        r.moved + (r.moved === 1 ? " report" : " reports") + " moved" +
+        (r.kept ? ", " + r.kept + " kept with this row (the same person had already reported the survivor)" : "") +
+        ". This camera is now off the map.";
+    }).catch(function () {
+      go.disabled = false;
+      note.textContent = "That did not go through. Try again in a moment.";
+    });
+  };
+}
+
 function addCameraByHand() {
   var typeSel = document.getElementById("c-type");
   var statusSel = document.getElementById("c-status");
@@ -1859,38 +2714,28 @@ function addCameraByHand() {
    with a way to take it off the map or put it back. All four actions
    go through moderate_undo, gated on the server like the rest. */
 
+var historyPager = null;
+
 function loadHistory() {
-  var list  = document.getElementById("history-list");
-  var empty = document.getElementById("history-empty");
-  var note  = document.getElementById("history-note");
-
-  note.textContent = "Loading…";
-
-  sb.from("reports")
-    .select("id,kind,camera_id,type,status_claim,name,note,lat,lon,state,resolved_at,resolution_note,profiles!reports_user_id_fkey(username),cameras(id,name,visible,status)")
-    .in("state", ["approved", "rejected", "merged"])
-    .order("resolved_at", { ascending: false, nullsFirst: false })
-    .limit(QUEUE_PAGE)
-    .then(function (result) {
-      var i;
-
-      list.innerHTML = "";
-      note.textContent = "";
-
-      if (result.error) {
-        note.textContent = "Could not load the history.";
-        return;
+  if (!historyPager) {
+    historyPager = makePager({
+      list:   document.getElementById("history-list"),
+      empty:  document.getElementById("history-empty"),
+      note:   document.getElementById("history-note"),
+      more:   document.getElementById("history-more"),
+      failed: "Could not load the history.",
+      row:    historyRow,
+      fetch:  function (offset, onDone) {
+        loadPage(
+          sb.from("reports")
+            .select("id,kind,camera_id,type,status_claim,name,note,lat,lon,state,resolved_at,resolution_note,profiles!reports_user_id_fkey(username),cameras(id,name,visible,status)")
+            .in("state", ["approved", "rejected", "merged"])
+            .order("resolved_at", { ascending: false, nullsFirst: false }),
+          offset, onDone);
       }
-
-      empty.style.display = result.data.length === 0 ? "block" : "none";
-
-      for (i = 0; i < result.data.length; i++) {
-        list.appendChild(historyRow(result.data[i]));
-      }
-    })
-    .catch(function () {
-      note.textContent = "Could not load the history.";
     });
+  }
+  historyPager.reset();
 }
 
 function undo(target, action, noteText, onDone) {
@@ -1970,6 +2815,8 @@ function historyRow(r) {
         }
         outcome.textContent = "Done.";
         loadHistory();
+        /* a retracted approval is pending again, and so counts */
+        refreshBacklog();
       });
     };
     return b;
@@ -2002,38 +2849,343 @@ function historyRow(r) {
   return row;
 }
 
-function loadQueue() {
-  var list  = document.getElementById("queue-list");
-  var empty = document.getElementById("queue-empty");
-  var note  = document.getElementById("queue-note");
+/* ---------------- sorting and filtering the whole queue ----------------
 
-  note.textContent = "Loading…";
+   Newest first, everything mixed, was the only order the queue had.
+   The order a moderator actually wants is "the likely duplicates
+   first": a report dropped on top of a camera the map already has
+   is the quickest decision on the page and the commonest, and it
+   should not be found by reading down thirty rows. And a moderator
+   who knows the shops, or the stations, wants to see only those.
 
+   The sort has to see the whole queue, not the loaded page: sorting
+   thirty rows by distance and then loading thirty more that are
+   nearer is worse than no sort at all. So the queue is now two
+   fetches. The first is the index: every pending report's small
+   columns - id, kind, type, position, time - in one request under
+   the same 5000 ceiling fetchCameras() uses, and for the same
+   reason. Those rows are a few dozen bytes each; five thousand of
+   them are smaller than one proof photograph, and a queue that long
+   is a problem this page will have earned by then. The index is
+   measured, filtered and sorted here, in the browser, and the pager
+   then fetches each page's full rows - the note, the reporter, the
+   proof - by id from the order it settled on.
+
+   The distance is worked out here and not by a new server function
+   on purpose. An endpoint that answered "how far is this report from
+   the nearest camera" would say nothing about accounts, so it would
+   pass the anonymity test; but it would be a new surface, with a
+   grant to get right and a policy to keep in step, for a number the
+   browser can already produce from two lists it already holds. The
+   arithmetic is metresBetween(), the twin of metres_between in
+   schema.sql, written once here.
+
+   Paging by id has a second benefit the offset paging did not have:
+   a Load more pressed after rows have left this page - approved,
+   rejected, in a batch - does not skip the rows that shifted up
+   to fill the gap, because the page is a slice of a list of ids
+   the browser holds, not a window on a table that moved. An id that
+   was decided since the index was taken simply comes back empty and
+   is not shown twice. */
+
+/* Everything a queue row shows. The proof rows and the reporter's
+   username ride along in the same request, so a page of thirty is
+   one round trip and not sixty-one. */
+var QUEUE_COLUMNS = "id,user_id,kind,camera_id,type,status_claim,name,note,lat,lon,created_at," +
+  "profiles!reports_user_id_fkey(username),report_proof(id,storage_path,mime)";
+
+/* The same ceiling as fetchCameras(), for the same reason. */
+var QUEUE_CEILING = 5000;
+
+var queuePager = null;
+var queueIndex = [];     /* every pending report's light row, measured */
+var queueOrder = [];     /* the ids of the ones that pass the filter, in the sort order */
+var queueView = { kind: "all", type: "all", sort: "newest" };
+
+/* Haversine, in metres. The twin of metres_between in schema.sql -
+   the same formula and the same 6371000 m radius, so a distance the
+   queue shows is the one approve_report would measure. */
+function metresBetween(lat1, lon1, lat2, lon2) {
+  var toRad = Math.PI / 180;
+  var dLat = (lat2 - lat1) * toRad;
+  var dLon = (lon2 - lon1) * toRad;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+/* The nearest camera on the map to a point, of any kind, and how
+   far. Any kind, not the report's kind: a fixed camera reported on
+   top of a van site is worth seeing beside the van site, whichever
+   of the two it turns out to be. Over allCameras, which the
+   moderation page holds whole. */
+function nearestCamera(lat, lon) {
+  var best = null;
+  var bestMetres = Infinity;
+  var m;
+  var i;
+
+  for (i = 0; i < allCameras.length; i++) {
+    if (!allCameras[i].visible) {
+      continue;
+    }
+    m = metresBetween(lat, lon, Number(allCameras[i].lat), Number(allCameras[i].lon));
+    if (m < bestMetres) {
+      bestMetres = m;
+      best = allCameras[i];
+    }
+  }
+
+  return best ? { camera: best, metres: bestMetres } : null;
+}
+
+function cameraById(id) {
+  var i;
+
+  for (i = 0; i < allCameras.length; i++) {
+    if (allCameras[i].id === id) {
+      return allCameras[i];
+    }
+  }
+  return null;
+}
+
+/* Every pending report's light row, measured. A new-camera report
+   gets its nearest camera; a state report is about a camera and sits
+   on its coordinates, so "nearest" would always be that camera at
+   zero and says nothing - it gets none, and sorts after the new
+   ones. A state report's kind is its camera's, which is why the
+   cameras are loaded first. */
+function loadQueueIndex(onDone) {
   sb.from("reports")
-    .select("id,user_id,kind,camera_id,type,status_claim,name,note,lat,lon,created_at,profiles!reports_user_id_fkey(username),report_proof(id,storage_path,mime)")
+    .select("id,kind,type,camera_id,lat,lon,created_at")
     .eq("state", "pending")
     .order("created_at", { ascending: false })
-    .limit(QUEUE_PAGE)
+    .limit(QUEUE_CEILING)
     .then(function (result) {
+      var rows;
+      var near;
+      var cam;
       var i;
 
-      list.innerHTML = "";
-      note.textContent = "";
-
       if (result.error) {
-        note.textContent = "Could not load the queue.";
+        onDone(result.error);
         return;
       }
 
-      empty.style.display = result.data.length === 0 ? "block" : "none";
-
-      for (i = 0; i < result.data.length; i++) {
-        list.appendChild(queueRow(result.data[i]));
+      rows = result.data || [];
+      for (i = 0; i < rows.length; i++) {
+        rows[i].nearest = null;
+        if (rows[i].kind === "new") {
+          near = nearestCamera(Number(rows[i].lat), Number(rows[i].lon));
+          if (near) {
+            rows[i].nearest = near;
+          }
+        } else {
+          cam = cameraById(rows[i].camera_id);
+          rows[i].type = cam ? cam.type : null;
+        }
       }
+      queueIndex = rows;
+      onDone(null);
     })
     .catch(function () {
-      note.textContent = "Could not load the queue.";
+      onDone({ message: "Could not reach the server." });
     });
+}
+
+/* The filter and the sort, over the index, into queueOrder. Newest
+   and oldest are by the time the report was sent. Nearest puts the
+   new-camera reports in order of distance to a camera already on the
+   map - the likeliest duplicates first - and the state reports after
+   them, newest first, since the distance means nothing for those. */
+function applyQueueView() {
+  var kept = [];
+  var i;
+  var r;
+
+  for (i = 0; i < queueIndex.length; i++) {
+    r = queueIndex[i];
+    if (queueView.kind !== "all" && r.kind !== queueView.kind) {
+      continue;
+    }
+    if (queueView.type !== "all" && r.type !== queueView.type) {
+      continue;
+    }
+    kept.push(r);
+  }
+
+  function byTime(a, b) {
+    return a.created_at < b.created_at ? 1 : (a.created_at > b.created_at ? -1 : 0);
+  }
+
+  if (queueView.sort === "oldest") {
+    kept.sort(function (a, b) { return -byTime(a, b); });
+  } else if (queueView.sort === "nearest") {
+    kept.sort(function (a, b) {
+      var da = a.nearest ? a.nearest.metres : Infinity;
+      var db = b.nearest ? b.nearest.metres : Infinity;
+
+      if (da !== db) {
+        return da < db ? -1 : 1;
+      }
+      return byTime(a, b);
+    });
+  } else {
+    kept.sort(byTime);
+  }
+
+  queueOrder = [];
+  for (i = 0; i < kept.length; i++) {
+    queueOrder.push(kept[i].id);
+  }
+
+  showQueueCount();
+}
+
+/* "12 of 60 match" while a filter is on; nothing while it is not,
+   because the backlog line above already says how many are waiting. */
+function showQueueCount() {
+  var line = document.getElementById("queue-count");
+
+  if (!line) {
+    return;
+  }
+  line.textContent = (queueView.kind === "all" && queueView.type === "all")
+    ? ""
+    : queueOrder.length + " of " + queueIndex.length + " match.";
+}
+
+function indexRow(id) {
+  var i;
+
+  for (i = 0; i < queueIndex.length; i++) {
+    if (queueIndex[i].id === id) {
+      return queueIndex[i];
+    }
+  }
+  return null;
+}
+
+/* One page of the queue: the next QUEUE_PAGE ids from queueOrder,
+   fetched whole. Still pending only, so an id decided since the
+   index was taken comes back empty rather than as a decided row
+   with live buttons. The rows come back in the table's order and
+   are put back into the sort's. "More" is known exactly here - it
+   is whether the order has ids past this page - rather than guessed
+   from a full page as loadPage() has to. */
+function fetchQueuePage(offset, onDone) {
+  var ids = queueOrder.slice(offset, offset + QUEUE_PAGE);
+  var more = offset + ids.length < queueOrder.length;
+
+  if (ids.length === 0) {
+    onDone(null, [], false);
+    return;
+  }
+
+  sb.from("reports")
+    .select(QUEUE_COLUMNS)
+    .in("id", ids)
+    .eq("state", "pending")
+    .then(function (result) {
+      var byId = {};
+      var rows = [];
+      var light;
+      var i;
+
+      if (result.error) {
+        onDone(result.error, [], false);
+        return;
+      }
+      for (i = 0; i < result.data.length; i++) {
+        byId[result.data[i].id] = result.data[i];
+      }
+      for (i = 0; i < ids.length; i++) {
+        if (byId[ids[i]]) {
+          light = indexRow(ids[i]);
+          byId[ids[i]].nearest = light ? light.nearest : null;
+          rows.push(byId[ids[i]]);
+        }
+      }
+      onDone(null, rows, more);
+    })
+    .catch(function () {
+      onDone({ message: "Could not reach the server." }, [], false);
+    });
+}
+
+function setUpQueueTools() {
+  var kindSel = document.getElementById("queue-kind");
+  var typeSel = document.getElementById("queue-type");
+  var sortSel = document.getElementById("queue-sort");
+  var any;
+
+  if (!kindSel || !typeSel || !sortSel) {
+    return;
+  }
+
+  /* The kinds from CAMERA_TYPES like every other drop-down, with
+     "any" put in front of them. */
+  fillTypeSelect(typeSel, null);
+  any = document.createElement("option");
+  any.value = "all";
+  any.textContent = "Any kind";
+  any.selected = true;
+  typeSel.insertBefore(any, typeSel.firstChild);
+
+  /* A change re-sorts the index the browser already holds and
+     fetches the first page of the new order; the index is not
+     fetched again, because nothing about it changed. */
+  kindSel.onchange = function () {
+    queueView.kind = kindSel.value;
+    applyQueueView();
+    queuePager.reset();
+  };
+  typeSel.onchange = function () {
+    queueView.type = typeSel.value;
+    applyQueueView();
+    queuePager.reset();
+  };
+  sortSel.onchange = function () {
+    queueView.sort = sortSel.value;
+    applyQueueView();
+    queuePager.reset();
+  };
+}
+
+function loadQueue() {
+  var note = document.getElementById("queue-note");
+
+  if (!queuePager) {
+    queuePager = makePager({
+      list:   document.getElementById("queue-list"),
+      empty:  document.getElementById("queue-empty"),
+      note:   note,
+      more:   document.getElementById("queue-more"),
+      failed: "Could not load the queue.",
+      row:    queueRow,
+      fetch:  fetchQueuePage
+    });
+  }
+
+  note.textContent = "Loading…";
+
+  /* Cameras first, for the distances and for a state report's kind;
+     then the index; then the first page. A failure to get the
+     cameras is not a failure to get the queue - the distances are
+     simply not shown - so it is not stopped on. */
+  ensureCameras(function () {
+    loadQueueIndex(function (problem) {
+      if (problem) {
+        note.textContent = "Could not load the queue.";
+        return;
+      }
+      applyQueueView();
+      queuePager.reset();
+    });
+  });
 }
 
 /* typeLabel() is in frontend/shared.js, so the queue names a kind of
@@ -2046,12 +3198,36 @@ function claimLabel(claim) {
 
 function queueRow(r) {
   var row = document.createElement("li");
+  var pick = document.createElement("label");
+  var box = document.createElement("input");
+  var pickText = document.createElement("span");
+  var main = document.createElement("div");
   var head = document.createElement("div");
   var body = document.createElement("div");
   var proof = document.createElement("div");
   var actions = document.createElement("div");
   var i;
 
+  /* The row is a tick box beside everything else, so that twenty
+     decisions can be one press (bulkDecide, below). A real checkbox
+     in a real label: the label's text is for a screen reader and is
+     hidden from sight, because "Select this report" written out
+     thirty times down a page says nothing the box does not. The id
+     rides on both the row and the box so either can be found from
+     the other. */
+  row.className = "pickable";
+  row.setAttribute("data-id", r.id);
+
+  pick.className = "pick";
+  box.type = "checkbox";
+  box.className = "pick-box";
+  box.setAttribute("data-id", r.id);
+  pickText.className = "pick-text";
+  pickText.textContent = "Select this report";
+  pick.appendChild(box);
+  pick.appendChild(pickText);
+
+  main.className = "queue-main";
   head.className = "queue-head";
   body.className = "queue-body";
   proof.className = "queue-proof";
@@ -2069,6 +3245,22 @@ function queueRow(r) {
     " · " + new Date(r.created_at).toLocaleString() +
     " · " + Number(r.lat).toFixed(5) + ", " + Number(r.lon).toFixed(5);
   head.appendChild(meta);
+
+  /* How far this is from a camera the map already has, for a
+     new-camera report. This is the line the "nearest" sort orders
+     by, so it is shown whatever the order: a report 15 m from a
+     camera of the same kind is very likely that camera, and the
+     moderator should not have to open the map to learn it. Measured
+     by loadQueueIndex(), which is why it is on the row rather than
+     fetched with it. */
+  if (r.nearest) {
+    var near = document.createElement("span");
+    near.className = "coords nearest";
+    near.textContent = "Nearest camera on the map: " + r.nearest.camera.name +
+      " (" + typeLabel(r.nearest.camera.type) + "), " + Math.round(r.nearest.metres) + " m";
+    head.appendChild(near);
+    row.setAttribute("data-nearest", Math.round(r.nearest.metres));
+  }
 
   if (r.note) {
     body.textContent = r.note;
@@ -2098,44 +3290,255 @@ function queueRow(r) {
   var outcome = document.createElement("span");
   outcome.className = "note";
 
-  function act(action) {
+  /* The one way a decision leaves this row. The row's own buttons
+     call it and so does the bulk path, with a callback: same call,
+     same function on the server, same gate. The outcome lands
+     beside the buttons either way, so a report that fails in a batch
+     of twenty says why on its own row rather than in a summary that
+     names a number. Without a callback it is the single case, and
+     the row stays where it is, marked done, so the moderator can
+     see what they just did; the bulk path takes the done rows away
+     itself once the batch is in. */
+  function act(action, noteText, onDone) {
     approve.disabled = true;
     reject.disabled = true;
+    box.disabled = true;
     outcome.textContent = "…";
 
-    sb.rpc("moderate_report", { report_id: r.id, action: action, note: null })
+    function failed(message) {
+      approve.disabled = false;
+      reject.disabled = false;
+      box.disabled = false;
+      outcome.textContent = message;
+      if (onDone) {
+        onDone(message);
+      }
+    }
+
+    sb.rpc("moderate_report", { report_id: r.id, action: action, note: noteText || null })
       .then(function (result) {
         if (result.error) {
-          approve.disabled = false;
-          reject.disabled = false;
-          outcome.textContent = result.error.message || "That did not go through.";
+          failed(result.error.message || "That did not go through.");
           return;
         }
-        row.className = "done";
+        row.className = "pickable done";
+        box.checked = false;
         outcome.textContent = action === "approve" ? "Approved." : "Rejected.";
         /* the map cache is five minutes old at most; a moderator who
            just approved something should see it on their next look */
         forgetCameraCache();
+        if (onDone) {
+          onDone(null);
+        } else {
+          refreshBacklog();
+        }
       })
       .catch(function () {
-        approve.disabled = false;
-        reject.disabled = false;
-        outcome.textContent = "That did not go through. Try again in a moment.";
+        failed("That did not go through. Try again in a moment.");
       });
   }
 
-  approve.onclick = function () { act("approve"); };
-  reject.onclick = function () { act("reject"); };
+  approve.onclick = function () { act("approve", null, null); };
+  reject.onclick = function () { act("reject", null, null); };
+
+  /* How bulkDecide() reaches this row's act(): a method on the
+     element, so the batch needs nothing but the rows it found. */
+  row.decide = act;
 
   actions.appendChild(approve);
   actions.appendChild(reject);
   actions.appendChild(outcome);
 
-  row.appendChild(head);
-  row.appendChild(body);
-  row.appendChild(proof);
-  row.appendChild(actions);
+  main.appendChild(head);
+  main.appendChild(body);
+  main.appendChild(proof);
+  main.appendChild(actions);
+
+  row.appendChild(pick);
+  row.appendChild(main);
   return row;
+}
+
+/* ---------------- deciding many at once ----------------
+
+   Twenty approvals were twenty clicks and twenty round trips, each
+   with a "…" to wait through. Moderation is volunteer time, and it is
+   the scarcest thing the project has, so the queue is now a list of
+   tick boxes with two buttons over it: Approve selected, Reject
+   selected, with one note for the whole batch of rejections.
+
+   What it must not become is a second way in. The bulk path calls
+   moderate_report once per report - the same function the buttons
+   on a row call, with the same role check on the server - through
+   the row's own act(). There is no server function that takes a
+   list, on purpose: one that did would be a second door to keep
+   locked, and the per-report function already does the clustering,
+   the merging and the XP that an approval means. The cost is one
+   request per report, which is what a moderator was paying by hand;
+   BULK_PARALLEL of them go at once so twenty take about as long as
+   five.
+
+   And it must not fail quietly. Each row reports its own outcome:
+   a row that went through leaves the list when the batch is in, a
+   row that did not stays where it was with the server's reason
+   beside it, and the line under the buttons says how many of each.
+   A batch of twenty with one failure is nineteen decisions made and
+   one plainly still to make, never "something went wrong". */
+
+var BULK_PARALLEL = 4;
+var bulkRunning = false;
+
+/* The <li> an element sits in. Walks up rather than using closest(),
+   which is a newer DOM call than the rest of this file leans on. */
+function rowOf(el) {
+  while (el && el.tagName !== "LI") {
+    el = el.parentNode;
+  }
+  return el;
+}
+
+/* The rows whose box is ticked and that are still undecided. A row
+   marked done keeps its box unticked and its buttons off, so it
+   cannot be sent twice from here. */
+function selectedQueueRows() {
+  var boxes = document.querySelectorAll("#queue-list li.pickable:not(.done) .pick-box");
+  var rows = [];
+  var i;
+
+  for (i = 0; i < boxes.length; i++) {
+    if (boxes[i].checked && !boxes[i].disabled) {
+      rows.push(rowOf(boxes[i]));
+    }
+  }
+  return rows;
+}
+
+function setUpBulk() {
+  var all = document.getElementById("queue-select-all");
+  var approveAll = document.getElementById("queue-approve-selected");
+  var rejectAll = document.getElementById("queue-reject-selected");
+
+  if (!all || !approveAll || !rejectAll) {
+    return;
+  }
+
+  /* "All on this page" is exactly that: the rows that are loaded.
+     It never reaches into pages not yet fetched, because a moderator
+     should not be able to approve what they have not seen. */
+  all.onchange = function () {
+    var boxes = document.querySelectorAll("#queue-list li.pickable:not(.done) .pick-box");
+    var i;
+
+    for (i = 0; i < boxes.length; i++) {
+      if (!boxes[i].disabled) {
+        boxes[i].checked = all.checked;
+      }
+    }
+  };
+
+  approveAll.onclick = function () { bulkDecide("approve"); };
+  rejectAll.onclick = function () { bulkDecide("reject"); };
+}
+
+function bulkDecide(action) {
+  var rows = selectedQueueRows();
+  var note = document.getElementById("queue-bulk-note");
+  var all = document.getElementById("queue-select-all");
+  var approveAll = document.getElementById("queue-approve-selected");
+  var rejectAll = document.getElementById("queue-reject-selected");
+  var list = document.getElementById("queue-list");
+  var empty = document.getElementById("queue-empty");
+  var more = document.getElementById("queue-more");
+  var why = null;
+  var next = 0;
+  var active = 0;
+  var done = 0;
+  var failed = 0;
+
+  if (bulkRunning) {
+    return;
+  }
+  if (rows.length === 0) {
+    note.textContent = "Nothing selected.";
+    return;
+  }
+
+  /* One note for the batch, on rejection only - approve_report has
+     no note to carry, and a rejection is the one the reporter reads.
+     Cancelling the prompt cancels the batch; an empty note is no
+     note, as the row's own Reject sends. */
+  if (action === "reject") {
+    why = window.prompt("A note for the reporters of these " + rows.length +
+      " reports - they can read it. Leave it blank for none.", "");
+    if (why === null) {
+      return;
+    }
+    why = why.trim() || null;
+  }
+
+  bulkRunning = true;
+  approveAll.disabled = true;
+  rejectAll.disabled = true;
+  all.disabled = true;
+  note.textContent = (action === "approve" ? "Approving " : "Rejecting ") + rows.length + "…";
+
+  function finish() {
+    var i;
+
+    bulkRunning = false;
+    approveAll.disabled = false;
+    rejectAll.disabled = false;
+    all.disabled = false;
+    all.checked = false;
+
+    /* The decided rows go; the failed ones stay, marked, with their
+       reason where act() put it. */
+    for (i = 0; i < rows.length; i++) {
+      if (rows[i].className.indexOf("done") !== -1 && rows[i].parentNode) {
+        rows[i].parentNode.removeChild(rows[i]);
+      }
+    }
+
+    note.textContent = (action === "approve" ? "Approved " : "Rejected ") +
+      done + " of " + rows.length + "." +
+      (failed ? " " + failed + " did not go through - the reason is beside each." : "");
+
+    /* A page emptied by the batch with nothing more to load is an
+       empty queue; the pager only knows to say so on a first page. */
+    if (!list.children.length && more.style.display === "none") {
+      empty.style.display = "";
+    }
+
+    forgetCameraCache();
+    refreshBacklog();
+  }
+
+  /* Keep BULK_PARALLEL requests out at a time until the rows run
+     out, then finish once the last one is back. */
+  function launch() {
+    while (active < BULK_PARALLEL && next < rows.length) {
+      (function (row) {
+        active++;
+        row.className = row.className.replace(" failed", "");
+        row.decide(action, why, function (problem) {
+          active--;
+          if (problem) {
+            failed++;
+            row.className = "pickable failed";
+          } else {
+            done++;
+          }
+          if (next >= rows.length && active === 0) {
+            finish();
+          } else {
+            launch();
+          }
+        });
+      })(rows[next++]);
+    }
+  }
+
+  launch();
 }
 
 function proofThumb(p) {
@@ -2164,6 +3567,212 @@ function proofThumb(p) {
   });
 
   return holder;
+}
+
+/* ---------------- activity: who did what ----------------
+
+   On a project that publishes accusations about surveillance, being
+   able to audit its own moderators is not optional. The columns were
+   always there - every decided report carries resolved_by,
+   resolved_at and resolution_note - and nothing showed them: the
+   history tab shows the reporter and the outcome, not the moderator.
+   This tab is the other reading of the same rows, newest decision
+   first: who decided, when, what they said, and about what. A report
+   that approved itself - enough people agreed - says so, since it
+   has no moderator to name.
+
+   Under it, the other half: what has been done to a camera by hand.
+   Adding, editing, moving, hiding, unhiding and merging each write a
+   row to moderation_log (see schema.sql, version 2.6), with the
+   moderator, the camera, the time, and a note that keeps what the
+   row no longer has - where a pin was, what a name said before.
+
+   Two lists rather than one stream, because they are two tables with
+   two clocks, and a single stream in time order would need both
+   fetched whole to page it honestly. Each is a pager of its own.
+   Both are moderators' reading only, and the server says so: the
+   reports policy, the profiles policy and the log's own policy all
+   ask is_moderator(); the tab hiding itself is the courtesy.
+
+   The log table arrives by migration and the live database may not
+   have it yet. That is not a broken tab: the lower list says which
+   migration to run, and the upper list is unaffected. */
+
+var activityPager = null;
+var activityLogPager = null;
+
+/* Everything the decision row shows. Two joins on profiles, told
+   apart by the foreign key each goes through: the reporter is not
+   shown here (the history tab has them), the moderator is. The
+   camera join is for its name. */
+var ACTIVITY_COLUMNS = "id,kind,type,status_claim,name,camera_id,lat,lon,state,resolved_at,resolution_note," +
+  "resolver:profiles!reports_resolved_by_fkey(username),cameras(id,name)";
+
+var LOG_COLUMNS = "id,action,camera_id,note,created_at,profiles(username),cameras(id,name,lat,lon)";
+
+function loadActivity() {
+  if (!activityPager) {
+    activityPager = makePager({
+      list:   document.getElementById("activity-list"),
+      empty:  document.getElementById("activity-empty"),
+      note:   document.getElementById("activity-note"),
+      more:   document.getElementById("activity-more"),
+      failed: "Could not load the decisions.",
+      row:    activityRow,
+      fetch:  function (offset, onDone) {
+        loadPage(
+          sb.from("reports")
+            .select(ACTIVITY_COLUMNS)
+            .in("state", ["approved", "rejected", "merged"])
+            .order("resolved_at", { ascending: false, nullsFirst: false }),
+          offset, onDone);
+      }
+    });
+    activityLogPager = makePager({
+      list:   document.getElementById("activity-log-list"),
+      empty:  document.getElementById("activity-log-empty"),
+      note:   document.getElementById("activity-log-note"),
+      more:   document.getElementById("activity-log-more"),
+      failed: "Could not load the camera log.",
+      row:    activityLogRow,
+      fetch:  function (offset, onDone) {
+        loadPage(
+          sb.from("moderation_log")
+            .select(LOG_COLUMNS)
+            .order("created_at", { ascending: false }),
+          offset, function (problem, rows, more) {
+            /* 42P01 is "no such table": the migration has not been
+               run against this database. Say which, rather than
+               "could not load". */
+            if (problem && problem.code === "42P01") {
+              onDone("The camera log is not in the database yet: run backend/migrations/004_moderation_log.sql in the SQL editor.", [], false);
+              return;
+            }
+            onDone(problem, rows, more);
+          });
+      }
+    });
+  }
+  activityPager.reset();
+  activityLogPager.reset();
+}
+
+/* What a report was about, in the words the queue uses. */
+function reportSubject(r) {
+  var cam = r.cameras;
+
+  return r.kind === "new"
+    ? "New: " + typeLabel(r.type) + " — " + (r.name || "")
+    : "State: " + (cam ? cam.name : "camera #" + r.camera_id) + " is " + claimLabel(r.status_claim);
+}
+
+/* "See on the map →", the same link the queue and the history give. */
+function mapLink(lat, lon) {
+  var a = document.createElement("a");
+
+  a.href = pageHref("index.html") + "#" + Number(lat).toFixed(5) + "," + Number(lon).toFixed(5);
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.textContent = "See on the map →";
+  return a;
+}
+
+function activityRow(r) {
+  var row = document.createElement("li");
+  var head = document.createElement("div");
+  var body = document.createElement("div");
+  var what = document.createElement("strong");
+  var meta = document.createElement("span");
+  var who;
+
+  head.className = "queue-head";
+  body.className = "queue-body";
+
+  what.textContent = stateLabel(r.state) + " · " + reportSubject(r);
+  head.appendChild(what);
+
+  /* No moderator named. For an approval or a merge that is usually
+     the auto-approve trigger - enough separate people agreed, and
+     nobody decided it - which is worth saying in as many words,
+     because it is the one kind of approval nobody made and an audit
+     should be able to tell. But the column is also null when the
+     moderator's account is gone (on delete set null), and a
+     rejection is never automatic, so the row says what the data can
+     honestly say and no more. */
+  if (r.resolver && r.resolver.username) {
+    who = "by " + r.resolver.username;
+  } else if (r.state === "rejected") {
+    who = "no moderator named - the service role, or an account since deleted";
+  } else {
+    who = "no moderator named - approved itself when enough people agreed, or the account is since deleted";
+  }
+
+  meta.className = "coords";
+  meta.textContent = who +
+    (r.resolved_at ? " · " + new Date(r.resolved_at).toLocaleString() : "") +
+    (r.resolution_note ? " · “" + r.resolution_note + "”" : "");
+  head.appendChild(meta);
+
+  if (r.cameras) {
+    var camLine = document.createElement("span");
+    camLine.className = "coords";
+    camLine.textContent = "Camera #" + r.cameras.id + " · " + r.cameras.name;
+    body.appendChild(camLine);
+    body.appendChild(document.createElement("br"));
+  }
+  body.appendChild(mapLink(r.lat, r.lon));
+
+  row.appendChild(head);
+  row.appendChild(body);
+  return row;
+}
+
+/* The log's action names, in words. The same six the table's check
+   constraint allows; an action it does not know is shown as it is
+   rather than hidden, because a row in the log is a row in the log. */
+function actionLabel(action) {
+  return {
+    add_camera:    "Added by hand",
+    edit_camera:   "Edited",
+    move_camera:   "Moved",
+    hide_camera:   "Taken off the map",
+    unhide_camera: "Put back on the map",
+    merge_cameras: "Merged"
+  }[action] || action;
+}
+
+function activityLogRow(l) {
+  var row = document.createElement("li");
+  var head = document.createElement("div");
+  var body = document.createElement("div");
+  var what = document.createElement("strong");
+  var meta = document.createElement("span");
+  var cam = l.cameras;
+
+  head.className = "queue-head";
+  body.className = "queue-body";
+
+  what.textContent = actionLabel(l.action) + " · " +
+    (cam ? cam.name : "camera #" + l.camera_id) + " (#" + l.camera_id + ")";
+  head.appendChild(what);
+
+  /* No actor means the service role did it - a script, the
+     maintainer in the SQL editor - or the moderator's account is
+     gone. Either way there is no name to give, and the row says so
+     rather than showing a blank. */
+  meta.className = "coords";
+  meta.textContent = (l.profiles && l.profiles.username ? "by " + l.profiles.username : "no moderator - the service role, or an account since deleted") +
+    " · " + new Date(l.created_at).toLocaleString() +
+    (l.note ? " · " + l.note : "");
+  head.appendChild(meta);
+
+  if (cam && cam.lat !== undefined && cam.lat !== null) {
+    body.appendChild(mapLink(cam.lat, cam.lon));
+  }
+
+  row.appendChild(head);
+  row.appendChild(body);
+  return row;
 }
 
 /* ------------------------------------------------------------------

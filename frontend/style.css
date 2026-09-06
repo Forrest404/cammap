@@ -1821,10 +1821,224 @@ button.toggle.on:focus-visible {
 }
 
 /* ------------------------------------------------------------------
-   MODERATION (Wave 2: the moderation agent writes this block)
+   MODERATION
 
-   Rules for the moderation page at scale: Load more, the backlog count
-   on the nav link, checkboxes and bulk actions, the sort and filter
-   row, the edit and merge panels, the activity view. If the agent needs
-   no rule here, this block is removed rather than left empty.
+   The moderation page at scale. Moderation is volunteer time and the
+   scarcest thing the project has, so everything here is judged by
+   decisions per minute: a list that goes on past thirty, a count of
+   what is waiting, a tick box on every row so twenty approvals are
+   one press, a way to sort the likely duplicates to the top, and a
+   log of who decided what. The rules are few because the queue's own
+   rules (ul.queue, .queue-head, .row, .note) already carry most of
+   it; what is here is what those did not cover.
    ------------------------------------------------------------------ */
+
+/* Load more sits under a list on its own line, in the list's own
+   left margin, so the eye that has just read the last row lands on
+   it. Hidden by an inline style until the first full page is in;
+   account.js's makePager() shows and hides it. */
+button.load-more {
+  display: block;
+  margin: 14px 0 0 0;
+}
+
+/* "12 waiting · the oldest has waited 3 days." The one line on the
+   page that says whether the queue is being kept up with, so it is
+   in the body colour and the body size, not the dim of a hint:
+   a hint is something to read once, this is something to read
+   every time. */
+.backlog {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* The panels Edit and Merge open inside a camera's row: the same
+   indent and rule as Move's panel, for the same reason - each
+   belongs to the row above it and should read as part of it, not as
+   a box of its own. Their fields are the ordinary form fields; the
+   hints in them are the ordinary hint. */
+.edit-panel,
+.merge-panel {
+  margin: 10px 0 4px 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--rule);
+}
+
+.edit-panel p.hint,
+.merge-panel p.hint {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+/* Merge's candidates are the place search's result rows - a list
+   of full-width buttons under a text box - so they take that list's
+   rules and add none. The statement of what is about to happen is
+   in the body colour and size: it is the thing the moderator is
+   confirming, and it is not a hint. Empty until a survivor is
+   picked, so it takes no room then. */
+.merge-panel ul.results {
+  margin-bottom: 12px;
+}
+
+.merge-panel .statement {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.merge-panel .statement:empty {
+  margin: 0;
+}
+
+/* Deciding many at once. Every queue row is a tick box beside the
+   report, and a bar over the list holds "select all", the two
+   buttons, and the batch's outcome on a line of its own. The box is
+   the accent so a ticked row reads as the site's and not the
+   browser's blue; the FORMS rule that takes the outline off every
+   input does not reach it, because KEYBOARD FOCUS gives a checkbox
+   the ring back. */
+.bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  max-width: 68ch;
+  margin: 0 0 12px 0;
+}
+
+.bulk-bar .note {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/* A label beside a box, not the block capitals over a field. */
+label.pick {
+  display: inline;
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  vertical-align: middle;
+  accent-color: var(--accent);
+}
+
+/* The row: the box in a narrow column at the left, the report to
+   its right, so thirty boxes line up down the page and the eye can
+   run down them. The box sits level with the report's first line. */
+ul.queue li.pickable {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+ul.queue li.pickable label.pick {
+  padding-top: 3px;
+}
+
+.queue-main {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* The label's words are for a screen reader; the box says it all to
+   the eye, thirty times down a page. */
+.pick-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A row a batch could not decide stays, marked at its edge, with the
+   server's reason where the row's own buttons would have put it. */
+ul.queue li.failed {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+
+/* A camera's row now carries four buttons - Edit, Move, Merge into…,
+   Remove from map - and on a phone they do not fit one line. The
+   .row they sit in is a flex line that does not wrap, so they were
+   squeezed until their words broke inside them; wrapping between
+   buttons is what a row of buttons should do. Every button row on
+   the page's lists gets it, because the same is true of any of them
+   the moment a fifth button arrives. */
+ul.queue .row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* Which reports, in what order: three drop-downs on one line, each
+   with a word in front of it, wrapping on a phone. The labels are
+   inline like the tick box's, not the block capitals over a form
+   field, and the selects take their own width rather than the
+   field's full one. The match count sits at the end of the line. */
+.queue-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  max-width: 68ch;
+  margin: 0 0 12px 0;
+}
+
+/* A word and its drop-down wrap as one, so "Order" is never left at
+   the end of a line with its select on the next. */
+.queue-tools .tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.queue-tools label {
+  display: inline;
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.queue-tools select {
+  width: auto;
+  margin: 0;
+  padding: 5px 7px;
+  font-size: 13px;
+}
+
+.queue-tools .note {
+  margin: 0;
+}
+
+/* The distance line under a report's name, dim like the coordinates
+   it sits beside: it is the number the nearest-first sort orders by,
+   shown whatever the order. */
+.queue-head .nearest {
+  display: block;
+}
+
+/* The Activity tab is two lists under two headings. The second
+   heading needs air above it, because what comes before it is a
+   list's last rule or a Load more button, and h3's own margin is
+   only below. The first sits straight under the hint. */
+#mod-activity h3 {
+  margin-top: 24px;
+}
+
+#mod-activity p.hint + h3 {
+  margin-top: 0;
+}
