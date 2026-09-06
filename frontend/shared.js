@@ -55,6 +55,31 @@ var LONDON_BOUNDS = [[51.28, -0.51], [51.70, 0.33]];
    Both maps use it, so it is here rather than in either of them. */
 var LONDON_CENTRE = [51.5074, -0.1278];
 
+/* How far the record reaches, and when somebody last looked. These
+   three are typed by hand when the record is refreshed, and nothing
+   else dates the data: a visitor cannot tell a current map from an
+   abandoned one without them, and it is the first thing a sceptical
+   reader checks. The map page writes them under the map beside a
+   count it works out from the record itself, so the count can never
+   go stale silently; these can, which is why they are in one place
+   with a comment on them and nowhere else.
+
+     met      the last year of the Met's LFR deployment records the
+              record holds. The Met has published a 2026 record; it
+              refuses scripted download and has not been added (the
+              TODO in NOTES.md), so this stays 2025 until it is.
+     btp      the year of the British Transport Police register the
+              nine station entries come from.
+     checked  when the sources were last looked at for anything new,
+              as a month, because a day would claim a precision the
+              checking does not have.
+
+   When the record is refreshed: update data/cameras.csv, run
+   tools/build_points.py, change these, and make img/share.png again
+   if the count moved - the card carries the count as a picture, and
+   the two should move together. */
+var RECORD_SOURCES = { met: 2025, btp: 2026, checked: "September 2026" };
+
 function inLondon(lat, lon) {
   return lat >= LONDON_BOUNDS[0][0] && lat <= LONDON_BOUNDS[1][0] &&
          lon >= LONDON_BOUNDS[0][1] && lon <= LONDON_BOUNDS[1][1];

@@ -850,6 +850,7 @@ var pointsList    = document.getElementById("points-list");
 var pointsEmpty   = document.getElementById("points-empty");
 var pointsSearch  = document.getElementById("points-search");
 var pointsCount   = document.getElementById("points-count");
+var recordLine    = document.getElementById("record-line");
 var sortButtons   = document.querySelectorAll("#points-sort button");
 
 var legacyToggle  = document.getElementById("legacy-toggle");
@@ -1866,6 +1867,37 @@ function render() {
       ? String(points.length) + " cameras"
       : String(rows.length) + " of " + String(points.length);
   }
+
+  if (recordLine) {
+    recordLine.textContent = recordLineText();
+  }
+}
+
+/* "182 cameras · Met records to 2025, BTP to 2026 · last checked
+   September 2026": what the map is a map of, and how old it is.
+
+   The count is the published record's - the length of points.js,
+   which is what data/cameras.csv builds - and never a typed number,
+   so it cannot go stale. Cameras the database has beyond the record
+   are reports moderators approved and are not in the CSV; they are
+   said separately, "5 more from reports", rather than folded into
+   one figure, because a reader who opens the CSV to check should
+   find the number this line gave them. Edit mode counts nothing
+   beyond the record: a draft's additions are not reports. The dates
+   are RECORD_SOURCES in shared.js, and the comment there says who
+   changes them and when. */
+function recordLineText() {
+  var record = published().length;
+  var extra = EDITING ? 0 : Math.max(0, points.length - record);
+  var text = String(record) + " cameras";
+
+  if (extra > 0) {
+    text += " in the record, " + String(extra) + " more from reports";
+  }
+
+  return text +
+    " · Met records to " + RECORD_SOURCES.met + ", BTP to " + RECORD_SOURCES.btp +
+    " · last checked " + RECORD_SOURCES.checked;
 }
 
 function rowFor(point) {
