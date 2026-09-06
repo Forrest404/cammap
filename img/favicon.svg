@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- cammap's mark: a filled dot inside a hollow ring, in the site's
+     accent on the site's black. It is the map's own vocabulary - a
+     solid dot is a camera fixed to something, a ring is a site a van
+     has been to - and it needs nothing a 16px tab cannot draw: no
+     text, no gradient, no corner. The square is the page colour rather
+     than transparent so that it reads the same on a light tab bar as
+     on a dark one, and so iOS, which fills transparency with black
+     anyway, gets the same square everyone else does.
+
+     This file is the source. The PNGs and the .ico beside it are
+     rasterised from the same geometry - NOTES.md, "Sharing the site",
+     says how - so change the shape here and make them again, never the
+     other way round. The ring's outer edge sits at 38% of the width,
+     inside the 40% safe zone a maskable Android icon is cropped to. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" fill="#0d0d0d"/>
+  <circle cx="32" cy="32" r="21" fill="none" stroke="#cf6a58" stroke-width="7"/>
+  <circle cx="32" cy="32" r="8" fill="#cf6a58"/>
+</svg>
