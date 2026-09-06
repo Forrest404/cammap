@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Identical on all seven pages, and must stay that way: it is what
+     makes the no-CDN rule something the browser enforces rather than
+     something we remember. tools/stamp.py fails if they drift. Why
+     each source is listed, and what breaks without worker-src, is in
+     CLAUDE.md under "The Content-Security-Policy". -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
+  img-src 'self' data: blob: https://server.arcgisonline.com
+          https://tiles.openfreemap.org https://*.openfreemap.org
+          https://*.supabase.co;
+  media-src 'self' blob: https://*.supabase.co;
+  worker-src blob:;
+  child-src blob:;
+  connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
+              https://tiles.openfreemap.org https://*.openfreemap.org
+              https://server.arcgisonline.com
+              https://nominatim.openstreetmap.org;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'none';
+  frame-ancestors 'none'">
+
+<!-- This page is served for ANY missing address, not only one at the
+     root: GitHub Pages hands out the root 404.html for /cammap/x and
+     for /cammap/pages/x alike. A relative href="index.html" would then
+     resolve to /cammap/pages/index.html on the second and break. So
+     every relative URL on this page - the stylesheet, the fonts, the
+     nav - is resolved from here instead, whatever path was asked for.
+
+     This is the one place the site's path on GitHub Pages is written
+     into a page. If the site moves to a custom domain at the root,
+     this becomes href="/". The CSP's base-uri 'self' is what allows
+     it; a <base> pointing off-site would be refused. -->
+<base href="/cammap/">
+
+<title>Not found &mdash; cammap</title>
+<meta name="description" content="There is no page at this address on cammap, the map of facial recognition cameras in London.">
+<!-- An error page is not a page to find in a search. -->
+<meta name="robots" content="noindex">
+
+<!-- Deliberately not loaded here: lib/supabase.js, supabase-config.js
+     and frontend/account.js. account.js writes the account links into
+     the nav relative to where it thinks it is, and it decides that by
+     looking for /pages/ in the URL - which, on a page served at every
+     missing address, is wrong half the time. Under the <base> above a
+     wrong guess is a broken link, so the nav here stays as written:
+     the map, About and Thoughts, and the line below sends people back
+     to the map. Nobody needs to sign in to be told a link has rotted. -->
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="frontend/style.css?v=f438b573">
+</head>
+<body>
+<div class="sheet">
+
+<header class="masthead">
+  <h1 class="title">cammap</h1>
+  <nav class="bar">
+    <a href="index.html">Map</a>
+    <span class="sep">&middot;</span>
+    <a href="pages/about.html">About</a>
+    <span class="sep">&middot;</span>
+    <a href="pages/blog.html">Thoughts</a>
+    <!-- account.js fills this in once it knows whether anyone is
+         signed in. Empty until then, so the nav never flickers. -->
+    <span id="nav-account"></span>
+  </nav>
+</header>
+
+<main>
+  <div class="prose">
+
+    <h2>Nothing here</h2>
+
+    <p>
+      There is no page at this address. The link may have been mistyped,
+      or it may point at something that has since moved.
+      <a href="index.html">Back to the map</a>.
+    </p>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+</footer>
+
+</div>
+</body>
+</html>
