@@ -1553,13 +1553,47 @@ button.toggle.on:focus-visible {
 }
 
 /* ------------------------------------------------------------------
-   MAP TOOLS (Wave 2: the map agent writes this block)
+   MAP TOOLS
 
-   Rules for the controls that turn the map from a picture into a tool:
-   the place search for everyone, Near me, the copy-link row in the
-   popup, stacked dots, the last-updated line. If the agent needs no
-   rule here, this block is removed rather than left empty.
+   The controls that turn the map from a picture into a tool: the
+   place search under the map, and what else Wave 2 adds to the map
+   page. Each is a few rules; the reasoning for the thing itself is in
+   map.js and NOTES.md ("The map as a tool"), and this block only says
+   where it sits and what paper does with it.
    ------------------------------------------------------------------ */
+
+/* ---------- finding a place ----------
+
+   Under the map, not beside the list, because it moves the map: the
+   list has a search of its own that finds a camera by name, and two
+   boxes both saying "find" in one column would ask to be confused.
+   The box keeps the panel border so it reads as a control and not as
+   a caption, and sits a little clear of the toggles above it. */
+
+.map-search {
+  margin: 14px 0 0 0;
+}
+
+/* The hint goes under the field rather than over it - what the box
+   does is plain from its heading, and where the words go is the
+   thing a person should read after typing them, not before. */
+.map-search p.hint {
+  margin: 8px 0 0 0;
+}
+
+/* The results list carries a rule along its top so the first result
+   has a line above it. With nothing found, or nothing asked yet, that
+   rule was a stray line between the note and the hint. */
+.map-search ul.results:empty {
+  display: none;
+}
+
+/* Paper cannot move the map. The results and the note go with it. */
+@media print {
+  .map-search {
+    display: none;
+  }
+}
 
 /* ------------------------------------------------------------------
    PAPER

@@ -11,11 +11,12 @@
                      circles in crowded places pool into a glow, so the
                      shape of the thing is visible from above.
 
-     index.html?edit How you add points. The form, the place search,
-                     clicking the map and the delete buttons all come
-                     back, and a button writes out the rows of
-                     data/cameras.csv for you to paste in, build and
-                     republish.
+     index.html?edit How you add points. The form, clicking the map
+                     and the delete buttons all come back, and a
+                     button writes out the rows of data/cameras.csv
+                     for you to paste in, build and republish. (The
+                     place search used to be edit-only as well; it is
+                     everyone's now - see "Finding a place" below.)
 
    Edit mode is a convenience, not a lock. Anyone may open ?edit on the
    live site, and it will do them no good: their changes live in their
@@ -306,6 +307,27 @@ map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-le
 /* The tile source carries its own attribution, so none is added here:
    passing our own as well printed it twice. */
 map.addControl(new maplibregl.AttributionControl({ compact: false }));
+
+/* ---------------- moving the map ----------------
+
+   Every deliberate move the page makes - a list row, a search result,
+   Near me, the reset in edit mode - goes through this one function,
+   so that how the map moves is decided in one place. Today it flies:
+   a flight across London says where you came from as well as where
+   you are going, which a cut does not. When the page comes to honour
+   prefers-reduced-motion, this is the line that changes, and nothing
+   else has to know.
+
+   Not for the hash on load: that is a jumpTo, on purpose - the page
+   has not drawn yet, so there is nowhere to fly from.
+
+   Worth knowing before believing a flight is broken: MapLibre advances
+   a flight on requestAnimationFrame, which a hidden or headless tab
+   never runs, so in a harness the map appears not to move. It has;
+   it is waiting for a frame. */
+function moveMap(lat, lon, zoom) {
+  map.flyTo({ center: lngLat(lat, lon), zoom: zoom, speed: 1.6 });
+}
 
 /* The LIFT table, lift() and its cache are in frontend/shared.js.
    They moved there when the report page grew a map of its own: the
@@ -675,6 +697,7 @@ var memoInput     = document.getElementById("memo");
 var addButton     = document.getElementById("add-button");
 var addNote       = document.getElementById("add-note");
 
+var searchBox     = document.getElementById("place-search");
 var searchText    = document.getElementById("search-text");
 var searchButton  = document.getElementById("search-button");
 var searchNote    = document.getElementById("search-note");
@@ -1418,7 +1441,7 @@ function rowFor(point) {
   go.appendChild(coords);
 
   go.onclick = function () {
-    map.flyTo({ center: lngLat(point.lat, point.lon), zoom: 17, speed: 1.6 });
+    moveMap(point.lat, point.lon, 17);
     openPopup(point.id);
   };
 
@@ -1448,6 +1471,238 @@ function rowFor(point) {
 
   return row;
 }
+
+/* ------------------------------------------------------------------
+   Finding a place
+
+   "Is there one near my station" is the question this map exists to
+   answer, and until now the only way to ask it was to know where the
+   station is on a dark map of London. The box under the map takes a
+   place name or a postcode and moves the map there. It moves the map
+   and nothing else - the cameras are not filtered by it - and it is
+   everyone's: it was edit-only for a long time for no better reason
+   than that it was built for adding cameras, while the policy that
+   lets the browser talk to the geocoder allowed it on every page.
+
+   The geocoder is Nominatim, OpenStreetMap's free one. Its usage
+   policy asks for no more than one request a second, an identifying
+   header, and no autocomplete. A browser will not let a page set the
+   header, but it does send the site's own address as the referer,
+   which identifies the caller as well. The rest is honoured by being
+   a light caller: a search happens when you press the button or hit
+   Enter, never as you type - which is why there is no search-as-you-
+   type here and must not be; requests are held at least a second
+   apart, with a press inside that second queued rather than dropped;
+   the same words asked twice are answered from the last reply; and no
+   more than five results are asked for. The search is confined to the
+   London bounding box, so it will not offer you a Richmond in
+   Yorkshire, and what comes back is checked against inLondon() too,
+   because a promise the site makes should not rest on a parameter
+   another service honours.
+
+   If you would like the requests to be attributable to you rather
+   than to the site, uncomment the email line in search() and put your
+   own address in it.
+   ------------------------------------------------------------------ */
+
+var SEARCH_URL = "https://nominatim.openstreetmap.org/search";
+var MINIMUM_GAP = 1000;   /* milliseconds between requests */
+var lastSearchAt = 0;
+
+/* The last words sent and what came back, so that pressing Search
+   again on the same words - the commonest second press - costs the
+   geocoder nothing. */
+var lastQuery = null;
+var lastFound = null;
+
+function search() {
+  var query = searchText.value.trim();
+  var waited = Date.now() - lastSearchAt;
+  var viewbox;
+  var url;
+
+  searchResults.innerHTML = "";
+
+  if (query === "") {
+    searchNote.textContent = "Type a place name or a postcode first.";
+    return;
+  }
+
+  if (query === lastQuery && lastFound) {
+    showResults(lastFound, query);
+    return;
+  }
+
+  if (waited < MINIMUM_GAP) {
+    searchNote.textContent = "One moment — searching again shortly.";
+    searchButton.disabled = true;
+    window.setTimeout(function () {
+      searchButton.disabled = false;
+      search();
+    }, MINIMUM_GAP - waited);
+    return;
+  }
+
+  lastSearchAt = Date.now();
+  searchNote.textContent = "Searching…";
+  searchButton.disabled = true;
+
+  /* viewbox is west,north,east,south. bounded=1 makes it a hard
+     restriction rather than a preference. */
+  viewbox = LONDON_BOUNDS[0][1] + "," + LONDON_BOUNDS[1][0] + "," +
+            LONDON_BOUNDS[1][1] + "," + LONDON_BOUNDS[0][0];
+
+  url = SEARCH_URL +
+        "?format=json" +
+        "&limit=5" +
+        "&bounded=1" +
+        "&viewbox=" + encodeURIComponent(viewbox) +
+        "&q=" + encodeURIComponent(query);
+  /* url = url + "&email=you@example.com"; */
+
+  window.fetch(url)
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("The search service answered with " + response.status);
+      }
+      return response.json();
+    })
+    .then(function (found) {
+      var kept = [];
+      var i;
+
+      for (i = 0; i < (found || []).length; i++) {
+        if (inLondon(parseFloat(found[i].lat), parseFloat(found[i].lon))) {
+          kept.push(found[i]);
+        }
+      }
+
+      lastQuery = query;
+      lastFound = kept;
+      searchButton.disabled = false;
+      showResults(kept, query);
+    })
+    .catch(function (err) {
+      searchButton.disabled = false;
+      searchNote.textContent = "The search could not be completed. Check the connection and try again.";
+    });
+}
+
+function showResults(found, query) {
+  var i;
+
+  if (!found || found.length === 0) {
+    searchNote.textContent = "Nothing found in London for “" + query + "”. Try the name of the road, or the postcode.";
+    return;
+  }
+
+  searchNote.textContent = found.length === 1
+    ? "One place found. Choose it to go there."
+    : "Choose one to go there.";
+
+  for (i = 0; i < found.length; i++) {
+    searchResults.appendChild(resultRow(found[i]));
+  }
+}
+
+/* How close to look at what was found. Nominatim gives every result a
+   bounding box - a few metres for an address, a few miles for a
+   borough - and the zoom is the closest one that fits it on the map,
+   so "Croydon" shows Croydon and "Croydon Road" shows the road. Not
+   fitBounds(), which is a second kind of movement: this way the move
+   is still moveMap(), and the one place that decides how the map
+   moves stays one place. The sums are the web-mercator ones - 512
+   pixels across the world at zoom 0, doubling with each level, and a
+   degree of latitude stretched by the secant of the latitude. */
+function zoomToFit(box) {
+  var canvas = map.getCanvas();
+  var width = canvas.clientWidth || 800;
+  var height = canvas.clientHeight || 600;
+  var south;
+  var north;
+  var west;
+  var east;
+  var spanLon;
+  var spanLat;
+  var zoom;
+
+  if (!box || box.length !== 4) {
+    return 15;
+  }
+
+  south = parseFloat(box[0]);
+  north = parseFloat(box[1]);
+  west = parseFloat(box[2]);
+  east = parseFloat(box[3]);
+
+  spanLon = Math.max(east - west, 0.0005);
+  spanLat = Math.max(north - south, 0.0005) / Math.cos((north + south) / 2 * Math.PI / 180);
+
+  zoom = Math.min(
+    Math.log(width * 360 / (512 * spanLon)) / Math.LN2,
+    Math.log(height * 360 / (512 * spanLat)) / Math.LN2
+  ) - 0.3;   /* a little room round the edges */
+
+  return Math.max(WIDEST_ZOOM, Math.min(17, Math.floor(zoom * 2) / 2));
+}
+
+function resultRow(result) {
+  var row = document.createElement("li");
+  var pick = document.createElement("button");
+
+  pick.className = "pick";
+  pick.textContent = result.display_name;
+
+  pick.onclick = function () {
+    var lat = parseFloat(result.lat);
+    var lon = parseFloat(result.lon);
+    var shortName = result.display_name.split(",")[0];
+
+    moveMap(lat, lon, zoomToFit(result.boundingbox));
+
+    searchResults.innerHTML = "";
+    searchNote.textContent = "Showing " + shortName + ".";
+
+    /* In edit mode a result also fills the coordinate boxes, rather
+       than saving straight away, so you can name the camera yourself
+       before it is recorded. */
+    if (EDITING) {
+      latInput.value = lat.toFixed(6);
+      lonInput.value = lon.toFixed(6);
+      if (nameInput.value.trim() === "") {
+        nameInput.value = shortName;
+      }
+      nameInput.focus();
+    }
+  };
+
+  row.appendChild(pick);
+  return row;
+}
+
+/* The box is hidden in the markup until this runs, so a page without
+   JavaScript - or one where map.js never got this far - shows no
+   search box that does nothing. */
+function setUpPlaceSearch() {
+  if (!searchText || !searchButton || !searchNote || !searchResults) {
+    return;
+  }
+
+  if (searchBox) {
+    searchBox.hidden = false;
+  }
+
+  searchButton.onclick = search;
+
+  searchText.onkeydown = function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      search();
+    }
+  };
+}
+
+setUpPlaceSearch();
 
 /* ------------------------------------------------------------------
    Everything below here only runs in edit mode.
@@ -1497,135 +1752,11 @@ function startEditing() {
 
   /* -------- Way 2: searching by place name
 
-     This uses Nominatim, OpenStreetMap's free geocoder. Its usage
-     policy asks callers for an identifying User-Agent header, but a
-     browser will not let a page set that header, so it cannot be
-     honoured literally from a static file. Instead the page is a light
-     caller: a search only ever happens when you press the button or hit
-     Enter, never as you type; requests are held at least a second
-     apart; and no more than five results are asked for. The search is
-     also confined to the London bounding box, so it will not offer you
-     a Richmond in Yorkshire.
-
-     If you would like your requests to be attributable, uncomment the
-     email line below and put your own address in it.
+     The search box is everyone's now and is set up further down, in
+     "Finding a place". In edit mode a picked result fills the
+     coordinate boxes as well as moving the map; that branch is in
+     resultRow(), guarded on EDITING.
      -------- */
-
-  var SEARCH_URL = "https://nominatim.openstreetmap.org/search";
-  var MINIMUM_GAP = 1000;   /* milliseconds between requests */
-  var lastSearchAt = 0;
-
-  function search() {
-    var query = searchText.value.trim();
-    var waited = Date.now() - lastSearchAt;
-
-    searchResults.innerHTML = "";
-
-    if (query === "") {
-      searchNote.textContent = "Type a place name first.";
-      return;
-    }
-
-    if (waited < MINIMUM_GAP) {
-      searchNote.textContent = "One moment — searching again shortly.";
-      searchButton.disabled = true;
-      window.setTimeout(function () {
-        searchButton.disabled = false;
-        search();
-      }, MINIMUM_GAP - waited);
-      return;
-    }
-
-    lastSearchAt = Date.now();
-    searchNote.textContent = "Searching…";
-    searchButton.disabled = true;
-
-    /* viewbox is west,north,east,south. bounded=1 makes it a hard
-       restriction rather than a preference. */
-    var viewbox = LONDON_BOUNDS[0][1] + "," + LONDON_BOUNDS[1][0] + "," +
-                  LONDON_BOUNDS[1][1] + "," + LONDON_BOUNDS[0][0];
-
-    var url = SEARCH_URL +
-              "?format=json" +
-              "&limit=5" +
-              "&bounded=1" +
-              "&viewbox=" + encodeURIComponent(viewbox) +
-              "&q=" + encodeURIComponent(query);
-    /* url = url + "&email=you@example.com"; */
-
-    window.fetch(url)
-      .then(function (response) {
-        if (!response.ok) {
-          throw new Error("The search service answered with " + response.status);
-        }
-        return response.json();
-      })
-      .then(function (found) {
-        searchButton.disabled = false;
-        showResults(found, query);
-      })
-      .catch(function (err) {
-        searchButton.disabled = false;
-        searchNote.textContent = "The search could not be completed.";
-      });
-  }
-
-  function showResults(found, query) {
-    var i;
-
-    if (!found || found.length === 0) {
-      searchNote.textContent = "Nothing found in London for “" + query + "”.";
-      return;
-    }
-
-    searchNote.textContent = "Choose one to fill in the form below.";
-
-    for (i = 0; i < found.length; i++) {
-      searchResults.appendChild(resultRow(found[i]));
-    }
-  }
-
-  function resultRow(result) {
-    var row = document.createElement("li");
-    var pick = document.createElement("button");
-
-    pick.className = "pick";
-    pick.textContent = result.display_name;
-
-    /* Picking a result fills the form rather than saving straight away,
-       so you can name the camera yourself before it is recorded. */
-    pick.onclick = function () {
-      var shortName = result.display_name.split(",")[0];
-
-      latInput.value = parseFloat(result.lat).toFixed(6);
-      lonInput.value = parseFloat(result.lon).toFixed(6);
-      if (nameInput.value.trim() === "") {
-        nameInput.value = shortName;
-      }
-
-      map.flyTo({
-      center: lngLat(parseFloat(result.lat), parseFloat(result.lon)),
-      zoom: 15,
-      speed: 1.6
-    });
-
-      searchResults.innerHTML = "";
-      searchNote.textContent = "";
-      nameInput.focus();
-    };
-
-    row.appendChild(pick);
-    return row;
-  }
-
-  searchButton.onclick = search;
-
-  searchText.onkeydown = function (event) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      search();
-    }
-  };
 
   /* -------- Way 3: clicking the map
 
@@ -1788,7 +1919,7 @@ function startEditing() {
     refreshCameras();
 
     render();
-    map.flyTo({ center: lngLat(LONDON_CENTRE[0], LONDON_CENTRE[1]), zoom: OPENING_ZOOM, speed: 1.6 });
+    moveMap(LONDON_CENTRE[0], LONDON_CENTRE[1], OPENING_ZOOM);
 
     exportText.style.display = "none";
     exportNote.textContent = "";

@@ -123,6 +123,34 @@
         </div>
         <ul class="legend" id="legend"></ul>
       </div>
+
+      <!-- Finding a place. Everyone's, not only edit mode's: "is
+           there one near my station" is the question this map is
+           for, and a search box answers it in one line where the
+           list's own search cannot - the list finds cameras by name,
+           this moves the map to a place. It is under the map because
+           it moves the map. Hidden until map.js takes the attribute
+           off, so a page without JavaScript shows no box that does
+           nothing; class map-search so the print view can drop it.
+           What is typed goes to OpenStreetMap's Nominatim, and the
+           hint says so: the site says what it does. -->
+      <div class="box map-search" id="place-search" hidden>
+        <h3>Find a place</h3>
+        <div class="row">
+          <input type="text" id="search-text" placeholder="Peckham, or a postcode"
+                 autocomplete="off" spellcheck="false"
+                 aria-label="Find a place in London">
+          <button id="search-button">Search</button>
+        </div>
+        <p class="note" id="search-note" aria-live="polite"></p>
+        <ul class="results" id="search-results"></ul>
+        <p class="hint">
+          Moves the map to a place. What you type is sent to
+          OpenStreetMap's Nominatim to be looked up, and nowhere else;
+          the cameras are not filtered by it.
+        </p>
+      </div>
+
       <p class="hint edit-only" style="margin-top:8px">
         Click anywhere on the map to take its coordinates, then give the
         camera a name in the form opposite.
@@ -131,17 +159,6 @@
 
     <!-- ---------------- right: the list, and the editing tools ---------------- -->
     <div class="side-column">
-
-      <!-- Way 2: search for a place by name -->
-      <div class="box edit-only">
-        <h3>Find a place</h3>
-        <div class="row">
-          <input type="text" id="search-text" placeholder="Postman's Park">
-          <button id="search-button">Search</button>
-        </div>
-        <p class="note" id="search-note"></p>
-        <ul class="results" id="search-results"></ul>
-      </div>
 
       <!-- Way 1: type the coordinates in directly -->
       <div class="box edit-only">
