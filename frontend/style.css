@@ -1844,6 +1844,20 @@ details.explain strong {
   }
 }
 
+/* The footer goes with the nav. Printing nine Croydon rows put only
+   the footer on a second sheet - the ASCII rule above it and two
+   lines nobody on a street needs: an appeal for donations, which is
+   for a screen, and the licence, which is named on the site the
+   paper came from and on the record itself. The PAPER block already
+   drops Donate; the rest of the footer follows it, and the leaflet
+   is one side of A4 again. Measured with Page.printToPDF at A4: two
+   pages before, one after. */
+@media print {
+  footer.foot {
+    display: none;
+  }
+}
+
 /* ------------------------------------------------------------------
    PAPER
 
