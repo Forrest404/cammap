@@ -1,0 +1,83 @@
+cammap is two things under two licences: the code that draws the map,
+and the record of cameras it draws. They are separated here because
+the licences that suit software and the licences that suit a database
+are not the same, and a single one would fit one of them badly.
+
+  THE CODE   MIT, below. Everything in this repository that is not
+             the record: the HTML pages, frontend/, tools/, backend/
+             schema.sql, the stylesheet. (lib/ and fonts/ are vendored
+             third-party work under their own licences, unchanged, and
+             are not ours to license.)
+
+  THE DATA   The Open Database License 1.0, further below. The record
+             of cameras: data/points.js, backend/seed.sql, and any
+             download of the same record the site offers (a CSV or
+             GeoJSON of the cameras is the same data in another form).
+
+The copyright holder is named as "cammap contributors" because the
+site puts no names on itself, on principle, and its licence should not
+be the one place it does.
+
+
+======================================================================
+THE CODE: MIT License
+======================================================================
+
+Copyright (c) 2026 cammap contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+======================================================================
+THE DATA: Open Database License (ODbL) v1.0
+======================================================================
+
+The record of facial recognition cameras published by cammap - the
+contents of data/points.js and backend/seed.sql, and every download
+of that record the site offers in another format - is made available
+under the Open Database License 1.0:
+
+    https://opendatacommons.org/licenses/odbl/1-0/
+
+You are free to copy, distribute, use, modify and build on the record,
+including commercially, provided that you:
+
+  attribute   say where it came from, in the form below;
+  share-alike if you publish a database built on it, publish that
+              under this licence too;
+  keep open   if you distribute it under technical restriction, also
+              offer a copy without.
+
+The attribution to use:
+
+    Contains data from cammap (https://forrest404.github.io/cammap/),
+    made available under the Open Database License (ODbL) 1.0.
+
+The record was itself assembled from public sources - the Metropolitan
+Police's published LFR deployment records, the British Transport
+Police's deployment register, and named press reporting - and nothing
+in it is estimated. Each entry's note says which. Reusing the record
+does not remove the need to credit those sources where your own use
+calls for it.
+
+ODbL was chosen over CC BY-SA because this is a database, queried and
+joined, rather than a document, read and quoted; it is the licence
+OpenStreetMap uses for the same reason, and the map's own base tiles
+come from OpenStreetMap data under it.

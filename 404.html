@@ -27,32 +27,33 @@
   base-uri 'self';
   form-action 'none';
   frame-ancestors 'none'">
-<title>Leaderboard &mdash; cammap</title>
-<meta name="description" content="Who has confirmed the most cameras on cammap: points for reports that put a camera on the map or changed one. Only a username is shown; there is nothing else to show.">
-<link rel="canonical" href="https://forrest404.github.io/cammap/pages/leaderboard.html">
-<!-- What a shared link turns into. Each page has its own title and
-     description - one shared across the site would be the failure
-     mode - and all of them show the same card, img/share.png, which
-     is the map itself photographed by tools/share-card.html and
-     committed, because a static site has nothing to draw one with on
-     request. The addresses are absolute because a card scraper has no
-     base to resolve against; they name the site's home on Pages, and
-     NOTES.md ("Sharing the site") lists every file that does. -->
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="cammap">
-<meta property="og:locale" content="en_GB">
-<meta property="og:url" content="https://forrest404.github.io/cammap/pages/leaderboard.html">
-<meta property="og:title" content="Leaderboard — cammap">
-<meta property="og:description" content="Who has confirmed the most cameras on cammap: points for reports that put a camera on the map or changed one. Only a username is shown; there is nothing else to show.">
-<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Leaderboard — cammap">
-<meta name="twitter:description" content="Who has confirmed the most cameras on cammap: points for reports that put a camera on the map or changed one. Only a username is shown; there is nothing else to show.">
-<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
-<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+
+<!-- This page is served for ANY missing address, not only one at the
+     root: GitHub Pages hands out the root 404.html for /cammap/x and
+     for /cammap/pages/x alike. A relative href="index.html" would then
+     resolve to /cammap/pages/index.html on the second and break. So
+     every relative URL on this page - the stylesheet, the fonts, the
+     nav - is resolved from here instead, whatever path was asked for.
+
+     This is the one place the site's path on GitHub Pages is written
+     into a page. If the site moves to a custom domain at the root,
+     this becomes href="/". The CSP's base-uri 'self' is what allows
+     it; a <base> pointing off-site would be refused. -->
+<base href="/cammap/">
+
+<title>Not found &mdash; cammap</title>
+<meta name="description" content="There is no page at this address on cammap, the map of facial recognition cameras in London.">
+<!-- An error page is not a page to find in a search. -->
+<meta name="robots" content="noindex">
+
+<!-- Deliberately not loaded here: lib/supabase.js, supabase-config.js
+     and frontend/account.js. account.js writes the account links into
+     the nav relative to where it thinks it is, and it decides that by
+     looking for /pages/ in the URL - which, on a page served at every
+     missing address, is wrong half the time. Under the <base> above a
+     wrong guess is a broken link, so the nav here stays as written:
+     the map, About and Thoughts, and the line below sends people back
+     to the map. Nobody needs to sign in to be told a link has rotted. -->
 <!-- The icon, in the forms the browsers between them ask for: SVG
      for the tab in Chrome and Firefox, .ico for Safari and anything
      older, a 180px PNG for an iOS home screen. manifest.json is what
@@ -60,14 +61,14 @@
      screenshot; theme-color is what the browser paints its own frame
      around the page. All are drawn from img/favicon.svg - NOTES.md,
      "Sharing the site", says how the raster ones are made from it. -->
-<link rel="icon" href="../img/favicon.ico" sizes="32x32">
-<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
-<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="img/favicon.ico" sizes="32x32">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="cammap">
 <meta name="theme-color" content="#0d0d0d">
-<link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=f438b573">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="frontend/style.css?v=f438b573">
 </head>
 <body>
 <div class="sheet">
@@ -75,11 +76,11 @@
 <header class="masthead">
   <h1 class="title">cammap</h1>
   <nav class="bar">
-    <a href="../index.html">Map</a>
+    <a href="index.html">Map</a>
     <span class="sep">&middot;</span>
-    <a href="about.html">About</a>
+    <a href="pages/about.html">About</a>
     <span class="sep">&middot;</span>
-    <a href="blog.html">Thoughts</a>
+    <a href="pages/blog.html">Thoughts</a>
     <!-- account.js fills this in once it knows whether anyone is
          signed in. Empty until then, so the nav never flickers. -->
     <span id="nav-account"></span>
@@ -89,31 +90,14 @@
 <main>
   <div class="prose">
 
-    <h2>Leaderboard</h2>
+    <h2>Nothing here</h2>
 
-    <p class="hint">
-      Points for reports that were confirmed: a camera the map did not
-      have, or a change in one it did. Only a username is shown; there is
-      nothing else to show.
+    <p>
+      There is no page at this address. The link may have been mistyped,
+      or it may point at something that has since moved.
+      <a href="index.html">Back to the map</a>.
     </p>
 
-    <div class="map-toggles" id="board-tabs">
-      <button class="toggle" data-view="leaderboard_all">All time</button>
-      <button class="toggle" data-view="leaderboard_weekly">This week</button>
-      <button class="toggle" data-view="leaderboard_daily">Today</button>
-    </div>
-
-    <p class="note" id="board-note"></p>
-
-    <div class="table-box">
-      <table class="board">
-        <thead>
-          <tr><th>#</th><th>Who</th><th>XP</th><th>Confirmed</th></tr>
-        </thead>
-        <tbody id="board-body"></tbody>
-      </table>
-    </div>
-    <p class="empty" id="board-empty" style="display:none">Nobody yet.</p>
   </div>
 </main>
 
@@ -146,9 +130,5 @@
 </footer>
 
 </div>
-<script src="../lib/supabase.js"></script>
-<script src="../frontend/shared.js?v=f438b573"></script>
-<script src="../supabase-config.js?v=f438b573"></script>
-<script src="../frontend/account.js?v=f438b573"></script>
 </body>
 </html>

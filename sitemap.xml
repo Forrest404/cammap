@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- cammap - the pages a search engine should know about.
+
+     Written by hand. Six addresses do not need generating, and a
+     generator would be one more tool for a site that has none. Every
+     page that is meant to be found is here; the moderation page is
+     not, because its <head> says noindex - it is empty for anyone who
+     is not a moderator - and a sitemap that lists a page and a <head>
+     that refuses it are a contradiction Search Console reports as an
+     error. 404.html is not a page, so it is not here either.
+
+     lastmod is the date of the page's last commit, which is what a
+     crawler uses to decide whether to fetch the page again. When a
+     page changes, update its line here and commit the two together;
+     git log gives the date, and NOTES.md ("Sharing the site") has the
+     exact command, which cannot be written in an XML comment because
+     it contains a double hyphen. A date that is too old costs a slow
+     re-crawl; a date that is too new costs nothing, so when in doubt
+     use today's.
+
+     The addresses are absolute, as the sitemap format requires, and
+     they name the site's home on GitHub Pages. If it moves to a domain
+     of its own they all change - see NOTES.md, "Sharing the site", for
+     every other file that carries the address. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://forrest404.github.io/cammap/</loc>
+    <lastmod>2026-09-06</lastmod>
+  </url>
+  <url>
+    <loc>https://forrest404.github.io/cammap/pages/about.html</loc>
+    <lastmod>2026-09-06</lastmod>
+  </url>
+  <url>
+    <loc>https://forrest404.github.io/cammap/pages/blog.html</loc>
+    <lastmod>2026-09-06</lastmod>
+  </url>
+  <url>
+    <loc>https://forrest404.github.io/cammap/pages/account.html</loc>
+    <lastmod>2026-09-06</lastmod>
+  </url>
+  <url>
+    <loc>https://forrest404.github.io/cammap/pages/report.html</loc>
+    <lastmod>2026-09-06</lastmod>
+  </url>
+  <url>
+    <loc>https://forrest404.github.io/cammap/pages/leaderboard.html</loc>
+    <lastmod>2026-09-06</lastmod>
+  </url>
+</urlset>

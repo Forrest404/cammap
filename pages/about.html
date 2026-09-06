@@ -28,6 +28,44 @@
   form-action 'none';
   frame-ancestors 'none'">
 <title>About &mdash; cammap</title>
+<meta name="description" content="About cammap: a project to map every facial recognition camera in London — LFR vans, fixed installs, transport police and shops — from public records, with nothing estimated.">
+<link rel="canonical" href="https://forrest404.github.io/cammap/pages/about.html">
+<!-- What a shared link turns into. Each page has its own title and
+     description - one shared across the site would be the failure
+     mode - and all of them show the same card, img/share.png, which
+     is the map itself photographed by tools/share-card.html and
+     committed, because a static site has nothing to draw one with on
+     request. The addresses are absolute because a card scraper has no
+     base to resolve against; they name the site's home on Pages, and
+     NOTES.md ("Sharing the site") lists every file that does. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cammap">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://forrest404.github.io/cammap/pages/about.html">
+<meta property="og:title" content="About cammap">
+<meta property="og:description" content="About cammap: a project to map every facial recognition camera in London — LFR vans, fixed installs, transport police and shops — from public records, with nothing estimated.">
+<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About cammap">
+<meta name="twitter:description" content="About cammap: a project to map every facial recognition camera in London — LFR vans, fixed installs, transport police and shops — from public records, with nothing estimated.">
+<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- The icon, in the forms the browsers between them ask for: SVG
+     for the tab in Chrome and Firefox, .ico for Safari and anything
+     older, a 180px PNG for an iOS home screen. manifest.json is what
+     makes "Add to Home Screen" on Android an icon rather than a
+     screenshot; theme-color is what the browser paints its own frame
+     around the page. All are drawn from img/favicon.svg - NOTES.md,
+     "Sharing the site", says how the raster ones are made from it. -->
+<link rel="icon" href="../img/favicon.ico" sizes="32x32">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<meta name="apple-mobile-web-app-title" content="cammap">
+<meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="../fonts/fonts.css">
 <link rel="stylesheet" href="../frontend/style.css?v=f438b573">
 </head>
@@ -73,7 +111,30 @@
 
 <footer class="foot">
   <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+       hosting" is true and says nothing - a precise small number is
+       far more persuasive than an unspecified appeal, and it fits a
+       site that says exactly what it knows everywhere else. The figure
+       was not available when this was written (QUESTIONS.md, item 2:
+       what the Supabase project and the cammap.app domain come to per
+       month; the Pages hosting itself is free). When it is known, make
+       the line below read, on all eight pages at once or stamp.py
+       fails:
+
+         cammap is free and has no advertising. Donations pay for the
+         hosting, which costs about £N a month.
+
+       Until then the sentence stays as it is: a number that has not
+       been checked is worse than none on a site whose whole argument
+       is that nothing on it is estimated. -->
   <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+  <!-- Two licences, because the code and the record are different
+       kinds of thing: the site is MIT, the cameras are ODbL 1.0, and
+       LICENSE at the root says which files are which and how to credit
+       the data. Both links leave the site - LICENSE is served without
+       a content type by Pages, which most browsers download rather
+       than show, so the MIT link goes to the repository's copy. -->
+  <span class="foot-note">Code <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">MIT</a> &middot; data <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a></span>
 </footer>
 
 </div>
