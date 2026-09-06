@@ -1156,9 +1156,230 @@ coordinates, so a scrolled page clips somewhere else.
 
 ### Reading the map without a mouse, or without sight
 
-*(Written by the Wave 3 map-a11y agent: reduced motion, what a screen
-reader is told the list is, soloing a kind from the legend, and the
-"how to read this map" block.)*
+`style.css` promises 4.5:1 on every colour. This is the same promise
+made to people who are not using a mouse, or not using their eyes:
+the map moves without sweeping for those who have asked their system
+for less motion; a screen reader is told what the map is and where
+the words for it are, and hears the count change; a kind can be
+picked out of the legend alone from the keyboard; and the legend is
+explained in prose. Each piece is under its own heading in
+`frontend/map.js` and says why there; this is the shorter account,
+the reasoning that did not fit in a comment, and what the
+accessibility tree said when it was checked.
+
+**Reduced motion (MAP-8).** `moveMap()` still flies - a flight across
+London says where you came from as well as where you are going - but
+under `prefers-reduced-motion` it cuts. The cut is `easeTo` with a
+duration of 0 and not `jumpTo`, for the reason the note under "Deep
+links" above gives: `jumpTo` ignores `offset`, and the popup a list
+row opens needs its dot three tenths of the map below the middle or
+it is cut off on a phone. The query is read once at load into
+`reduceMotion` and read again on its `change` event, so flipping the
+setting with the page open takes effect on the next move;
+`addEventListener` is the call, with the older `addListener` kept as
+the fallback because Safari before 14 knows only that name, and
+without `matchMedia` at all the answer is no.
+
+Why the page reads the query itself when MapLibre reads it too: it
+does, live, and under it turns every `flyTo` into a `jumpTo` - which
+is exactly the call that drops the offset. So the page's own reading
+is what `moveMap()` checks before MapLibre gets the chance, and it
+chooses the cut that keeps the offset. MapLibre's reading still
+covers what it animates on its own account: the zoom buttons go
+through `easeTo` and get a duration of 0 from it, so nothing was
+needed there. ("Movement, in one place" above says it flies today;
+it flies unless asked not to.) Checked with the media feature
+emulated over the DevTools protocol: no preference, `flyTo` once;
+emulated "reduce", the change event set the variable and the next
+row click was `easeTo {duration: 0, offset: [0, 198]}` with `flyTo`
+never called and the centre landing 0.0007 degrees north of the dot;
+the zoom button went 17 to 18 at once; back to no preference, the
+variable re-read false and the next click flew.
+
+**What a screen reader is told (MAP-9).** The dots are drawn into a
+canvas, and a canvas has nothing in it assistive technology can read.
+The list beside the map was always the same cameras in words, and
+nothing said so. Four things now do.
+
+The Cameras box is a region named from its heading and a hidden
+sentence after it, so a reader arriving by landmark hears "Cameras.
+The map in words. Every camera the map is showing is a row here, and
+a row shows its camera on the map." (`aria-labelledby` joins its
+parts with a space, which is why the sentence stands on its own
+rather than leading with a comma.)
+
+Each row speaks its kind and state after the name, in a hidden span:
+"Euston Station, Transport police." or ", LFR van site, legacy, last
+seen 2025." Before, the row's name was the camera's name, its note
+and its coordinates, and nothing said it was a van site or that it is
+legacy: the swatch carried those words as its `title`, which a
+pointer sees as a tooltip and paper reads back with `attr()`, and
+which a title on a span with no text in it gives to no one else. The
+middle dots the label uses are commas in the spoken copy, because a
+synthetic voice reads "·" as "middle dot" or not at all. The swatch's
+title stays, for the tooltip and for paper.
+
+The count is read out through `#list-status`, a `role="status"` live
+region in the list's head hidden from the eye (the visible count
+beside the heading already says it there). It is written only from
+the places a visitor narrows the list - a filter, the search box -
+and never from `render()`, which also runs on load and again when the
+database answers: a count read out before anyone has touched anything
+is noise over the page's own title. It is held back 600 ms so that
+typing "croy" is one sentence and not four, read out only when the
+sentence has changed, and cleared after four seconds so a reader
+browsing the head later finds the count once; a live region's
+clearing is not announced. `announceCount()` is the call;
+`announceThenCount(prefix)` is for a change with a word to say first,
+which is what the legend's solo uses. For whoever adds a filter
+next: call one of the two after `render()`, never write the element
+directly, and keep the visible count's text as it is - the share
+card (`tools/share-card.html`) reads "182 cameras" out of it.
+
+The canvas keeps its place in the tab order and says what it is.
+MapLibre names it "Map", a region, and gives it `tabindex="0"` so the
+arrow keys pan and `+`/`-` zoom. The brief said to mark it
+`aria-hidden`; the code says otherwise, and the code wins: hiding a
+focusable element from assistive technology is the one arrangement
+every checker flags, because a reader then lands on a thing it has
+been told does not exist, and a sighted person steering by keyboard
+would lose keys that work. So it is `role="application"` - the honest
+role for a widget that takes the arrow keys for itself, and what tells
+a screen reader to pass them through rather than read the page with
+them - with the role description "map" said in its place and a label
+that sends the reader to the list by its heading: "Map of London with
+the recorded facial recognition cameras drawn on it. The same cameras
+are listed in words under the heading Cameras, after the map. Arrow
+keys pan; plus and minus zoom." Because the canvas stays focusable,
+the ring the FOCUS block draws round the map's box keeps working. Set
+once; the canvas outlives every style swap.
+
+One more thing turned up on the way: `#map-note`, the line under the
+map that Near me and a bad link speak through, was `display: none`
+while empty, so it was not in the accessibility tree at the moment
+its first sentence arrived - and a live region that appears with its
+text is a new element, not a change, and is not read. It keeps its
+place now at no height (ACCESSIBILITY in `style.css`). The `.sr-only`
+class there is the same recipe as `.pick-text` under MODERATION,
+written for the queue's tick boxes before this class existed;
+whoever next edits that block should make it this.
+
+What the tree said, over the DevTools protocol
+(`Accessibility.getFullAXTree`): `region "CAMERAS The map in words.
+…"`; `button "EUSTON STATION , Transport police. British Transport
+Police LFR - 4 deployments in the 2026 station trial 51.5289,
+-0.1342"`; `application "Map of London with …" {focusable,
+roledescription=map}`; `status {live=polite, atomic=true}` reading
+"22 of 187 cameras shown" after a legend key and "117 of 187 cameras
+shown" after it again; 17 buttons under the list with Legacy off and
+182 with it on, matching the DOM; four input events 100 ms apart
+producing one announcement; and all three live regions in the tree
+at load. Chrome writes names as the stylesheet transforms them, so
+"CAMERAS" and "LEGACY" are what a reader is given; that is the
+uppercase rule under FORMS, not a bug here.
+
+**Solo: only this kind (MAP-6).** "Only the shops" was four clicks
+and could not be undone in one. Each legend key has a small `[only]`
+beside it - a second button, because a keyboard needs something it
+can land on and a modifier key is invisible - named "Only <kind>"
+with `aria-pressed` as its state. A press shows that kind and hides
+the rest; a press on it again, or on the soloed key itself, shows
+every kind. Click-to-toggle on the keys is as it was.
+
+The solo is not a state of its own. It is the legend showing one kind
+and hiding the others, read back from `hiddenTypes` by `soloType()`,
+so it is remembered through the same `hidden` map `STORAGE.view` has
+always saved, an older saved view loads unchanged, and the solo and
+the map cannot disagree. The price is small and deliberate: hiding
+four kinds one at a time arrives at the same place as pressing
+`[only]` on the fifth, and the legend says so.
+
+Every van site is legacy ("What active means"), so "only the van
+sites" with Legacy off would show nothing at all, and the person
+asked for the van sites. When the kinds narrow to one whose every
+camera is legacy - worked out from the points, not assumed of vans,
+because a database still carrying active van rows changes the answer
+(QUESTIONS.md, item 9) - Legacy is switched on for them and the line
+under the map says so: "Every LFR van site in the record is legacy,
+so Legacy has been switched on to show them." Ending the solo
+switches it back off, unless the visitor has pressed Legacy
+themselves in between, which makes it theirs; and only the solo's own
+sentence is taken back from the line, not whatever Near me or a link
+has said there since. It is saved with the view like any other press,
+which is the difference from a deep link's switch: the visitor asked,
+where the link did.
+
+A screen reader hears the pressed state on the control and, through
+the status line, "Only one kind, LFR van site. 163 of 182 cameras
+shown" and "Every kind. 17 of 182 cameras shown". And the legend is
+built afresh after every press, which used to drop a keyboard's focus
+on the floor at every key - Space on a key and the reader was back at
+the top of the page. Whichever key or `[only]` had focus is noted by
+its kind and given focus again once rebuilt. `[only]` is not printed;
+the struck-through keys already say what is shown on paper.
+
+**How to read this map (WORD-6).** A `details` element under the map
+bar, four sentences: colour says what a camera is; a solid dot is in
+use, a hollow ring is a legacy site, the non-functional colour is one
+reported as not working; the glow is weighed by how often the record
+has a spot used and a lone camera makes none ("Tuning the glow"); and
+every van site sits behind Legacy because a van parks for a shift and
+drives away ("What active means"). Nothing in it claims what the data
+does not. The first sentence's list of kinds is written by `map.js`
+from `CAMERA_TYPES`, so the prose cannot name a kind the key lacks or
+miss one it has; the labels are lowered into the sentence where they
+start with an ordinary word and left alone where they start with an
+acronym. Without JavaScript the sentence still reads, without the
+list.
+
+Open in the markup, so it is open with no JavaScript; open by default
+on the first visit only. `STORAGE.explained` is set when it has been
+shown open once and again when it is closed, and a visit that finds it
+closes the block - so a visitor who read it and moved on and one who
+shut it both get one summary line next time. Where storage is refused
+the key is never found and it is open on every visit, which is the
+harmless way round. Opening it again on a later visit is not
+remembered: it is there to be looked at, not to stay open. A
+`details`/`summary` rather than a button and a box because the
+browser folds it, the keyboard already knows Enter and Space on a
+summary, the FOCUS block covers `summary` already, and the tree says
+`DisclosureTriangle "How to read this map" {expanded}`, which is what
+a reader wants to hear. Not printed: paper has no map to read, and
+each printed row already says its kind in words. Two things worth
+knowing when checking it: the `toggle` event is delivered after the
+click returns, so a key read in the same tick as the click is not yet
+set; and `NAV` in the harness keeps the profile, so a second load is
+a second visit.
+
+**A link that points outside London (the Wave 2 observation).**
+`#99/0/0` used to be ignored in silence, with the address left in the
+bar as if it had been honoured. `applyHash()` now says under the map
+that the link points outside London and the whole map is shown,
+treats the link as having asked for no view (a camera named in the
+same link is still followed and centred on), and writes the view as
+it stands over the address that was not - forgetting the last write
+first, because a hash changed by hand while the map has not moved is
+the view `writeHash()` wrote last and it would otherwise see nothing
+to do.
+
+**The footer, off paper.** The Wave 1 check found that printing the
+nine Croydon rows put only the footer on a second sheet: its ASCII
+rule, the donations line and the licence line. None of it is for
+someone on a street with a leaflet - the appeal is for a screen, and
+the licence is named on the site the paper came from and on the
+record itself - so the footer now goes with the nav on paper
+(ACCESSIBILITY in `style.css`, beside the other print rules of this
+wave), and a borough's list is one side of A4 again. Measured with
+`Page.printToPDF`: two pages before, one after.
+
+**How it was checked.** Headless Chrome over the DevTools protocol,
+at 1400 and 390, with `Accessibility.getFullAXTree` for what a reader
+is given, `Emulation.setEmulatedMedia` for reduced motion,
+`Network.setBlockedURLs` on the Supabase host to check against the
+published record rather than the live table (QUESTIONS.md, item 9,
+still shows 117 of 187 there), real Tab, Space and Enter through
+`Input.dispatchKeyEvent`, `localStorage` cleared, set, and redefined
+to throw, and `Page.printToPDF` at A4 for the paper.
 
 ### Keyboard focus and print
 

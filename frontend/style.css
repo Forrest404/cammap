@@ -1710,14 +1710,153 @@ button.toggle.on:focus-visible {
 }
 
 /* ------------------------------------------------------------------
-   ACCESSIBILITY (Wave 3: the map-a11y agent writes this block)
+   ACCESSIBILITY
 
-   Rules for reading the map without a mouse or without sight: the
-   live region, the soloed legend key, the "how to read this map"
-   block and its collapsed state, and anything reduced motion needs.
-   If the agent needs no rule here, this block is removed rather than
-   left empty.
+   Reading the map without a mouse, or without sight. The map's dots
+   are drawn into a canvas nothing can read, so to a screen reader
+   the list beside the map is the map; what is here is what that
+   needs from the stylesheet, and it is little, because the work is
+   in the markup and in map.js - names, roles and a live region. The
+   long version is "Reading the map without a mouse, or without
+   sight" in NOTES.md.
    ------------------------------------------------------------------ */
+
+/* Words for a screen reader and no one else: the sentence that names
+   the list as the map in words, the kind and state spoken after each
+   row's name, and the status line the count is read out through.
+   Off the page but in it - not display: none, which would take them
+   out of the accessibility tree along with the eye's - one pixel
+   square, clipped, and taken out of the flow so the flex rows they
+   sit in do not move. The same recipe as .pick-text under MODERATION,
+   written for the queue's tick boxes before this class existed;
+   whoever next edits that block should make it this. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The line under the map is a live region, and until now it was
+   display: none while empty. A region that is not in the tree when
+   its first sentence arrives is not read: screen readers watch the
+   regions they were handed at load, and one that appears with its
+   text is a new element, not a change. So an empty note keeps its
+   place in the tree at no height, and takes no room on the page
+   either - which was the whole point of hiding it. */
+.map-note:empty {
+  display: block;
+  height: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* "only", beside each key in the legend: press it and that kind is
+   the only one shown; press it again, or the key, and every kind is
+   back. A second button rather than a modifier on the key because a
+   keyboard needs something it can land on. It is styled as the key
+   is - no border, no fill, no capitals - and a size smaller, in the
+   dim, so the legend still reads as a key first; the brackets are
+   the nav's, and are what stops "LFR van site only" reading as one
+   phrase. Pressed, it takes the accent and an underline, so the
+   state is not carried by colour alone (the other keys emptying to
+   outlines says it as well). The dim and the accent are the page's
+   own 5.6:1 and 5.4:1. */
+button.legend-only {
+  padding: 1px 2px;
+  border: none;
+  background: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+button.legend-only::before { content: "["; }
+button.legend-only::after  { content: "]"; }
+
+button.legend-only:hover {
+  background: none;
+  color: var(--accent);
+}
+
+button.legend-only.on {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* Paper cannot press it, and the struck-through keys already say
+   what is shown. */
+@media print {
+  button.legend-only {
+    display: none;
+  }
+}
+
+/* "How to read this map", under the legend: a details element whose
+   summary is set in the voice of the boxes' headings, so it reads as
+   a heading that happens to fold, and whose prose is the hint voice
+   - the dim, at the hint's size - because it is a thing to read once.
+   The browser's own marker is kept: it is what says the thing folds.
+   Held to a comfortable measure; the map column is wider than prose
+   should run. Not on paper: the paper has no map to read, and each
+   printed row already says its kind and state in words. */
+details.explain {
+  margin: 12px 0 0 0;
+  max-width: 76ch;
+}
+
+details.explain summary {
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+details.explain summary:hover {
+  color: var(--text);
+}
+
+details.explain p {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dim);
+}
+
+details.explain strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+@media print {
+  details.explain {
+    display: none;
+  }
+}
+
+/* The footer goes with the nav. Printing nine Croydon rows put only
+   the footer on a second sheet - the ASCII rule above it and two
+   lines nobody on a street needs: an appeal for donations, which is
+   for a screen, and the licence, which is named on the site the
+   paper came from and on the record itself. The PAPER block already
+   drops Donate; the rest of the footer follows it, and the leaflet
+   is one side of A4 again. Measured with Page.printToPDF at A4: two
+   pages before, one after. */
+@media print {
+  footer.foot {
+    display: none;
+  }
+}
 
 /* ------------------------------------------------------------------
    PAPER

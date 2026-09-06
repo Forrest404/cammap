@@ -356,15 +356,48 @@ map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-le
    passing our own as well printed it twice. */
 map.addControl(new maplibregl.AttributionControl({ compact: false }));
 
+/* ---------------- what the canvas says it is ----------------
+
+   The dots are drawn into a canvas, and a canvas has nothing in it
+   that assistive technology can read: the cameras exist for a screen
+   reader only as the list beside the map. MapLibre names the canvas
+   "Map", a region, and puts it in the tab order so the arrow keys pan
+   and + and - zoom. It is left in the tab order, on purpose: those
+   keys work, a sighted person steering by keyboard uses them, and
+   hiding a focusable thing from assistive technology (aria-hidden on
+   something Tab still reaches) is the one arrangement every checker
+   flags, because a reader then lands on a thing it has been told
+   does not exist.
+
+   So instead the canvas says what it is and where the words are.
+   role="application" is the honest role for a widget that takes the
+   arrow keys for itself - it tells a screen reader to pass the keys
+   through rather than read the page with them - and the role
+   description "map" is what is said in its place. The label sends
+   the reader to the list by the heading it can find with one key.
+   Set once; the canvas outlives every style swap. */
+function nameTheCanvas() {
+  var canvas = map.getCanvas();
+
+  canvas.setAttribute("role", "application");
+  canvas.setAttribute("aria-roledescription", "map");
+  canvas.setAttribute("aria-label",
+    "Map of London with the recorded facial recognition cameras drawn on it. " +
+    "The same cameras are listed in words under the heading Cameras, after the map. " +
+    "Arrow keys pan; plus and minus zoom.");
+}
+
+nameTheCanvas();
+
 /* ---------------- moving the map ----------------
 
    Every deliberate move the page makes - a list row, a search result,
    Near me, the reset in edit mode - goes through this one function,
-   so that how the map moves is decided in one place. Today it flies:
-   a flight across London says where you came from as well as where
-   you are going, which a cut does not. When the page comes to honour
-   prefers-reduced-motion, this is the line that changes, and nothing
-   else has to know.
+   so that how the map moves is decided in one place. It flies: a
+   flight across London says where you came from as well as where you
+   are going, which a cut does not. Unless the visitor has asked their
+   system for less motion, in which case it cuts - see "reduced
+   motion" just below - and nothing else on the page has to know.
 
    Not for the hash on load: that is a jumpTo, on purpose - the page
    has not drawn yet, so there is nowhere to fly from.
@@ -375,16 +408,64 @@ map.addControl(new maplibregl.AttributionControl({ compact: false }));
    phone - where the map is 460 pixels tall and a popup with a note in
    it is half that - MapLibre finds no room above the dot, hangs the
    popup below it instead, and the bottom rows are cut off by the
-   map's edge. popupRoom() is the number to pass. If this is ever
-   made a cut rather than a flight, it must be easeTo with a duration
-   of 0 and not jumpTo: jumpTo ignores `offset`, silently.
+   map's edge. popupRoom() is the number to pass. That is why the cut
+   is easeTo with a duration of 0 and not jumpTo: jumpTo ignores
+   `offset`, silently, and the popup would land at the map's centre
+   with nowhere to stand.
 
    Worth knowing before believing a flight is broken: MapLibre advances
    a flight on requestAnimationFrame, which a hidden or headless tab
    never runs, so in a harness the map appears not to move. It has;
    it is waiting for a frame. */
 function moveMap(lat, lon, zoom, below) {
-  map.flyTo({ center: lngLat(lat, lon), zoom: zoom, speed: 1.6, offset: [0, below || 0] });
+  var to = { center: lngLat(lat, lon), zoom: zoom, offset: [0, below || 0] };
+
+  if (reduceMotion) {
+    to.duration = 0;
+    map.easeTo(to);
+    return;
+  }
+
+  to.speed = 1.6;
+  map.flyTo(to);
+}
+
+/* ---------------- reduced motion ----------------
+
+   A person who has asked their system for less motion - a setting on
+   every phone and desktop, kept by people for whom a map sweeping
+   across London is a physical thing, not a flourish - is asked once
+   here, and asked again whenever the answer changes: the media query
+   fires "change" when the setting is flipped with the page open, and
+   a page that only looked at load would keep flying for the rest of
+   the visit. addEventListener is the standard call; the older
+   addListener is kept as the fallback, because this is plain browser
+   JavaScript for old browsers too and Safari before 14 knows only
+   the old name. Without matchMedia at all there is no way to ask,
+   and the answer is no.
+
+   Why this exists when MapLibre reads the same query itself: it
+   does, live, and under it turns every flyTo into a jumpTo - which
+   is the one call that drops `offset` (see moveMap above), so under
+   reduced motion the popup a list row opens would be cut off at the
+   bottom of a phone's map. The variable here is what moveMap checks
+   before MapLibre gets the chance, and it chooses the cut that keeps
+   the offset. MapLibre's own reading still covers what it animates
+   on its own account - the zoom buttons, which go through easeTo and
+   get a duration of 0 from it - so that side needs nothing here. */
+var motionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+var reduceMotion = motionQuery ? motionQuery.matches === true : false;
+
+function readMotion() {
+  reduceMotion = motionQuery.matches === true;
+}
+
+if (motionQuery) {
+  if (typeof motionQuery.addEventListener === "function") {
+    motionQuery.addEventListener("change", readMotion);
+  } else if (typeof motionQuery.addListener === "function") {
+    motionQuery.addListener(readMotion);
+  }
 }
 
 /* How far below the middle a dot should sit for its popup to fit
@@ -1122,15 +1203,23 @@ function applyLegacyFilter() {
 }
 
 /* Anything that changes which cameras count ends here: the dot filter,
-   the glow sources and the list are all brought back into step. */
+   the glow sources and the list are all brought back into step - and
+   the new count is read out, see "what a screen reader is told". */
 function applyFilters() {
   applyLegacyFilter();
   refreshCameras();
   render();
+  announceCount();
 }
 
 function setLegacy(on) {
   showLegacy = on;
+
+  /* The visitor's own press: whatever a solo switched on is theirs
+     now, and ending the solo will not switch it back. */
+  legacyBySolo = false;
+  clearSoloNote();
+
   applyFilters();
   saveView();
   markLegacy();
@@ -1144,12 +1233,153 @@ function markLegacy() {
 }
 
 /* Clicking a kind in the legend takes it off the map and out of the
-   list. Clicking it again puts it back. */
+   list. Clicking it again puts it back. Clicking the one kind that
+   is on its own - a solo, below - puts every kind back instead: the
+   alternative is a map with nothing on it. */
 function toggleType(type) {
-  hiddenTypes[type] = !hiddenTypes[type];
+  if (soloType() === type) {
+    hiddenTypes = {};
+  } else {
+    hiddenTypes[type] = !hiddenTypes[type];
+  }
+  kindsChanged();
+}
+
+/* ---------------- solo: only this kind ----------------
+
+   "Only the shops" was four clicks in the legend and could not be
+   undone in one. Each key now has a small "only" beside it: a press
+   shows that kind and hides the rest; a press on it again, or on the
+   soloed key itself, shows every kind again.
+
+   The solo is not a state of its own. It is the legend showing one
+   kind and hiding the others, read back from hiddenTypes - so it is
+   remembered between visits through the same `hidden` map the view
+   has always saved, an older saved view loads exactly as before, and
+   the two cannot disagree about what is shown. The price is small
+   and deliberate: hiding four kinds one at a time arrives at the
+   same place as pressing "only" on the fifth, and the legend says so.
+
+   Every van site is legacy ("What active means" in NOTES.md), so
+   "only the van sites" with Legacy off would show nothing at all.
+   The person asked for the van sites; showing them is the answer.
+   So when the kinds narrow to one whose every camera is legacy -
+   worked out from the points, not assumed of vans, because a
+   database that still carries active van rows changes the answer -
+   Legacy is switched on for them and the line under the map says
+   so. It is switched back off when the solo ends, unless the
+   visitor has pressed Legacy themselves in between, which makes it
+   theirs. This is saved with the view like any other press: the
+   visitor asked, which is the difference from a deep link's
+   unsaved switch. */
+
+/* The one kind shown when every other kind is hidden; null when two
+   or more are shown, and null when none is. */
+function soloType() {
+  var shown = null;
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    if (typeShown(TYPES[i].type)) {
+      if (shown !== null) {
+        return null;
+      }
+      shown = TYPES[i].type;
+    }
+  }
+
+  return shown;
+}
+
+/* Whether a kind has cameras and every one of them is legacy. */
+function allLegacy(type) {
+  var any = false;
+  var i;
+
+  for (i = 0; i < points.length; i++) {
+    if (points[i].type === type) {
+      if (points[i].status !== "legacy") {
+        return false;
+      }
+      any = true;
+    }
+  }
+
+  return any;
+}
+
+/* Whether the Legacy switch was turned on by a solo rather than by
+   a press on it, and what the line under the map was told when it
+   was - so that only that sentence is taken back, and not whatever
+   Near me or a link has said there since. */
+var legacyBySolo = false;
+var soloNote = null;
+
+function clearSoloNote() {
+  if (soloNote !== null && mapNote && mapNote.textContent === soloNote) {
+    sayUnderMap("");
+  }
+  soloNote = null;
+}
+
+/* A press on a key's "only". */
+function soloKind(type) {
+  var i;
+
+  if (soloType() === type) {
+    hiddenTypes = {};
+  } else {
+    for (i = 0; i < TYPES.length; i++) {
+      hiddenTypes[TYPES[i].type] = TYPES[i].type !== type;
+    }
+  }
+  kindsChanged();
+}
+
+/* After any change to which kinds are shown, by key or by "only":
+   the Legacy rule above, the map and the list, the saved view, the
+   legend redrawn with its pressed states, and a word for a screen
+   reader before the count. */
+function kindsChanged() {
+  var solo = soloType();
+  var prefix = "";
+
+  if (solo !== null && !showLegacy && allLegacy(solo)) {
+    showLegacy = true;
+    legacyBySolo = true;
+    markLegacy();
+    soloNote = "Every " + (typeLabel(solo) || solo) +
+      " in the record is legacy, so Legacy has been switched on to show them.";
+    sayUnderMap(soloNote);
+  } else if (solo === null && legacyBySolo) {
+    showLegacy = false;
+    legacyBySolo = false;
+    markLegacy();
+    clearSoloNote();
+  }
+
+  if (solo !== null) {
+    prefix = "Only one kind, " + (typeLabel(solo) || solo);
+  } else if (isEveryKindShown()) {
+    prefix = "Every kind";
+  }
+
   applyFilters();
   saveView();
   drawLegend();
+  announceThenCount(prefix);
+}
+
+function isEveryKindShown() {
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    if (!typeShown(TYPES[i].type)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /* Imagery on: show the raster, hide the ground, ring every dot in the
@@ -1255,14 +1485,31 @@ function legendNote(colour, text, hollow) {
    place to say "just these". A kind that is switched off dims here and
    goes from both the map and the list. */
 function drawLegend() {
+  var solo;
   var item;
   var button;
+  var only;
   var swatch;
+  var had;
+  var again;
   var i;
 
   if (!legend) {
     return;
   }
+
+  solo = soloType();
+
+  /* The legend is built afresh after every press, and the button
+     that was pressed goes with it - so a keyboard that had pressed
+     Space on a key found itself back at the top of the page, with
+     the legend somewhere below. Whichever key or "only" had focus is
+     noted by its kind and given focus again once rebuilt. */
+  had = document.activeElement;
+  had = had && legend.contains(had) ? {
+    type: had.getAttribute("data-type"),
+    only: had.className.indexOf("legend-only") !== -1
+  } : null;
 
   legend.innerHTML = "";
 
@@ -1271,10 +1518,11 @@ function drawLegend() {
 
     button = document.createElement("button");
     button.className = typeShown(TYPES[i].type) ? "legend-key" : "legend-key off";
+    button.setAttribute("data-type", TYPES[i].type);
     button.setAttribute("aria-pressed", typeShown(TYPES[i].type) ? "true" : "false");
-    button.title = typeShown(TYPES[i].type)
-      ? "Hide these"
-      : "Show these again";
+    button.title = solo === TYPES[i].type
+      ? "Show every kind again"
+      : (typeShown(TYPES[i].type) ? "Hide these" : "Show these again");
 
     swatch = document.createElement("span");
     swatch.className = "swatch";
@@ -1289,6 +1537,27 @@ function drawLegend() {
     })(TYPES[i].type);
 
     item.appendChild(button);
+
+    /* "only", beside the key: a second button, because a keyboard
+       needs something it can reach and a modifier key is invisible.
+       Its name says which kind, since "only" five times over says
+       nothing on its own; its pressed state is the solo. */
+    only = document.createElement("button");
+    only.type = "button";
+    only.className = solo === TYPES[i].type ? "legend-only on" : "legend-only";
+    only.setAttribute("data-type", TYPES[i].type);
+    only.textContent = "only";
+    only.setAttribute("aria-label", "Only " + TYPES[i].label);
+    only.setAttribute("aria-pressed", solo === TYPES[i].type ? "true" : "false");
+    only.title = solo === TYPES[i].type ? "Show every kind again" : "Show only these";
+
+    only.onclick = (function (type) {
+      return function () {
+        soloKind(type);
+      };
+    })(TYPES[i].type);
+
+    item.appendChild(only);
     legend.appendChild(item);
   }
 
@@ -1296,6 +1565,14 @@ function drawLegend() {
      the colour, so there is nothing here to switch off. */
   legend.appendChild(legendNote(NONFUNCTIONAL_COLOUR, "Non-functional", false));
   legend.appendChild(legendNote(TYPES[1].colour, "Legacy (no longer in use)", true));
+
+  if (had && had.type) {
+    again = legend.querySelector((had.only ? "button.legend-only" : "button.legend-key") +
+                                 "[data-type=\"" + had.type + "\"]");
+    if (again) {
+      again.focus();
+    }
+  }
 }
 
 /* Everything the layers need, worked out in one walk of the list.
@@ -1862,6 +2139,8 @@ function render() {
 
   pointsEmpty.style.display = rows.length === 0 ? "block" : "none";
 
+  listedCount = rows.length;
+
   if (pointsCount) {
     pointsCount.textContent = rows.length === points.length
       ? String(points.length) + " cameras"
@@ -1871,6 +2150,75 @@ function render() {
   if (recordLine) {
     recordLine.textContent = recordLineText();
   }
+}
+
+/* ---------------- what a screen reader is told ----------------
+
+   The count beside the heading changes silently: it is a span, and a
+   screen reader that is somewhere else on the page hears nothing when
+   it does. So when the list is narrowed the count is read out through
+   #list-status, a live region in the list's head that is hidden from
+   the eye - the visible count already says it there - and written
+   here and nowhere else.
+
+   Written from the two places a visitor narrows the list - a filter
+   (the legend, Legacy, a solo) and the search box - and deliberately
+   not from render(), which also runs on load and again when the
+   database answers: a count read out before anyone has touched
+   anything is noise over the page's own title. Held back a little,
+   so that typing "croy" is one sentence and not four, and read out
+   only when the sentence has changed. Then cleared, so that a reader
+   browsing the head later finds the count once, beside the heading,
+   and not twice; a live region's clearing is not announced.
+
+   announceThenCount() is for a filter that has something to say
+   before the number - "Showing only LFR van sites" - and is what the
+   legend's solo uses; anything that changes the list and wants a
+   word first should go through it too. */
+var listStatus = document.getElementById("list-status");
+var listedCount = 0;
+
+var ANNOUNCE_AFTER = 600;   /* milliseconds of quiet before it is read */
+var ANNOUNCE_CLEAR = 4000;  /* how long it stays, for a reader who asks again */
+var announceTimer = null;
+var clearTimer = null;
+var lastAnnounced = "";
+var announcePrefix = "";
+
+function countSentence() {
+  return listedCount === points.length
+    ? String(points.length) + " cameras shown"
+    : String(listedCount) + " of " + String(points.length) + " cameras shown";
+}
+
+function announceCount() {
+  if (!listStatus) {
+    return;
+  }
+
+  window.clearTimeout(announceTimer);
+  announceTimer = window.setTimeout(function () {
+    var text = (announcePrefix ? announcePrefix + ". " : "") + countSentence();
+
+    announcePrefix = "";
+    announceTimer = null;
+
+    if (text === lastAnnounced) {
+      return;
+    }
+    lastAnnounced = text;
+
+    listStatus.textContent = text;
+    window.clearTimeout(clearTimer);
+    clearTimer = window.setTimeout(function () {
+      listStatus.textContent = "";
+    }, ANNOUNCE_CLEAR);
+  }, ANNOUNCE_AFTER);
+}
+
+function announceThenCount(prefix) {
+  announcePrefix = prefix || "";
+  announceCount();
 }
 
 /* "182 cameras · Met records to 2025, BTP to 2026 · last checked
@@ -1922,6 +2270,21 @@ function rowFor(point) {
   name.className = "name";
   name.textContent = point.name;
   go.appendChild(name);
+
+  /* The kind and the state, in words, for a screen reader. The swatch
+     carries them as its title, which a pointer sees as a tooltip and
+     paper reads back with attr() - but a title on a span with no text
+     in it reaches no one else: the row's spoken name was the camera's
+     name, its note and its coordinates, and nothing said it was a van
+     site or that it is legacy. Hidden from the eye, since the swatch
+     already says it there; after the name, so a reader skimming the
+     list by first words still hears the name first. The middle dots
+     the label uses are commas here, because a synthetic voice reads
+     "·" as "middle dot" or not at all. */
+  var spoken = document.createElement("span");
+  spoken.className = "sr-only";
+  spoken.textContent = ", " + labelOf(point).replace(/ · /g, ", ") + ".";
+  go.appendChild(spoken);
 
   if (point.note) {
     var memo = document.createElement("span");
@@ -2441,6 +2804,87 @@ function startEditing() {
 }
 
 /* ------------------------------------------------------------------
+   How to read this map
+
+   The block under the legend, in index.html. Two things are done to
+   it here. The first sentence's list of kinds is written from
+   CAMERA_TYPES, the one table the key and the dots are painted from,
+   so the prose cannot name a kind the key does not have or miss one
+   it does; the labels are lowered into the sentence where they start
+   with an ordinary word, and left alone where they start with an
+   acronym ("LFR van site"). And it is open by default on the first
+   visit only: the markup says open, so a page without JavaScript
+   shows it, and a visit that finds STORAGE.explained set closes it.
+   The key is set when it has been shown open once and again when it
+   is closed - a visitor who read it and moved on and one who shut it
+   both get one summary line next time. Where storage is refused the
+   key is never found and it is open on every visit, which is the
+   harmless way round. Opening it again on a later visit is not
+   remembered: it is there to be looked at, not to stay open.
+   ------------------------------------------------------------------ */
+
+var explainBox   = document.getElementById("explain");
+var explainKinds = document.getElementById("explain-kinds");
+
+function kindInSentence(label) {
+  /* "Fixed LFR camera" -> "fixed LFR camera"; "LFR van site" stays. */
+  return /^[A-Z][a-z]/.test(label) ? label.charAt(0).toLowerCase() + label.slice(1) : label;
+}
+
+function kindsSentence() {
+  var names = [];
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    names.push(kindInSentence(TYPES[i].label));
+  }
+
+  if (names.length < 2) {
+    return names.length ? ": " + names[0] : "";
+  }
+
+  return ": " + names.slice(0, -1).join(", ") + " or " + names[names.length - 1];
+}
+
+function rememberExplained() {
+  try {
+    window.localStorage.setItem(STORAGE.explained, "1");
+  } catch (err) {
+    /* storage refused - it will be open next time too, and that is fine */
+  }
+}
+
+function setUpExplain() {
+  var seen = false;
+
+  if (explainKinds) {
+    explainKinds.textContent = kindsSentence();
+  }
+
+  if (!explainBox) {
+    return;
+  }
+
+  try {
+    seen = window.localStorage.getItem(STORAGE.explained) === "1";
+  } catch (err) {
+    seen = false;
+  }
+
+  if (seen) {
+    explainBox.removeAttribute("open");
+  } else {
+    rememberExplained();
+  }
+
+  explainBox.addEventListener("toggle", function () {
+    if (!explainBox.open) {
+      rememberExplained();
+    }
+  });
+}
+
+/* ------------------------------------------------------------------
    Start up
    ------------------------------------------------------------------ */
 
@@ -2454,6 +2898,7 @@ if (EDITING) {
 /* The layers are made when the style finishes loading, and take the
    list as it stands then, so there is nothing to draw here. */
 drawLegend();
+setUpExplain();
 render();
 
 /* ------------------------------------------------------------------
@@ -2941,7 +3386,26 @@ function cameraLinkSettled() {
 function applyHash() {
   var wanted = readHash();
 
-  if (wanted.view && inLondon(wanted.view.lat, wanted.view.lon)) {
+  /* A view outside London - #99/0/0, a link edited by hand, a link
+     made for another city's copy of this map - used to be ignored in
+     silence, and the address it asked for stayed in the bar as if it
+     had been honoured. The map cannot go there (maxBounds would hold
+     it at the edge anyway), so it says so, treats the link as having
+     asked for no view - a camera named in the same link is still
+     followed, and centred on, as if the link had named only it - and
+     writes the view as it stands over the address that was not, so
+     what is in the bar is once again what is on the map. The last
+     write is forgotten first: a hash edited by hand while the map
+     has not moved is the view writeHash() wrote last, and it would
+     otherwise see nothing to do and leave the bad address standing. */
+  if (wanted.view && !inLondon(wanted.view.lat, wanted.view.lon)) {
+    sayUnderMap("That link points outside London, which is all this map covers; showing the whole map.");
+    wanted.view = null;
+    lastWrittenHash = null;
+    writeHash();
+  }
+
+  if (wanted.view) {
     /* jumpTo, not moveMap(): on load there is nothing to fly from,
        and a change to the hash by hand is a request for a place, not
        a journey. */
@@ -3383,6 +3847,7 @@ if (pointsSearch) {
   pointsSearch.oninput = function () {
     searchTerm = pointsSearch.value.trim().toLowerCase();
     render();
+    announceCount();   /* held back until the typing pauses */
   };
 }
 

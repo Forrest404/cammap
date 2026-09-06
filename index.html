@@ -135,6 +135,45 @@
         <ul class="legend" id="legend"></ul>
       </div>
 
+      <!-- How to read the map, in words. The legend gives five
+           colours and two fills, and a visitor had to work out for
+           themselves that a hollow ring is a van site and why the
+           map opens with none of them on it. Four sentences: the
+           colours, the ring, the glow, and why van sites sit behind
+           Legacy - each drawn from NOTES.md ("What active means",
+           "Tuning the glow"), none claiming what the data does not.
+           The list of kinds in the first sentence is filled in by
+           map.js from CAMERA_TYPES, so it cannot disagree with the
+           key above it; without JavaScript the sentence still reads,
+           without the list.
+
+           Open in the markup, so a page without JavaScript shows it;
+           map.js closes it on any visit after the first, and
+           remembers a close. Details/summary rather than a button
+           and a box because the browser does the collapsing, the
+           keyboard already knows it (Enter or Space on the summary),
+           and the focus ring covers summary already. -->
+      <details class="explain" id="explain" open>
+        <summary>How to read this map</summary>
+        <p>
+          Colour says what a camera is<span id="explain-kinds"></span>.
+          The key above gives each kind its colour.
+          A solid dot is a camera in use; a hollow ring in the same
+          colour is a legacy site, one no longer in use; a dot filled
+          in the non-functional colour is one reported as not working,
+          whatever its kind.
+          Pull back and the dots pool into a glow, weighed by how many
+          times the record has a spot being used &ndash; so a place a
+          van has been sent twenty times reads hotter than one it
+          visited once &ndash; and a camera on its own makes no glow
+          at all.
+          Every LFR van site sits behind the <strong>Legacy</strong>
+          toggle: a van parks for a shift and drives away, so the
+          record can say where one has been and never where one is
+          now, and the map opens on the cameras fixed to something.
+        </p>
+      </details>
+
       <!-- What the map is a map of, and how old it is: the count of
            cameras in the record, worked out from the record by
            map.js's render(), and the reach of the sources and when
@@ -215,11 +254,26 @@
            The search narrows this list only, not the map: dots
            vanishing letter by letter is a poor way to read a map. The
            kinds of camera are switched on and off in the legend under
-           the map instead, and those do narrow both. -->
-      <div class="box" id="cameras-box">
+           the map instead, and those do narrow both.
+
+           To a screen reader this box is the map. The dots are drawn
+           into a canvas nothing can read, and this list is the same
+           cameras in words - so the box is a named region whose name
+           says so, from the heading and the hidden sentence after it,
+           and a reader who lands on the map's canvas is sent here by
+           the canvas's own label (map.js names it). The status line
+           after the count is where the count is read out when the
+           list is narrowed: a live region, hidden from the eye because
+           the count beside the heading already says it, written by
+           map.js only when a visitor changes a filter and never on
+           load. It has to be in the page from the start - a live
+           region that appears with its first sentence is not heard. -->
+      <div class="box" id="cameras-box" role="region" aria-labelledby="cameras-heading cameras-equivalent">
         <div class="list-head">
-          <h3>Cameras</h3>
+          <h3 id="cameras-heading">Cameras</h3>
+          <span class="sr-only" id="cameras-equivalent">The map in words. Every camera the map is showing is a row here, and a row shows its camera on the map.</span>
           <span class="count" id="points-count"></span>
+          <span class="sr-only" id="list-status" role="status" aria-live="polite" aria-atomic="true"></span>
         </div>
         <input type="search" id="points-search" class="find"
                placeholder="Find a camera" autocomplete="off" spellcheck="false"
