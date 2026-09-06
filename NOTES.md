@@ -624,6 +624,7 @@ from a non-moderator is a courtesy, never the lock.
                    rejection, hide or unhide a camera      moderate_undo
     cameras        put one on the map by hand              moderate_add_camera
     cameras        correct where one is                    moderate_move_camera
+    cameras        correct its name, note, kind or state   moderate_edit_camera
 
 **Move** is the newest of those and the one worth explaining. A pin in the
 wrong place is the commonest thing wrong with a camera that is otherwise right:
@@ -703,6 +704,55 @@ as the site's. `isModerator()` in `account.js` is the guard; the
 server's policy is what makes the count a moderator's. `refreshBacklog()`
 runs again after every decision, after a bulk run, and after an
 approval is taken back (which is a report pending again).
+
+**Edit** is the sibling of Move, for the rest of the row: the name,
+the note, the kind and the state. A typo in a name used to be
+permanent - the only thing that rewrote one was the seed, which cannot
+reach a camera that came from a report. `moderate_edit_camera` is the
+same shape as `moderate_move_camera`: an inner `edit_camera` for the
+service role, a wrapper that checks the role first, the same
+inline panel under the row. It refuses a blank name and a wrong id
+the way Add and Move do, leaves a bad kind or state to the table's
+check constraints for the reason Move leaves the bounds to them, and
+refuses one thing of its own: a van site marked active. Every van
+site is legacy ("What active means", above); the build script refuses
+it in the CSV and this refuses it on the row. It is not a check
+constraint on the table because the live database still carries van
+rows that say active from before the change (QUESTIONS.md, item 9)
+and adding the constraint would fail on them; `approve_report` also
+still writes a reported van as active, and the one-line update above
+is still the way to bring those into line.
+
+`seed_key` is left alone, for Move's reason - it is how the seed finds
+a row it has already written - and the consequence is the opposite of
+Move's, so it is said in the panel: the seed's `on conflict` rewrites
+`name`, `note` and `status` from the record, so an edit to a seed
+camera holds only until the next re-run of `seed.sql`. Make the
+correction in `data/cameras.csv` as well, or it will be undone. (A
+corrected *type* survives a re-seed, because the type is part of the
+key and not in the update list - which is the same reason to fix the
+CSV, or the row is orphaned from its line the day the record is next
+built.)
+
+**Who did what** is now a table. A report's decision was always
+recorded on the report - `resolved_by`, `resolved_at`,
+`resolution_note` - but a camera's had nowhere to go: hiding one left
+a note on its approved reports if it had any, and moving, unhiding
+or editing one left only `updated_at`, which says when and not who or
+what. `moderation_log` (migration 004, schema version 2.6) holds one
+row per thing a moderator does to a camera by hand - add, edit, move,
+hide, unhide, merge - with the moderator's id, the camera, a note and
+the time, and nothing more; nothing about a reporter that `reports`
+does not already hold. The functions that do those things write it
+through their existing `actor` parameter (`move_camera` gained one,
+which is a new signature, so the migration drops the old one by name
+first). The note carries what an audit needs and the row no longer
+does: a move says where the pin was, an edit says which fields changed
+and what they said, a hide says why. Moderators read it through RLS
+(`is_moderator()`); no client role can write it, so it is a record and
+not a notebook. Report decisions are deliberately not copied into it -
+two records of one decision are two things to keep in step - and the
+Activity tab reads both.
 
 ### Housekeeping SQL
 

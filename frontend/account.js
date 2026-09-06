@@ -1640,6 +1640,7 @@ function setUpModeratePage() {
            it. Coming back the other way is covered - that reloads
            the list, which rebuilds every row. */
         closeMove();
+        closeEdit();
 
         for (j = 0; j < tabs.length; j++) {
           tabs[j].className = tabs[j] === button ? "toggle on" : "toggle";
@@ -1679,6 +1680,13 @@ var showHiddenCameras = false;
    context a browser only has so many of. */
 var movingCamera = null;
 var movePicker = null;
+
+/* Likewise the one camera whose name, note, kind or state is open
+   for correcting. One panel of any kind at a time, across Move and
+   Edit both: opening either closes the other, because one thing
+   being changed is one thing to save wrong, and a panel left open
+   off screen is a panel a moderator forgets they opened. */
+var editingCamera = null;
 
 function setUpCamerasTab() {
   var search = document.getElementById("c-search");
@@ -1740,6 +1748,7 @@ function renderCameras() {
      its map down properly first, or the discarded element keeps a
      live WebGL context and a set of tile workers behind it. */
   closeMove();
+  closeEdit();
 
   list.innerHTML = "";
 
@@ -1774,8 +1783,15 @@ function cameraRow(c) {
   meta.textContent = cameraMeta(c);
   head.appendChild(meta);
 
+  /* The note has an element of its own so an edit can rewrite it in
+     place, the way a move rewrites the coordinates line, without
+     rebuilding the row under the panel. Empty when there is none;
+     the <br> is left out then so the link sits where the note would. */
+  var noteEl = document.createElement("span");
+  noteEl.className = "cam-note";
+  noteEl.textContent = c.note || "";
+  body.appendChild(noteEl);
   if (c.note) {
-    body.textContent = c.note;
     body.appendChild(document.createElement("br"));
   }
   var onMap = document.createElement("a");
@@ -1826,6 +1842,24 @@ function cameraRow(c) {
     openMove(c, row);
   };
 
+  /* Correcting what it says, which is the other half of "the camera
+     is right, the record of it is not": a typo in the name, a note
+     that says the wrong road, a shop entered as a fixed install, a
+     reported van site that came through as active. Until this the
+     only edit path for any of those was the seed, which cannot reach
+     a camera that came from a report. */
+  var edit = document.createElement("button");
+  edit.className = "quiet";
+  edit.textContent = "Edit";
+  edit.onclick = function () {
+    if (editingCamera === c.id) {
+      closeEdit();
+      return;
+    }
+    openEdit(c, row);
+  };
+
+  actions.appendChild(edit);
   actions.appendChild(move);
   actions.appendChild(b);
   actions.appendChild(outcome);
@@ -1923,6 +1957,7 @@ function openMove(c, row) {
   var lonIn   = lonBox.querySelector("input");
 
   closeMove();
+  closeEdit();
   movingCamera = c.id;
 
   panel.className = "move-panel";
@@ -2059,6 +2094,232 @@ function openMove(c, row) {
       row.querySelector(".coords").textContent = cameraMeta(c);
       row.querySelector("a.on-map").href = cameraMapHref(c);
       note.textContent = "Moved. It is at " + lat.toFixed(5) + ", " + lon.toFixed(5) + " now.";
+    }).catch(function () {
+      save.disabled = false;
+      note.textContent = "That did not go through. Try again in a moment.";
+    });
+  };
+}
+
+/* ---------------- editing a camera ----------------
+
+   The sibling of Move, for the rest of the row: the name, the note,
+   the kind and the state. A pin in the wrong place was the commonest
+   thing wrong with a camera that is otherwise right, and a name
+   spelt wrong is the next - and until this a typo was permanent,
+   because the only path that rewrote a name was the seed, which
+   cannot reach a camera that came from a report at all.
+
+   It saves through moderate_edit_camera, which checks the role again
+   and refuses the one thing this panel will not offer: a van site
+   marked active. Every van site is legacy - a van parks for a shift
+   and drives away - and the panel greys the option out and says why
+   rather than letting a moderator find out from the server.
+
+   The same panel shape as Move: opened inside the row, one at a
+   time, saved with a button, the row's own lines rewritten in place
+   so the panel stays open for a second correction. The server
+   records which fields changed and what they said before, so an
+   edit can be read back and, by hand, reversed.
+
+   One consequence is worth a line in the panel itself. A camera
+   from the published record keeps its seed_key (see move_camera in
+   schema.sql for why), and the seed's on-conflict update rewrites
+   the name, note and state from data/cameras.csv - so for a seed
+   camera an edit here holds only until the next re-run of the seed.
+   The correction is made in the CSV as well, or it will be undone;
+   the panel says so above Save for exactly those cameras. */
+
+function closeEdit() {
+  var panel = document.getElementById("c-edit-panel");
+
+  if (panel) {
+    panel.parentNode.removeChild(panel);
+  }
+  editingCamera = null;
+}
+
+/* A label over a field, for a text box, a textarea or a select
+   alike. moveField() is the number-box version of this; the two are
+   separate because a number box carries a step and an inputmode
+   that none of these want. */
+function labelled(id, label, input) {
+  var wrap = document.createElement("div");
+  var tag = document.createElement("label");
+
+  tag.setAttribute("for", id);
+  tag.textContent = label;
+  input.id = id;
+
+  wrap.appendChild(tag);
+  wrap.appendChild(input);
+  return wrap;
+}
+
+/* The three states a camera can be in, as the Add form offers them.
+   Written here once for the panel rather than read off the Add
+   form's <select>, which is on the page only because this tab is. */
+var CAMERA_STATES = [
+  { value: "active",        label: "Active" },
+  { value: "legacy",        label: "Legacy - no longer in use" },
+  { value: "nonfunctional", label: "Non-functional" }
+];
+
+function openEdit(c, row) {
+  var panel    = document.createElement("div");
+  var nameIn   = document.createElement("input");
+  var noteIn   = document.createElement("textarea");
+  var typeSel  = document.createElement("select");
+  var stateSel = document.createElement("select");
+  var pair     = document.createElement("div");
+  var vanHint  = document.createElement("p");
+  var seedHint = document.createElement("p");
+  var buttons  = document.createElement("div");
+  var save     = document.createElement("button");
+  var cancel   = document.createElement("button");
+  var note     = document.createElement("p");
+  var option;
+  var i;
+
+  closeMove();
+  closeEdit();
+  editingCamera = c.id;
+
+  panel.className = "edit-panel";
+  panel.id = "c-edit-panel";
+
+  nameIn.type = "text";
+  nameIn.value = c.name;
+  panel.appendChild(labelled("c-edit-name", "Name", nameIn));
+
+  noteIn.value = c.note || "";
+  noteIn.placeholder = "optional - shown in the popup";
+  panel.appendChild(labelled("c-edit-note", "Note", noteIn));
+
+  /* The kinds from CAMERA_TYPES, like every other drop-down. A row
+     can also carry the one type that is not a kind - nonfunccam,
+     from the older report rows - and fillTypeSelect() does not list
+     it, so it is added for that row alone; otherwise the select
+     would open on the first kind and a Save would quietly make a
+     fixed camera of it. */
+  fillTypeSelect(typeSel, c.type);
+  if (!typeOf(c.type)) {
+    option = document.createElement("option");
+    option.value = c.type;
+    option.textContent = typeLabel(c.type);
+    option.selected = true;
+    typeSel.appendChild(option);
+  }
+
+  for (i = 0; i < CAMERA_STATES.length; i++) {
+    option = document.createElement("option");
+    option.value = CAMERA_STATES[i].value;
+    option.textContent = CAMERA_STATES[i].label;
+    option.selected = CAMERA_STATES[i].value === c.status;
+    stateSel.appendChild(option);
+  }
+
+  pair.className = "pair";
+  pair.appendChild(labelled("c-edit-type", "What kind", typeSel));
+  pair.appendChild(labelled("c-edit-status", "State", stateSel));
+  panel.appendChild(pair);
+
+  /* Every van site is legacy. The Active option is greyed out while
+     the kind is a van site, and this line says why; the server
+     refuses the pair as well, so the greying is a courtesy and the
+     refusal is the lock. A van site that already reads active - a
+     reported one, on a database seeded before the change - shows
+     as it is, so the moderator can see it and set it right. */
+  vanHint.className = "hint";
+  vanHint.textContent = "A van site cannot be active: a van parks for a shift and drives away, " +
+    "so no van site claims to be there today. Set it to Legacy.";
+  panel.appendChild(vanHint);
+
+  function vanRule() {
+    var isVan = typeSel.value === "vancam";
+    stateSel.options[0].disabled = isVan;
+    vanHint.style.display = isVan ? "" : "none";
+  }
+  typeSel.onchange = vanRule;
+  vanRule();
+
+  if (c.source === "seed") {
+    seedHint.className = "hint";
+    seedHint.textContent = "This camera is from the published record. Its name, note and state are " +
+      "rewritten from data/cameras.csv every time the seed is run, so a correction made here " +
+      "holds only until then: make it in the CSV as well, or it will be undone.";
+    panel.appendChild(seedHint);
+  }
+
+  buttons.className = "row";
+  save.textContent = "Save";
+  cancel.className = "quiet";
+  cancel.textContent = "Cancel";
+  buttons.appendChild(save);
+  buttons.appendChild(cancel);
+  panel.appendChild(buttons);
+
+  note.className = "note";
+  panel.appendChild(note);
+
+  row.appendChild(panel);
+  nameIn.focus();
+
+  cancel.onclick = function () {
+    closeEdit();
+  };
+
+  save.onclick = function () {
+    var name = nameIn.value.trim();
+    var text = noteIn.value.trim();
+    var type = typeSel.value;
+    var status = stateSel.value;
+
+    note.textContent = "";
+
+    if (name === "") {
+      note.textContent = "A camera needs a name.";
+      nameIn.focus();
+      return;
+    }
+    if (type === "vancam" && status === "active") {
+      note.textContent = "A van site cannot be active. Set it to Legacy.";
+      stateSel.focus();
+      return;
+    }
+    if (name === c.name && text === (c.note || "") && type === c.type && status === c.status) {
+      note.textContent = "Nothing changed.";
+      return;
+    }
+
+    save.disabled = true;
+    note.textContent = "Saving…";
+
+    sb.rpc("moderate_edit_camera", {
+      cam_id: c.id,
+      cam_name: name,
+      cam_note: text,
+      cam_type: type,
+      cam_status: status
+    }).then(function (result) {
+      save.disabled = false;
+      if (result.error) {
+        note.textContent = result.error.message || "That did not go through.";
+        return;
+      }
+      forgetCameraCache();
+      c.name = name;
+      c.note = text;
+      c.type = type;
+      c.status = status;
+
+      /* The row above the panel is rewritten rather than the list
+         rebuilt, for Move's reason: rebuilding would close the panel
+         under a moderator who may have a second correction to make. */
+      row.querySelector(".queue-head strong").textContent = c.name;
+      row.querySelector(".coords").textContent = cameraMeta(c);
+      row.querySelector(".cam-note").textContent = c.note;
+      note.textContent = "Saved.";
     }).catch(function () {
       save.disabled = false;
       note.textContent = "That did not go through. Try again in a moment.";

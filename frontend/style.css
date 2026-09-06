@@ -1852,3 +1852,20 @@ button.load-more {
   font-size: 14px;
   color: var(--text);
 }
+
+/* The panel Edit opens inside a camera's row: the same indent and
+   rule as Move's panel, for the same reason - it belongs to the row
+   above it and should read as part of it, not as a box of its own.
+   Its fields are the ordinary form fields; the two hints in it are
+   the ordinary hint. */
+.edit-panel {
+  margin: 10px 0 4px 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--rule);
+}
+
+.edit-panel p.hint {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: var(--dim);
+}

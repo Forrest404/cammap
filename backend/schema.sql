@@ -767,6 +767,85 @@ create policy "saved_cameras: delete own"
 revoke all on public.saved_cameras from anon, authenticated;
 grant select, insert, update, delete on public.saved_cameras to authenticated;
 
+-- ---------------- moderation_log ----------------
+
+-- version 2.6 added this: one row per thing a moderator does to a
+-- camera by hand - adding one, editing one, moving one, hiding or
+-- unhiding one, merging two. Moderator id, action, camera, a note, a
+-- time; nothing more, and nothing about a reporter that the reports
+-- table does not already hold.
+--
+-- A report's decision has always been recorded on the report -
+-- resolved_by, resolved_at, resolution_note - but a camera's had
+-- nowhere to go. Hiding one left a note on its approved reports, if
+-- it had any; moving one, unhiding one, or editing one left only
+-- updated_at, which says when and not who or what. On a project that
+-- publishes accusations about surveillance, being able to audit its
+-- own moderators is not optional, and "the row was touched at 14:02"
+-- is not an audit. Report decisions are deliberately not copied in
+-- here: the reports table already records them, in columns the
+-- functions that make them already write, and two records of one
+-- decision would be two things to keep in step. The Activity tab on
+-- the moderation page reads both.
+--
+-- actor is null for something done without a moderator behind it -
+-- a script run with the service role - and becomes null if the
+-- moderator's account is ever deleted, so the row outlives the
+-- person, which an audit record must. camera_id likewise: cameras
+-- are never deleted, but if one ever were the log should not go
+-- with it. (backend/migrations/004_moderation_log.sql is this block,
+-- and the functions it teaches to write it, on their own.)
+create table if not exists public.moderation_log (
+  id         bigint generated always as identity primary key,
+  actor      uuid references public.profiles(id) on delete set null,
+  action     text not null
+               check (action in ('add_camera', 'edit_camera', 'move_camera',
+                                 'hide_camera', 'unhide_camera', 'merge_cameras')),
+  camera_id  bigint references public.cameras(id) on delete set null,
+  note       text,
+  created_at timestamptz not null default now()
+);
+
+-- The Activity tab reads it newest first, a page at a time.
+create index if not exists moderation_log_created_idx
+  on public.moderation_log (created_at desc);
+
+alter table public.moderation_log enable row level security;
+
+-- Moderators read it; nobody writes it from a browser. The rows are
+-- inserted by the functions further down, which run as the table's
+-- owner and are not subject to this policy; withholding insert,
+-- update and delete from the client roles altogether is what makes
+-- the log a record rather than a notebook.
+drop policy if exists "moderation_log: read moderator" on public.moderation_log;
+create policy "moderation_log: read moderator"
+  on public.moderation_log for select
+  using (public.is_moderator());
+
+revoke all on public.moderation_log from anon, authenticated;
+grant select on public.moderation_log to authenticated;
+
+-- One place the insert is written, so a function that acts on a
+-- camera records itself in one line. service_role only: it is
+-- called from inside the security definer functions, never from a
+-- browser, and a client that could call it directly could write
+-- history that did not happen.
+create or replace function public.log_moderation(
+  actor uuid, action text, cid bigint, note text default null)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  insert into public.moderation_log (actor, action, camera_id, note)
+  values (actor, action, cid, note);
+end;
+$fn$;
+
+revoke all on function public.log_moderation(uuid, text, bigint, text) from public, anon, authenticated;
+grant execute on function public.log_moderation(uuid, text, bigint, text) to service_role;
+
 -- ---------------- upgrade from version 1 ----------------
 
 -- Version 1 kept proposed sightings in a submissions table that the
@@ -1084,7 +1163,9 @@ grant execute on function public.moderate_report(bigint, text, text) to authenti
 -- the person's total on delete, so nothing here adds up anything.
 
 -- Take a camera off the map. It stays in the table, invisible, with
--- its reports intact. Idempotent.
+-- its reports intact. Idempotent. Since version 2.6 it also writes a
+-- moderation_log row with the reason; the note on the approved
+-- reports stays too - it is what the reporter reads.
 create or replace function public.hide_camera(cid bigint, why text default null, actor uuid default null)
 returns void
 language plpgsql
@@ -1104,6 +1185,7 @@ begin
          resolved_by = coalesce(actor, resolved_by),
          resolved_at = now()
    where camera_id = cid and state = 'approved';
+  perform public.log_moderation(actor, 'hide_camera', cid, why);
 end;
 $fn$;
 
@@ -1111,7 +1193,9 @@ revoke all on function public.hide_camera(bigint, text, uuid) from public, anon,
 grant execute on function public.hide_camera(bigint, text, uuid) to service_role;
 
 -- Put a hidden camera back. The reverse of hide_camera, for a removal
--- that turned out to be wrong.
+-- that turned out to be wrong. Logged since version 2.6, but only
+-- when something happened - a second call on a camera already on
+-- the map is nothing to record.
 create or replace function public.unhide_camera(cid bigint, actor uuid default null)
 returns void
 language plpgsql
@@ -1120,6 +1204,10 @@ set search_path = public, pg_temp
 as $fn$
 begin
   update public.cameras set visible = true where id = cid and not visible;
+  if not found then
+    return;
+  end if;
+  perform public.log_moderation(actor, 'unhide_camera', cid, null);
 end;
 $fn$;
 
@@ -1217,7 +1305,10 @@ grant execute on function public.reapprove_report(bigint, uuid) to service_role;
 -- Put a camera on the map by hand, without a report. For the things a
 -- moderator knows about that nobody has reported - a published record,
 -- a site visit. Goes straight on, visible, attributed to whoever added
--- it, with no XP for anyone. Same London box as everything else.
+-- it, with no XP for anyone. Same London box as everything else. The
+-- row's own approved_by already says who; the moderation_log row it
+-- writes as well (version 2.6) is so the Activity tab has one list
+-- of camera actions rather than one per kind.
 create or replace function public.add_camera(
   cam_name text, cam_note text, cam_lat double precision, cam_lon double precision,
   cam_type text, cam_status text default 'active', actor uuid default null)
@@ -1236,6 +1327,7 @@ begin
   values (btrim(cam_name), coalesce(cam_note, ''), cam_lat, cam_lon, cam_type,
           coalesce(cam_status, 'active'), 'admin', now(), actor)
   returning id into cid;
+  perform public.log_moderation(actor, 'add_camera', cid, null);
   return cid;
 end;
 $fn$;
@@ -1290,38 +1382,55 @@ grant execute on function public.moderate_add_camera(text, text, double precisio
 -- before sending, so a third copy of the numbers in this function
 -- would be one more thing to drift. Out-of-bounds arrives as a
 -- constraint violation, which is the honest answer.
+--
+-- version 2.6 gave it an actor, so the moderation_log can say who
+-- moved it, and it records where the pin was: the row carries where
+-- it is now, and an audit of a move that cannot say where from is
+-- half an audit. A new parameter is a new signature, and
+-- create-or-replace would leave the old three-argument function
+-- standing beside the new one on a database that has it, so the old
+-- one is dropped by name first - a no-op on a fresh database.
+drop function if exists public.move_camera(bigint, double precision, double precision);
+
 create or replace function public.move_camera(
-  cid bigint, new_lat double precision, new_lon double precision)
+  cid bigint, new_lat double precision, new_lon double precision, actor uuid default null)
 returns void
 language plpgsql
 security definer
 set search_path = public, pg_temp
 as $fn$
+declare
+  old public.cameras%rowtype;
 begin
   if new_lat is null or new_lon is null then
     raise exception 'a camera needs both coordinates';
+  end if;
+
+  -- Silence here would look like success to the moderator watching,
+  -- and the camera would not have moved. A wrong id is worth hearing
+  -- about, unlike hide_camera's second call on an already hidden
+  -- camera, which is genuinely nothing to do.
+  select * into old from public.cameras where id = cid;
+  if not found then
+    raise exception 'no camera with id %', cid;
   end if;
 
   update public.cameras
      set lat = new_lat, lon = new_lon
    where id = cid;
 
-  -- Silence here would look like success to the moderator watching,
-  -- and the camera would not have moved. A wrong id is worth hearing
-  -- about, unlike hide_camera's second call on an already hidden
-  -- camera, which is genuinely nothing to do.
-  if not found then
-    raise exception 'no camera with id %', cid;
-  end if;
+  perform public.log_moderation(actor, 'move_camera', cid,
+    format('was at %s, %s', round(old.lat::numeric, 5), round(old.lon::numeric, 5)));
 end;
 $fn$;
 
-revoke all on function public.move_camera(bigint, double precision, double precision)
+revoke all on function public.move_camera(bigint, double precision, double precision, uuid)
   from public, anon, authenticated;
-grant execute on function public.move_camera(bigint, double precision, double precision)
+grant execute on function public.move_camera(bigint, double precision, double precision, uuid)
   to service_role;
 
--- The browser's way in for a moderator. Checks the role, then moves.
+-- The browser's way in for a moderator. Checks the role, then moves,
+-- passing the moderator through for the log.
 create or replace function public.moderate_move_camera(
   cam_id bigint, cam_lat double precision, cam_lon double precision)
 returns void
@@ -1333,7 +1442,7 @@ begin
   if not public.is_moderator() then
     raise exception 'moderators only' using errcode = '42501';
   end if;
-  perform public.move_camera(cam_id, cam_lat, cam_lon);
+  perform public.move_camera(cam_id, cam_lat, cam_lon, auth.uid());
 end;
 $fn$;
 
@@ -1342,11 +1451,144 @@ revoke all on function public.moderate_move_camera(bigint, double precision, dou
 grant execute on function public.moderate_move_camera(bigint, double precision, double precision)
   to authenticated, service_role;
 
+-- version 2.7: edit a camera. Everything on the row a moderator might
+-- have a reason to correct and that nothing else corrects: the name,
+-- the note, the kind, the state. Not the position (move_camera), not
+-- visibility (hide_camera), not the counts or the source columns,
+-- which are the record's and change in data/cameras.csv. Until this
+-- a moderator could add, hide, unhide and move a camera, and a typo
+-- in a name was permanent. Same pattern as move_camera: this for the
+-- service role, moderate_edit_camera below for the browser.
+--
+-- What it refuses:
+--   - a blank name, as add_camera does;
+--   - an id that is not a camera, aloud, as move_camera does;
+--   - a van site marked active. Every vancam is legacy - a van parks
+--     for a shift and drives away, so no van site claims to be there
+--     today - and that is the one invariant of the record this map
+--     is most careful about (NOTES.md, "What active means"). The
+--     build script refuses it in the CSV; this refuses it here. It is
+--     not a check constraint on the table because a live database
+--     seeded before every van went legacy still carries van rows that
+--     say active (QUESTIONS.md, item 9), and adding the constraint
+--     would fail on them; approve_report also still writes a
+--     reported van as active, which is left for the maintainer's
+--     one-line update in NOTES.md and not changed here.
+-- A bad type or state is refused by the table's own check
+-- constraints, the same reasoning move_camera gives for the bounds:
+-- the constraint is the lock, and a copy of the list here would be
+-- one more thing to drift.
+--
+-- seed_key is not touched, for the reason move_camera does not
+-- touch it: it is how seed.sql finds a row it has already written,
+-- and rewriting it would make the next seed run insert a second
+-- camera. The consequence is worth saying plainly, because it is
+-- the opposite of Move's: the seed's on-conflict update rewrites
+-- name, note and status from the record, so an edit to a seed
+-- camera's name, note or state holds only until the next re-run of
+-- seed.sql. A correction to a seed camera is made in
+-- data/cameras.csv as well, or it will be undone. (The type is part
+-- of the key and not in the update list, so a corrected type
+-- survives - and orphans the row from its CSV line the day the
+-- record is next built with the old type, which is the same reason
+-- to fix the CSV.) The panel on the moderation page says this above
+-- the Save button for any camera that came from the seed.
+--
+-- The log row records which fields changed and what they were, so
+-- the previous value is never lost: "name was 'Croydon'; status was
+-- active". Nothing is logged, and nothing written, when nothing
+-- changed. (backend/migrations/005_edit_camera.sql is this and the
+-- wrapper on their own.)
+create or replace function public.edit_camera(
+  cid bigint, new_name text, new_note text, new_type text, new_status text,
+  actor uuid default null)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+declare
+  old     public.cameras%rowtype;
+  changed text[] := '{}';
+  want_name   text;
+  want_note   text;
+  want_type   text;
+  want_status text;
+begin
+  if new_name is null or btrim(new_name) = '' then
+    raise exception 'a camera needs a name';
+  end if;
+
+  select * into old from public.cameras where id = cid;
+  if not found then
+    raise exception 'no camera with id %', cid;
+  end if;
+
+  want_name   := btrim(new_name);
+  want_note   := coalesce(new_note, '');
+  want_type   := coalesce(new_type, old.type);
+  want_status := coalesce(new_status, old.status);
+
+  if want_type = 'vancam' and want_status = 'active' then
+    raise exception 'a van site cannot be active: a van parks for a shift and drives away, so no van site claims to be there today';
+  end if;
+
+  if want_name <> old.name then
+    changed := changed || format('name was %L', old.name);
+  end if;
+  if want_note <> old.note then
+    changed := changed || format('note was %L', old.note);
+  end if;
+  if want_type <> old.type then
+    changed := changed || format('type was %s', old.type);
+  end if;
+  if want_status <> old.status then
+    changed := changed || format('status was %s', old.status);
+  end if;
+
+  if cardinality(changed) = 0 then
+    return;
+  end if;
+
+  update public.cameras
+     set name = want_name, note = want_note, type = want_type, status = want_status
+   where id = cid;
+
+  perform public.log_moderation(actor, 'edit_camera', cid, array_to_string(changed, '; '));
+end;
+$fn$;
+
+revoke all on function public.edit_camera(bigint, text, text, text, text, uuid)
+  from public, anon, authenticated;
+grant execute on function public.edit_camera(bigint, text, text, text, text, uuid)
+  to service_role;
+
+-- The browser's way in for a moderator. Checks the role, then edits.
+create or replace function public.moderate_edit_camera(
+  cam_id bigint, cam_name text, cam_note text, cam_type text, cam_status text)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  if not public.is_moderator() then
+    raise exception 'moderators only' using errcode = '42501';
+  end if;
+  perform public.edit_camera(cam_id, cam_name, cam_note, cam_type, cam_status, auth.uid());
+end;
+$fn$;
+
+revoke all on function public.moderate_edit_camera(bigint, text, text, text, text)
+  from public, anon, authenticated;
+grant execute on function public.moderate_edit_camera(bigint, text, text, text, text)
+  to authenticated, service_role;
+
 -- What the moderator's browser calls to undo a decision. Same gate as
 -- moderate_report. Actions: hide_camera and unhide_camera take a
--- camera id; retract and reapprove take a report id. Adding and
--- moving a camera are not here - they carry arguments of their own,
--- so each has its own moderate_ function above.
+-- camera id; retract and reapprove take a report id. Adding, moving
+-- and editing a camera are not here - they carry arguments of their
+-- own, so each has its own moderate_ function above.
 create or replace function public.moderate_undo(target bigint, action text, note text default null)
 returns bigint
 language plpgsql
