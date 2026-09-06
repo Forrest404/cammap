@@ -1154,6 +1154,12 @@ this harness (the tab is not hidden), so `document.hidden` is the
 thing to check, not the harness; and a screenshot `clip` is in page
 coordinates, so a scrolled page clips somewhere else.
 
+### Reading the map without a mouse, or without sight
+
+*(Written by the Wave 3 map-a11y agent: reduced motion, what a screen
+reader is told the list is, soloing a kind from the legend, and the
+"how to read this map" block.)*
+
 ### Keyboard focus and print
 
 **The focus ring.** Everything Tab can reach shows two pixels of the
@@ -1269,6 +1275,12 @@ and will print with the list once it exists.
 What the site keeps about a person: a username of two random words, a password hash, the reports they sent, and their XP. No email, no name, no IP address in any of our tables.
 
 Two honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. And a photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Videos are sent as they are, and the page says so.
+
+### Changing, leaving and recovering an account
+
+*(Written by the Wave 3 accounts agent: signing out everywhere, changing
+the password, the leaderboard opt-out and where it is enforced, what a
+saved camera knows, the recovery card, and deleting an account.)*
 
 ## Forrest404
 

@@ -1710,6 +1710,16 @@ button.toggle.on:focus-visible {
 }
 
 /* ------------------------------------------------------------------
+   ACCESSIBILITY (Wave 3: the map-a11y agent writes this block)
+
+   Rules for reading the map without a mouse or without sight: the
+   live region, the soloed legend key, the "how to read this map"
+   block and its collapsed state, and anything reduced motion needs.
+   If the agent needs no rule here, this block is removed rather than
+   left empty.
+   ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------
    PAPER
 
    What printing the map page gives you: the list, in one column,
@@ -2190,3 +2200,13 @@ ul.queue .row {
 #mod-activity p.hint + h3 {
   margin-top: 0;
 }
+
+/* ------------------------------------------------------------------
+   ACCOUNTS (Wave 3: the accounts agent writes this block)
+
+   Rules for the account page's new boxes: change password, sign out
+   everywhere, the leaderboard switch, the recovery card and its print
+   layout, the delete-account confirmation, and the saved-camera state
+   line. If the agent needs no rule here, this block is removed rather
+   than left empty.
+   ------------------------------------------------------------------ */
