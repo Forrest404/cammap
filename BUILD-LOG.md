@@ -74,18 +74,18 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | KEEP-3 | 0 | keep3 | merged | 052c8eb | `tools/check.js`, zero deps |
 | KEEP-1 | 0 | keep1 | merged | 15599a0 | `stamp.py` → checker; nav check must normalise hrefs and `current` |
 | KEEP-2 | 0 | keep2 | merged | 97b2bfc | GitHub Actions; "green" only observable after a push the maintainer makes |
-| REACH-4 | 1 | chrome | todo | | root `404.html`, must carry the CSP and join stamp.py's page set |
-| REACH-3 | 1 | chrome | todo | | `robots.txt`, `sitemap.xml` at `https://forrest404.github.io/cammap/` |
-| REACH-7 | 1 | chrome | todo | | licence: proceeds on QUESTIONS default until the maintainer decides |
-| WORD-5 | 1 | chrome | todo | | hosting figure: `TODO` in footer until answered |
-| REACH-2 | 1 | chrome | todo | | favicon SVG, 180px PNG, manifest |
-| REACH-1 | 1 | chrome | todo | | per-page title/description, 1200×630 PNG in `img/` |
+| REACH-4 | 1 | chrome | in-flight | | root `404.html`, must carry the CSP and join stamp.py's page set |
+| REACH-3 | 1 | chrome | in-flight | | `robots.txt`, `sitemap.xml` at `https://forrest404.github.io/cammap/` |
+| REACH-7 | 1 | chrome | in-flight | | licence: proceeds on QUESTIONS default until the maintainer decides |
+| WORD-5 | 1 | chrome | in-flight | | hosting figure: `TODO` in footer until answered |
+| REACH-2 | 1 | chrome | in-flight | | favicon SVG, 180px PNG, manifest |
+| REACH-1 | 1 | chrome | in-flight | | per-page title/description, 1200×630 PNG in `img/` |
 | DATA-5 | 1 | generator | todo | | byte-identical regeneration is the gate; orchestrator verifies by hand |
 | DATA-3 | 1 | generator | todo | | *migration*; by source period, not calendar year — see ground truth |
 | DATA-1 (schema) | 1 | generator | todo | | *migration*; `source_url`, `source_label` nullable; UI is Wave 5 |
 | DATA-7 (schema) | 1 | generator | todo | | *migration*; `approximate` boolean derived once at generation, never at runtime |
-| MAP-7 | 1 | stylesheet | todo | | one `:focus-visible` rule |
-| MAP-10 | 1 | stylesheet | todo | | print stylesheet; list rows already carry coordinates |
+| MAP-7 | 1 | stylesheet | in-flight | | one `:focus-visible` rule |
+| MAP-10 | 1 | stylesheet | in-flight | | print stylesheet; list rows already carry coordinates |
 | MAP-3 | 2 | map | todo | | remove `edit-only`, add debounce and empty state |
 | MAP-1 | 2 | map | todo | | `#zoom/lat/lon`, `#camera=<id>`, keep `#lat,lon` |
 | MAP-2 | 2 | map | todo | | Near me, pressed never automatic |
@@ -136,8 +136,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 
 | Status | Count |
 | --- | --- |
-| todo | 55 |
-| in-flight | 0 |
+| todo | 47 |
+| in-flight | 8 |
 | merged | 3 |
 | verified | 0 |
 | blocked | 0 |
@@ -146,3 +146,9 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 ## Wave log
 
 *(one entry per wave: what landed, what changed shape, what is blocked, ledger totals)*
+
+**Wave 0 → 1 handover (2026-09-06).** Wave 0 merged; verification agent running. Wave 1's
+chrome and stylesheet agents were started before that report came back, because neither
+touches `tools/`, which is the only place a Wave 0 fix could land. The generator agent
+(DATA-5, DATA-3, DATA-1/DATA-7 schema) is held until verification returns, because it
+extends `tools/stamp.py` and `tools/check.js` and would conflict with any fix there.
