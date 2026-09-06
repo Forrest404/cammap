@@ -773,6 +773,44 @@ server's reason beside it, and the line under the buttons says how
 many of each. "Select all" reaches only the rows that are loaded: a
 moderator should not be able to approve what they have not seen.
 
+**The queue can be sorted and filtered, and the sort sees all of
+it.** Newest first, everything mixed, was the only order there was.
+The order a moderator wants is *the likely duplicates first*: a report
+dropped on top of a camera the map already has is the quickest
+decision on the page and the commonest. So the queue is now two
+fetches. The first is an index - every pending report's small columns
+(id, kind, type, position, time) in one request, under the same 5,000
+ceiling the cameras fetch uses and for the same reason: those rows
+are a few dozen bytes each, five thousand of them are smaller than one
+proof photograph, and a queue that long is a problem the page will
+have earned. The index is measured, filtered and sorted in the
+browser, and the pager fetches each page's full rows - note, reporter,
+proof - by id from the order it settled on. Sorting thirty loaded rows
+and then loading thirty more that are nearer would be worse than no
+sort, which is why the whole set is sorted and not the page.
+
+Filter by what a report is (a new camera, a state report) and by kind
+(from `CAMERA_TYPES`; a state report's kind is its camera's, which is
+why the cameras are loaded first). Sort newest, oldest, or nearest to
+a camera on the map; nearest puts state reports last, since they sit
+on the camera they are about and the distance says nothing. Every
+new-camera row shows its nearest camera and the distance whatever the
+order, so a report 15 m from a camera of the same kind announces
+itself.
+
+The distance is `metresBetween()` in `account.js`, the twin of
+`metres_between` in `schema.sql` - same formula, same radius, written
+once in each. It is computed in the browser and not by a new server
+function on purpose. An endpoint answering "how far is this report
+from the nearest camera" would say nothing about accounts and so would
+pass the anonymity test; but it would be a new surface, with a grant
+to get right and a policy to keep in step, for a number the browser
+already has both halves of. Paging by id also closes a gap offset
+paging had: a *Load more* pressed after rows have left the page - in a
+batch, say - does not skip the rows that shifted up to fill the gap,
+and an id decided since the index was taken comes back empty rather
+than as a decided row with live buttons.
+
 ### Housekeeping SQL
 
 Old anonymous accounts and test users:

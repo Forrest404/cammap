@@ -1947,3 +1947,52 @@ ul.queue li.failed {
   border-left: 2px solid var(--accent);
   padding-left: 10px;
 }
+
+/* Which reports, in what order: three drop-downs on one line, each
+   with a word in front of it, wrapping on a phone. The labels are
+   inline like the tick box's, not the block capitals over a form
+   field, and the selects take their own width rather than the
+   field's full one. The match count sits at the end of the line. */
+.queue-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  max-width: 68ch;
+  margin: 0 0 12px 0;
+}
+
+/* A word and its drop-down wrap as one, so "Order" is never left at
+   the end of a line with its select on the next. */
+.queue-tools .tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.queue-tools label {
+  display: inline;
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.queue-tools select {
+  width: auto;
+  margin: 0;
+  padding: 5px 7px;
+  font-size: 13px;
+}
+
+.queue-tools .note {
+  margin: 0;
+}
+
+/* The distance line under a report's name, dim like the coordinates
+   it sits beside: it is the number the nearest-first sort orders by,
+   shown whatever the order. */
+.queue-head .nearest {
+  display: block;
+}

@@ -125,17 +125,47 @@
       <!-- What is waiting. -->
       <div id="mod-queue">
         <p class="hint">
-          Pending reports, newest first. Approving a new camera puts it on
-          the map for everyone; approving a state report changes the camera
-          it is about. Both give the reporter their XP. Reports that enough
-          people agreed on have already gone through by themselves and are
-          not here.
+          Pending reports. Approving a new camera puts it on the map for
+          everyone; approving a state report changes the camera it is
+          about. Both give the reporter their XP. Reports that enough
+          people agreed on have already gone through by themselves and
+          are not here. <strong>Nearest first</strong> puts the reports
+          that sit on top of a camera the map already has at the top -
+          the likeliest duplicates, and the quickest decisions.
         </p>
         <!-- How many are waiting and how long the oldest has waited:
              the measure of whether the queue is being kept up with.
              account.js's refreshBacklog() writes it, from a count-only
              request, and again after every decision. -->
         <p class="backlog" id="queue-backlog" aria-live="polite"></p>
+        <!-- Which reports, in what order. The sort sees the whole
+             queue, not the loaded page: account.js fetches every
+             pending report's small columns once, measures each against
+             the cameras it already holds, sorts here, and pages the
+             full rows by id. The kind list is filled from CAMERA_TYPES. -->
+        <div class="queue-tools" id="queue-tools">
+          <span class="tool">
+            <label for="queue-kind">Show</label>
+            <select id="queue-kind">
+              <option value="all">All reports</option>
+              <option value="new">New cameras</option>
+              <option value="status">State reports</option>
+            </select>
+          </span>
+          <span class="tool">
+            <label for="queue-type">Kind</label>
+            <select id="queue-type"></select>
+          </span>
+          <span class="tool">
+            <label for="queue-sort">Order</label>
+            <select id="queue-sort">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="nearest">Nearest to a camera on the map</option>
+            </select>
+          </span>
+          <span class="note" id="queue-count" aria-live="polite"></span>
+        </div>
         <!-- Deciding many at once. Tick rows, or all on this page, and
              one press approves or rejects them - each through
              moderate_report, the same function and the same gate as the

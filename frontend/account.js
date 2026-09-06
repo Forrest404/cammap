@@ -1534,10 +1534,16 @@ function loadPage(query, offset, onDone) {
 
    reset() empties the list and loads the first page; load() loads the
    next. One load at a time - a second click on the button while the
-   first is still out would append the same page twice. */
+   first is still out would append the same page twice - and a reset
+   while a page is out throws that page away when it lands: the list
+   it was fetched for has been emptied, and the rows would otherwise
+   arrive in a list that now means something else (a filter changed
+   twice in a second showed the first filter's rows under the second
+   filter's count, which is how this was found). */
 function makePager(opts) {
   var offset = 0;
   var loading = false;
+  var generation = 0;
   var pager = {};
 
   function show(el, on) {
@@ -1547,6 +1553,8 @@ function makePager(opts) {
   }
 
   function load() {
+    var mine = generation;
+
     if (loading) {
       return;
     }
@@ -1558,6 +1566,13 @@ function makePager(opts) {
 
     opts.fetch(offset, function (problem, rows, more) {
       var i;
+
+      /* A reset happened while this page was out: it belongs to a
+         list that is gone. The reset's own load is what the note and
+         the button now answer to. */
+      if (mine !== generation) {
+        return;
+      }
 
       loading = false;
       if (opts.more) {
@@ -1587,6 +1602,8 @@ function makePager(opts) {
   }
 
   pager.reset = function () {
+    generation++;
+    loading = false;
     offset = 0;
     opts.list.innerHTML = "";
     show(opts.empty, false);
@@ -1660,6 +1677,7 @@ function setUpModeratePage() {
   }
 
   setUpBulk();
+  setUpQueueTools();
   loadQueue();
 }
 
@@ -1710,30 +1728,60 @@ function setUpCamerasTab() {
   loadAllCameras();
 }
 
-function loadAllCameras() {
-  var note = document.getElementById("cameras-note");
+/* The fetch on its own, for the two tabs that want the cameras: the
+   Cameras tab, which lists them, and the queue, which measures each
+   report's distance to the nearest one (see "sorting the whole
+   queue", below). Calls back with an error or null once allCameras
+   is filled.
 
-  note.textContent = "Loading…";
-
-  /* A moderator's select on cameras returns hidden ones too, by the
-     read policy. Ordered by name so the list reads like the map's. */
+   A moderator's select on cameras returns hidden ones too, by the
+   read policy. Ordered by name so the list reads like the map's.
+   The 5000 is a ceiling, not a page: the list is meant to bring
+   everything, and 182 cameras plus whatever is reported will not
+   reach it for a long time - and if it ever does, the search box
+   and the distance sort will both be quietly short of the rest,
+   which is the moment to make this a pager too. */
+function fetchCameras(onDone) {
   sb.from("cameras")
     .select("id,name,note,lat,lon,type,status,source,visible")
     .order("name")
     .limit(5000)
     .then(function (result) {
-      note.textContent = "";
       if (result.error) {
-        note.textContent = "Could not load the cameras.";
+        onDone(result.error);
         return;
       }
       allCameras = result.data;
       camerasLoaded = true;
-      renderCameras();
+      onDone(null);
     })
     .catch(function () {
-      note.textContent = "Could not load the cameras.";
+      onDone({ message: "Could not reach the server." });
     });
+}
+
+/* The cameras, if they are not already here. The Cameras tab
+   reloads on every visit so a change made elsewhere shows; the queue
+   only needs them once, for the distances. */
+function ensureCameras(onDone) {
+  if (camerasLoaded) {
+    onDone(null);
+    return;
+  }
+  fetchCameras(onDone);
+}
+
+function loadAllCameras() {
+  var note = document.getElementById("cameras-note");
+
+  note.textContent = "Loading…";
+
+  fetchCameras(function (problem) {
+    note.textContent = problem ? "Could not load the cameras." : "";
+    if (!problem) {
+      renderCameras();
+    }
+  });
 }
 
 function renderCameras() {
@@ -2523,34 +2571,343 @@ function historyRow(r) {
   return row;
 }
 
+/* ---------------- sorting and filtering the whole queue ----------------
+
+   Newest first, everything mixed, was the only order the queue had.
+   The order a moderator actually wants is "the likely duplicates
+   first": a report dropped on top of a camera the map already has
+   is the quickest decision on the page and the commonest, and it
+   should not be found by reading down thirty rows. And a moderator
+   who knows the shops, or the stations, wants to see only those.
+
+   The sort has to see the whole queue, not the loaded page: sorting
+   thirty rows by distance and then loading thirty more that are
+   nearer is worse than no sort at all. So the queue is now two
+   fetches. The first is the index: every pending report's small
+   columns - id, kind, type, position, time - in one request under
+   the same 5000 ceiling fetchCameras() uses, and for the same
+   reason. Those rows are a few dozen bytes each; five thousand of
+   them are smaller than one proof photograph, and a queue that long
+   is a problem this page will have earned by then. The index is
+   measured, filtered and sorted here, in the browser, and the pager
+   then fetches each page's full rows - the note, the reporter, the
+   proof - by id from the order it settled on.
+
+   The distance is worked out here and not by a new server function
+   on purpose. An endpoint that answered "how far is this report from
+   the nearest camera" would say nothing about accounts, so it would
+   pass the anonymity test; but it would be a new surface, with a
+   grant to get right and a policy to keep in step, for a number the
+   browser can already produce from two lists it already holds. The
+   arithmetic is metresBetween(), the twin of metres_between in
+   schema.sql, written once here.
+
+   Paging by id has a second benefit the offset paging did not have:
+   a Load more pressed after rows have left this page - approved,
+   rejected, in a batch - does not skip the rows that shifted up
+   to fill the gap, because the page is a slice of a list of ids
+   the browser holds, not a window on a table that moved. An id that
+   was decided since the index was taken simply comes back empty and
+   is not shown twice. */
+
 /* Everything a queue row shows. The proof rows and the reporter's
    username ride along in the same request, so a page of thirty is
    one round trip and not sixty-one. */
 var QUEUE_COLUMNS = "id,user_id,kind,camera_id,type,status_claim,name,note,lat,lon,created_at," +
   "profiles!reports_user_id_fkey(username),report_proof(id,storage_path,mime)";
 
+/* The same ceiling as fetchCameras(), for the same reason. */
+var QUEUE_CEILING = 5000;
+
 var queuePager = null;
+var queueIndex = [];     /* every pending report's light row, measured */
+var queueOrder = [];     /* the ids of the ones that pass the filter, in the sort order */
+var queueView = { kind: "all", type: "all", sort: "newest" };
+
+/* Haversine, in metres. The twin of metres_between in schema.sql -
+   the same formula and the same 6371000 m radius, so a distance the
+   queue shows is the one approve_report would measure. */
+function metresBetween(lat1, lon1, lat2, lon2) {
+  var toRad = Math.PI / 180;
+  var dLat = (lat2 - lat1) * toRad;
+  var dLon = (lon2 - lon1) * toRad;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+/* The nearest camera on the map to a point, of any kind, and how
+   far. Any kind, not the report's kind: a fixed camera reported on
+   top of a van site is worth seeing beside the van site, whichever
+   of the two it turns out to be. Over allCameras, which the
+   moderation page holds whole. */
+function nearestCamera(lat, lon) {
+  var best = null;
+  var bestMetres = Infinity;
+  var m;
+  var i;
+
+  for (i = 0; i < allCameras.length; i++) {
+    if (!allCameras[i].visible) {
+      continue;
+    }
+    m = metresBetween(lat, lon, Number(allCameras[i].lat), Number(allCameras[i].lon));
+    if (m < bestMetres) {
+      bestMetres = m;
+      best = allCameras[i];
+    }
+  }
+
+  return best ? { camera: best, metres: bestMetres } : null;
+}
+
+function cameraById(id) {
+  var i;
+
+  for (i = 0; i < allCameras.length; i++) {
+    if (allCameras[i].id === id) {
+      return allCameras[i];
+    }
+  }
+  return null;
+}
+
+/* Every pending report's light row, measured. A new-camera report
+   gets its nearest camera; a state report is about a camera and sits
+   on its coordinates, so "nearest" would always be that camera at
+   zero and says nothing - it gets none, and sorts after the new
+   ones. A state report's kind is its camera's, which is why the
+   cameras are loaded first. */
+function loadQueueIndex(onDone) {
+  sb.from("reports")
+    .select("id,kind,type,camera_id,lat,lon,created_at")
+    .eq("state", "pending")
+    .order("created_at", { ascending: false })
+    .limit(QUEUE_CEILING)
+    .then(function (result) {
+      var rows;
+      var near;
+      var cam;
+      var i;
+
+      if (result.error) {
+        onDone(result.error);
+        return;
+      }
+
+      rows = result.data || [];
+      for (i = 0; i < rows.length; i++) {
+        rows[i].nearest = null;
+        if (rows[i].kind === "new") {
+          near = nearestCamera(Number(rows[i].lat), Number(rows[i].lon));
+          if (near) {
+            rows[i].nearest = near;
+          }
+        } else {
+          cam = cameraById(rows[i].camera_id);
+          rows[i].type = cam ? cam.type : null;
+        }
+      }
+      queueIndex = rows;
+      onDone(null);
+    })
+    .catch(function () {
+      onDone({ message: "Could not reach the server." });
+    });
+}
+
+/* The filter and the sort, over the index, into queueOrder. Newest
+   and oldest are by the time the report was sent. Nearest puts the
+   new-camera reports in order of distance to a camera already on the
+   map - the likeliest duplicates first - and the state reports after
+   them, newest first, since the distance means nothing for those. */
+function applyQueueView() {
+  var kept = [];
+  var i;
+  var r;
+
+  for (i = 0; i < queueIndex.length; i++) {
+    r = queueIndex[i];
+    if (queueView.kind !== "all" && r.kind !== queueView.kind) {
+      continue;
+    }
+    if (queueView.type !== "all" && r.type !== queueView.type) {
+      continue;
+    }
+    kept.push(r);
+  }
+
+  function byTime(a, b) {
+    return a.created_at < b.created_at ? 1 : (a.created_at > b.created_at ? -1 : 0);
+  }
+
+  if (queueView.sort === "oldest") {
+    kept.sort(function (a, b) { return -byTime(a, b); });
+  } else if (queueView.sort === "nearest") {
+    kept.sort(function (a, b) {
+      var da = a.nearest ? a.nearest.metres : Infinity;
+      var db = b.nearest ? b.nearest.metres : Infinity;
+
+      if (da !== db) {
+        return da < db ? -1 : 1;
+      }
+      return byTime(a, b);
+    });
+  } else {
+    kept.sort(byTime);
+  }
+
+  queueOrder = [];
+  for (i = 0; i < kept.length; i++) {
+    queueOrder.push(kept[i].id);
+  }
+
+  showQueueCount();
+}
+
+/* "12 of 60 match" while a filter is on; nothing while it is not,
+   because the backlog line above already says how many are waiting. */
+function showQueueCount() {
+  var line = document.getElementById("queue-count");
+
+  if (!line) {
+    return;
+  }
+  line.textContent = (queueView.kind === "all" && queueView.type === "all")
+    ? ""
+    : queueOrder.length + " of " + queueIndex.length + " match.";
+}
+
+function indexRow(id) {
+  var i;
+
+  for (i = 0; i < queueIndex.length; i++) {
+    if (queueIndex[i].id === id) {
+      return queueIndex[i];
+    }
+  }
+  return null;
+}
+
+/* One page of the queue: the next QUEUE_PAGE ids from queueOrder,
+   fetched whole. Still pending only, so an id decided since the
+   index was taken comes back empty rather than as a decided row
+   with live buttons. The rows come back in the table's order and
+   are put back into the sort's. "More" is known exactly here - it
+   is whether the order has ids past this page - rather than guessed
+   from a full page as loadPage() has to. */
+function fetchQueuePage(offset, onDone) {
+  var ids = queueOrder.slice(offset, offset + QUEUE_PAGE);
+  var more = offset + ids.length < queueOrder.length;
+
+  if (ids.length === 0) {
+    onDone(null, [], false);
+    return;
+  }
+
+  sb.from("reports")
+    .select(QUEUE_COLUMNS)
+    .in("id", ids)
+    .eq("state", "pending")
+    .then(function (result) {
+      var byId = {};
+      var rows = [];
+      var light;
+      var i;
+
+      if (result.error) {
+        onDone(result.error, [], false);
+        return;
+      }
+      for (i = 0; i < result.data.length; i++) {
+        byId[result.data[i].id] = result.data[i];
+      }
+      for (i = 0; i < ids.length; i++) {
+        if (byId[ids[i]]) {
+          light = indexRow(ids[i]);
+          byId[ids[i]].nearest = light ? light.nearest : null;
+          rows.push(byId[ids[i]]);
+        }
+      }
+      onDone(null, rows, more);
+    })
+    .catch(function () {
+      onDone({ message: "Could not reach the server." }, [], false);
+    });
+}
+
+function setUpQueueTools() {
+  var kindSel = document.getElementById("queue-kind");
+  var typeSel = document.getElementById("queue-type");
+  var sortSel = document.getElementById("queue-sort");
+  var any;
+
+  if (!kindSel || !typeSel || !sortSel) {
+    return;
+  }
+
+  /* The kinds from CAMERA_TYPES like every other drop-down, with
+     "any" put in front of them. */
+  fillTypeSelect(typeSel, null);
+  any = document.createElement("option");
+  any.value = "all";
+  any.textContent = "Any kind";
+  any.selected = true;
+  typeSel.insertBefore(any, typeSel.firstChild);
+
+  /* A change re-sorts the index the browser already holds and
+     fetches the first page of the new order; the index is not
+     fetched again, because nothing about it changed. */
+  kindSel.onchange = function () {
+    queueView.kind = kindSel.value;
+    applyQueueView();
+    queuePager.reset();
+  };
+  typeSel.onchange = function () {
+    queueView.type = typeSel.value;
+    applyQueueView();
+    queuePager.reset();
+  };
+  sortSel.onchange = function () {
+    queueView.sort = sortSel.value;
+    applyQueueView();
+    queuePager.reset();
+  };
+}
 
 function loadQueue() {
+  var note = document.getElementById("queue-note");
+
   if (!queuePager) {
     queuePager = makePager({
       list:   document.getElementById("queue-list"),
       empty:  document.getElementById("queue-empty"),
-      note:   document.getElementById("queue-note"),
+      note:   note,
       more:   document.getElementById("queue-more"),
       failed: "Could not load the queue.",
       row:    queueRow,
-      fetch:  function (offset, onDone) {
-        loadPage(
-          sb.from("reports")
-            .select(QUEUE_COLUMNS)
-            .eq("state", "pending")
-            .order("created_at", { ascending: false }),
-          offset, onDone);
-      }
+      fetch:  fetchQueuePage
     });
   }
-  queuePager.reset();
+
+  note.textContent = "Loading…";
+
+  /* Cameras first, for the distances and for a state report's kind;
+     then the index; then the first page. A failure to get the
+     cameras is not a failure to get the queue - the distances are
+     simply not shown - so it is not stopped on. */
+  ensureCameras(function () {
+    loadQueueIndex(function (problem) {
+      if (problem) {
+        note.textContent = "Could not load the queue.";
+        return;
+      }
+      applyQueueView();
+      queuePager.reset();
+    });
+  });
 }
 
 /* typeLabel() is in frontend/shared.js, so the queue names a kind of
@@ -2610,6 +2967,22 @@ function queueRow(r) {
     " · " + new Date(r.created_at).toLocaleString() +
     " · " + Number(r.lat).toFixed(5) + ", " + Number(r.lon).toFixed(5);
   head.appendChild(meta);
+
+  /* How far this is from a camera the map already has, for a
+     new-camera report. This is the line the "nearest" sort orders
+     by, so it is shown whatever the order: a report 15 m from a
+     camera of the same kind is very likely that camera, and the
+     moderator should not have to open the map to learn it. Measured
+     by loadQueueIndex(), which is why it is on the row rather than
+     fetched with it. */
+  if (r.nearest) {
+    var near = document.createElement("span");
+    near.className = "coords nearest";
+    near.textContent = "Nearest camera on the map: " + r.nearest.camera.name +
+      " (" + typeLabel(r.nearest.camera.type) + "), " + Math.round(r.nearest.metres) + " m";
+    head.appendChild(near);
+    row.setAttribute("data-nearest", Math.round(r.nearest.metres));
+  }
 
   if (r.note) {
     body.textContent = r.note;
