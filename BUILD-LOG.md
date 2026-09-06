@@ -52,6 +52,13 @@ and for the citations WORD-1, WORD-2 and REACH-6 need. It must not be merged int
 wholesale — "Do not invent data" — and the byte-identical test for DATA-5 is against
 `points.js`/`seed.sql`, not against it.
 
+**The live database, seen from a browser on 2026-09-06:** 187 cameras (five beyond the
+seed), 117 shown by default, 95 van sites still `active`. `seed.sql` has not been re-run
+since the legacy change. `QUESTIONS.md` item 9 tells the maintainer what to run; it is not
+a programme item. Browser checks in every wave will show this state until it is done. The
+Chrome extension is not connected in this environment; browser checks run through the
+system Chrome headless over the DevTools protocol (a harness in the session scratchpad).
+
 **Premise that has partly evaporated — DATA-3.** The brief's per-year column
 `{"2023":1,"2024":3,"2025":4}` assumes per-calendar-year counts. The repository does not
 hold them. The record's own vocabulary, read off the notes, is: `2023-24` (65 sites),

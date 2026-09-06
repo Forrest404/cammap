@@ -6,7 +6,21 @@ it can be revisited. Answer by editing this file or by telling the orchestrator.
 
 ## Open
 
-*(none at present)*
+### 9. The live database has not had `seed.sql` re-run since every van site went legacy
+Found on 2026-09-06 while checking Wave 0 in a browser against the live Supabase project:
+the map opens on **117 of 187** cameras, with **95 van sites `active`**. The published
+record says 17 of 182. `NOTES.md` ("What active means") already says what to do, and it is
+a dashboard action, not a code change:
+
+1. run `backend/seed.sql` again in the SQL editor (the `on conflict` update rewrites
+   `status` in place for the 163 seed rows);
+2. then `update cameras set status = 'legacy' where type = 'vancam' and status = 'active';`
+   for the van sites that came from reports and carry no `seed_key`.
+
+Until that is done the deployed site contradicts its own data note, and every wave's
+browser checks will show the old split. Nothing in the programme depends on it, but it
+is the first thing a visitor sees. *(The five rows beyond the seed are report- or
+admin-sourced cameras; the programme leaves them alone.)*
 
 ## Answered
 
