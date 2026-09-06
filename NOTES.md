@@ -688,6 +688,22 @@ bring everything, and the moderation page holds all the cameras in
 memory on purpose so that a search for "Croydon" does not cost a
 round trip per letter.
 
+**The backlog is counted.** The Moderate link in the nav reads
+"Moderate (12)" on every page, and the top of the queue says how long
+the oldest report has waited - which is the number that says whether
+the queue is being kept up with, more than the count is. The count is
+a head request (`count: "exact", head: true` on the pending reports;
+no rows come back), so a moderator pays for one small answer per page
+load and never for the queue itself; the oldest is one row, sorted
+the other way from the queue. Both run only for a moderator, and not
+only because the number means nothing to anyone else: the reports
+read policy lets a person see their own reports, so the same query
+from a plain account would count *theirs* and the nav would show it
+as the site's. `isModerator()` in `account.js` is the guard; the
+server's policy is what makes the count a moderator's. `refreshBacklog()`
+runs again after every decision, after a bulk run, and after an
+approval is taken back (which is a report pending again).
+
 ### Housekeeping SQL
 
 Old anonymous accounts and test users:

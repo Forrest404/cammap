@@ -247,7 +247,13 @@ function renderNav() {
 
   if (isModerator()) {
     navAccount.appendChild(navSeparator());
-    navAccount.appendChild(navLink(pageHref("moderate.html"), "Moderate", PAGE === "moderate.html"));
+    navModerate = navLink(pageHref("moderate.html"), "Moderate", PAGE === "moderate.html");
+    navAccount.appendChild(navModerate);
+
+    /* The count comes a moment after the link, in its own request,
+       so the nav is drawn once and the number is filled in when it
+       is known rather than the whole nav waiting on it. */
+    refreshBacklog();
   }
 
   navAccount.appendChild(navSeparator());
@@ -258,6 +264,123 @@ function renderNav() {
     signOut();
   };
   navAccount.appendChild(out);
+}
+
+/* ---------------- what is waiting ----------------
+
+   A queue nobody can see the length of is a queue nobody can plan
+   around. Before this, the only way to know whether anything was
+   waiting was to open the moderation page and look, which meant a
+   moderator who was not already looking never knew - and the reports
+   sat. Now the Moderate link carries the count, "Moderate (12)", on
+   every page, and the top of the queue says how long the oldest one
+   has been waiting, which is the number that says whether the queue
+   is being kept up with.
+
+   The count is a head request - count only, no rows - so on every
+   page load a moderator pays for one small answer and not for the
+   queue itself. It runs only when the person is a moderator, and not
+   only because the number means nothing to anyone else: the reports
+   read policy lets a person see their own reports, so the same query
+   from a plain account would come back with a count of theirs and
+   the nav would show it as the site's. isModerator() is the guard,
+   and the server's policy is what makes the count a moderator's. */
+
+var navModerate = null;    /* the Moderate link, once the nav has drawn it */
+var pendingCount = null;   /* the last count, or null while unknown */
+
+function countPending(onDone) {
+  sb.from("reports")
+    .select("id", { count: "exact", head: true })
+    .eq("state", "pending")
+    .then(function (result) {
+      onDone(result.error ? null : result.count);
+    })
+    .catch(function () {
+      onDone(null);
+    });
+}
+
+/* When the oldest pending report was sent, or null. One row, sorted
+   the other way from the queue. */
+function oldestPending(onDone) {
+  sb.from("reports")
+    .select("created_at")
+    .eq("state", "pending")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .then(function (result) {
+      onDone(!result.error && result.data && result.data[0] ? result.data[0].created_at : null);
+    })
+    .catch(function () {
+      onDone(null);
+    });
+}
+
+/* "3 minutes", "5 hours", "2 days", "3 weeks": how long ago an ISO
+   time was, in the one unit a person would say. Never more precise
+   than that - the age of the oldest report is a measure of whether
+   the queue is being kept up with, and minutes past two days are
+   not part of that answer. */
+function ageOf(iso) {
+  var seconds = (Date.now() - new Date(iso).getTime()) / 1000;
+  var n;
+  var unit;
+
+  if (seconds < 3600) {
+    n = Math.max(1, Math.round(seconds / 60));
+    unit = "minute";
+  } else if (seconds < 48 * 3600) {
+    n = Math.round(seconds / 3600);
+    unit = "hour";
+  } else if (seconds < 14 * 86400) {
+    n = Math.round(seconds / 86400);
+    unit = "day";
+  } else {
+    n = Math.round(seconds / (7 * 86400));
+    unit = "week";
+  }
+
+  return n + " " + unit + (n === 1 ? "" : "s");
+}
+
+/* Redraws the count wherever it shows: on the nav link, and - on the
+   moderation page - the line above the queue with the oldest's age.
+   Called when the nav is drawn and after anything that changes what
+   is pending: a decision, a bulk run, an approval taken back. A
+   failed count leaves the link reading "Moderate" with no number,
+   which is the honest state rather than a stale one. */
+function refreshBacklog() {
+  var line = document.getElementById("queue-backlog");
+
+  if (!configured || !isModerator()) {
+    return;
+  }
+
+  countPending(function (n) {
+    pendingCount = n;
+
+    if (navModerate) {
+      navModerate.textContent = "Moderate" + (n ? " (" + n + ")" : "");
+    }
+
+    if (!line) {
+      return;
+    }
+    if (n === null) {
+      line.textContent = "";
+      return;
+    }
+    if (n === 0) {
+      line.textContent = "Nothing waiting.";
+      return;
+    }
+
+    oldestPending(function (since) {
+      line.textContent = n + " waiting" +
+        (since ? " · the oldest has waited " + ageOf(since) : "") + ".";
+    });
+  });
 }
 
 /* ------------------------------------------------------------------
@@ -2104,6 +2227,8 @@ function historyRow(r) {
         }
         outcome.textContent = "Done.";
         loadHistory();
+        /* a retracted approval is pending again, and so counts */
+        refreshBacklog();
       });
     };
     return b;
@@ -2246,6 +2371,7 @@ function queueRow(r) {
         /* the map cache is five minutes old at most; a moderator who
            just approved something should see it on their next look */
         forgetCameraCache();
+        refreshBacklog();
       })
       .catch(function () {
         approve.disabled = false;

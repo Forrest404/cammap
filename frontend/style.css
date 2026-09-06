@@ -1841,3 +1841,14 @@ button.load-more {
   display: block;
   margin: 14px 0 0 0;
 }
+
+/* "12 waiting · the oldest has waited 3 days." The one line on the
+   page that says whether the queue is being kept up with, so it is
+   in the body colour and the body size, not the dim of a hint:
+   a hint is something to read once, this is something to read
+   every time. */
+.backlog {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: var(--text);
+}

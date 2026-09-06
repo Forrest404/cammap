@@ -131,6 +131,11 @@
           people agreed on have already gone through by themselves and are
           not here.
         </p>
+        <!-- How many are waiting and how long the oldest has waited:
+             the measure of whether the queue is being kept up with.
+             account.js's refreshBacklog() writes it, from a count-only
+             request, and again after every decision. -->
+        <p class="backlog" id="queue-backlog" aria-live="polite"></p>
         <p class="note" id="queue-note"></p>
         <ul class="queue" id="queue-list"></ul>
         <p class="empty" id="queue-empty" style="display:none">Nothing waiting.</p>
