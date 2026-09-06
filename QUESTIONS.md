@@ -10,7 +10,12 @@ it can be revisited. Answer by editing this file or by telling the orchestrator.
 Found by the build script's import. **High Road, Haringey**: the note says `2023-24`, the
 `last` field says `2025`. One of them is wrong and only the source can say which; the script
 preserved both as they were. Also the ledger's count of `2025` sites was 62 and the notes
-give 63 (Station Parade's note runs on past its period). Nothing was changed.
+give 63 (Station Parade's note runs on past its period). Nothing was changed. Also from the
+Wave 1 verification: **Station Parade**'s note says "this pin is a guess" but the record
+has `approximate: false`, because the flag was derived from the one phrase the brief named;
+that is one cell in `data/cameras.csv` to set if you agree it is approximate. And two
+theregister.com source URLs redirect (301) to canonical addresses; storing the final URL
+is a two-cell edit for the Wave 5 record agent.
 
 ### 11. Where a van site spans more than one Met record, the citation is the Met's records page
 34 van sites carry a period that spans two or three Met deployment records (`2023-2025`,

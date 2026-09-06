@@ -274,9 +274,12 @@ when it fails. Run both before every commit; if you add a field to the record,
 add it to `FIELDS` in `check.js` at the same time you add it to `seed.sql`.
 
 Worth looking at after any change to the map or the picker: the console is
-clean (a CSP violation shows up there and nowhere else), the camera dots
-survive a Dark → Light → Satellite → Dark round trip, and the glow still has
-three layers rather than six —
+clean (a CSP violation shows up there and nowhere else — known noise that is
+not ours: the `frame-ancestors`-in-`<meta>` line, MapLibre's `wood-pattern`
+image warning, and three "Expected value to be of type number" worker
+warnings from the OpenFreeMap Bright style in the Light view), the camera
+dots survive a Dark → Light → Satellite → Dark round trip, and the glow has
+one layer per colour shown rather than two —
 
 ```js
 map.getStyle().layers.filter(l => l.id.startsWith('cammap-heat')).length

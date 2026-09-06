@@ -569,7 +569,7 @@ POINTS_HEADER = """\
    borough, the note says the pin is approximate and `approximate`
    is true.
 
-   Ten fields:
+   Twelve fields:
      name, note, lat, lon   as before
      type    fixedcam | vancam | transportcam | facewatchcam | privatecam
      status  active | legacy

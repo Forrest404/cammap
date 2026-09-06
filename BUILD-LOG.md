@@ -74,30 +74,30 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | KEEP-3 | 0 | keep3 | verified | 052c8eb | `tools/check.js`, zero deps |
 | KEEP-1 | 0 | keep1 | verified | 15599a0 | `stamp.py` → checker; nav check must normalise hrefs and `current` |
 | KEEP-2 | 0 | keep2 | verified | 97b2bfc | GitHub Actions; "green" only observable after a push the maintainer makes |
-| REACH-4 | 1 | chrome | merged | c8d897b | root `404.html` with a same-origin `<base>`; no account.js there; 8 pages in stamp.py's set |
-| REACH-3 | 1 | chrome | merged | 857c528 | six URLs: moderate is `noindex` and left out; robots allows all, reasoning in the file |
-| REACH-7 | 1 | chrome | merged | 99c471a | ODbL 1.0 for the data; code not licensed, by the maintainer's decision (QUESTIONS 3); `LICENSE` and a footer line on all eight pages |
-| WORD-5 | 1 | chrome | merged | a6c5ef4 | done on default: figure unknown, `TODO (WORD-5)` comment beside the footer sentence |
-| REACH-2 | 1 | chrome | merged | 81f018e | SVG, .ico, 180/192/512 PNG, manifest, theme-color |
-| REACH-1 | 1 | chrome | merged | da59a54 | per-page description, canonical, OG and Twitter; `img/share.png` from `tools/share-card.html` |
-| DATA-5 | 1 | generator | merged | 695c661 | `tools/build_points.py` from `data/cameras.csv`; byte-identical verified by the orchestrator; `stamp.py` regenerates and compares on every run |
-| DATA-3 | 1 | generator | merged | 3bd11bb | *migration 001, unapplied*; `periods` jsonb by source period, `deployments` = sum; 172 rows with periods, 10 null |
-| DATA-1 (schema) | 1 | generator | merged | cbbb578 | *migration 002, unapplied*; `source_label`/`source_url` on all 182 rows, 11 distinct URLs (QUESTIONS 11 on the 34 spanning rows) |
-| DATA-7 (schema) | 1 | generator | merged | 21904e7 | *migration 003, unapplied*; `approximate` boolean, 43 rows true |
-| MAP-7 | 1 | stylesheet | merged | dca47c0 | one `:focus-visible` rule; ring moves inside pressed toggles; attribution bar 0.86→0.94 for contrast |
-| MAP-10 | 1 | stylesheet | merged | 83e23a5 | `@media print`: list on white with coordinates, legend and filter state kept |
-| MAP-3 | 2 | map | todo | | remove `edit-only`, add debounce and empty state |
-| MAP-1 | 2 | map | todo | | `#zoom/lat/lon`, `#camera=<id>`, keep `#lat,lon` |
-| MAP-2 | 2 | map | todo | | Near me, pressed never automatic |
-| MAP-5 | 2 | map | todo | | stacked dots; Croydon pair is the test |
-| REACH-5 | 2 | map | todo | | moved from Wave 1/3: the count line belongs with `render()` |
-| MOD-1 | 2 | moderation | todo | | `.range()` + Load more on queue and history |
-| MOD-7 | 2 | moderation | todo | | head count on nav link |
-| MOD-2 | 2 | moderation | todo | | *migration*; `moderate_edit_camera` |
-| MOD-4 | 2 | moderation | todo | | bulk via the same `security definer` functions |
-| MOD-5 | 2 | moderation | todo | | sort/filter where the whole queue is visible |
-| MOD-6 | 2 | moderation | todo | | activity view, paginated |
-| MOD-3 | 2 | moderation | todo | | *migration*; `moderate_merge_cameras`, non-destructive |
+| REACH-4 | 1 | chrome | verified | c8d897b | root `404.html` with a same-origin `<base>`; no account.js there; 8 pages in stamp.py's set |
+| REACH-3 | 1 | chrome | verified | 857c528 | six URLs: moderate is `noindex` and left out; robots allows all, reasoning in the file |
+| REACH-7 | 1 | chrome | verified | 99c471a | ODbL 1.0 for the data; code not licensed, by the maintainer's decision (QUESTIONS 3); `LICENSE` and a footer line on all eight pages |
+| WORD-5 | 1 | chrome | verified | a6c5ef4 | done on default: figure unknown, `TODO (WORD-5)` comment beside the footer sentence |
+| REACH-2 | 1 | chrome | verified | 81f018e | SVG, .ico, 180/192/512 PNG, manifest, theme-color |
+| REACH-1 | 1 | chrome | verified | da59a54 | per-page description, canonical, OG and Twitter; `img/share.png` from `tools/share-card.html` |
+| DATA-5 | 1 | generator | verified | 695c661 | `tools/build_points.py` from `data/cameras.csv`; byte-identical verified by the orchestrator; `stamp.py` regenerates and compares on every run |
+| DATA-3 | 1 | generator | verified | 3bd11bb | *migration 001, unapplied*; `periods` jsonb by source period, `deployments` = sum; 172 rows with periods, 10 null |
+| DATA-1 (schema) | 1 | generator | verified | cbbb578 | *migration 002, unapplied*; `source_label`/`source_url` on all 182 rows, 11 distinct URLs (QUESTIONS 11 on the 34 spanning rows) |
+| DATA-7 (schema) | 1 | generator | verified | 21904e7 | *migration 003, unapplied*; `approximate` boolean, 43 rows true |
+| MAP-7 | 1 | stylesheet | verified | dca47c0 | one `:focus-visible` rule; ring moves inside pressed toggles; attribution bar 0.86→0.94 for contrast |
+| MAP-10 | 1 | stylesheet | verified | 83e23a5 | `@media print`: list on white with coordinates, legend and filter state kept |
+| MAP-3 | 2 | map | in-flight | | remove `edit-only`, add debounce and empty state |
+| MAP-1 | 2 | map | in-flight | | `#zoom/lat/lon`, `#camera=<id>`, keep `#lat,lon` |
+| MAP-2 | 2 | map | in-flight | | Near me, pressed never automatic |
+| MAP-5 | 2 | map | in-flight | | stacked dots; Croydon pair is the test |
+| REACH-5 | 2 | map | in-flight | | moved from Wave 1/3: the count line belongs with `render()` |
+| MOD-1 | 2 | moderation | in-flight | | `.range()` + Load more on queue and history |
+| MOD-7 | 2 | moderation | in-flight | | head count on nav link |
+| MOD-2 | 2 | moderation | in-flight | | *migration*; `moderate_edit_camera` |
+| MOD-4 | 2 | moderation | in-flight | | bulk via the same `security definer` functions |
+| MOD-5 | 2 | moderation | in-flight | | sort/filter where the whole queue is visible |
+| MOD-6 | 2 | moderation | in-flight | | activity view, paginated |
+| MOD-3 | 2 | moderation | in-flight | | *migration*; `moderate_merge_cameras`, non-destructive |
 | MAP-8 | 3 | map-a11y | todo | | reduced motion, re-read on change |
 | MAP-9 | 3 | map-a11y | todo | | `aria-hidden` canvas, live region |
 | MAP-6 | 3 | map-a11y | todo | | legend solo, keyboard reachable |
@@ -136,10 +136,10 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 
 | Status | Count |
 | --- | --- |
-| todo | 43 |
-| in-flight | 0 |
-| merged | 12 |
-| verified | 3 |
+| todo | 31 |
+| in-flight | 12 |
+| merged | 0 |
+| verified | 15 |
 | blocked | 0 |
 | dropped | 0 |
 
@@ -166,3 +166,23 @@ rows whose source is `'seed'` (stamp.py covers the other case); (3) with the dat
 unreachable, account.js still writes the Leaderboard and Account nav links — pre-existing,
 and DATA-8 is the item that decides what the page says in that state. CI live run: awaits
 the maintainer's first push. Totals after Wave 0: 3 verified, 55 to go.
+
+**Wave 1 summary (verified 2026-09-06).** Landed: `404.html`, `robots.txt`, `sitemap.xml`,
+`manifest.json`, icons, `img/share.png` and per-page cards; `LICENSE` (data ODbL 1.0, code
+not licensed — the maintainer's decision at `40346a6`); the focus ring and the print view;
+`tools/build_points.py` with `data/cameras.csv` as the one source, byte-identical at its
+first commit; `periods`, `source_label`/`source_url` and `approximate` in the record, with
+migrations 001–003 written and **unapplied**. Changed shape: sitemap of six (moderate is
+`noindex`); `<base>` in 404.html; TODO as a comment; periods by source period; the 34
+spanning rows cite the Met's records page (QUESTIONS 11). Blocked: nothing. Verification:
+all twelve met; migrations applied twice and the seed loaded twice on a throwaway
+PostgreSQL 14 with every new constraint refusing by name; ten of eleven source URLs answer
+200 (the Met's index page refuses scripted requests). Non-blocking observations carried
+forward: the index description's "every site a public record supports" overclaims against
+the survey (→ Wave 2 map agent, index.html); the build script's header said "Ten fields"
+for twelve (fixed by the orchestrator); a nine-row print puts only the footer on page 2
+(→ Wave 3, style.css); two theregister URLs 301 to canonical addresses and Station
+Parade's "this pin is a guess" has `approximate: false` (→ Wave 5 record agent,
+QUESTIONS 10); Light view logs three OpenFreeMap style warnings and the glow has one
+layer per colour shown, not "three" (CLAUDE.md wording fixed). Totals after Wave 1: 15
+verified, 43 to go.
