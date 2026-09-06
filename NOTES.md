@@ -933,9 +933,226 @@ The satellite view uses Esri's World Imagery from the open tile endpoint, with a
 
 ### The map as a tool
 
-*(Written by the Wave 2 map agent: deep links and the hash, Near me and
-what it does not do, the place search for everyone, stacked dots, and the
-last-updated line.)*
+The drawing was the strongest thing in the project. What it lacked was
+the handful of controls that turn a picture into a tool: a way to say
+"here is the camera outside my station" as a link, a way to ask "is
+there one near me", a way to find a place without knowing where it is
+on a dark map, and an honest count where two cameras sit on one spot.
+All of it is in `frontend/map.js`, each under its own heading, and
+each block there says why it is the way it is; this is the shorter
+account, and the reasoning that did not fit in a comment.
+
+**Deep links and the hash (MAP-1).** The address bar follows the map
+in the form OpenStreetMap uses, `#14/51.5169/-0.0977` - zoom, latitude,
+longitude - and carries `&camera=<id>` after it while a popup is open,
+so copying the address bar and opening it elsewhere gives back the
+view and the popup both. `#camera=<id>` on its own opens the camera
+close in. The old `#51.51234,-0.12345` form is kept exactly as it was,
+zoom 17 at the spot: the moderation queue writes it (`cameraMapHref()`
+in `account.js`), and it costs nothing to keep. A hash changed by hand
+while the page is open is followed too.
+
+Written with `replaceState`, never `pushState`: every pan as a history
+entry would turn the back button into a tour of everywhere you had
+been. Held to one write a quarter of a second, taken at the end of the
+interval, so a drag writes where it got to. A page opened plain keeps a
+plain address until the map moves; the URL only ever carries a view
+the visitor made or asked for.
+
+Which id a camera carries is the decision worth recording. A camera
+the database has given an id links by that: it is the same for every
+visitor and survives a rename or a Move. A camera the database has not
+- the seed, when the database is unreachable or not configured, or
+before it has answered - links by its `seed_key`, URL-encoded, which is
+its identity in the published record and what the row carries too.
+Either resolves on load: a number against `cameraId`, anything else
+against `seedKey`, which `tidy()` fixes on every point when it is read
+from `points.js` (that also makes the overlay's match stable after a
+Move, which `overlayCameras()` used to work out from a position it
+was about to overwrite). A numeric id cannot be answered until the
+database has spoken, so it waits for the overlay and is answered then;
+where the database does not answer, or the camera is gone, the line
+under the map says so rather than showing central London in silence.
+The trade-off is known: a seed-key link works for anyone in any state
+and is long; a numeric link is short and needs the database. Flipping
+the preference is one line in `cameraLinkId()`.
+
+A link is allowed to switch Legacy on, or a kind the legend has
+switched off, for the visit and without saving it - a link to a camera
+that then does not appear is a broken link, and the link asked, not
+the visitor.
+
+"Copy link" in the popup is an anchor whose `href` is the link itself,
+so a right-click and "copy link address" works before any script does.
+A click copies it by the clipboard API, then `execCommand`, then a
+selected box with the address in it - none of the three is everywhere:
+the API is refused off the disk and on plain http, `execCommand` is
+deprecated, and a selected box needs only Ctrl-C. A popup opened by a
+link or a list row now lands its dot three tenths of the map's height
+below the middle, through `popupRoom()`, because on a phone the map is
+462 pixels tall and MapLibre hangs a popup taller than the room above
+its dot below the dot instead, where the map's edge cut it off. Note
+for whoever makes movement a cut rather than a flight: `jumpTo`
+ignores `offset`, silently; `easeTo` with a duration of 0 is the cut
+that honours it, and `showCameraLink()` uses that.
+
+**Near me, and what it does not do (MAP-2).** Pressed, never automatic
+- the line the TODO above drew before this was built, and a privacy
+position rather than a preference. The browser is asked for a location
+only when the button under the map is pressed. The answer lives in one
+variable for the visit and is written nowhere: not to storage, not to
+the database, not to the hash on its own account. The one honest
+caveat is that the hash follows the map, and after Near me the map is
+looking at where you are, as it would be after you panned there;
+copying the address bar then is copying a view of your street, which
+is the visitor's act and not the site's.
+
+A press centres the map, closer or wider by how good the fix is
+(`zoomForAccuracy()`), draws where you are as a ring with a dot in it
+and the browser's stated accuracy as a larger ring round that, and
+sorts the list by distance with the distance on every row, whatever
+the order - "130 m", "1.6 km", rounded to what a phone can know. A
+Nearest sort button appears while a fix is held; a second press clears
+everything and puts the list back in the order it was in, and the
+order remembered between visits is never "near". The request asks for
+a rough fix (`enableHighAccuracy: false`), waits ten seconds, and
+accepts a fix up to three minutes old: a rough fix says which street,
+arrives sooner and costs a phone less.
+
+The rings answer to the brightness rule. They are `#5c5c5c`, the dark
+map's own brightest grey, and measured with every other layer hidden
+the brightest pixel they put on the dark view is 89 against the rule's
+134. Over imagery that grey vanished, and the rule allows nothing
+brighter, so the answer was darker: a casing in the page black under
+the ring and the marker, shown on the satellite view only - on the
+dark map it would be black on black, on the light map it would turn a
+quiet grey ring into a heavy one. The marker is a ring with a dot in
+it because a plain grey dot is what a private camera looks like and a
+hollow ring is what a legacy site looks like. The fill inside the
+accuracy ring is all but transparent: the ring says how far the
+browser might be wrong, and a filled disc would say "here" with a
+confidence the browser did not offer.
+
+Every failure leaves the map as usable as before and says why, in the
+line under the map: refused ("that is fine, the map works without
+it"), no fix in ten seconds, could not be worked out. Without
+geolocation at all, or off https - browsers refuse to ask on a plain
+http page - the button is shown disabled with the reason in its title
+and its accessible name. A fix outside London is said to be, and the
+distances are shown all the same: "the nearest is 66 km away" is an
+answer. The button is not disabled while a request is out, because
+disabling a focused button drops the keyboard on the floor; a second
+press is ignored until the browser answers.
+
+**The place search, for everyone (MAP-3).** The Nominatim box was
+edit-only for no better reason than that it was built for adding
+cameras, while the policy already allowed the host on every page. It
+now sits under the map - it moves the map, and the list's own search
+finds a camera by name; two "find" boxes in one column would ask to be
+confused - and is set up for everyone in its own section of `map.js`.
+Edit mode keeps its extra: a picked result fills the coordinate boxes.
+
+Nominatim's usage policy asks for one request a second at most, an
+identifying header, and no autocomplete. A browser will not let a page
+set the header, but it sends the site's address as the referer, which
+identifies the caller. The rest is honoured by being a light caller: a
+search happens on Enter or the button and never as you type - there is
+no search-as-you-type and there must not be; requests are held a
+second apart with a press inside that second queued; the same words
+asked twice are answered from the last reply; five results at most;
+bounded to London by the request and checked against `inLondon()` on
+the way back. Nothing found says so in words. The zoom is worked out
+from the result's bounding box, so "Croydon" shows Croydon and "Croydon
+Road" shows the road - through `moveMap()`, not `fitBounds()`, so that
+how the map moves stays decided in one place. The hint under the field
+says where the words go, because the site says what it does. The box
+is hidden in the markup until `map.js` lifts it, so a page without
+JavaScript shows no search that does nothing; paper drops it.
+
+**Movement, in one place.** Every deliberate move the page makes - a
+list row, a search result, Near me, the reset in edit mode - goes
+through `moveMap(lat, lon, zoom, below)`. It flies today. When the page
+comes to honour `prefers-reduced-motion` that is the one function to
+change, and the note above about `jumpTo` and `offset` is the one
+thing to know before changing it. The hash on load is a `jumpTo` on
+purpose: there is nowhere to fly from.
+
+**Stacked cameras (MAP-5).** Two cameras on one corner drew as one dot
+and `DRAW_ORDER` chose which, so the map under-reported exactly where
+it mattered most. North End, Croydon is a fixed install and, at the
+same coordinates, the van hotspot with the most deployments in the
+record - twenty-one - and the map showed one red dot. London Road,
+Croydon is the same pair. Nothing here is estimated, but a count of
+one where the record says two is a claim as well.
+
+Two things fix it, and both are needed. A count beside any dot with
+others under it - a symbol layer over the dots, from zoom 13 where the
+dots stop pooling into the glow and start to be read one by one, in
+"Noto Sans Regular" because that is the font both OpenFreeMap styles
+set their labels in and a symbol layer in a font the style does not
+serve draws nothing. It is `#7f7f7f`, 127 against the rule's 134, on
+a halo in the page black; on the light map it is the dark ring colour
+the dots wear there. And a chooser on click: a click that lands on more
+than one camera - the map is asked what is drawn within six pixels of
+the click - opens a small list, swatch, name and kind, and the one
+chosen opens as usual. Its buttons are buttons, the first takes focus,
+Escape closes it and hands focus back to the map. The keyboard's own
+way to any camera is still the list, where a stacked pair is two rows.
+
+"Stacked" is within fifteen metres, the width of a road, counted by a
+sorted sweep over the shown points - a few hundred distance sums, no
+clustering library, done again whenever the shown set changes. It takes
+the two Croydon pairs and Coventry Street with Piccadilly Circus,
+eleven metres apart, and leaves Tooting with Tooting Broadway,
+twenty-four metres apart, which separate by zoom sixteen; below that
+two dots that close are one dot whatever the count says, and the
+chooser is the safety net, because it asks at the zoom the click was
+made. `DRAW_ORDER` stays as the tiebreak for which paints last; it was
+never meant to be a filter. One thing to know when checking this
+against the live site: until `seed.sql` is re-run (QUESTIONS.md, item
+9) the live table still carries North End's van site as active, so
+with Legacy off a click there opens the chooser rather than the fixed
+camera's popup - which is right for that data, and goes away with the
+re-seed. Against the record, Legacy off gives one dot and one popup.
+
+**The line under the map (REACH-5).** "182 cameras · Met records to
+2025, BTP to 2026 · last checked September 2026", written by `render()`
+next to the count it already keeps. The count is the published
+record's, the length of `points.js`, and never a typed number, so it
+cannot go stale. Cameras the database holds beyond the record - reports
+moderators approved, not in the CSV - are said separately, "182 cameras
+in the record, 5 more from reports", so a reader who opens the CSV to
+check finds the figure they were given; edit mode counts nothing beyond
+the record. The dates are `RECORD_SOURCES` in `shared.js`, beside the
+bounds: three values typed by hand when the record is refreshed, and
+the comment there says what each means and why the Met's year is 2025
+for now. `img/share.png` carries the count as a picture and moves with
+it: when the record is refreshed, update the CSV, run the build script,
+change the constants, and make the card again if the count moved.
+
+**What `?edit` exports now.** CSV rows, in the column order the build
+script documents, quoted the way Python's `csv` module quotes, with
+`periods` sorted by start year by hand because JavaScript puts a key
+that looks like a whole number ("2025") ahead of every other key
+whatever order it was written in. Export the published record
+untouched, paste it over `data/cameras.csv`, run the script, and git
+reports nothing changed in any of the three files - that round trip is
+the check that the export writes what the script reads. The four newer
+fields travel with a point from `tidy()` onward, and `overlayCameras()`
+takes them from a database row only when the row has the columns
+(`takeRecordFields()`); the fetch does not name them until the
+migrations are applied, because PostgREST refuses a whole query for one
+column it does not know.
+
+**How it was checked.** Headless Chrome over the DevTools protocol with
+real mouse and keyboard events, at 1400 and 390 wide, on all three
+views; the harness's `Page.addScriptToEvaluateOnNewDocument` stubbed
+`navigator.geolocation` for each of the four outcomes, since a stub
+made after load is too late for a button set up at load. Two things
+worth knowing before believing a result: a `flyTo` does complete in
+this harness (the tab is not hidden), so `document.hidden` is the
+thing to check, not the harness; and a screenshot `clip` is in page
+coordinates, so a scrolled page clips somewhere else.
 
 ### Keyboard focus and print
 

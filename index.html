@@ -28,7 +28,7 @@
   form-action 'none';
   frame-ancestors 'none'">
 <title>cammap &mdash; facial recognition cameras in London</title>
-<meta name="description" content="A map of every facial recognition camera site in London that a public record supports: the Met's LFR van deployments, the fixed cameras, the British Transport Police stations and the shops. Nothing here is estimated.">
+<meta name="description" content="A map of the facial recognition camera sites in London that the public record supports: the Met's LFR van deployments, the fixed cameras, the British Transport Police stations and the shops. Nothing here is estimated.">
 <link rel="canonical" href="https://forrest404.github.io/cammap/">
 <!-- What a shared link turns into. Each page has its own title and
      description - one shared across the site would be the failure
@@ -43,14 +43,14 @@
 <meta property="og:locale" content="en_GB">
 <meta property="og:url" content="https://forrest404.github.io/cammap/">
 <meta property="og:title" content="cammap — facial recognition cameras in London">
-<meta property="og:description" content="A map of every facial recognition camera site in London that a public record supports: the Met's LFR van deployments, the fixed cameras, the British Transport Police stations and the shops. Nothing here is estimated.">
+<meta property="og:description" content="A map of the facial recognition camera sites in London that the public record supports: the Met's LFR van deployments, the fixed cameras, the British Transport Police stations and the shops. Nothing here is estimated.">
 <meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="cammap — facial recognition cameras in London">
-<meta name="twitter:description" content="A map of every facial recognition camera site in London that a public record supports: the Met's LFR van deployments, the fixed cameras, the British Transport Police stations and the shops. Nothing here is estimated.">
+<meta name="twitter:description" content="A map of the facial recognition camera sites in London that the public record supports: the Met's LFR van deployments, the fixed cameras, the British Transport Police stations and the shops. Nothing here is estimated.">
 <meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
 <meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
 
@@ -116,6 +116,17 @@
         <div class="map-toggles">
           <button id="legacy-toggle" class="toggle" aria-pressed="false" title="Also show the LFR van sites - places a van has been sent, not places one is now">Legacy</button>
         </div>
+        <!-- Pressed, never automatic. The browser asks for a location
+             only when this is pressed; the answer is held in memory
+             for this visit, drawn as a ring, and written nowhere.
+             Hidden until map.js has looked for geolocation: without
+             it the button is shown disabled with the reason in its
+             title, and without JavaScript there is no button at all.
+             The privacy line is in NOTES.md, "The map as a tool". -->
+        <div class="map-toggles">
+          <button id="near-me" class="toggle" aria-pressed="false" hidden
+                  title="Centre the map on where you are. Asked for only when you press this, never on its own; nothing is stored or sent anywhere. Press again to clear it.">Near me</button>
+        </div>
         <div class="map-toggles" id="view-buttons">
           <button class="toggle on" data-view="dark" aria-pressed="true" title="The dark map">Dark</button>
           <button class="toggle" data-view="light" aria-pressed="false" title="The light map">Light</button>
@@ -123,6 +134,49 @@
         </div>
         <ul class="legend" id="legend"></ul>
       </div>
+
+      <!-- What the map is a map of, and how old it is: the count of
+           cameras in the record, worked out from the record by
+           map.js's render(), and the reach of the sources and when
+           they were last checked, from RECORD_SOURCES in shared.js.
+           Never a typed number: a number typed here would go stale
+           without a sound. Ordinary text, so it prints with the list
+           and a screen reader reads it where it sits. -->
+      <p class="record-line" id="record-line"></p>
+
+      <!-- The one line under the map for what the map has to say: a
+           link it could not follow, what Near me found or did not.
+           Filled by map.js; hidden while empty; read out as it
+           changes. -->
+      <p class="note map-note" id="map-note" aria-live="polite"></p>
+
+      <!-- Finding a place. Everyone's, not only edit mode's: "is
+           there one near my station" is the question this map is
+           for, and a search box answers it in one line where the
+           list's own search cannot - the list finds cameras by name,
+           this moves the map to a place. It is under the map because
+           it moves the map. Hidden until map.js takes the attribute
+           off, so a page without JavaScript shows no box that does
+           nothing; class map-search so the print view can drop it.
+           What is typed goes to OpenStreetMap's Nominatim, and the
+           hint says so: the site says what it does. -->
+      <div class="box map-search" id="place-search" hidden>
+        <h3>Find a place</h3>
+        <div class="row">
+          <input type="text" id="search-text" placeholder="Peckham, or a postcode"
+                 autocomplete="off" spellcheck="false"
+                 aria-label="Find a place in London">
+          <button id="search-button">Search</button>
+        </div>
+        <p class="note" id="search-note" aria-live="polite"></p>
+        <ul class="results" id="search-results"></ul>
+        <p class="hint">
+          Moves the map to a place. What you type is sent to
+          OpenStreetMap's Nominatim to be looked up, and nowhere else;
+          the cameras are not filtered by it.
+        </p>
+      </div>
+
       <p class="hint edit-only" style="margin-top:8px">
         Click anywhere on the map to take its coordinates, then give the
         camera a name in the form opposite.
@@ -131,17 +185,6 @@
 
     <!-- ---------------- right: the list, and the editing tools ---------------- -->
     <div class="side-column">
-
-      <!-- Way 2: search for a place by name -->
-      <div class="box edit-only">
-        <h3>Find a place</h3>
-        <div class="row">
-          <input type="text" id="search-text" placeholder="Postman's Park">
-          <button id="search-button">Search</button>
-        </div>
-        <p class="note" id="search-note"></p>
-        <ul class="results" id="search-results"></ul>
-      </div>
 
       <!-- Way 1: type the coordinates in directly -->
       <div class="box edit-only">
@@ -186,20 +229,29 @@
                   title="In the order the record lists them">A&ndash;Z</button>
           <button class="toggle" data-sort="used" aria-pressed="false"
                   title="Where the record shows cameras used most often">Most used</button>
+          <!-- Only while Near me holds a position: there is no
+               distance to sort by until there is somewhere to
+               measure from. -->
+          <button class="toggle" data-sort="near" aria-pressed="false" hidden
+                  title="Closest to where you are first">Nearest</button>
         </div>
         <ul class="points" id="points-list"></ul>
         <p class="empty" id="points-empty">No cameras recorded yet.</p>
       </div>
 
-      <!-- Writing the file back out -->
+      <!-- Writing the record back out. CSV rows, not a points.js:
+           points.js is written from data/cameras.csv by
+           tools/build_points.py and a pasted one fails stamp.py. -->
       <div class="box edit-only">
         <h3>Publish</h3>
         <p class="hint">
-          Copy the file below, paste it over everything in
-          <strong>points.js</strong>, then commit and push.
+          Copy the rows below and paste them over everything in
+          <strong>data/cameras.csv</strong>, then run
+          <strong>python3 tools/build_points.py</strong> and commit the
+          CSV with the two files it writes.
         </p>
         <div class="row">
-          <button id="copy-button">Copy points.js</button>
+          <button id="copy-button">Copy cameras.csv</button>
           <button id="reset-button" class="quiet">Start again</button>
         </div>
         <p class="note" id="export-note"></p>

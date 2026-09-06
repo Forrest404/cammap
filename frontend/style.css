@@ -1553,13 +1553,161 @@ button.toggle.on:focus-visible {
 }
 
 /* ------------------------------------------------------------------
-   MAP TOOLS (Wave 2: the map agent writes this block)
+   MAP TOOLS
 
-   Rules for the controls that turn the map from a picture into a tool:
-   the place search for everyone, Near me, the copy-link row in the
-   popup, stacked dots, the last-updated line. If the agent needs no
-   rule here, this block is removed rather than left empty.
+   The controls that turn the map from a picture into a tool: the
+   place search under the map, and what else Wave 2 adds to the map
+   page. Each is a few rules; the reasoning for the thing itself is in
+   map.js and NOTES.md ("The map as a tool"), and this block only says
+   where it sits and what paper does with it.
    ------------------------------------------------------------------ */
+
+/* ---------- finding a place ----------
+
+   Under the map, not beside the list, because it moves the map: the
+   list has a search of its own that finds a camera by name, and two
+   boxes both saying "find" in one column would ask to be confused.
+   The box keeps the panel border so it reads as a control and not as
+   a caption, and sits a little clear of the toggles above it. */
+
+.map-search {
+  margin: 14px 0 0 0;
+}
+
+/* The hint goes under the field rather than over it - what the box
+   does is plain from its heading, and where the words go is the
+   thing a person should read after typing them, not before. */
+.map-search p.hint {
+  margin: 8px 0 0 0;
+}
+
+/* The results list carries a rule along its top so the first result
+   has a line above it. With nothing found, or nothing asked yet, that
+   rule was a stray line between the note and the hint. */
+.map-search ul.results:empty {
+  display: none;
+}
+
+/* ---------- the lines under the map ----------
+
+   Two. The record line says what the map is a map of and how old it
+   is - the count, the reach of the sources, when they were last
+   checked - in the dim the legend uses, because it is a caption and
+   not a control. On paper it goes to full black with the count in the
+   list head, since a printed list with no date on it is exactly the
+   thing the line exists to prevent.
+
+   The note is what the map has to say when it has something to say -
+   a link it could not follow, what Near me found - in the note voice
+   the forms use. Silent, it takes no room: .note reserves a line so a
+   form does not jump when a message arrives, and under the map that
+   reserved line was a gap. */
+
+.record-line {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.map-note {
+  margin: 6px 0 0 0;
+}
+
+.map-note:empty {
+  display: none;
+}
+
+@media print {
+  .record-line {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: var(--text);
+  }
+}
+
+/* ---------- the link in the popup ----------
+
+   Where the clipboard is refused, the address is put in a box under
+   "Copy link" and selected. It is a text field like any other on the
+   site, only smaller, because a popup is 240 pixels wide and an
+   address is long: it is there to be copied, not read. */
+
+.maplibregl-popup-content input.copy-box {
+  margin: 6px 0 2px 0;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+/* ---------- the chooser, for a click that lands on two ----------
+
+   The popup a click opens when more than one camera sits under it:
+   "2 cameras here" and a button per camera, written the way a list
+   row is - swatch, name in the accent, the kind beneath in the dim -
+   so a person who has read the list reads this without learning
+   anything new. The buttons carry no border and no capitals for the
+   same reason the legend's keys do not: they are the things to
+   choose between, not a row of controls. */
+
+.maplibregl-popup-content ul.stack {
+  margin: 6px 0 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.maplibregl-popup-content ul.stack li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.maplibregl-popup-content button.pick-camera {
+  display: block;
+  width: 100%;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  line-height: 1.45;
+}
+
+.maplibregl-popup-content button.pick-camera:hover {
+  background: none;
+}
+
+.maplibregl-popup-content button.pick-camera .swatch {
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+
+.maplibregl-popup-content button.pick-camera .name {
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.maplibregl-popup-content button.pick-camera:hover .name {
+  color: var(--text);
+}
+
+/* The kind on its own line under the name, as the popup writes it. */
+.maplibregl-popup-content button.pick-camera .kind {
+  margin: 0;
+}
+
+/* Paper cannot move the map, copy a link or ask where you are. The
+   search, its results, the note and Near me go; the popup was never
+   on paper. The Nearest sort, if it is the order in force, prints as
+   "Order: Nearest" through the PAPER rule for the sort row, which is
+   right: a list sorted by distance from somewhere is worth saying. */
+@media print {
+  .map-search,
+  .map-note,
+  #near-me {
+    display: none;
+  }
+}
 
 /* ------------------------------------------------------------------
    PAPER
