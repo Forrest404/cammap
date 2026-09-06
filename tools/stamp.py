@@ -513,7 +513,8 @@ def describe(row):
 
 PAIRED = [("name", "name"), ("note", "note"), ("lat", "lat"), ("lon", "lon"),
           ("type", "type"), ("status", "status"), ("last", "last_seen"),
-          ("deployments", "deployments"), ("periods", "periods")]
+          ("deployments", "deployments"), ("periods", "periods"),
+          ("source_label", "source_label"), ("source_url", "source_url")]
 
 # Columns the seed writes as a string literal that the database reads
 # as something else. periods is jsonb, written as its JSON text, so it

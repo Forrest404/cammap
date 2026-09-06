@@ -241,10 +241,11 @@ hand, the way `stamp.py` is a checker they run by hand.
                                              the CSV (see below)
 
 **The columns**, in the order they are written: `name`, `type`, `status`,
-`lat`, `lon`, `last`, `periods`, `deployments`, `note`. The prose is last
-because it is the long one, so a line reads as the structured fields first
-and the note trailing. The script's docstring documents each column; the
-ones worth knowing about before editing:
+`lat`, `lon`, `last`, `periods`, `deployments`, `source_label`,
+`source_url`, `note`. The prose is last because it is the long one, so a
+line reads as the structured fields first and the note trailing. The
+script's docstring documents each column; the ones worth knowing about
+before editing:
 
 - `status` may be left blank. A `vancam` is then legacy and anything else
   active - the same default `tidy()` in `map.js` gives a hand-typed entry.
@@ -325,6 +326,70 @@ Adding it to the database is `backend/migrations/001_periods.sql`, run in
 the SQL editor and followed by a re-run of `seed.sql`, whose on-conflict
 update fills the column on every seed row. `schema.sql` carries the same
 block as version 2.3 so a fresh database ends up identical.
+
+**Where each camera comes from.** Provenance used to live in the prose of
+`note` with nothing to click: "Met Police LFR van - 3 deployments
+2023-2025" says which record without saying where it is. Two columns now
+carry it. `source_label` names the record or report the entry rests on;
+`source_url` is where that document is. Both are null where none is known,
+and null is what the map should show as nothing at all - a camera without
+a source says nothing rather than something vague. Two rules hold in the
+script, in `check.js` and on the server: a URL is `https` with no
+whitespace, and a URL needs a label, because a link with no name is not a
+citation. The `note` prose is untouched.
+
+How the values were set, so they can be checked one by one:
+
+- **Met van sites (163)**: label and URL derived at import from the period
+  in the note, through the `MET_RECORDS` table in the script, which lists
+  the Met's published deployment-record PDFs and the years each covers. A
+  period inside one record gets that record's PDF and the label "Met
+  Police LFR deployment record, PERIOD": `2023-24` (65 rows) the
+  2023-to-2024 grid, `2025` (63) the 2025 record, `2020-22` (1) the
+  2020-2022 grid. A period spanning more than one record - `2023-2025`
+  (31), `2020-2025` (2), `2020-24` (1) - has no single document to point
+  at, so it gets the Met's page the records are published on, under
+  "Deployment records", and the label reads "records", plural. That page
+  is the most specific address there is for those 34 rows; if it is ever
+  judged too coarse, the honest alternative is null, not a guess at one of
+  the PDFs.
+- **BTP stations (9)**: "British Transport Police LFR deployment register,
+  2026" and the register PDF, also derived from the note.
+- **Everything else (10)** was set by hand in the CSV from the research
+  survey in `london-lfr-cameras/`, per QUESTIONS.md item 8, only where the
+  survey's site and the record's entry are plainly the same place. The
+  label is the publication and date as the survey gives them; the URL is
+  the survey's, verbatim. The two Croydon installs share the Met's own
+  press release of 13 May 2026, which describes the pair ("static cameras
+  at two locations, at the north and south ends of Croydon's high
+  street") - the record's two rows are the two cameras the Met's March
+  2025 announcement named as "North End and London Road", and the release
+  is a source for each, without a claim about which is which:
+
+      King's Cross Central              The Register, 6 September 2019
+      London Road, Croydon (fixed)      Met Police press release, 13 May 2026
+      North End, Croydon (fixed)        Met Police press release, 13 May 2026
+      Sainsbury's Camden Town           Retail Technology Innovation Hub, 1 July 2026
+      Sainsbury's Dalston               Retail Technology Innovation Hub, 1 July 2026
+      Sainsbury's Ladbroke Grove        Retail Technology Innovation Hub, 1 July 2026
+      Sainsbury's Whitechapel           Retail Technology Innovation Hub, 1 July 2026
+      Sainsbury's Elephant and Castle   The Register, 6 February 2026
+      Sainsbury's Sydenham              The Grocer, July 2026
+      Sainsbury's East Dulwich          Retail Gazette, August 2026
+
+  The survey's own dates for these stores - installed January 2026 for the
+  five the record gives as "from early 2026", September 2025 for Sydenham,
+  paused for East Dulwich - agree with the notes, which is the check that
+  they are the same shops and not merely the same names.
+
+None of the URLs was fetched by the programme that set them: the Met and
+BTP sites refuse scripted requests, and the rest are cited as the survey
+cites them. A dead link is a data correction in the CSV, one cell.
+
+Adding the columns to the database is `backend/migrations/002_source.sql`,
+after 001, then a re-run of `seed.sql`. `schema.sql` carries the same block
+as version 2.4. What the popup shows for them is the next wave's; today the
+data is exact and nothing on the page reads it yet.
 
 **`--import`** reads a `points.js` - the committed one, or one pasted out
 of `index.html?edit` - and writes the CSV from it. It was used once, to make

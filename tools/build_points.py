@@ -92,6 +92,20 @@ record"). Columns, in the order they are written:
                naming the row, so the two cannot drift. Where periods
                is blank it is what the CSV says, or one - a shop, a
                fixed camera, a site the record lists once.
+  source_label The record or report the entry rests on, named: "Met
+               Police LFR deployment record, 2025", "British Transport
+               Police LFR deployment register, 2026", "The Register,
+               6 February 2026". Blank is null, and the map then says
+               nothing about a source - which is the honest thing to
+               say where none is known, and better than something
+               vague. A label names a document; it is never "official
+               records" or "press".
+  source_url   Where that record or report is, as an https:// URL, or
+               blank for null. Only ever the document itself, or the
+               page a multi-document record is published on - never a
+               homepage, never a search, never a guess at where it
+               might be. A URL needs a label, because a link with no
+               name is not a citation; the build refuses one without.
   note         Free prose, written last because it is the long one.
                Preserved to the character; everything the map shows in
                a popup comes from here.
@@ -144,6 +158,29 @@ note states outright:
                deployments is refused - the record would be
                contradicting itself, and the way to find out which
                half is right is not to pick one.
+  source_label from the periods, for a Met van site or a BTP station,
+  source_url   and for nothing else. The label names the record the
+               period came from - "Met Police LFR deployment record,
+               2023-24", "British Transport Police LFR deployment
+               register, 2026". The URL is that record's own PDF where
+               the period falls within one published record, and the
+               Met's page that lists its records where the period
+               spans more than one: "2023-2025" is the 2023-to-2024
+               grid and the 2025 record together, there is no one
+               document to point at, and the page they are both
+               published on is the most specific address there is.
+               MET_RECORDS below is the table of what the Met has
+               published and where; a period outside every record in
+               it gets its label and no URL, never a guess. The shops,
+               the fixed installs and the King's Cross estate get null
+               for both from the import: their notes name no document.
+               Each was then given its source by hand in the CSV from
+               the research survey in london-lfr-cameras/, one site at
+               a time, only where the survey's site and the record's
+               entry are plainly the same place (QUESTIONS.md, item 8),
+               and each is listed in NOTES.md. That is what the CSV is
+               for; a table of camera names in this script would be
+               data hiding in code.
 """
 import csv
 import io
@@ -166,7 +203,11 @@ USAGE = "usage: python3 tools/build_points.py [--check | --import POINTS_JS]"
 # header row is checked against this on every read, so a column renamed
 # or reordered in a spreadsheet is a failure that names itself rather
 # than a silent shift of every value one place to the left.
-COLUMNS = ["name", "type", "status", "lat", "lon", "last", "periods", "deployments", "note"]
+COLUMNS = ["name", "type", "status", "lat", "lon", "last", "periods", "deployments",
+           "source_label", "source_url", "note"]
+
+# A source URL: https, and nothing that could be two things.
+SOURCE_URL = re.compile(r'^https://\S+$')
 
 # The statuses the published record may assert. The database also knows
 # "nonfunctional", but that is a state a moderator sets on a row, never
@@ -187,6 +228,59 @@ PERIOD_KEY = re.compile(r'^\d{4}(-\d{2}|-\d{4})?$')
 # own; the build never looks at a note.
 NOTE_MET = re.compile(r'^Met Police LFR van - (\d+) deployments? (\d{4}(?:-\d{2}|-\d{4})?)(?:\s|$)')
 NOTE_BTP = re.compile(r'^British Transport Police LFR - (\d+) deployments? in the (\d{4}) station trial(?:\s|$)')
+
+# What the Met has published about its van deployments, and where:
+# one PDF per period, each a row per deployment with the location as
+# the Met writes it, the date and the outcomes. The years are the span
+# each document covers. Only the import reads this, to give a van site
+# the URL of the record its period came from; the 2026 record is
+# listed on the Met's page but is linked without a file extension and
+# could not be retrieved when this was written, so it is not here and
+# a 2026 period would get a label and no URL until it is.
+MET_RECORDS = [
+    (2020, 2022, "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/new/lfr-deployment-grid-2020-2022.pdf"),
+    (2023, 2024, "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf"),
+    (2025, 2025, "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf"),
+]
+
+# The Met's page the records above are published on, under "Deployment
+# records" - the address given for a period that spans more than one
+# of them.
+MET_RECORDS_PAGE = "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/"
+
+# The British Transport Police deployment register: one PDF, every
+# deployment of the 2026 station trial, same columns as the Met's.
+BTP_REGISTER = "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf"
+
+
+def period_span(key):
+    """The first and last year a period covers: 2025 is (2025, 2025),
+    2023-24 is (2023, 2024), 2020-2025 is (2020, 2025)."""
+    start = int(key[:4])
+    if len(key) == 4:
+        return start, start
+    tail = key[5:]
+    return start, int(tail) if len(tail) == 4 else int(key[:2] + tail)
+
+
+def source_from_note(note, periods):
+    """(source_label, source_url) for an imported entry that carries
+    neither: named from the periods for a Met van site or a BTP
+    station, (None, None) for anything else."""
+    if periods is None:
+        return None, None
+    keys = list(periods.keys())
+    named = " and ".join(keys)
+    if NOTE_BTP.match(note):
+        return "British Transport Police LFR deployment register, %s" % named, BTP_REGISTER
+    if NOTE_MET.match(note):
+        start = min(period_span(k)[0] for k in keys)
+        end = max(period_span(k)[1] for k in keys)
+        hits = [url for (a, b, url) in MET_RECORDS if a <= end and b >= start]
+        label = "Met Police LFR deployment record%s, %s" % ("s" if len(hits) > 1 else "", named)
+        url = hits[0] if len(hits) == 1 else (MET_RECORDS_PAGE if hits else None)
+        return label, url
+    return None, None
 
 
 def period_order(key):
@@ -368,6 +462,19 @@ def read_csv(text=None):
         else:
             deployments = 1 if given is None else given
 
+        # A source is a label, or a label and a URL. Never a URL alone -
+        # a link with no name is not a citation - and never a URL that
+        # is not https or has a space in it.
+        source_label = raw["source_label"] or None
+        source_url = raw["source_url"] or None
+        if source_label is not None and source_label != source_label.strip():
+            raise BuildError("%s: source_label %r has surrounding whitespace" % (where, source_label))
+        if source_url is not None:
+            if not SOURCE_URL.match(source_url):
+                raise BuildError("%s: source_url %r is not an https:// URL" % (where, source_url))
+            if source_label is None:
+                raise BuildError("%s: a source_url needs a source_label naming what it is" % where)
+
         row = {
             "name": name,
             "type": kind,
@@ -377,6 +484,8 @@ def read_csv(text=None):
             "last": last,
             "periods": periods,
             "deployments": deployments,
+            "source_label": source_label,
+            "source_url": source_url,
             "note": raw["note"],
         }
         row["seed_key"] = seed_key(row)
@@ -425,7 +534,7 @@ POINTS_HEADER = """\
    shops. Nothing here is estimated. Where a source gave only a
    borough, the note says the pin is approximate.
 
-   Seven fields:
+   Nine fields:
      name, note, lat, lon   as before
      type    fixedcam | vancam | transportcam | facewatchcam | privatecam
      status  active | legacy
@@ -442,6 +551,14 @@ POINTS_HEADER = """\
               which year each fell in, and a per-year breakdown
               of that would be an estimate dressed as a record.
               deployments is always the sum of the values.
+     source_label  the record or report the entry rests on, named:
+                   "Met Police LFR deployment record, 2025", "The
+                   Register, 6 February 2026". null where none is
+                   known, and the map then says nothing rather
+                   than something vague.
+     source_url    where that record or report is, or null. Only
+                   ever the document itself or the page it is
+                   published on; never a homepage, never a guess.
 
    Every van site is legacy, and that is not a statement about age.
    An LFR van parks for a shift and drives away, so there is no hour
@@ -486,6 +603,10 @@ def js_string(s):
     return json.dumps(s, ensure_ascii=False)
 
 
+def js_nullable(s):
+    return "null" if s is None else js_string(s)
+
+
 def render_points(rows):
     lines = [POINTS_HEADER, "var POINTS = ["]
     for i, row in enumerate(rows):
@@ -499,7 +620,9 @@ def render_points(rows):
         lines.append("    status: %s," % js_string(row["status"]))
         lines.append("    last: %s," % ("null" if row["last"] is None else row["last"]))
         lines.append("    deployments: %d," % row["deployments"])
-        lines.append("    periods: %s" % periods_json(row["periods"]))
+        lines.append("    periods: %s," % periods_json(row["periods"]))
+        lines.append("    source_label: %s," % js_nullable(row["source_label"]))
+        lines.append("    source_url: %s" % js_nullable(row["source_url"]))
         lines.append("  }" if i == len(rows) - 1 else "  },")
     lines.append("")
     lines.append("];")
@@ -539,15 +662,18 @@ SEED_HEADER = """\
 --    periods is the deployment count broken down by the period the
 --    source gives it in, as jsonb, or null where the source names no
 --    period. deployments is its sum, and the table checks that.
+--    source_label names the record or report a row rests on and
+--    source_url is where it is; both null where none is known, and a
+--    URL is never written without a label.
 -- ------------------------------------------------------------------
 """
 
 SEED_COLUMNS = ["name", "note", "lat", "lon", "type", "status", "last_seen", "deployments", "periods",
-                "source", "seed_key"]
+                "source_label", "source_url", "source", "seed_key"]
 
 # What a re-run may rewrite on a row it already wrote. Position is not
 # here, and must not be.
-SEED_UPDATES = ["name", "note", "status", "last_seen", "deployments", "periods"]
+SEED_UPDATES = ["name", "note", "status", "last_seen", "deployments", "periods", "source_label", "source_url"]
 
 
 def sql_string(s):
@@ -571,7 +697,8 @@ def seed_values(row):
     # the plain patterns stamp.py and check.js use.
     periods = None if row["periods"] is None else json.dumps(row["periods"])
     return [row["name"], row["note"], row["lat"], row["lon"], row["type"], row["status"],
-            row["last"], row["deployments"], periods, "seed", row["seed_key"]]
+            row["last"], row["deployments"], periods, row["source_label"], row["source_url"],
+            "seed", row["seed_key"]]
 
 
 def render_seed(rows):
@@ -745,6 +872,10 @@ def csv_text(entries):
                 periods = periods_of(";".join("%s:%s" % kv for kv in periods.items()), who)
         else:
             periods = periods_from_note(e["note"], deployments, who)
+        if "source_label" in e or "source_url" in e:
+            source_label, source_url = e.get("source_label"), e.get("source_url")
+        else:
+            source_label, source_url = source_from_note(e["note"], periods)
         writer.writerow([
             e["name"],
             kind,
@@ -754,6 +885,8 @@ def csv_text(entries):
             "" if last is None else str(last),
             periods_text(periods),
             "1" if deployments is None else str(deployments),
+            "" if source_label is None else source_label,
+            "" if source_url is None else source_url,
             e["note"],
         ])
     return out.getvalue()

@@ -309,6 +309,8 @@ create table if not exists public.cameras (
   last_seen   integer,                     -- the last year a source records it, or null
   deployments integer not null default 1,  -- how many times a source records it being used
   periods     jsonb,                       -- those uses by the period the source gives, {"2023-24": 1}; null when it gives none
+  source_label text,                       -- the record or report the row rests on, named; null when none is known
+  source_url  text,                        -- where that record or report is, https; null when unknown, never without a label
 
   source      text not null check (source in ('seed', 'report', 'admin')),
   seed_key    text unique,                 -- name|lat|lon|type, seed rows only
@@ -401,6 +403,37 @@ alter table public.cameras add constraint cameras_periods_total_check
 
 comment on column public.cameras.periods is
   'Deployments counted by the period the source gives them in, {"2023-24": 1}; null where the source names no period. deployments is the sum.';
+
+-- version 2.4 added source_label and source_url: where a row comes
+-- from, named and linked. Until now provenance was prose inside note
+-- with nothing to click - "Met Police LFR van - 3 deployments
+-- 2023-2025" says which record without saying where it is. The label
+-- names the document ("Met Police LFR deployment record, 2025", "The
+-- Register, 6 February 2026") and the URL is the document itself, or
+-- the page a multi-document record is published on. Both are null
+-- where none is known, and a null is what the map should show as
+-- nothing at all: a camera without a source says nothing rather than
+-- something vague. Two rules the server holds whatever wrote the row:
+-- a URL is https with no whitespace, and a URL needs a label, because
+-- a link with no name is not a citation. The same two rules are in
+-- build_points.py and check.js. (backend/migrations/002_source.sql is
+-- this block on its own.)
+alter table public.cameras
+  add column if not exists source_label text,
+  add column if not exists source_url text;
+
+alter table public.cameras drop constraint if exists cameras_source_label_check;
+alter table public.cameras add constraint cameras_source_label_check
+  check (source_label is null or source_label = btrim(source_label) and source_label <> '');
+
+alter table public.cameras drop constraint if exists cameras_source_url_check;
+alter table public.cameras add constraint cameras_source_url_check
+  check (source_url is null or (source_url ~ '^https://\S+$' and source_label is not null));
+
+comment on column public.cameras.source_label is
+  'The record or report the row rests on, named. null where none is known; the map then says nothing.';
+comment on column public.cameras.source_url is
+  'Where the record or report named in source_label is, as an https URL. null where unknown; never set without a label.';
 
 create index if not exists cameras_visible_idx on public.cameras (visible);
 

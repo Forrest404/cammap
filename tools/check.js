@@ -70,7 +70,14 @@ var ROOT = path.resolve(__dirname, "..");
    entry missing one is a row the seed cannot write; an entry with one
    more is a field the seed silently drops. Add here when a field is
    added to both - and only then. */
-var FIELDS = ["name", "note", "lat", "lon", "type", "status", "last", "deployments", "periods"];
+var FIELDS = ["name", "note", "lat", "lon", "type", "status", "last", "deployments", "periods",
+  "source_label", "source_url"];
+
+/* A source URL is https and has no whitespace in it. http is not
+   accepted: every source this record cites is served over https, and
+   a plain-http link on a page about surveillance would be its own
+   small irony. */
+var SOURCE_URL = /^https:\/\/\S+$/;
 
 /* What the record says about status. The database also knows
    "nonfunctional", but that is a state a moderator sets on a row,
@@ -472,7 +479,8 @@ if (havePoints && haveShared) {
     var keys = {};
     var off = {
       fields: [], name: [], note: [], coords: [], type: [], status: [],
-      last: [], deployments: [], periods: [], periodsSum: [], london: [], van: [], dupKey: []
+      last: [], deployments: [], periods: [], periodsSum: [], sourceLabel: [], sourceUrl: [],
+      london: [], van: [], dupKey: []
     };
     var i;
     var e;
@@ -572,6 +580,21 @@ if (havePoints && haveShared) {
         }
       }
 
+      /* A source is null, or a label, or a label and a URL. A label is
+         a non-empty string with no surrounding whitespace; a URL is
+         https; a URL without a label is a link with no name, which is
+         not a citation, and the popup would have nothing to show for
+         it but the address. */
+      if (!(e.source_label === null ||
+            (typeof e.source_label === "string" && e.source_label !== "" && e.source_label === e.source_label.trim()))) {
+        off.sourceLabel.push(who + " " + JSON.stringify(e.source_label));
+      }
+      if (!(e.source_url === null || (typeof e.source_url === "string" && SOURCE_URL.test(e.source_url)))) {
+        off.sourceUrl.push(who + " " + JSON.stringify(e.source_url));
+      } else if (e.source_url !== null && e.source_label === null) {
+        off.sourceUrl.push(who + " has a source_url and no source_label");
+      }
+
       if (typeof e.lat === "number" && typeof e.lon === "number" && !site.inLondon(e.lat, e.lon)) {
         off.london.push(who + " " + JSON.stringify([e.lat, e.lon]));
       }
@@ -598,6 +621,8 @@ if (havePoints && haveShared) {
     check("every deployments is an integer of at least 1", off.deployments.length === 0, listOf(off.deployments));
     check("every periods is null or an object of period keys to positive integers", off.periods.length === 0, listOf(off.periods));
     check("every deployments is the sum of its periods where periods is given", off.periodsSum.length === 0, listOf(off.periodsSum));
+    check("every source_label is null or a trimmed non-empty string", off.sourceLabel.length === 0, listOf(off.sourceLabel));
+    check("every source_url is null or https, and never without a label", off.sourceUrl.length === 0, listOf(off.sourceUrl));
     check("every camera is in London", off.london.length === 0, listOf(off.london));
     check("every vancam is legacy", off.van.length === 0, listOf(off.van));
     check("seed keys are unique across the record", off.dupKey.length === 0, listOf(off.dupKey));
