@@ -76,7 +76,7 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | KEEP-2 | 0 | keep2 | verified | 97b2bfc | GitHub Actions; "green" only observable after a push the maintainer makes |
 | REACH-4 | 1 | chrome | merged | c8d897b | root `404.html` with a same-origin `<base>`; no account.js there; 8 pages in stamp.py's set |
 | REACH-3 | 1 | chrome | merged | 857c528 | six URLs: moderate is `noindex` and left out; robots allows all, reasoning in the file |
-| REACH-7 | 1 | chrome | merged | 99c471a | MIT code, ODbL 1.0 data; `LICENSE` and a footer line on all eight pages |
+| REACH-7 | 1 | chrome | merged | 99c471a | ODbL 1.0 for the data; code not licensed, by the maintainer's decision (QUESTIONS 3); `LICENSE` and a footer line on all eight pages |
 | WORD-5 | 1 | chrome | merged | a6c5ef4 | done on default: figure unknown, `TODO (WORD-5)` comment beside the footer sentence |
 | REACH-2 | 1 | chrome | merged | 81f018e | SVG, .ico, 180/192/512 PNG, manifest, theme-color |
 | REACH-1 | 1 | chrome | merged | da59a54 | per-page description, canonical, OG and Twitter; `img/share.png` from `tools/share-card.html` |

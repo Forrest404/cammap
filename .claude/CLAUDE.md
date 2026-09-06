@@ -82,9 +82,9 @@ backend/            schema.sql; seed.sql (also written by the script);
 img/                favicon.svg and the rasters made from it, and
                     share.png, the card a pasted link turns into
 manifest.json       "Add to Home Screen"; robots.txt and sitemap.xml
-robots.txt          tell crawlers what is here; LICENSE says the code
-sitemap.xml         is MIT and the record ODbL 1.0. NOTES.md "Sharing
-LICENSE             the site" is the long version of all four.
+robots.txt          tell crawlers what is here; LICENSE says the record
+sitemap.xml         is ODbL 1.0 and the code is not licensed for reuse.
+LICENSE             NOTES.md "Sharing the site" is the long version.
 tools/share-card.html  photographs the glow for img/share.png, by hand,
                     whenever the count changes; its header says how
 lib/ fonts/         vendored, pinned, do not edit

@@ -300,20 +300,21 @@ a missing path, so to check this one, open `/404.html` directly - and
 serve the repository as `/cammap/` under something (a symlink in a
 temporary directory does it) if the `<base>` is to resolve locally.
 
-**The licences (REACH-7).** `LICENSE` at the root, in two parts: the
-code is MIT and the record - `data/points.js`, `backend/seed.sql`, and
-any download of the same cameras in another format - is under the Open
-Database License 1.0, with the attribution line to use. ODbL over
-CC BY-SA because the record is a database, queried and joined, rather
-than a document read and quoted; it is what OpenStreetMap chose for the
-same reason, and the base tiles are already under it. The copyright
-holder is "cammap contributors", because the site puts no names on
-itself and its licence is not the place to start. The footer on every
-page says "Code MIT · data ODbL 1.0" with a link to each; the MIT link
-goes to the repository's copy on GitHub rather than to `/LICENSE`,
-because Pages serves a file with no extension as an untyped download
-in most browsers. `lib/` and `fonts/` are vendored under their own
-licences and are not ours to license.
+**The licence (REACH-7).** `LICENSE` at the root. The record -
+`data/cameras.csv`, `data/points.js`, `backend/seed.sql`, and any download
+of the same cameras in another format - is under the Open Database License
+1.0, with the attribution line to use. ODbL over CC BY-SA because the
+record is a database, queried and joined, rather than a document read and
+quoted; it is what OpenStreetMap chose for the same reason, and the base
+tiles are already under it. The code is deliberately not licensed: the
+maintainer decided on 2026-09-06 that the project is not open source, so
+everything that is not the record is all rights reserved, and `LICENSE`
+says so in as many words. The copyright holder is "cammap contributors",
+because the site puts no names on itself and its licence is not the place
+to start. The footer on every page says "Data ODbL 1.0 · licence"; both
+links leave the site, because Pages serves a file with no extension as an
+untyped download in most browsers. `lib/` and `fonts/` are vendored under
+their own licences and are not ours to license either way.
 
 **The donate line (WORD-5).** The footer says donations pay for the
 hosting and names no figure. It should: a precise small number is far

@@ -75,7 +75,8 @@ and both are one edit to change.*
 project is not open source. Answer given in the session: no licence is legally required
 (the default is all rights reserved), but the press page, the downloads and "permission to
 reuse" all depend on the *data* being licensed; the code licence is separable and can be
-dropped or made source-available. Awaiting the decision; the default stands until then.
+dropped or made source-available. **Decided 2026-09-06: keep the data licence, drop the code licence.** The record is ODbL
+1.0; the code is all rights reserved; `LICENSE` and the footer on every page say so.
 
 ### 4. Who runs this, for the About page (WORD-1)
 The brief wants About to say who runs the site and how it is funded. `NOTES.md` names two
