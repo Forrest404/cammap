@@ -1665,10 +1665,13 @@ function setUpModeratePage() {
         document.getElementById("mod-queue").style.display = which === "queue" ? "block" : "none";
         document.getElementById("mod-history").style.display = which === "history" ? "block" : "none";
         document.getElementById("mod-cameras").style.display = which === "cameras" ? "block" : "none";
+        document.getElementById("mod-activity").style.display = which === "activity" ? "block" : "none";
         if (which === "history") {
           loadHistory();
         } else if (which === "cameras") {
           setUpCamerasTab();
+        } else if (which === "activity") {
+          loadActivity();
         } else {
           loadQueue();
         }
@@ -3289,6 +3292,212 @@ function proofThumb(p) {
   });
 
   return holder;
+}
+
+/* ---------------- activity: who did what ----------------
+
+   On a project that publishes accusations about surveillance, being
+   able to audit its own moderators is not optional. The columns were
+   always there - every decided report carries resolved_by,
+   resolved_at and resolution_note - and nothing showed them: the
+   history tab shows the reporter and the outcome, not the moderator.
+   This tab is the other reading of the same rows, newest decision
+   first: who decided, when, what they said, and about what. A report
+   that approved itself - enough people agreed - says so, since it
+   has no moderator to name.
+
+   Under it, the other half: what has been done to a camera by hand.
+   Adding, editing, moving, hiding, unhiding and merging each write a
+   row to moderation_log (see schema.sql, version 2.6), with the
+   moderator, the camera, the time, and a note that keeps what the
+   row no longer has - where a pin was, what a name said before.
+
+   Two lists rather than one stream, because they are two tables with
+   two clocks, and a single stream in time order would need both
+   fetched whole to page it honestly. Each is a pager of its own.
+   Both are moderators' reading only, and the server says so: the
+   reports policy, the profiles policy and the log's own policy all
+   ask is_moderator(); the tab hiding itself is the courtesy.
+
+   The log table arrives by migration and the live database may not
+   have it yet. That is not a broken tab: the lower list says which
+   migration to run, and the upper list is unaffected. */
+
+var activityPager = null;
+var activityLogPager = null;
+
+/* Everything the decision row shows. Two joins on profiles, told
+   apart by the foreign key each goes through: the reporter is not
+   shown here (the history tab has them), the moderator is. The
+   camera join is for its name. */
+var ACTIVITY_COLUMNS = "id,kind,type,status_claim,name,camera_id,lat,lon,state,resolved_at,resolution_note," +
+  "resolver:profiles!reports_resolved_by_fkey(username),cameras(id,name)";
+
+var LOG_COLUMNS = "id,action,camera_id,note,created_at,profiles(username),cameras(id,name,lat,lon)";
+
+function loadActivity() {
+  if (!activityPager) {
+    activityPager = makePager({
+      list:   document.getElementById("activity-list"),
+      empty:  document.getElementById("activity-empty"),
+      note:   document.getElementById("activity-note"),
+      more:   document.getElementById("activity-more"),
+      failed: "Could not load the decisions.",
+      row:    activityRow,
+      fetch:  function (offset, onDone) {
+        loadPage(
+          sb.from("reports")
+            .select(ACTIVITY_COLUMNS)
+            .in("state", ["approved", "rejected", "merged"])
+            .order("resolved_at", { ascending: false, nullsFirst: false }),
+          offset, onDone);
+      }
+    });
+    activityLogPager = makePager({
+      list:   document.getElementById("activity-log-list"),
+      empty:  document.getElementById("activity-log-empty"),
+      note:   document.getElementById("activity-log-note"),
+      more:   document.getElementById("activity-log-more"),
+      failed: "Could not load the camera log.",
+      row:    activityLogRow,
+      fetch:  function (offset, onDone) {
+        loadPage(
+          sb.from("moderation_log")
+            .select(LOG_COLUMNS)
+            .order("created_at", { ascending: false }),
+          offset, function (problem, rows, more) {
+            /* 42P01 is "no such table": the migration has not been
+               run against this database. Say which, rather than
+               "could not load". */
+            if (problem && problem.code === "42P01") {
+              onDone("The camera log is not in the database yet: run backend/migrations/004_moderation_log.sql in the SQL editor.", [], false);
+              return;
+            }
+            onDone(problem, rows, more);
+          });
+      }
+    });
+  }
+  activityPager.reset();
+  activityLogPager.reset();
+}
+
+/* What a report was about, in the words the queue uses. */
+function reportSubject(r) {
+  var cam = r.cameras;
+
+  return r.kind === "new"
+    ? "New: " + typeLabel(r.type) + " — " + (r.name || "")
+    : "State: " + (cam ? cam.name : "camera #" + r.camera_id) + " is " + claimLabel(r.status_claim);
+}
+
+/* "See on the map →", the same link the queue and the history give. */
+function mapLink(lat, lon) {
+  var a = document.createElement("a");
+
+  a.href = pageHref("index.html") + "#" + Number(lat).toFixed(5) + "," + Number(lon).toFixed(5);
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.textContent = "See on the map →";
+  return a;
+}
+
+function activityRow(r) {
+  var row = document.createElement("li");
+  var head = document.createElement("div");
+  var body = document.createElement("div");
+  var what = document.createElement("strong");
+  var meta = document.createElement("span");
+  var who;
+
+  head.className = "queue-head";
+  body.className = "queue-body";
+
+  what.textContent = stateLabel(r.state) + " · " + reportSubject(r);
+  head.appendChild(what);
+
+  /* No moderator named. For an approval or a merge that is usually
+     the auto-approve trigger - enough separate people agreed, and
+     nobody decided it - which is worth saying in as many words,
+     because it is the one kind of approval nobody made and an audit
+     should be able to tell. But the column is also null when the
+     moderator's account is gone (on delete set null), and a
+     rejection is never automatic, so the row says what the data can
+     honestly say and no more. */
+  if (r.resolver && r.resolver.username) {
+    who = "by " + r.resolver.username;
+  } else if (r.state === "rejected") {
+    who = "no moderator named - the service role, or an account since deleted";
+  } else {
+    who = "no moderator named - approved itself when enough people agreed, or the account is since deleted";
+  }
+
+  meta.className = "coords";
+  meta.textContent = who +
+    (r.resolved_at ? " · " + new Date(r.resolved_at).toLocaleString() : "") +
+    (r.resolution_note ? " · “" + r.resolution_note + "”" : "");
+  head.appendChild(meta);
+
+  if (r.cameras) {
+    var camLine = document.createElement("span");
+    camLine.className = "coords";
+    camLine.textContent = "Camera #" + r.cameras.id + " · " + r.cameras.name;
+    body.appendChild(camLine);
+    body.appendChild(document.createElement("br"));
+  }
+  body.appendChild(mapLink(r.lat, r.lon));
+
+  row.appendChild(head);
+  row.appendChild(body);
+  return row;
+}
+
+/* The log's action names, in words. The same six the table's check
+   constraint allows; an action it does not know is shown as it is
+   rather than hidden, because a row in the log is a row in the log. */
+function actionLabel(action) {
+  return {
+    add_camera:    "Added by hand",
+    edit_camera:   "Edited",
+    move_camera:   "Moved",
+    hide_camera:   "Taken off the map",
+    unhide_camera: "Put back on the map",
+    merge_cameras: "Merged"
+  }[action] || action;
+}
+
+function activityLogRow(l) {
+  var row = document.createElement("li");
+  var head = document.createElement("div");
+  var body = document.createElement("div");
+  var what = document.createElement("strong");
+  var meta = document.createElement("span");
+  var cam = l.cameras;
+
+  head.className = "queue-head";
+  body.className = "queue-body";
+
+  what.textContent = actionLabel(l.action) + " · " +
+    (cam ? cam.name : "camera #" + l.camera_id) + " (#" + l.camera_id + ")";
+  head.appendChild(what);
+
+  /* No actor means the service role did it - a script, the
+     maintainer in the SQL editor - or the moderator's account is
+     gone. Either way there is no name to give, and the row says so
+     rather than showing a blank. */
+  meta.className = "coords";
+  meta.textContent = (l.profiles && l.profiles.username ? "by " + l.profiles.username : "no moderator - the service role, or an account since deleted") +
+    " · " + new Date(l.created_at).toLocaleString() +
+    (l.note ? " · " + l.note : "");
+  head.appendChild(meta);
+
+  if (cam && cam.lat !== undefined && cam.lat !== null) {
+    body.appendChild(mapLink(cam.lat, cam.lon));
+  }
+
+  row.appendChild(head);
+  row.appendChild(body);
+  return row;
 }
 
 /* ------------------------------------------------------------------

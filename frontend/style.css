@@ -1996,3 +1996,15 @@ ul.queue li.failed {
 .queue-head .nearest {
   display: block;
 }
+
+/* The Activity tab is two lists under two headings. The second
+   heading needs air above it, because what comes before it is a
+   list's last rule or a Load more button, and h3's own margin is
+   only below. The first sits straight under the hint. */
+#mod-activity h3 {
+  margin-top: 24px;
+}
+
+#mod-activity p.hint + h3 {
+  margin-top: 0;
+}

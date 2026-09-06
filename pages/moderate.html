@@ -28,7 +28,7 @@
   form-action 'none';
   frame-ancestors 'none'">
 <title>Moderate &mdash; cammap</title>
-<meta name="description" content="cammap's moderation page: the queue of reported cameras, the history of decisions, and every camera on the map. For moderators; every action is checked again on the server.">
+<meta name="description" content="cammap's moderation page: the queue of reported cameras, the history of decisions, every camera on the map, and a record of who decided what. For moderators; every action is checked again on the server.">
 <link rel="canonical" href="https://forrest404.github.io/cammap/pages/moderate.html">
 <!-- What a shared link turns into. Each page has its own title and
      description - one shared across the site would be the failure
@@ -43,14 +43,14 @@
 <meta property="og:locale" content="en_GB">
 <meta property="og:url" content="https://forrest404.github.io/cammap/pages/moderate.html">
 <meta property="og:title" content="Moderation — cammap">
-<meta property="og:description" content="cammap's moderation page: the queue of reported cameras, the history of decisions, and every camera on the map. For moderators; every action is checked again on the server.">
+<meta property="og:description" content="cammap's moderation page: the queue of reported cameras, the history of decisions, every camera on the map, and a record of who decided what. For moderators; every action is checked again on the server.">
 <meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Moderation — cammap">
-<meta name="twitter:description" content="cammap's moderation page: the queue of reported cameras, the history of decisions, and every camera on the map. For moderators; every action is checked again on the server.">
+<meta name="twitter:description" content="cammap's moderation page: the queue of reported cameras, the history of decisions, every camera on the map, and a record of who decided what. For moderators; every action is checked again on the server.">
 <meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
 <meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
 <!-- Not a page to find in a search: it is empty for anyone who is not
@@ -120,6 +120,7 @@
         <button class="toggle on" data-tab="queue">Queue</button>
         <button class="toggle" data-tab="history">History</button>
         <button class="toggle" data-tab="cameras">Cameras</button>
+        <button class="toggle" data-tab="activity">Activity</button>
       </div>
 
       <!-- What is waiting. -->
@@ -255,6 +256,35 @@
         <ul class="queue" id="history-list"></ul>
         <p class="empty" id="history-empty" style="display:none">Nothing decided yet.</p>
         <button id="history-more" class="quiet load-more" style="display:none">Load more</button>
+      </div>
+
+      <!-- Who did what. The same decided reports the history shows,
+           read the other way round - by the moderator who decided
+           them - and under that every change made to a camera by
+           hand, from moderation_log. Nothing here can be changed; it
+           is the record of what was. Moderators only, and the server
+           says so: every table this reads asks is_moderator(). -->
+      <div id="mod-activity" style="display:none">
+        <p class="hint">
+          Every decision a moderator has made, newest first: who, when,
+          what they said, and what it was about. A report that approved
+          itself because enough people agreed says so. Under that, every
+          change made to a camera by hand - added, edited, moved, taken
+          off the map, put back, merged - with what it was before.
+          Nothing here can be changed. It is the record of what was.
+        </p>
+
+        <h3>Decisions on reports</h3>
+        <p class="note" id="activity-note"></p>
+        <ul class="queue" id="activity-list"></ul>
+        <p class="empty" id="activity-empty" style="display:none">Nothing decided yet.</p>
+        <button id="activity-more" class="quiet load-more" style="display:none">Load more</button>
+
+        <h3>Changes to cameras</h3>
+        <p class="note" id="activity-log-note"></p>
+        <ul class="queue" id="activity-log-list"></ul>
+        <p class="empty" id="activity-log-empty" style="display:none">No camera has been changed by hand yet.</p>
+        <button id="activity-log-more" class="quiet load-more" style="display:none">Load more</button>
       </div>
 
     </div>

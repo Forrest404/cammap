@@ -811,6 +811,24 @@ batch, say - does not skip the rows that shifted up to fill the gap,
 and an id decided since the index was taken comes back empty rather
 than as a decided row with live buttons.
 
+**Activity: who did what.** A fourth tab. The upper list is every
+decided report read the other way round from the history tab - by the
+moderator who decided it: who, when, what they said, and what it was
+about, through a second join on `profiles` told apart from the
+reporter's by its foreign key (`profiles!reports_resolved_by_fkey`).
+A report that approved itself, because enough people agreed, says so
+in as many words: it is the one kind of approval nobody made, and an
+audit should be able to tell. The lower list is `moderation_log`: every
+change made to a camera by hand, with the moderator, the time, and the
+note that keeps what the row no longer has. Two lists rather than one
+stream because they are two tables with two clocks, and a single
+stream in time order would need both fetched whole to page honestly;
+each is a pager of its own. Moderators only, and the server says so -
+the reports, profiles and log policies all ask `is_moderator()`; the
+tab hiding itself is the courtesy. Until migration 004 is run the
+lower list says which migration to run, and the upper list is
+unaffected.
+
 ### Housekeeping SQL
 
 Old anonymous accounts and test users:
