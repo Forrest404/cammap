@@ -656,6 +656,12 @@ reached.
 Moving is in `schema.sql`, so an existing project needs the file re-run in the
 SQL editor before the button works. It is safe to run again, as always.
 
+### Moderating at scale
+
+*(Written by the Wave 2 moderation agent: pagination, the backlog count,
+editing and merging cameras, bulk decisions, sorting the queue, and the
+activity view.)*
+
 ### Housekeeping SQL
 
 Old anonymous accounts and test users:
@@ -719,6 +725,12 @@ Judge changes to these by looking at the map, not by reading them.
 ### Satellite imagery
 
 The satellite view uses Esri's World Imagery from the open tile endpoint, with attribution, which is allowed for non-commercial use. It is not guaranteed. If it stops, the toggle stops showing imagery and nothing else breaks; the whole of it is one block at the top of `frontend/map.js`.
+
+### The map as a tool
+
+*(Written by the Wave 2 map agent: deep links and the hash, Near me and
+what it does not do, the place search for everyone, stacked dots, and the
+last-updated line.)*
 
 ### Keyboard focus and print
 

@@ -1553,6 +1553,15 @@ button.toggle.on:focus-visible {
 }
 
 /* ------------------------------------------------------------------
+   MAP TOOLS (Wave 2: the map agent writes this block)
+
+   Rules for the controls that turn the map from a picture into a tool:
+   the place search for everyone, Near me, the copy-link row in the
+   popup, stacked dots, the last-updated line. If the agent needs no
+   rule here, this block is removed rather than left empty.
+   ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------
    PAPER
 
    What printing the map page gives you: the list, in one column,
@@ -1810,3 +1819,12 @@ button.toggle.on:focus-visible {
     overflow: visible;
   }
 }
+
+/* ------------------------------------------------------------------
+   MODERATION (Wave 2: the moderation agent writes this block)
+
+   Rules for the moderation page at scale: Load more, the backlog count
+   on the nav link, checkboxes and bulk actions, the sort and filter
+   row, the edit and merge panels, the activity view. If the agent needs
+   no rule here, this block is removed rather than left empty.
+   ------------------------------------------------------------------ */
