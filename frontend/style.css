@@ -1869,3 +1869,81 @@ button.load-more {
   font-size: 13px;
   color: var(--dim);
 }
+
+/* Deciding many at once. Every queue row is a tick box beside the
+   report, and a bar over the list holds "select all", the two
+   buttons, and the batch's outcome on a line of its own. The box is
+   the accent so a ticked row reads as the site's and not the
+   browser's blue; the FORMS rule that takes the outline off every
+   input does not reach it, because KEYBOARD FOCUS gives a checkbox
+   the ring back. */
+.bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  max-width: 68ch;
+  margin: 0 0 12px 0;
+}
+
+.bulk-bar .note {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/* A label beside a box, not the block capitals over a field. */
+label.pick {
+  display: inline;
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  vertical-align: middle;
+  accent-color: var(--accent);
+}
+
+/* The row: the box in a narrow column at the left, the report to
+   its right, so thirty boxes line up down the page and the eye can
+   run down them. The box sits level with the report's first line. */
+ul.queue li.pickable {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+ul.queue li.pickable label.pick {
+  padding-top: 3px;
+}
+
+.queue-main {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* The label's words are for a screen reader; the box says it all to
+   the eye, thirty times down a page. */
+.pick-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A row a batch could not decide stays, marked at its edge, with the
+   server's reason where the row's own buttons would have put it. */
+ul.queue li.failed {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}

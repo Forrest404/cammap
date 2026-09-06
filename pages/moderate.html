@@ -136,6 +136,19 @@
              account.js's refreshBacklog() writes it, from a count-only
              request, and again after every decision. -->
         <p class="backlog" id="queue-backlog" aria-live="polite"></p>
+        <!-- Deciding many at once. Tick rows, or all on this page, and
+             one press approves or rejects them - each through
+             moderate_report, the same function and the same gate as the
+             buttons on a row, one call per report. A row that fails stays
+             with its reason beside it; the rest leave. account.js's
+             bulkDecide() is the whole of it. -->
+        <div class="bulk-bar" id="queue-bulk">
+          <input type="checkbox" id="queue-select-all">
+          <label for="queue-select-all" class="pick">Select all on this page</label>
+          <button id="queue-approve-selected">Approve selected</button>
+          <button id="queue-reject-selected" class="quiet">Reject selected</button>
+          <span class="note" id="queue-bulk-note" aria-live="polite"></span>
+        </div>
         <p class="note" id="queue-note"></p>
         <ul class="queue" id="queue-list"></ul>
         <p class="empty" id="queue-empty" style="display:none">Nothing waiting.</p>

@@ -754,6 +754,25 @@ not a notebook. Report decisions are deliberately not copied into it -
 two records of one decision are two things to keep in step - and the
 Activity tab reads both.
 
+**Many decisions in one press.** Twenty approvals were twenty clicks
+and twenty round trips. Every queue row now has a tick box - a real
+checkbox in a real label, its words for a screen reader - and a bar
+over the list holds *Select all on this page*, *Approve selected* and
+*Reject selected*, with one note for a batch of rejections. Two rules
+hold it honest. It is not a second way in: `bulkDecide()` calls
+`moderate_report` once per report, through the row's own `act()`,
+which is the same call the row's own buttons make - the same function,
+the same role check on the server. There is deliberately no server
+function that takes a list; one would be a second door to keep locked,
+and the per-report function already does the clustering, the merging
+and the XP that an approval means. Four requests go at a time, so
+twenty take about as long as five. And it does not fail quietly: each
+row reports its own outcome, a row that went through leaves the list
+when the batch is in, a row that did not stays where it was with the
+server's reason beside it, and the line under the buttons says how
+many of each. "Select all" reaches only the rows that are loaded: a
+moderator should not be able to approve what they have not seen.
+
 ### Housekeeping SQL
 
 Old anonymous accounts and test users:

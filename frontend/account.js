@@ -1659,6 +1659,7 @@ function setUpModeratePage() {
     })(tabs[i]);
   }
 
+  setUpBulk();
   loadQueue();
 }
 
@@ -2562,12 +2563,36 @@ function claimLabel(claim) {
 
 function queueRow(r) {
   var row = document.createElement("li");
+  var pick = document.createElement("label");
+  var box = document.createElement("input");
+  var pickText = document.createElement("span");
+  var main = document.createElement("div");
   var head = document.createElement("div");
   var body = document.createElement("div");
   var proof = document.createElement("div");
   var actions = document.createElement("div");
   var i;
 
+  /* The row is a tick box beside everything else, so that twenty
+     decisions can be one press (bulkDecide, below). A real checkbox
+     in a real label: the label's text is for a screen reader and is
+     hidden from sight, because "Select this report" written out
+     thirty times down a page says nothing the box does not. The id
+     rides on both the row and the box so either can be found from
+     the other. */
+  row.className = "pickable";
+  row.setAttribute("data-id", r.id);
+
+  pick.className = "pick";
+  box.type = "checkbox";
+  box.className = "pick-box";
+  box.setAttribute("data-id", r.id);
+  pickText.className = "pick-text";
+  pickText.textContent = "Select this report";
+  pick.appendChild(box);
+  pick.appendChild(pickText);
+
+  main.className = "queue-main";
   head.className = "queue-head";
   body.className = "queue-body";
   proof.className = "queue-proof";
@@ -2614,45 +2639,255 @@ function queueRow(r) {
   var outcome = document.createElement("span");
   outcome.className = "note";
 
-  function act(action) {
+  /* The one way a decision leaves this row. The row's own buttons
+     call it and so does the bulk path, with a callback: same call,
+     same function on the server, same gate. The outcome lands
+     beside the buttons either way, so a report that fails in a batch
+     of twenty says why on its own row rather than in a summary that
+     names a number. Without a callback it is the single case, and
+     the row stays where it is, marked done, so the moderator can
+     see what they just did; the bulk path takes the done rows away
+     itself once the batch is in. */
+  function act(action, noteText, onDone) {
     approve.disabled = true;
     reject.disabled = true;
+    box.disabled = true;
     outcome.textContent = "…";
 
-    sb.rpc("moderate_report", { report_id: r.id, action: action, note: null })
+    function failed(message) {
+      approve.disabled = false;
+      reject.disabled = false;
+      box.disabled = false;
+      outcome.textContent = message;
+      if (onDone) {
+        onDone(message);
+      }
+    }
+
+    sb.rpc("moderate_report", { report_id: r.id, action: action, note: noteText || null })
       .then(function (result) {
         if (result.error) {
-          approve.disabled = false;
-          reject.disabled = false;
-          outcome.textContent = result.error.message || "That did not go through.";
+          failed(result.error.message || "That did not go through.");
           return;
         }
-        row.className = "done";
+        row.className = "pickable done";
+        box.checked = false;
         outcome.textContent = action === "approve" ? "Approved." : "Rejected.";
         /* the map cache is five minutes old at most; a moderator who
            just approved something should see it on their next look */
         forgetCameraCache();
-        refreshBacklog();
+        if (onDone) {
+          onDone(null);
+        } else {
+          refreshBacklog();
+        }
       })
       .catch(function () {
-        approve.disabled = false;
-        reject.disabled = false;
-        outcome.textContent = "That did not go through. Try again in a moment.";
+        failed("That did not go through. Try again in a moment.");
       });
   }
 
-  approve.onclick = function () { act("approve"); };
-  reject.onclick = function () { act("reject"); };
+  approve.onclick = function () { act("approve", null, null); };
+  reject.onclick = function () { act("reject", null, null); };
+
+  /* How bulkDecide() reaches this row's act(): a method on the
+     element, so the batch needs nothing but the rows it found. */
+  row.decide = act;
 
   actions.appendChild(approve);
   actions.appendChild(reject);
   actions.appendChild(outcome);
 
-  row.appendChild(head);
-  row.appendChild(body);
-  row.appendChild(proof);
-  row.appendChild(actions);
+  main.appendChild(head);
+  main.appendChild(body);
+  main.appendChild(proof);
+  main.appendChild(actions);
+
+  row.appendChild(pick);
+  row.appendChild(main);
   return row;
+}
+
+/* ---------------- deciding many at once ----------------
+
+   Twenty approvals were twenty clicks and twenty round trips, each
+   with a "…" to wait through. Moderation is volunteer time, and it is
+   the scarcest thing the project has, so the queue is now a list of
+   tick boxes with two buttons over it: Approve selected, Reject
+   selected, with one note for the whole batch of rejections.
+
+   What it must not become is a second way in. The bulk path calls
+   moderate_report once per report - the same function the buttons
+   on a row call, with the same role check on the server - through
+   the row's own act(). There is no server function that takes a
+   list, on purpose: one that did would be a second door to keep
+   locked, and the per-report function already does the clustering,
+   the merging and the XP that an approval means. The cost is one
+   request per report, which is what a moderator was paying by hand;
+   BULK_PARALLEL of them go at once so twenty take about as long as
+   five.
+
+   And it must not fail quietly. Each row reports its own outcome:
+   a row that went through leaves the list when the batch is in, a
+   row that did not stays where it was with the server's reason
+   beside it, and the line under the buttons says how many of each.
+   A batch of twenty with one failure is nineteen decisions made and
+   one plainly still to make, never "something went wrong". */
+
+var BULK_PARALLEL = 4;
+var bulkRunning = false;
+
+/* The <li> an element sits in. Walks up rather than using closest(),
+   which is a newer DOM call than the rest of this file leans on. */
+function rowOf(el) {
+  while (el && el.tagName !== "LI") {
+    el = el.parentNode;
+  }
+  return el;
+}
+
+/* The rows whose box is ticked and that are still undecided. A row
+   marked done keeps its box unticked and its buttons off, so it
+   cannot be sent twice from here. */
+function selectedQueueRows() {
+  var boxes = document.querySelectorAll("#queue-list li.pickable:not(.done) .pick-box");
+  var rows = [];
+  var i;
+
+  for (i = 0; i < boxes.length; i++) {
+    if (boxes[i].checked && !boxes[i].disabled) {
+      rows.push(rowOf(boxes[i]));
+    }
+  }
+  return rows;
+}
+
+function setUpBulk() {
+  var all = document.getElementById("queue-select-all");
+  var approveAll = document.getElementById("queue-approve-selected");
+  var rejectAll = document.getElementById("queue-reject-selected");
+
+  if (!all || !approveAll || !rejectAll) {
+    return;
+  }
+
+  /* "All on this page" is exactly that: the rows that are loaded.
+     It never reaches into pages not yet fetched, because a moderator
+     should not be able to approve what they have not seen. */
+  all.onchange = function () {
+    var boxes = document.querySelectorAll("#queue-list li.pickable:not(.done) .pick-box");
+    var i;
+
+    for (i = 0; i < boxes.length; i++) {
+      if (!boxes[i].disabled) {
+        boxes[i].checked = all.checked;
+      }
+    }
+  };
+
+  approveAll.onclick = function () { bulkDecide("approve"); };
+  rejectAll.onclick = function () { bulkDecide("reject"); };
+}
+
+function bulkDecide(action) {
+  var rows = selectedQueueRows();
+  var note = document.getElementById("queue-bulk-note");
+  var all = document.getElementById("queue-select-all");
+  var approveAll = document.getElementById("queue-approve-selected");
+  var rejectAll = document.getElementById("queue-reject-selected");
+  var list = document.getElementById("queue-list");
+  var empty = document.getElementById("queue-empty");
+  var more = document.getElementById("queue-more");
+  var why = null;
+  var next = 0;
+  var active = 0;
+  var done = 0;
+  var failed = 0;
+
+  if (bulkRunning) {
+    return;
+  }
+  if (rows.length === 0) {
+    note.textContent = "Nothing selected.";
+    return;
+  }
+
+  /* One note for the batch, on rejection only - approve_report has
+     no note to carry, and a rejection is the one the reporter reads.
+     Cancelling the prompt cancels the batch; an empty note is no
+     note, as the row's own Reject sends. */
+  if (action === "reject") {
+    why = window.prompt("A note for the reporters of these " + rows.length +
+      " reports - they can read it. Leave it blank for none.", "");
+    if (why === null) {
+      return;
+    }
+    why = why.trim() || null;
+  }
+
+  bulkRunning = true;
+  approveAll.disabled = true;
+  rejectAll.disabled = true;
+  all.disabled = true;
+  note.textContent = (action === "approve" ? "Approving " : "Rejecting ") + rows.length + "…";
+
+  function finish() {
+    var i;
+
+    bulkRunning = false;
+    approveAll.disabled = false;
+    rejectAll.disabled = false;
+    all.disabled = false;
+    all.checked = false;
+
+    /* The decided rows go; the failed ones stay, marked, with their
+       reason where act() put it. */
+    for (i = 0; i < rows.length; i++) {
+      if (rows[i].className.indexOf("done") !== -1 && rows[i].parentNode) {
+        rows[i].parentNode.removeChild(rows[i]);
+      }
+    }
+
+    note.textContent = (action === "approve" ? "Approved " : "Rejected ") +
+      done + " of " + rows.length + "." +
+      (failed ? " " + failed + " did not go through - the reason is beside each." : "");
+
+    /* A page emptied by the batch with nothing more to load is an
+       empty queue; the pager only knows to say so on a first page. */
+    if (!list.children.length && more.style.display === "none") {
+      empty.style.display = "";
+    }
+
+    forgetCameraCache();
+    refreshBacklog();
+  }
+
+  /* Keep BULK_PARALLEL requests out at a time until the rows run
+     out, then finish once the last one is back. */
+  function launch() {
+    while (active < BULK_PARALLEL && next < rows.length) {
+      (function (row) {
+        active++;
+        row.className = row.className.replace(" failed", "");
+        row.decide(action, why, function (problem) {
+          active--;
+          if (problem) {
+            failed++;
+            row.className = "pickable failed";
+          } else {
+            done++;
+          }
+          if (next >= rows.length && active === 0) {
+            finish();
+          } else {
+            launch();
+          }
+        });
+      })(rows[next++]);
+    }
+  }
+
+  launch();
 }
 
 function proofThumb(p) {
