@@ -43,6 +43,15 @@ the three schema constraints carry the same numbers; every `vancam` is
 bar `nonfunccam`. `python3 tools/stamp.py --check` runs all of it and writes
 nothing; that is what CI runs, and a stale stamp fails it.
 
+GitHub runs the same two scripts on every push and every pull request —
+`python3 tools/stamp.py --check` then `node tools/check.js`, from
+`.github/workflows/check.yml` — on its runner's own Python and Node,
+installing nothing. It is the pre-commit check run where forgetting is not
+possible; a red run names the page, row or constraint. For a stale stamp, run
+`python3 tools/stamp.py` with no flag locally and commit what it writes. It
+does not stop a Pages deploy: that needs branch protection requiring the
+`check` status.
+
 ## Where things live
 
 ```
@@ -64,6 +73,8 @@ tools/stamp.py      run before every commit: stamps, then checks every
                     copied thing still agrees (--check writes nothing)
 tools/check.js      run before every commit too: the record and the pure
                     functions, checked in bare Node with nothing installed
+.github/workflows/  check.yml: GitHub runs both scripts on every push and
+                    pull request. Not served by Pages.
 ```
 
 Links are relative to wherever the page sits, so `account.js` writes them

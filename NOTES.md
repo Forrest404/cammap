@@ -35,6 +35,9 @@
                         twice still agrees; the second checks the record
                         and the pure functions in bare Node (see
                         "Deploying a change" below).
+    .github/workflows/  check.yml - GitHub runs stamp.py --check and
+                        check.js on every push and pull request. Not
+                        served by Pages.
 
 Links are written relative to wherever the page sits, so index.html reaches
 `pages/about.html` while a page in pages/ reaches `../index.html`. account.js
@@ -140,6 +143,16 @@ page whose stamps would change is then a failure naming the page, not a
 repair. That is the form for CI: on a checked-out tree a stale stamp means
 somebody committed without running the script, and the build should say so
 rather than quietly fix it.
+
+That is what `.github/workflows/check.yml` does. On every push to every
+branch and every pull request, GitHub checks out the tree and runs
+`python3 tools/stamp.py --check`, then `node tools/check.js`, on the
+runner's own Python and Node with nothing installed, and the run goes red
+if either exits non-zero. It is a checker, not a build: the site is still
+served from `main` as committed, and nothing under `.github/` reaches it. A
+red run is a notice, not a lock - Pages deploys regardless - so a commit
+that reached `main` without the scripts is fixed forward. To make it a
+lock, require the `check` status in the branch protection for `main`.
 
 `node tools/check.js` is the nearest thing to tests. It needs Node and
 nothing else, and it exits non-zero naming what broke - a van site claiming
