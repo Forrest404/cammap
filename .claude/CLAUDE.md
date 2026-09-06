@@ -42,7 +42,8 @@ pages/              about, blog, account, report, moderate, leaderboard
 frontend/shared.js  what the other files must agree on: camera types,
                     London bounds, the base styles and the dark lift
 frontend/map.js     the map: layers, glow, the list, edit mode
-frontend/picker.js  the pin-dropping map on the report form
+frontend/picker.js  the pin-dropping map: the report form, and the
+                    moderation page's Move
 frontend/account.js accounts, reports, moderation, leaderboard - runs
                     on every page, because the nav does
 frontend/style.css  all of it
@@ -112,14 +113,24 @@ Things that look like they would work and do not:
 
 ## Things that must not drift apart
 
-- **The base map.** Both maps - the real one and the report form's picker -
-  draw through `MAP_STYLES` and `tidyBaseStyle()` in `frontend/shared.js`. The
-  dark style is drawn for a pure black page and needs lifting against this one;
-  do that there, once, not per map.
+- **The base map.** The map itself and every picker - on the report form, and
+  under Move on the moderation page - draw through `MAP_STYLES` and
+  `tidyBaseStyle()` in `frontend/shared.js`. The dark style is drawn for a pure
+  black page and needs lifting against this one; do that there, once, not per
+  map.
 - **The aerial imagery.** `SATELLITE_TILES`, `addSatellite()` and
-  `showSatellite()` in `shared.js`, used by both maps. If Esri's endpoint ever
+  `showSatellite()` in `shared.js`, used by all of them. If Esri's endpoint ever
   changes, that block is the whole of what needs touching, and the toggle stops
   showing imagery rather than breaking anything.
+- **A camera's position, in three places at once.** A moderator can move a
+  camera (moderation page, Cameras tab, **Move**). For that correction to
+  hold, `move_camera` in `schema.sql` must leave `seed_key` alone - it is how
+  `seed.sql` matches a row it has already written, and the seed's
+  `on conflict` deliberately never writes coordinates - and
+  `overlayCameras()` in `map.js` must take `lat`/`lon` from the database row
+  rather than from the seed entry it is laying itself over. Miss either and
+  the camera silently goes back to where it was: the first on the next seed
+  run, the second on the next page load.
 - **The camera types.** `CAMERA_TYPES` in `frontend/shared.js` is the one list.
   The legend, every drop-down, and every label come from it. The database keeps
   its own copy in the `type` check constraints — deliberately, because the
@@ -127,6 +138,14 @@ Things that look like they would work and do not:
   a kind of camera means editing `shared.js` and `schema.sql`, and nothing else.
 - **The London bounds.** `LONDON_BOUNDS` in `frontend/shared.js`, and the
   `check` constraints on `cameras`, `reports` and `saved_cameras`. Same reason.
+- **Every `vancam` is `legacy`.** In `data/points.js`, in `backend/seed.sql`,
+  and in the default `tidy()` gives an entry with no status. A van parks for a
+  shift and drives away, so no van site claims to be active and the map opens
+  on the 17 cameras fixed to something. The recency lives in `last` and
+  `deployments`, which are untouched. `build_points.py` is missing and used to
+  compute an active/legacy split from the newest Met year - if it turns up, it
+  has to be changed before it is run, or 97 sites go back to active. The long
+  version is "What active means" in `NOTES.md`.
 - **`data/points.js` and `backend/seed.sql`** hold the same cameras in two
   forms and must agree. Both say they are written out by `build_points.py` —
   **that script is not in this repository.** Until it turns up, both files are

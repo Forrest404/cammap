@@ -44,10 +44,12 @@ five. The database keeps its own copy of the types and the bounds in `check`
 constraints, on purpose: the server has to refuse a bad row without trusting
 anything a browser sent.
 
-`frontend/picker.js` is the map on the report form - drop a pin, drag it, and
-the two coordinate boxes follow. It draws the same base map through the same
-shared code, so the picker and the map cannot come to disagree about what
-London looks like. It is the only other page that loads MapLibre.
+`frontend/picker.js` is the pin-dropping map - drop a pin, drag it, and the two
+coordinate boxes follow. It draws the same base map through the same shared
+code, so the picker and the map cannot come to disagree about what London looks
+like. Two pages besides the map itself load MapLibre for it: the report form,
+where someone is placing a camera, and the moderation page's Cameras tab, where
+a moderator is correcting where one already is. Same question, so the same map.
 
 It carries the same two toggles the map page has. **Satellite** is the one that
 earns its place on a form: a street diagram tells you which road, a photograph
@@ -62,7 +64,7 @@ they must be kept in step with each other.
 
 ## TODO
 
-- [x] Make it *active* facial recognition cameras, and add a legacy toggle to show ones previously in use. (Done: a van site is active if the newest Met record we hold - 2025 - lists a deployment there. The 2026 record is behind bot protection; when it is obtained, bump `LATEST_MET_YEAR` in the build script and the split updates itself.)
+- [x] Make it *active* facial recognition cameras, and add a legacy toggle to show ones previously in use. (Done, then rethought - see "What active means" below. Every van site is now legacy; only the 17 cameras fixed to something show by default.)
 - [x] ~~Use AI to predict where the next LFR deployments will be.~~ **Dropped, deliberately.** 182 sites drawn from annual FOI records cannot support a credible forecast, and this map's own data note says "Nothing here is estimated" - a confident guess printed beside a public record invites people to read it as one. On a civil liberties map that is a liability, not a feature.
 
   What was built instead answers the question people actually have, out of data already held: **Most used**, the sort beside the camera list, orders by `deployments` - how many times a source records a spot being used. Same number the glow is weighed by. It says where they have gone again and again, which the record does support.
@@ -71,7 +73,7 @@ they must be kept in step with each other.
 - [x] Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password. (Done: the site generates the username - two words, `copper.heron` - and the person sets a password. No email, no name. See "Anonymity" below for what "completely" honestly means.)
 - [ ] Make it so that when reporting the state of a camera, you have to upload an image
 - [ ] Get the Met's 2026 deployment record (met.police.uk blocks scripted downloads; it needs a real browser) and re-run the build.
-- [ ] Other cities. The type identifiers and the schema carry over; the London bounds are now `LONDON_BOUNDS` in `frontend/shared.js` (one place, shared by the map and the report form), the opening centre `LONDON` in `frontend/map.js`, and three `check` constraints in `backend/schema.sql` - on `cameras`, `reports` and `saved_cameras`. Wherever the user is located, thats where the map displays by default.
+- [ ] Other cities. The type identifiers and the schema carry over; the London bounds are now `LONDON_BOUNDS` in `frontend/shared.js` (one place, shared by the map and the report form), the opening centre `LONDON_CENTRE` beside it, the opening zoom in `frontend/map.js`, and three `check` constraints in `backend/schema.sql` - on `cameras`, `reports` and `saved_cameras`. Wherever the user is located, thats where the map displays by default.
 
   Worth saying plainly before that last part is built: asking every visitor for their location, to centre a map, is a real cost to a site whose whole argument is that it collects nothing. `navigator.geolocation` prompts, and a refusal has to work as well as a yes. If it is done, it should be a button the visitor presses rather than something that happens to them on arrival - which is how the report form already does it.
 
@@ -97,6 +99,45 @@ tags so a returning visitor's browser fetches them afresh instead of
 pairing new HTML with old JavaScript. Skip it and the first visit after
 a deploy can show a page whose buttons do nothing.
 
+### What active means
+
+Every one of the 163 LFR van sites carries `status: legacy`, so the map opens
+on the 17 cameras that are actually fixed to something - the two Croydon
+installs, the nine station deployments, the seven shops - and the van record is
+behind the **Legacy** toggle.
+
+It used to split them. A van site was active if the newest Met record we held
+(2025) listed a deployment there, legacy if it did not, and `build_points.py`
+computed that from `LATEST_MET_YEAR`. The split was dropped because it drew a
+line between two things that are equally uncertain in the only sense a visitor
+cares about: an LFR van parks for a shift and drives away, so a 2025 deployment
+is no more a claim that a van is at that spot today than a 2024 one is. Calling
+one of them "active" on a map of surveillance invites exactly the reading the
+project refuses everywhere else - see the dropped prediction feature above, and
+"Nothing here is estimated" in the `points.js` header.
+
+Nothing was deleted, and the recency did not go anywhere. `last` still carries
+the year of the most recent recorded deployment and `deployments` still carries
+the count, so a popup still reads "LFR van site · legacy · last seen 2025", the
+glow is still weighed by how often a spot was used, and **Most used** still
+sorts by it. What changed is that the map no longer opens by asserting a van is
+anywhere.
+
+Two things will quietly undo it:
+
+- **`build_points.py`**, when it turns up. It computed the split, and a re-run
+  would set 97 van sites back to active. It must be made to write every
+  `vancam` as legacy first.
+- **A re-run of `seed.sql` against a database seeded before this change** is
+  what applies it, not what breaks it - `status` is in the `on conflict do
+  update` list, so the 97 rows are rewritten in place. Do run it.
+
+Cameras that came from user reports have no `seed_key` and are not touched by
+the seed, so a reported van site stays whatever the moderator approved it as.
+To bring those into line too:
+
+    update cameras set status = 'legacy' where type = 'vancam' and status = 'active';
+
 ### Roles
 
 Moderators and admins are set here, not on the site:
@@ -105,6 +146,49 @@ Moderators and admins are set here, not on the site:
     update profiles set role = 'admin'     where username = 'copper.heron';
 
 `admin` and `moderator` are the same on the site today; the two exist so they can differ later.
+
+### What a moderator can change
+
+Everything a moderator does is gated in the database - a page hiding itself
+from a non-moderator is a courtesy, never the lock.
+
+    the queue      approve or reject a pending report      moderate_report
+    history        take an approval back, reconsider a
+                   rejection, hide or unhide a camera      moderate_undo
+    cameras        put one on the map by hand              moderate_add_camera
+    cameras        correct where one is                    moderate_move_camera
+
+**Move** is the newest of those and the one worth explaining. A pin in the
+wrong place is the commonest thing wrong with a camera that is otherwise right:
+the Met's record gives a van site as a borough rather than a street, and a
+reporter drops the pin where they were standing rather than on the pole
+opposite. Everything else about a camera could already be corrected; its
+position could not. The Cameras tab now opens the report form's own picker
+under a row - same map, same crosshair, same Satellite toggle, same pair of
+coordinate boxes - and saves the new position through `moderate_move_camera`.
+
+Two things make a correction stick, and both are easy to undo by accident:
+
+- `move_camera` does not touch `seed_key`. The key reads
+  `name|lat|lon|type` as the *published record* gave them, and it is how
+  `seed.sql` finds a row it has already written. Because the seed's
+  `on conflict` never writes coordinates, a re-run brings the name, note and
+  state up to date and leaves the moved pin where the moderator put it.
+  Rewriting the key to the new position would make the next seed run insert a
+  second camera back at the old one.
+- `overlayCameras()` in `frontend/map.js` takes `lat`/`lon` from the database
+  row when it lays the table over a seed entry. It did not before - it copied
+  the name, note and state and left the position to `points.js` - so a moved
+  seed camera would have shown at its old spot on the map however the database
+  read.
+
+A moved seed camera therefore disagrees with `data/points.js`, which still
+carries the published position. That is the right way round: the database is
+what the map reads, and `points.js` is the fallback for when it cannot be
+reached.
+
+Moving is in `schema.sql`, so an existing project needs the file re-run in the
+SQL editor before the button works. It is safe to run again, as always.
 
 ### Housekeeping SQL
 
@@ -209,4 +293,5 @@ https://www.google.com/search?q=is+there+a+project+mapping+out+all+london+facial
 - LFR Watch
 - Watch Face
 - Cam Watch
--   
+- No Match 
+- 

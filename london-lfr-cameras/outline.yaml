@@ -1,0 +1,123 @@
+topic: Live facial recognition cameras in London - fixed installations, retail networks and van deployments
+
+# Scope decided with the user: police plus Facewatch plus other private LFR.
+# Historic-only deployments are in scope where they explain the present, but
+# the survey is about what is running now.
+#
+# The items below are research UNITS, not cameras. A per-camera list cannot be
+# the input, because no register of these cameras exists - assembling that list
+# is the output.
+
+items:
+  - name: Met Police fixed LFR installations
+    category: police_fixed
+    description: >
+      Permanently installed LFR cameras operated by the Metropolitan Police,
+      including the Croydon installation on North End and London Road. Exact
+      mounting points, go-live date, operating hours, and whether the programme
+      has extended beyond Croydon. This is the closest thing to a genuinely
+      fixed police LFR camera in London and deserves the most precision.
+
+  - name: Met Police LFR van deployments and their publication
+    category: police_van
+    description: >
+      Vehicle-mounted Met LFR. How many vans, which boroughs, how often, and
+      critically - where deployments are announced, how far in advance, and
+      whether any live or near-live location listing exists on the Met website
+      or elsewhere. Include the deployment archive if the Met publishes one.
+
+  - name: British Transport Police facial recognition
+    category: police_van
+    description: >
+      BTP use of LFR and retrospective facial recognition on the rail and
+      Underground network in London. Which stations, whether fixed or mobile,
+      current status, and any published schedule.
+
+  - name: City of London Police and other forces operating LFR in Greater London
+    category: police_van
+    description: >
+      City of London Police LFR, plus neighbouring forces (Essex, Surrey,
+      Kent, Hertfordshire, Thames Valley) running LFR at or inside the Greater
+      London boundary, and any joint or national operations.
+
+  - name: Facewatch network - scale, model and London footprint
+    category: facewatch
+    description: >
+      What Facewatch is, how many UK and London stores, how the shared watchlist
+      works, whether store locations are published anywhere, what the door
+      signage looks like, and how a member of the public could identify a
+      Facewatch store. Establish plainly whether a store list is obtainable.
+
+  - name: Facewatch in convenience and grocery chains
+    category: facewatch
+    description: >
+      Named Facewatch users among convenience and grocery retailers - Southern
+      Co-op, Budgens, Costcutter, Nisa, One Stop, Spar, Iceland, Home Bargains,
+      QD Stores. Which have London branches using it, and any named branch.
+
+  - name: Facewatch in Frasers Group and other named retail users
+    category: facewatch
+    description: >
+      Sports Direct, Flannels, House of Fraser and other Frasers Group fascias,
+      plus any other named chains. Which London stores are confirmed, and any
+      chain that has since withdrawn.
+
+  - name: Facewatch - withdrawals, complaints and current operating status
+    category: facewatch
+    description: >
+      ICO intervention, individual misidentification cases, retailers that have
+      dropped the system, and hard evidence that the network is still operating
+      in 2026 rather than merely still existing as a company.
+
+  - name: Non-Facewatch retail facial recognition in London
+    category: other_private
+    description: >
+      Supermarket and retail FR that does not use Facewatch - Asda, Tesco,
+      Morrisons, Sainsbury's trials, and vendors such as Corsight, FaceMe,
+      Veesion and Auror. Which are live in London stores now.
+
+  - name: Venue, stadium and private estate facial recognition
+    category: other_private
+    description: >
+      Shopping centres, stadiums and privately owned public space - Westfield
+      Stratford and White City, the O2, Wembley, Canary Wharf, Kings Cross
+      Central and the 2019 episode there, Granary Square, and any current
+      installation.
+
+  - name: Transport network facial recognition
+    category: transport
+    description: >
+      TfL, Network Rail and airports. The Willesden Green AI trial and what it
+      actually recognised, Network Rail station trials, Heathrow and London City.
+      Distinguish carefully between face recognition, object recognition and
+      face matching at e-gates - they are frequently conflated in coverage.
+
+  - name: Where LFR van locations are published, live or otherwise
+    category: transparency
+    description: >
+      The core second question. Every channel where a Met, BTP or City of London
+      LFR deployment location appears - official pages, X/Twitter accounts,
+      local press, and any third-party or crowdsourced live map. Establish
+      whether a LIVE map of current van positions exists anywhere, and if not,
+      what the closest available thing is and how current it gets.
+
+  - name: Campaign group audits and crowdsourced camera datasets
+    category: transparency
+    description: >
+      Big Brother Watch, Liberty, Privacy International, Defend Digital Me and
+      any OpenStreetMap or community mapping effort that has enumerated LFR or
+      Facewatch sites in London. Datasets, methodologies and whether their data
+      is downloadable and reusable.
+
+  - name: Regulatory and legal status as of 2026
+    category: transparency
+    description: >
+      Bridges v South Wales Police and what followed, ICO position, the College
+      of Policing authorised professional practice, any 2025-2026 legislation,
+      consultation or judicial review, and how any of it constrains where
+      cameras may be placed today.
+
+execution:
+  batch_size: 7          # 7 agents in one wave; no second wave, so no approval gate
+  items_per_agent: 2
+  output_dir: ./london-lfr-cameras/results

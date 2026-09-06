@@ -1,0 +1,232 @@
+{
+  "item_name": "Transport network facial recognition",
+  "operator": "Four different bodies, and the distinction between them is the whole point of this file. (1) British Transport Police - the only operator running true live facial recognition (LFR, 1:N watchlist matching) on London's transport network, at National Rail termini and, since August 2026, London Underground stations. (2) Transport for London - owns and operates the stations and the CCTV, provides BTP with the physical hosting, and separately ran its own AI camera trial at Willesden Green; TfL itself operates no facial recognition. (3) Network Rail - ran AI video analytics trials at its managed stations, including London Waterloo, London Euston and London Bridge, using face analysis (demographics/emotion inference) and non-facial appearance tracking, not watchlist identification. (4) UK Border Force - runs the ePassport gates at Heathrow, Gatwick, London City and Stansted, which are 1:1 document verification, a different technology from everything else in this file. The Metropolitan Police has also deployed its own LFR van at a station forecourt (King's Cross, 1 July 2025) but that is a Met street deployment at a transport location, not a transport-operator system.",
+  "system_type": "transport",
+  "vendor": "BTP LFR: NEC NeoFace M40, run at a minimum match threshold of 0.64 - the same algorithm and the same threshold the Metropolitan Police and South Wales Police use, and the algorithm the National Physical Laboratory tested for demographic performance. Network Rail 2022-2024 station analytics: Amazon Rekognition running on feeds from Cisco Meraki MV smart cameras. Network Rail / London Bridge 'Tag and Track' 2020-2021: Ipsotek (an Atos subsidiary), a GBP 2.442m project part-funded by InnovateUK. TfL Willesden Green AI trial: the supplier is not named in TfL's own FOI disclosure or in the reporting derived from it [uncertain]. Border Force ePassport gates: gate hardware and matching supplier not published in the sources reviewed [uncertain].",
+  "london_coverage_summary": "As of September 2026 the only live facial recognition running on London's transport network is British Transport Police's pilot, which began at London Bridge on 11 February 2026, ran at the main line termini through the spring and summer, and extended onto the London Underground at Victoria on 11 August 2026. It is a rotating temporary deployment, not an installation: cameras are set up on a station concourse for three to six hours and taken away. The pilot runs until November 2026. Everything else on the network that gets called 'facial recognition' in coverage is something else - TfL's Willesden Green trial (October 2022 to September 2023) was object and behaviour detection with faces blurred by default; Network Rail's 2022-2024 trial at Waterloo and Euston used Amazon Rekognition to infer age, gender and emotion from faces rather than to identify anyone; the London Bridge 'Tag and Track' work deliberately avoided faces and re-identified people by clothing and gait; and the ePassport gates at Heathrow and London City compare a live face to the photo in the chip of the passport the traveller has just inserted, a one-to-one check against a document the person is holding, with no watchlist of faces involved.",
+  "cameras": [
+    {
+      "site_name": "London Bridge station (National Rail concourse)",
+      "address": "London Bridge station, Station Approach Road, London",
+      "postcode": null,
+      "borough": "Southwark",
+      "lat": null,
+      "lng": null,
+      "camera_type": "unknown",
+      "installed_date": null,
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "notes": "First BTP LFR deployment anywhere: 11/02/2026, 4hr 35min, crime hotspot use case, watchlist 381, threshold 0.64, 0 alerts, ~16,156 faces seen. Temporary cameras on the concourse, removed at the end of the deployment - camera_type is 'unknown' rather than 'fixed' or 'van' because these are neither: they are portable masts set up inside the station, not vehicle-mounted and not permanently installed. Status 'active' means the station remains in the trial rotation, not that a camera is standing there today."
+    },
+    {
+      "site_name": "London Waterloo station (National Rail concourse)",
+      "address": "Waterloo station, Station Approach, London",
+      "postcode": null,
+      "borough": "Lambeth",
+      "lat": null,
+      "lng": null,
+      "camera_type": "unknown",
+      "installed_date": null,
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "notes": "Two BTP deployments in the published register: 13/02/2026 (4hr 45min, watchlist 409, 0 alerts, ~56,186 faces - the largest single-deployment face count of the spring) and 22/05/2026 (4hr 25min, watchlist 474, 0 alerts, ~36,598 faces). Waterloo was also one of the eight stations in Network Rail's separate Amazon Rekognition analytics trial from 2022; the two are unrelated systems and must not be merged into one dot."
+    },
+    {
+      "site_name": "London Euston station (National Rail concourse)",
+      "address": "Euston station, Euston Road, London",
+      "postcode": null,
+      "borough": "Camden",
+      "lat": null,
+      "lng": null,
+      "camera_type": "unknown",
+      "installed_date": null,
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "notes": "Three BTP deployments in the register: 17/02/2026 (4hr 50min, watchlist 386, ~46,420 faces), 13/03/2026 (3hr 55min, watchlist 439, ~25,525 faces) and 17/07/2026 (4hr 55min, watchlist 546, ~68,952 faces - the highest face count recorded in the trial to 15 August 2026). Zero alerts at all three. Euston was also a Network Rail Amazon Rekognition trial station, and separately the subject of a DfT-published privacy notice for station security technology trials."
+    },
+    {
+      "site_name": "King's Cross station (National Rail concourse)",
+      "address": "King's Cross station, Euston Road, London",
+      "postcode": null,
+      "borough": "Camden",
+      "lat": null,
+      "lng": null,
+      "camera_type": "unknown",
+      "installed_date": null,
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "notes": "The most-used BTP site in the published register: three deployments, 24/02/2026 (4hr 21min, watchlist 455, ~19,313 faces), 04/03/2026 (3hr, watchlist 402, ~10,735 faces) and 02/04/2026 (3hr 19min, watchlist 446, ~15,284 faces), plus 11/07/2026 (2hr 31min, watchlist 507, ~17,343 faces) - four in total. The 24 February deployment produced the only alert of the entire BTP trial to 15 August 2026, and BTP recorded it as an unconfirmed false alert, giving a false alert rate of 0.00517%. Separately, the Metropolitan Police ran one of its own LFR van deployments at 'Kings Cross Station' on 01/07/2025 (4 hours, watchlist 16,206, 0 alerts, ~9,960 faces) - a different force, a different system, the same location."
+    },
+    {
+      "site_name": "London St Pancras International (National Rail concourse)",
+      "address": "St Pancras International, Euston Road, London",
+      "postcode": null,
+      "borough": "Camden",
+      "lat": null,
+      "lng": null,
+      "camera_type": "unknown",
+      "installed_date": null,
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "notes": "One BTP deployment in the register: 19/03/2026, 3hr 45min, crime hotspot, watchlist 465, threshold 0.64, 0 alerts, ~17,478 faces seen."
+    },
+    {
+      "site_name": "Liverpool Street station (National Rail concourse)",
+      "address": "Liverpool Street station, Liverpool Street, London",
+      "postcode": null,
+      "borough": "City of London",
+      "lat": null,
+      "lng": null,
+      "camera_type": "unknown",
+      "installed_date": null,
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "notes": "Two BTP deployments: 26/03/2026 (3hr 50min, watchlist 455, ~18,089 faces) and 28/05/2026 (2hr 36min, watchlist 478, ~17,219 faces). Zero alerts at both. Worth flagging for a London map: Liverpool Street sits inside the City of London, so this is BTP operating facial recognition inside the City of London Police's area, which itself operates none."
+    },
+    {
+      "site_name": "London Victoria station (National Rail concourse)",
+      "address": "Victoria station, Terminus Place, London",
+      "postcode": null,
+      "borough": "Westminster",
+      "lat": null,
+      "lng": null,
+      "camera_type": "unknown",
+      "installed_date": null,
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "notes": "Four BTP deployments on the main line side: 09/04/2026 (3hr 45min, watchlist 448, ~24,213 faces), 20/05/2026 (4hr 30min, watchlist 474, ~27,735 faces), 27/06/2026 (5hr 42min, watchlist 441, ~36,028 faces) and 02/07/2026 (5hr 45min, watchlist 486, ~33,422 faces). Zero alerts at all four. Listed separately from the Underground station below because BTP's own register lists them separately, and because the concourses are physically different spaces."
+    },
+    {
+      "site_name": "Victoria Underground station",
+      "address": "Victoria Underground station, Terminus Place, London",
+      "postcode": null,
+      "borough": "Westminster",
+      "lat": null,
+      "lng": null,
+      "camera_type": "unknown",
+      "installed_date": "2026-08-11",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "notes": "The first ever use of live facial recognition on the London Underground: 11/08/2026, 6hr 30min - the longest deployment of the trial - crime hotspot use case, watchlist 673 (also the largest of the trial), threshold 0.64, zero alerts, ~33,545 faces seen. 'installed_date' here records the date of first use, not an installation; nothing was installed. BTP published a diagram of the recognition zone for this deployment at https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/victoria-lu-map.jpg , which is the only sub-station-level location detail BTP has published for any deployment."
+    }
+  ],
+  "camera_count_confirmed": 8,
+  "camera_count_claimed": "No operator claims a camera count for transport facial recognition, because on the LFR side there is no installed estate to count - BTP counts deployments, not cameras, and its published register held 19 deployments across 8 named London station sites between 11 February and 11 August 2026. The numbers that do get quoted are about non-LFR systems and are routinely misread as facial recognition: TfL tested 11 algorithms at one station (Willesden Green) drawn from a menu of 77 possible 'use cases'; Network Rail's Amazon Rekognition trial covered 8 UK stations of which Waterloo and Euston were the London ones; London Bridge has roughly 750 CCTV cameras of which about 100 carry video analytics; and UK Border Force runs around 290-293 ePassport gates across 13 UK airports, Heathrow and London City among them. None of those figures is a count of facial recognition cameras.",
+  "fixed_vs_mobile": "Zero permanently installed facial recognition cameras on the London transport network. All eight BTP sites are temporary: portable camera masts brought onto a concourse for a single shift of two and a half to six and a half hours, then removed. They are not van-mounted either - BTP's own page contrasts its method with the 'roadside LFR deployments already in use by other police forces' and describes 'cameras temporarily in place on station concourses'. That is why every entry above carries camera_type 'unknown': the survey's fixed/van axis has no correct answer for a tripod on a station floor, and forcing it either way would mislead. The only genuinely fixed face-processing hardware on the transport network is the ePassport gate estate at the airports, and those gates are 1:1 verification against a presented passport chip, not surveillance cameras. TfL's Willesden Green AI ran on the station's existing fixed CCTV; Network Rail's Rekognition trial likewise ran on existing fixed cameras at ticket gatelines.",
+  "geographic_concentration": "Overwhelmingly the central London termini. Seven of the eight BTP sites are main line terminals, and six of those (Euston, King's Cross, St Pancras, Victoria, Waterloo, Liverpool Street) sit on the inner ring; London Bridge is the seventh. By borough that concentrates in Camden (Euston, King's Cross, St Pancras - three of the eight sites and eight of the nineteen deployments), Westminster (Victoria main line and Victoria Underground), then Lambeth, Southwark and the City of London with one site each. Nothing in outer London, nothing on a bus route, nothing at a suburban station. The Underground element began at Victoria and BTP has said it will rotate between Underground and Network Rail stations until November 2026, so the outer-zone picture may change before the trial ends. The two non-LFR trials fall outside that pattern: Willesden Green is in Brent, well outside the terminus ring, and was chosen as a fare-evasion testbed rather than a crime hotspot.",
+  "status_as_of_2026": "active",
+  "last_confirmed_active_date": "11 August 2026 - the Victoria Underground deployment, evidenced three ways: BTP's own LFR Deployment Register records it as a completed 6hr 30min operation with 673 people on the watchlist and 33,545 estimated faces seen; TfL issued a press release the same day confirming BTP was trialling LFR at TfL stations; and the deployment was covered by The Register, Biometric Update, Rail Business UK and Emergency Services Times on 11-12 August 2026. The trial's own end date is November 2026, so it is running as of the 6 September 2026 date of this research, but the specific deployments between mid-August and early September could not be confirmed because the current register PDF is behind a Cloudflare interstitial that blocks automated retrieval.",
+  "evidence_of_current_activity": "BTP's LFR page states the pilot 'will run until November 2026' and carries a live 'Upcoming deployments' heading - as archived on 11 August 2026 it read 'Tuesday 11 August - London Victoria Underground station'. The LFR Deployment Register PDF is being updated as the trial proceeds; the copy captured on 15 August 2026 contains 19 rows ending with Victoria Underground. TfL's press release of 11 August 2026 announces a four-month trial from that date. Chief Superintendent Chris Casey of BTP is quoted in it saying deployments are 'intelligence-led and focused on identifying people wanted by the police or courts'. Big Brother Watch's criticism of the Underground extension as a 'digital police lineup', published the same week, is independent confirmation the system is live. On the non-LFR side the evidence points the other way: Network Rail told journalists it does 'not use facial recognition or real-time live tracking', and TfL's Willesden Green trial ended in September 2023.",
+  "known_pauses_or_withdrawals": "Three things on the transport network have stopped or were never adopted, and all three are frequently reported as if they were live facial recognition. (1) TfL's Willesden Green AI trial ran October 2022 to end of September 2023 and ended; TfL has not announced a network-wide rollout of it. (2) Network Rail's 'Tag and Track' at London Bridge - Ipsotek appearance-based re-identification, trialled August 2020 to August 2021 - was tested and then not adopted; Network Rail confirmed it is 'not in use' and that it does not use facial recognition or real-time live tracking. (3) The Network Rail / Amazon Rekognition analytics trial across eight stations including Waterloo and Euston, which ran from 2022 and was exposed by Wired in June 2024 through a Big Brother Watch FOI, drew the criticism that Network Rail 'had no right to deploy discredited emotion recognition technology against unwitting commuters'; the emotion and demographic inference element has not been reported as continuing. BTP's own trial has not been paused, but it has produced no confirmed true match: 19 deployments, roughly 537,000 faces on the main line stations plus 33,545 at Victoria Underground, one alert in total, and BTP classified that one as false.",
+  "locations_published_publicly": "yes",
+  "publication_channel": "For BTP, both prospectively and retrospectively, on one page: https://www.btp.police.uk/police-forces/british-transport-police/areas/about-us/about-us/facial-recognition-technology/ . That page carries an 'Upcoming deployments' section naming the next station and date, and a 'Deployment history and performance' section linking the LFR Deployment Register PDF at https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf (an earlier filename, https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register-.pdf , with a trailing hyphen, was used until mid-August 2026). BTP states plainly: 'Before each deployment, we will publish details on our website to ensure transparency.' For the Victoria Underground deployment BTP also published a recognition-zone diagram at https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/victoria-lu-map.jpg . TfL announces the trial but not individual deployments, at https://tfl.gov.uk/info-for/media/press-releases/2026/august/british-transport-police-trialling-live-facial-recognition-at-transport-for-london-stations . TfL's Willesden Green disclosure came through FOI, reference FOI-3155-2324 at https://tfl.gov.uk/corporate/transparency/freedom-of-information/foi-request-detail?referenceId=FOI-3155-2324 . Network Rail published nothing; its trials became public only through Big Brother Watch FOI requests reported by Wired in June 2024. Note that both BTP web pages sit behind a Cloudflare bot check, so the human-readable page can be read in a browser but not fetched programmatically; the PDF assets download directly.",
+  "live_feed_or_map_available": "No live map or feed exists, but BTP comes closer than any other operator in this survey - it is the only London facial recognition operator that publishes a forward-looking location notice on its own website rather than only a same-day social media post. The 'Upcoming deployments' block on the BTP LFR page names the next station and date in plain text; the archived copy of 11 August 2026 read 'Tuesday 11 August - London Victoria Underground station'. That is a single line of prose, not a map, not a feed, not machine-readable, and the notice observed was same-day: the entry naming an 11 August deployment was live on 11 August, and BTP publishes no minimum notice period. Behind it sits the LFR Deployment Register PDF, which is a genuine and detailed archive - location, date, duration to the minute, use case, watchlist size, threshold, alert breakdown, false alert rate, outcomes and estimated faces seen for every deployment - but it is retrospective and its Location column is a bare station name with no indication of which concourse or entrance the recognition zone covered. The one exception is the Victoria Underground zone diagram, a JPEG floor plan, which is the only sub-station-level location detail BTP has ever published and is not part of any structured dataset. Nothing third-party fills the gap: no crowdsourced tracker, no campaign map, no scraped feed of BTP or TfL deployments was found. Practically, for a mapping project: BTP deployments can be plotted at station granularity with confident dates from the register, the next deployment's station can be read off the BTP page but only hours ahead, and there is nothing at all to poll for a real-time 'is it running right now' signal beyond the physical signage in the station.",
+  "advance_notice_period": "BTP commits to publishing before each deployment but publishes no minimum period, and observed practice is same-day: the 'Upcoming deployments' entry for the 11 August 2026 Victoria Underground deployment was live on 11 August, and both the TfL press release and the BTP announcement went out that day. Signage and QR codes go up at the station on the day. So the honest answer is hours, not days - enough to satisfy a transparency commitment, not enough to plan a route around. No advance notice at all applies to the non-LFR systems: TfL's Willesden Green trial was disclosed only after it had finished, via FOI, and Network Rail's trials were disclosed by campaigners rather than by Network Rail. [uncertain - BTP publishes no stated notice period, so 'same-day' is inferred from one dated observation plus the timing of the announcements]",
+  "foi_or_audit_sources": "Wired's June 2024 investigation by Matt Burgess, built on documents obtained by Big Brother Watch under FOI, is the source for the Network Rail / Amazon Rekognition trial at eight stations including London Waterloo and London Euston, and for the finding that the software was configured to infer emotion, age and gender - the detail that generated the 'emotion recognition' headlines. Jake Hurfurt, Big Brother Watch's head of research and investigations, is quoted saying Network Rail 'had no right to deploy discredited emotion recognition technology against unwitting commuters'. TfL's own FOI disclosure FOI-3155-2324 is the primary record of the Willesden Green trial, and James O'Malley's analysis of the released documents (takes.jamesomalley.co.uk) is the fullest published account of what the eleven algorithms actually did. O'Malley separately obtained and published the London Bridge 'Tag and Track' material, establishing the Ipsotek involvement, the GBP 2.442m budget and Network Rail's statement that the capability is not in use. The National Physical Laboratory's 'Facial Recognition Technology in Law Enforcement Equitability Study', commissioned by the Met and South Wales Police, is the independent test of the NeoFace M40 algorithm BTP uses. Zoe Garbett AM's February 2026 London Assembly report covers Met LFR rather than BTP but sets the transparency baseline the transport deployments are judged against.",
+  "legal_basis": "BTP relies on common law policing powers to prevent and detect crime, together with Part 3 of the Data Protection Act 2018 for law enforcement processing of biometric data, the Human Rights Act 1998 (Article 8) and the Equality Act 2010 public sector equality duty, and publishes an LFR Legal Mandate, two Appropriate Policy Documents and a two-stage Data Protection Impact Assessment, all dated 10 February 2026, the day before the trial began. Its stated safeguards are that deployments are intelligence-led against a watchlist of people wanted by police or the courts or subject to ancillary court orders, that alert images are deleted immediately or within 24 hours, that images and biometric data of non-matches are deleted automatically and immediately, and that the underlying CCTV is kept for 31 days. The airport ePassport gates rest on an entirely different basis - immigration and border control powers - and perform a 1:1 comparison between a live face and the photograph in the chip of the passport the traveller has just presented, plus separate database checks on the document; there is no facial watchlist and no 1:N search of the travelling public, which is why it is a category error to count e-gates as LFR cameras. TfL's Willesden Green trial and Network Rail's analytics ran under general data protection grounds without any facial watchlist. [uncertain - BTP's legal mandate document was identified by URL but not read in full]",
+  "regulatory_challenges": "No court challenge has been brought against BTP's transport LFR pilot specifically. It inherits the general legal position: R (Bridges) v Chief Constable of South Wales Police [2020] EWCA Civ 1058, which found South Wales Police's LFR unlawful on the grounds of insufficiently constrained discretion over watchlists and locations and an inadequate public sector equality duty assessment, without holding LFR unlawful as such. The live pressure in 2026 is on the Metropolitan Police - the Equality and Human Rights Commission has said the Met's use must comply with human rights law and has questioned its lawfulness, and a judicial review of Met LFR was heard in 2026 - and any ruling there would bear on BTP because it uses the same algorithm at the same threshold under a comparable policy. Big Brother Watch has publicly opposed the Underground extension as a 'digital police lineup' scanning innocent commuters without consent, and critics note the trial's arithmetic: roughly 570,000 faces scanned across 19 deployments for a single alert that turned out to be a false one. The Home Office consultation on a legal framework for police facial recognition, to which Big Brother Watch responded in February 2026, is the route by which any statutory basis would arrive. Network Rail's emotion-inference trial drew criticism on data protection grounds after the June 2024 Wired report but no publicly reported ICO enforcement action. [uncertain - the outcome of the 2026 Met judicial review and any ICO action on Network Rail could not be confirmed]",
+  "oversight_body": "For BTP: the British Transport Police Authority, plus internal governance boards and external ethics and independent advisory groups named on its LFR page; the Information Commissioner's Office for the data protection dimension; and the National Physical Laboratory for algorithm testing. For TfL station technology: the TfL Board and, in respect of policing on the network, the Mayor's Office for Policing and Crime and the London Assembly Police and Crime Committee, though TfL is not a police force and MOPAC does not oversee BTP. For Network Rail: the Office of Rail and Road for railway regulation, the ICO for data protection. For the airport e-gates: the Home Office and the Independent Chief Inspector of Borders and Immigration. There is no single body with oversight of facial recognition across the transport network as a whole, which is part of why the different technologies get conflated.",
+  "research_confidence": "high",
+  "key_uncertainties": "The site list itself is solid: all eight stations come from BTP's own published deployment register, with dates, durations and face counts. Five things could not be established. (1) The register copy used here was captured on 15 August 2026 and ends with the Victoria Underground deployment; deployments between then and 6 September 2026 are almost certainly recorded in the current version, which sits behind a Cloudflare bot check that blocked automated retrieval - so the real site count today may be higher than 8, and a sibling file in this survey working from a later copy counts 10 station labels including a 'Kings Cross St Pancras Underground' entry that is not in the 15 August version. (2) No coordinates and no sub-station positions are published for any deployment except Victoria Underground, where BTP released a zone diagram as a JPEG; every lat/lng in this file is therefore null rather than guessed, and a map should place these at station centroids with that caveat visible. (3) Which stations BTP will rotate to before November 2026 is not published beyond the next one. (4) The Willesden Green question cannot be closed cleanly: TfL's director of security stated the technology was not used as a facial recognition tool and that faces were blurred, while analysis of the FOI-released documents indicates blurring was relaxed for the fare evasion use case so that repeat evaders could be recognised, with matches manually double-checked. That is face matching of a sort, but against images of previously detected evaders rather than a police watchlist, and no independent confirmation of how far it was actually used in production was found - this is the single most-conflated fact in the whole item and is flagged uncertain. (5) The vendor of the Willesden Green system and the supplier of the Border Force e-gates are not named in any source reviewed. A deliberate exclusion, not an uncertainty: the ePassport gates at Heathrow, Gatwick, London City and Stansted are not in the camera list at all. They are 1:1 verification of a live face against the chip photograph in a passport the traveller has physically handed over, roughly 290-293 gates across 13 UK airports, and counting them as facial recognition cameras would inflate the survey by hundreds of sites while describing a fundamentally different act. The 2026 expansion of biometric processing for departing passengers at UK airports is the same category - identity verification against a document, not watchlist surveillance - and is excluded on the same grounds.",
+  "sources": [
+    {
+      "title": "BTP Live Facial Recognition Deployment Register (PDF)",
+      "url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "date": "copy captured 15 August 2026; rows from 11/02/2026 to 11/08/2026",
+      "what_it_supports": "PRIMARY SOURCE and the backbone of this file. All 19 deployment rows: station, date, duration, use case, watchlist size, 0.64 threshold, alert breakdown, false alert rate, outcomes and estimated faces seen. Source of the eight station sites, the single King's Cross false alert of 24/02/2026, and the Victoria Underground figures (6hr 30min, watchlist 673, 33,545 faces, zero alerts)."
+    },
+    {
+      "title": "British Transport Police use of Live Facial Recognition Technology",
+      "url": "https://www.btp.police.uk/police-forces/british-transport-police/areas/about-us/about-us/facial-recognition-technology/",
+      "date": "read as archived 11 August 2026",
+      "what_it_supports": "PRIMARY. Pilot start 11 February 2026, extension to Underground in August 2026, end November 2026; NEC NeoFace M40; watchlist construction; deletion rules (alert images within 24 hours, non-matches immediately, CCTV kept 31 days); the statement 'Before each deployment, we will publish details on our website to ensure transparency'; the live 'Upcoming deployments' entry reading 'Tuesday 11 August - London Victoria Underground station'; the contrast drawn with 'roadside LFR deployments already in use by other police forces' and the description of 'cameras temporarily in place on station concourses'; links to the legal mandate, EIA, two APDs and two-stage DPIA all dated 10 February 2026."
+    },
+    {
+      "title": "British Transport Police trialling live facial recognition at Transport for London stations (TfL press release)",
+      "url": "https://tfl.gov.uk/info-for/media/press-releases/2026/august/british-transport-police-trialling-live-facial-recognition-at-transport-for-london-stations",
+      "date": "11 August 2026",
+      "what_it_supports": "PRIMARY. First Underground deployment at Victoria on 11 August 2026, four-month trial, deployment in signed areas so passengers can choose whether to pass through, quotes from Siwan Hayward (TfL Director of Security, Policing and Enforcement), Ch Supt Chris Casey (BTP) and Deputy Mayor Kaya Comer-Schwartz. Establishes that TfL hosts but does not operate the system."
+    },
+    {
+      "title": "British Transport Police extends live facial recognition trial into Underground stations (Biometric Update)",
+      "url": "https://www.biometricupdate.com/202608/british-transport-police-extends-live-facial-recognition-trial-into-underground-stations",
+      "date": "August 2026",
+      "what_it_supports": "NEC NeoFace M40 named as the algorithm; rotation between Underground and Network Rail stations until November; the commitment to notify the public before each deployment with signage and QR-code feedback; alternative routes for those avoiding the zone; NPL testing and ethics-group oversight."
+    },
+    {
+      "title": "BTP's First London Underground Facial Recognition Deployment: 33,545 Estimated Faces, No Alerts",
+      "url": "https://www.railway.supply/btps-first-london-underground-facial-recognition-deployment-33545-estimated-faces-no-alerts/",
+      "date": "August 2026",
+      "what_it_supports": "Independent corroboration of the Victoria Underground row: 6hr 30min, watchlist 673, threshold 0.64, 33,545 estimated faces, zero alerts and zero outcomes, crime hotspot classification, and the existence of a public deployment register."
+    },
+    {
+      "title": "Brit rail cops bring live facial recognition to the London Underground (The Register)",
+      "url": "https://www.theregister.com/security/2026/08/12/brit_rail_cops_bring_live_facial_recognition_to_the_london_underground/5286697",
+      "date": "12 August 2026",
+      "what_it_supports": "Cumulative trial arithmetic before the Underground phase - 17 further main line uses after London Bridge, roughly 537,000 faces scanned, one false match and no positive matches - and Big Brother Watch's 'digital police lineup' criticism."
+    },
+    {
+      "title": "TfL's AI Tube Station experiment is amazing and slightly terrifying (James O'Malley)",
+      "url": "https://takes.jamesomalley.co.uk/p/tfls-ai-tube-station-experiment-is",
+      "date": "February 2024, based on TfL FOI disclosure",
+      "what_it_supports": "PRIMARY-ADJACENT and the key source for the Willesden Green distinction. Trial ran October 2022 to September 2023; 11 algorithms deployed from a menu of 77 possible use cases; alert counts (over 26,000 fare evasion alerts across eleven months, 3,802 in June 2023 alone; 2,194 platform edge alerts; 6 weapons alerts; 4 smoking alerts); faces automatically blurred by default with the blurring relaxed for the fare evasion use case so repeat evaders could be recognised, matches manually double-checked. This is the nuance the headlines lost in both directions."
+    },
+    {
+      "title": "TfL FOI request detail FOI-3155-2324",
+      "url": "https://tfl.gov.uk/corporate/transparency/freedom-of-information/foi-request-detail?referenceId=FOI-3155-2324",
+      "date": "2023/24",
+      "what_it_supports": "TfL's own disclosure on the Willesden Green trial, including the statement that the pilot used image detection AI to monitor movement through gatelines to identify possible fare evasion and was not used as a facial recognition tool."
+    },
+    {
+      "title": "No facial recognition? No problem! How London Bridge tested tech to track individuals inside the station (James O'Malley)",
+      "url": "https://takes.jamesomalley.co.uk/p/no-facial-recognition-no-problem",
+      "date": "2024",
+      "what_it_supports": "The London Bridge 'Tag and Track' trial, August 2020 to August 2021, vendor Ipsotek (Atos), GBP 2.442m part-funded by InnovateUK; appearance-based re-identification using clothing, accessories and movement rather than faces; Network Rail's confirmation that Tag and Track is 'not in use' and that it does 'not use facial recognition or real-time live tracking'; roughly 100 of London Bridge's 750 cameras carrying analytics."
+    },
+    {
+      "title": "Network Rail's 2-year trial of Amazon's emotion detection tech exposed (summary of Wired investigation)",
+      "url": "https://www.freevacy.com/news/wired/network-rails-2-year-trial-of-amazons-emotion-detection-tech-exposed/5410",
+      "date": "June 2024",
+      "what_it_supports": "The Network Rail trial: eight UK stations including London Waterloo and London Euston plus Manchester Piccadilly, Glasgow Central, Reading and Leeds; Amazon Rekognition on Cisco Meraki cameras; virtual tripwires at gatelines; inference of emotion and demographic detail; exposure via Big Brother Watch FOI reported by Wired; Jake Hurfurt's 'no right to deploy discredited emotion recognition technology' quote."
+    },
+    {
+      "title": "Hidden AI Cameras Recorded Train Passengers' Emotions at Glasgow Central (Digit)",
+      "url": "https://www.digit.fyi/network-rail-ai-cameras/",
+      "date": "June 2024",
+      "what_it_supports": "Corroboration of the Network Rail trial's scope, the covert nature of the deployment and the emotion/demographic analysis, and that the cameras sat at ticket barriers."
+    },
+    {
+      "title": "MPS LFR Deployments 2025 - Live Facial Recognition Deployment Record 2025 (PDF)",
+      "url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+      "date": "rows 08/01/2025 to 23/12/2025",
+      "what_it_supports": "The Metropolitan Police's own LFR van deployment at 'Kings Cross Station' on 01/07/2025 - 4 hours, watchlist 16,206, zero alerts, ~9,960 faces - which is the evidence that station forecourts also see Met street LFR, a different force and system from BTP's at the same address."
+    },
+    {
+      "title": "ePassport gates (Wikipedia) and UK Border Force e-gate reporting",
+      "url": "https://en.wikipedia.org/wiki/EPassport_gates",
+      "date": "retrieved September 2026",
+      "what_it_supports": "The e-gate mechanism that must not be conflated with LFR: facial recognition used to verify the traveller against the photograph stored in the chip of the biometric passport they have inserted, a 1:1 check, with separate database queries on the document; roughly 290-293 gates across 13 UK airports including Heathrow, Gatwick, London City and Stansted."
+    },
+    {
+      "title": "The unchecked expansion of live facial recognition technology in London - Zoe Garbett AM (PDF)",
+      "url": "https://www.london.gov.uk/sites/default/files/2026-02/The%20unchecked%20expansion%20of%20live%20facial%20recognition%20technology%20in%20London%20-%20Zo%C3%AB%20Garbett%20Feb%202026.pdf",
+      "date": "10 February 2026",
+      "what_it_supports": "Context for the transparency baseline and the London-wide LFR picture the transport trial sits inside; borough-level deployment counts since 2020 and the finding on unequal geographic distribution."
+    }
+  ],
+  "uncertain": [
+    "vendor",
+    "advance_notice_period",
+    "legal_basis",
+    "regulatory_challenges",
+    "camera_count_claimed"
+  ]
+}

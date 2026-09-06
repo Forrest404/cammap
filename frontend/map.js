@@ -216,7 +216,10 @@ function sameColours(a, b) {
    would otherwise hoist the name but run the assignment afterwards
    and quietly undo whatever was remembered.
 
-   showLegacy   off by default: the map shows what is in use now.
+   showLegacy   off by default, which now hides every van site: a
+                van is somewhere for a shift, so the map opens on the
+                cameras that are actually fixed to something and the
+                van record is a thing you ask for.
    hiddenTypes  kinds switched off in the legend. Empty means all.
    sortBy       "name" or "used" - see listed(). */
 var showLegacy = false;
@@ -704,6 +707,7 @@ function tidy(list) {
   var clean = [];
   var i;
   var entry;
+  var kind;
 
   for (i = 0; i < list.length; i++) {
     entry = list[i];
@@ -712,6 +716,8 @@ function tidy(list) {
       continue;
     }
 
+    kind = typeof entry.type === "string" ? entry.type : "vancam";
+
     clean.push({
       id: nextId++,
       name: entry.name,
@@ -719,9 +725,15 @@ function tidy(list) {
       lat: parseFloat(entry.lat),
       lon: parseFloat(entry.lon),
 
-      /* A hand-typed entry may leave these out. */
-      type: typeof entry.type === "string" ? entry.type : "vancam",
-      status: typeof entry.status === "string" ? entry.status : "active",
+      /* A hand-typed entry may leave these out. A van site with no
+         status given is legacy, not active - every van site in
+         points.js is, and a default that quietly contradicted the
+         file would put a lone hand-typed van on the opening map
+         beside the fixed cameras. See the header of data/points.js
+         for why none of them claims to be active. */
+      type: kind,
+      status: typeof entry.status === "string" ? entry.status
+        : (kind === "vancam" ? "legacy" : "active"),
       last: typeof entry.last === "number" ? entry.last : null,
 
       /* How many times a source records this spot being used. The glow
@@ -1745,6 +1757,7 @@ function deploymentsOf(row, fallback) {
 function overlayCameras(rows) {
   var bySeed = {};
   var i;
+  var key;
   var row;
   var point;
   var merged = [];
@@ -1755,18 +1768,35 @@ function overlayCameras(rows) {
     }
   }
 
-  /* Seed entries, each replaced by its database row if there is one. */
+  /* Seed entries, each replaced by its database row if there is one.
+
+     The key is worked out once, before anything is copied over: it is
+     built from the entry's own name, position and type, and the
+     position is about to be overwritten by the row's. Asking for it
+     again afterwards would be asking a different question. */
   for (i = 0; i < points.length; i++) {
     point = points[i];
-    row = bySeed[seedKeyOf(point)];
+    key = seedKeyOf(point);
+    row = bySeed[key];
     if (row) {
       point.name = row.name;
       point.note = row.note || "";
       point.status = row.status;
+
+      /* Where the database says it is, not where points.js does. A
+         moderator can correct a pin - a van site the published record
+         gives as a borough rather than a street - and the row is then
+         the truth about where it stands. The seed row keeps its
+         seed_key through a move, which is how it is still matched
+         here, and how a re-run of seed.sql leaves the correction
+         alone. */
+      point.lat = Number(row.lat);
+      point.lon = Number(row.lon);
+
       point.last = typeof row.last_seen === "number" ? row.last_seen : point.last;
       point.deployments = deploymentsOf(row, point.deployments);
       point.cameraId = row.id;
-      delete bySeed[seedKeyOf(point)];
+      delete bySeed[key];
     }
     merged.push(point);
   }

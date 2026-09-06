@@ -28,8 +28,16 @@
   form-action 'none';
   frame-ancestors 'none'">
 <title>Moderate &mdash; cammap</title>
+<!-- MapLibre, vendored in lib/ like everywhere else on this site.
+     The map, the report form and this page are the three that pull it
+     in: the Cameras tab opens the same pin-dropping map to correct
+     where a camera is. Most people reach this page from the map,
+     where the browser has already cached it under the same address. -->
+<link rel="stylesheet" href="../lib/maplibre-gl.css">
+<script src="../lib/maplibre-gl.js"></script>
+
 <link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=f0726019">
+<link rel="stylesheet" href="../frontend/style.css?v=9f8635fe">
 </head>
 <body>
 <div class="sheet">
@@ -88,7 +96,10 @@
           Every camera the map knows about, seed and reported alike.
           Removing one hides it - it keeps its reports and can be put
           back. Adding one puts it on the map at once, with no report
-          behind it and no XP for anyone.
+          behind it and no XP for anyone. <strong>Move</strong> opens
+          the map under a camera so its pin can be dragged onto where
+          it actually is - the commonest thing wrong with a camera
+          that is otherwise right.
         </p>
 
         <div class="box">
@@ -155,8 +166,9 @@
 
 </div>
 <script src="../lib/supabase.js"></script>
-<script src="../frontend/shared.js?v=f0726019"></script>
-<script src="../supabase-config.js?v=f0726019"></script>
-<script src="../frontend/account.js?v=f0726019"></script>
+<script src="../frontend/shared.js?v=9f8635fe"></script>
+<script src="../supabase-config.js?v=9f8635fe"></script>
+<script src="../frontend/picker.js?v=9f8635fe"></script>
+<script src="../frontend/account.js?v=9f8635fe"></script>
 </body>
 </html>

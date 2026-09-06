@@ -1,9 +1,10 @@
 /* ------------------------------------------------------------------
-   cammap - the coordinate picker on the report page
+   cammap - the coordinate picker
 
-   Plain browser JavaScript, same rules as the rest. Loaded only on
-   report.html, because it is the only page that needs MapLibre
-   besides the map itself.
+   Plain browser JavaScript, same rules as the rest. Loaded by
+   report.html and moderate.html - the two pages besides the map
+   itself that need MapLibre, because on both of them somebody is
+   being asked where a camera is.
 
    Why it exists: the report form used to ask for a latitude and a
    longitude in two number boxes. Almost nobody can look at
@@ -21,6 +22,13 @@
    will refuse a second pending report in the same cell anyway. Seeing
    a dot already sitting on your corner answers that before you type
    anything.
+
+   The moderation page uses the same thing for the other half of the
+   job: correcting a pin that is already on the map. Same map, same
+   pin, same pair of boxes - a moderator moving a camera and a
+   visitor placing one are answering the same question, and there is
+   no reason for them to be looking at two different maps while they
+   do it.
 
    Two toggles under it, the same two the map page has:
 
@@ -50,9 +58,9 @@ var PICK_WIDE = 11;
 var PICK_SOURCE = "pick-cameras";
 var PICK_DOTS = "pick-camera-dots";
 
-/* Makes the picker. Returns a handle with setPoint() and cameras(),
-   or null if the page has no container for it - which is how the form
-   goes on working if MapLibre failed to load.
+/* Makes the picker. Returns a handle with setPoint(), cameras() and
+   remove(), or null if the page has no container for it - which is
+   how the form goes on working if MapLibre failed to load.
 
    options:
      container   the element id to draw into
@@ -320,6 +328,26 @@ function makePicker(options) {
     cameras: function (rows) {
       allRows = rows || [];
       drawContext();
+    },
+
+    /* Take the map down again. The report form makes one picker and
+       keeps it for the life of the page, so it never needs this; the
+       moderation page makes one per camera a moderator opens for
+       moving and throws it away on the next, and a MapLibre map that
+       is only unlinked from the document keeps its WebGL context and
+       its tile workers running. A browser gives a page about a dozen
+       of those before it starts dropping the oldest, which shows up
+       as an earlier map going blank rather than as an error, so this
+       is called rather than trusted to garbage collection. */
+    remove: function () {
+      var bar = holder.nextSibling;
+
+      /* The toggles were inserted after the map, not inside it, so
+         they outlive it unless they are taken with it. */
+      if (bar && bar.className && bar.className.indexOf("pick-toggles") !== -1) {
+        bar.parentNode.removeChild(bar);
+      }
+      map.remove();
     }
 
   };

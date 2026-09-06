@@ -1,0 +1,161 @@
+{
+  "item_name": "Facewatch - withdrawals, complaints and current operating status",
+  "operator": "Facewatch Limited (Companies House 07209931, status Active, incorporated 31 March 2010, registered office 89 High Street, Hadleigh, Ipswich, Suffolk IP7 5EA; CEO Nick Fisher; roughly 24 employees as of April 2026). Facewatch supplies and runs the shared watchlist and matching service; the individual retailer operates the camera in its own store and is the party the shopper actually encounters.",
+  "system_type": "facewatch",
+  "vendor": "Facewatch Limited. It describes its own pipeline as dual biometric algorithms plus human review, and does not name the underlying engines. It achieved ISO/IEC 42001:2023 certification for AI management systems in June 2026, issued by Tempo Audits. [uncertain]",
+  "london_coverage_summary": "This is the currency check on the rest of the Facewatch research, and the answer is unambiguous: the network is not shrinking, it is expanding, and it is expanding hardest in London. The only London sites the record names are Sainsbury's - Dulwich, where the system was paused on 17 August 2026 after a wrongful ejection, and Elephant & Castle, where a different shopper was wrongly ejected in February 2026 - plus the five other London stores switched on in January 2026. No retail chain has been confirmed to have dropped Facewatch. The one confirmed withdrawal anywhere is a single store pausing for a single incident, while the same retailer publicly reaffirmed the technology and went on expanding.",
+  "cameras": [
+    {
+      "site_name": "Sainsbury's Dulwich",
+      "address": null,
+      "postcode": null,
+      "borough": "Southwark [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026 [uncertain]",
+      "status": "paused",
+      "confidence": "confirmed",
+      "source_url": "https://www.retailgazette.co.uk/blog/2026/08/sainsburys-pauses-ai-facial-recognition-cameras-after-shopper-wrongly-ejected/"
+    },
+    {
+      "site_name": "Sainsbury's Elephant & Castle",
+      "address": null,
+      "postcode": null,
+      "borough": "Southwark [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.theregister.com/2026/02/06/sainsburys_/"
+    }
+  ],
+  "camera_count_confirmed": 2,
+  "camera_count_claimed": "Facewatch claims 125+ retailer clients operating 'thousands of stores' across the UK as of June and July 2026. It reports more than 500,000 real-time alerts in 2025, a record 55,462 positive alerts in the single month of May 2026, and nearly 300,000 alerts in the first half of 2026 - more than 50,000 positive alerts a month. Sainsbury's alone claims 55 live stores as of mid-2026 with a stated target of 200+ before Christmas 2026. There is no published London figure and no per-borough figure from any operator.",
+  "fixed_vs_mobile": "Entirely fixed. Facewatch is a permanently installed entrance camera; there is no van-mounted or redeployable retail variant, and none of the withdrawal or complaint material describes anything mobile. Of the two named London sites here, 2 are fixed and 0 are mobile. The mobile element in this system is the watchlist, not the hardware: a person added at one subscribing store is flagged at every other Facewatch store nationally, which is why a single misidentification produces a nationwide ban rather than a local one - the mechanism behind both 2026 London cases.",
+  "geographic_concentration": "The two incident sites are both in Southwark, which is coincidence rather than pattern. The wider Sainsbury's rollout that produced them concentrates in inner London - Southwark, Lewisham, Hackney, Tower Hamlets, Camden, Kensington and Chelsea - and the Metropolitan Police's own separate retail-crime reporting pilot, running from January 2026, focused on Lewisham and central London. Facewatch's next declared growth direction is community pharmacies, announced June 2026 as 'PharmacyProtect', which if it lands would spread the network across every high street rather than concentrating it further.",
+  "status_as_of_2026": "active",
+  "last_confirmed_active_date": "2026-08-17/18. On 17 August 2026 the Facewatch camera at Sainsbury's Dulwich in south London generated an alert that led store security to eject Matt Arnold, an employee of the nearby Dulwich Hamlet Comedy Club, from the self-service checkout area; Facewatch confirmed to him the next day that he had been wrongly removed and attributed it to in-store human error rather than a system failure. Sainsbury's apologised and offered a £150 voucher, which he donated to a food bank. That is a dated, first-person, press-reported instance of a live camera producing a live alert in a London shop three weeks before this research. It is the hardest available evidence that the network is operating and not merely incorporated.",
+  "evidence_of_current_activity": "Five independent 2026-dated strands, deliberately chosen so that none of them depends on Facewatch's own marketing alone. (1) The Dulwich ejection, 17 August 2026 - an alert that visibly fired, reported by Retail Gazette, Grocery Gazette and Retail Technology Innovation Hub, with a named individual. (2) The Elephant & Castle ejection of Warren Rajah, 6 February 2026, reported by The Register, in which Facewatch required him to submit a passport and headshot to confirm he was not on the database. (3) Sainsbury's July 2026 announcement of expansion from 55 stores to more than 200 by Christmas 2026, carried by The Grocer, The Register and Biometric Update - and reaffirmed in August 2026 after the Dulwich incident rather than withdrawn. (4) Facewatch's July 2026 launch of a Crime Management Platform that alerts police within four seconds of a serious repeat-offender match, down from a nine-second average in January 2026, plus the June 2026 ISO/IEC 42001:2023 certification and the June 2026 PharmacyProtect launch aimed at community pharmacies - all three are the behaviour of a company investing, not retrenching. (5) Facewatch Limited filed accounts made up to 31 March 2026 and a confirmation statement dated 31 March 2026 at Companies House and is listed as Active.",
+  "known_pauses_or_withdrawals": "One confirmed pause and no confirmed chain-level withdrawal anywhere in the UK.\n\nThe pause: Sainsbury's suspended facial recognition at its Dulwich store on or about 17 August 2026 after the wrongful ejection of Matt Arnold. It was explicitly store-level and explicitly temporary - Sainsbury's publicly kept faith with the technology and the 200-store expansion continued.\n\nNon-adoptions that are sometimes misread as withdrawals: the Co-op Group (distinct from Southern Co-op) told a parliamentary committee it has no plans to implement LFR and 'cannot see what intervention it would drive helpfully'. Asda's five-store Greater Manchester trial in 2025 drew a Big Brother Watch legal complaint to the ICO and a dispute over whether thousands of complaints were received, but it was Asda's own trial, not a Facewatch deployment, and I found no confirmation it was ended.\n\nGenuinely unknown: Southern Co-op, Facewatch's most-cited early client with 35 of roughly 200 stores from 2020-2022, has not publicly confirmed or denied the deployment since about 2023. Its stores are on the south coast rather than in London, so it does not affect the London map either way. Frasers Group has never announced a stop; its last direct statement, March 2023, was that the rollout would continue, and Facewatch still named Frasers Group, Flannels and Sports Direct as clients in June 2026. [uncertain]",
+  "locations_published_publicly": "no",
+  "publication_channel": "None exists. Neither Facewatch nor any client retailer publishes a list, register or map of equipped stores. Facewatch's website (https://www.facewatch.co.uk/) carries case studies that occasionally name one store - an Eat 17 Spar in Hackney, a Budgens at Jubilee Square near Aylesbury - but these are testimonials, not an inventory, and some are seven or eight years old. The ICO publishes its 2023 investigation outcome but no site list. Statutory disclosure amounts to a sign at the shop entrance.",
+  "live_feed_or_map_available": "No, in every sense. There is no live feed, no official map, no operator list and no third-party or crowdsourced map of Facewatch-equipped shops in London or the UK. Big Brother Watch campaigns continuously on retail LFR and runs a support page for people wrongly flagged, but publishes no store list or map. Because every operator is a private company, the Freedom of Information Act gives no route in - unlike police LFR, where deployment notices at least exist. The result is a fixed, permanently-on biometric network of, on the operator's own claim, thousands of UK sites, whose locations are discoverable only by standing outside each shop and reading the sign. For anyone mapping this, Facewatch sites have to be gathered by direct observation or crowd report; there is no dataset to import and no endpoint to query.",
+  "advance_notice_period": "None, and the concept does not apply - these are permanent installations rather than scheduled deployments. Notice is a sign at the entrance, seen on arrival. Neither Facewatch nor its clients announce a new store going live in advance; the January 2026 five-store London expansion, for instance, was reported after the fact.",
+  "foi_or_audit_sources": "Big Brother Watch's July 2022 ICO complaint against Southern Co-op and Facewatch, alleging breaches of UK GDPR Articles 5, 6, 9 and 10 and failures on children's rights. The ICO investigation that followed, concluded 31 March 2023, which found breaches on eight counts but took advisory action only and required no further regulatory action after Facewatch overhauled its practices - after which the ICO had to publicly deny it had given 'blanket approval' and ask Facewatch to remove the ICO logo from its promotional material. Big Brother Watch's April 2023 open letter to Frasers Group, signed by nearly 50 parliamentarians and peers with Liberty and Privacy International. Big Brother Watch's May 2024 legal action on behalf of 'Sara' against Facewatch and Home Bargains. Its 2025 ICO complaint over Asda's separate trial. Its February 2026 submission to the Home Office consultation on a new legal framework for police use of facial recognition. None of these enumerates store addresses; all name chains rather than branches. The FOI Act does not apply to any of these companies.",
+  "legal_basis": "UK GDPR Article 6(1)(f) legitimate interests for the general processing, with Article 9(2)(g) and the Data Protection Act 2018 Schedule 1 substantial-public-interest condition for the prevention or detection of unlawful acts covering the special-category biometric data. Facewatch acts as a UK GDPR data controller for the watchlist, and states that where no match is found the biometric template is deleted immediately; where a match is made the image is retained for up to a year and shared with other subscribing stores. There is no criminal-conviction threshold for being added to the watchlist and no police input into it - store staff decide, on their own suspicion. That is the structural feature behind every misidentification case here, and it remains unchanged in 2026. In May 2026 Facewatch appointed Dean Armstrong KC as Data Protection Officer; former Biometrics and Surveillance Camera Commissioner Fraser Sampson sits on its board as a non-executive director.",
+  "regulatory_challenges": "ICO investigation concluded 31 March 2023 - eight counts of data protection breach found, policies overhauled, no enforcement. 'Sara', a 19-year-old wrongly flagged at a Home Bargains in Manchester in February 2024, sued Facewatch and Home Bargains with Big Brother Watch's support in what was billed as the UK's first challenge to retail facial recognition; Facewatch admitted the misidentification, and I could not find a reported final judgment or settlement terms. Danielle Horan, wrongly added to the watchlist in June 2025 over a pack of toilet roll she had paid for at two Manchester Home Bargains stores. A London shopper added in June 2025 over 39p of paracetamol, who filed an ICO complaint. Warren Rajah, wrongly ejected from Sainsbury's Elephant & Castle, February 2026. Matt Arnold, wrongly ejected from Sainsbury's Dulwich, 17 August 2026. Separately but importantly for the wider picture: the judicial review of the Met's police LFR brought by Shaun Thompson and Silkie Carlo was heard in the High Court on 27-28 January 2026 and the court ruled the Met's use lawful, a judgment Big Brother Watch is appealing - a ruling that removed the most likely legal check on the whole technology in the UK. No court has ever ruled on private retail LFR; Bridges v South Wales Police (2020) bound a police force, not a shop. The Crime and Policing Act 2026 removed the £200 low-value shoplifting threshold, which Facewatch expects to push alert volumes higher still. Political controversy also attaches to a closed-door meeting between then policing minister Chris Philp and Facewatch while the ICO investigation was live.",
+  "oversight_body": "The Information Commissioner's Office, and effectively nobody else. The Biometrics and Surveillance Camera Commissioner's code covered public authorities only and that office has been wound down - its former holder Fraser Sampson subsequently joined Facewatch's board as a non-executive director. There is no sector regulator for retail facial recognition, no licensing regime, no registration requirement and no obligation to publish deployment locations. The ICO's 2023 outcome - breaches found, advice given, no penalty - is the high-water mark of intervention to date.",
+  "research_confidence": "medium",
+  "key_uncertainties": "The direct answer to the question this item was set to test: the Facewatch network has not shrunk, has not been restructured and has not lost a major client. It is bigger in 2026 than at any prior point on every metric available - alert volume, client count, store count, and product range. Findings from the other Facewatch research items should be read as understating current scale, not overstating it. The one countervailing fact worth carrying forward is that Sainsbury's - the largest and fastest-growing client - is now on its second publicly reported wrongful ejection in six months, both in London, and that pattern is what a future withdrawal, if one comes, would grow from.\n\nWhat I could not establish. First, whether Frasers Group is still using Facewatch is genuinely unresolved. The evidence is a 2023 press round and Facewatch's own June 2026 client list, which is marketing copy and may name a legacy or lapsed client; Frasers Group itself has said nothing publicly since March 2023 and I found no facial recognition disclosure in its annual reporting. Second, Southern Co-op's 35-store deployment has simply gone quiet since around 2023 - I could find no source confirming it continues or has ended. Both belong in the 'unknown', not the 'active', column, and neither is in London anyway.\n\nThird, the outcome of the 'Sara' v Facewatch and Home Bargains claim is not public. Facewatch admitted the misidentification, but I found no reported judgment, settlement or discontinuance, so the UK's first retail LFR legal challenge has no findable ending. Fourth, the Dulwich pause is reported as a store-level suspension but I could not establish whether it has since been lifted, three weeks on.\n\nFifth, every operational statistic here - 99.98% accuracy, 46% reduction in theft, 92% of banned offenders not returning, 500,000 alerts, 125+ retailers - originates with Facewatch or its clients. None is independently audited, and the accuracy figure in particular is doing a lot of work: both 2026 London ejections were attributed by Facewatch and Sainsbury's to staff approaching the wrong person rather than to a false match, which conveniently places the failure outside the number being quoted. Take them as claims, not measurements.\n\nSixth, on site-level detail: only two London sites can be named in connection with complaints or pauses, and neither has a published address, postcode or coordinate, so those fields are null. The boroughs are inferred from the place name in the source and marked uncertain - 'Sainsbury's Dulwich' in particular could denote more than one branch. Nothing here should be pinned on a map without confirming the storefront in person.",
+  "sources": [
+    {
+      "title": "Sainsbury's pauses AI facial recognition cameras after shopper wrongly ejected (Retail Gazette)",
+      "url": "https://www.retailgazette.co.uk/blog/2026/08/sainsburys-pauses-ai-facial-recognition-cameras-after-shopper-wrongly-ejected/",
+      "date": "2026-08",
+      "what_it_supports": "The 17 August 2026 Dulwich incident, Matt Arnold, the store-level pause, the £150 voucher, and that this is the second wrongful ejection of 2026. The single most recent hard evidence of a live camera."
+    },
+    {
+      "title": "Sainsbury's pauses AI facial recognition in store where shopper wrongly ejected (Grocery Gazette)",
+      "url": "https://www.grocerygazette.co.uk/2026/08/17/sainsburys-pauses-ai-facial-recognition-cameras-after-shopper-wrongly-ejected/",
+      "date": "2026-08-17",
+      "what_it_supports": "Independent corroboration that the pause was confined to the store where the incident happened."
+    },
+    {
+      "title": "Sainsbury's keeps the faith with Facewatch AI technology as customer wrongly accused of shoplifting (Retail Technology Innovation Hub)",
+      "url": "https://retailtechinnovationhub.com/home/2026/8/18/sainsburys-keeps-the-faith-with-facewatch-ai-technology-as-customer-is-wrongly-accused-of-shoplifting",
+      "date": "2026-08-18",
+      "what_it_supports": "That Sainsbury's reaffirmed the technology after the Dulwich pause rather than withdrawing - the key point that the pause is not a withdrawal."
+    },
+    {
+      "title": "Shopper wrongfully ejected after facial recognition alert (The Register)",
+      "url": "https://www.theregister.com/2026/02/06/sainsburys_/",
+      "date": "2026-02-06",
+      "what_it_supports": "The February 2026 Elephant & Castle ejection of Warren Rajah, the passport-and-headshot process for getting off the database, and six live Sainsbury's sites across Greater London at that date."
+    },
+    {
+      "title": "Brit supermarket giant triples down on facial recog to nab shoplifters (The Register)",
+      "url": "https://www.theregister.com/security/2026/07/06/brit-supermarket-giant-triples-down-on-facial-recog-to-nab-shoplifters/5266935",
+      "date": "2026-07-06",
+      "what_it_supports": "Expansion from 55 to 200 stores by end of 2026; the named London sites; Big Brother Watch's response; that no withdrawal was reported."
+    },
+    {
+      "title": "Sainsbury's to extend facial recognition tech to 200 stores by Christmas (The Grocer)",
+      "url": "https://www.thegrocer.co.uk/news/sainsburys-to-extend-facial-recognition-tech-to-200-stores-by-christmas/720799.article",
+      "date": "2026-07",
+      "what_it_supports": "The 55-to-200 store expansion, the 99.98% accuracy and 92% non-return claims, and Big Brother Watch's criticism."
+    },
+    {
+      "title": "Facewatch retail facial recognition to notify police of repeat offender matches (Biometric Update)",
+      "url": "https://www.biometricupdate.com/202607/facewatch-retail-facial-recognition-to-notify-police-of-repeat-offender-matches",
+      "date": "2026-07",
+      "what_it_supports": "Nearly 300,000 alerts in H1 2026, 125+ retailers and thousands of stores, four-second police alerting, and the Crime and Policing Act 2026 removing the £200 threshold."
+    },
+    {
+      "title": "Facewatch wants to bring live facial recognition to UK pharmacies (Biometric Update)",
+      "url": "https://www.biometricupdate.com/202606/facewatch-wants-to-bring-live-facial-recognition-to-uk-pharmacies",
+      "date": "2026-06-09",
+      "what_it_supports": "The PharmacyProtect expansion; the current named client list including Frasers Group, Flannels and Sports Direct; 500,000+ alerts in 2025; Facewatch attributing misidentifications to in-store process error."
+    },
+    {
+      "title": "Facewatch gains responsible AI certification for retail facial recognition platform (Biometric Update)",
+      "url": "https://www.biometricupdate.com/202606/facewatch-gains-responsible-ai-certification-for-retail-facial-recognition-platform",
+      "date": "2026-06",
+      "what_it_supports": "ISO/IEC 42001:2023 certification issued by Tempo Audits, and the record 55,462 positive alerts in May 2026 - evidence of investment rather than retrenchment."
+    },
+    {
+      "title": "FACEWATCH LIMITED overview (Companies House)",
+      "url": "https://find-and-update.company-information.service.gov.uk/company/07209931",
+      "date": "2026",
+      "what_it_supports": "Company status Active, accounts made up to 31 March 2026, confirmation statement dated 31 March 2026 - the corporate half of the 'still operating, not merely existing' test."
+    },
+    {
+      "title": "Update: Big Brother Watch's complaint to the ICO on retailer facial recognition (Big Brother Watch)",
+      "url": "https://bigbrotherwatch.org.uk/blog/update-big-brother-watchs-complaint-to-the-ico-on-retailer-facial-recognition/",
+      "date": "2023-06-28",
+      "what_it_supports": "The July 2022 complaint, the March 2023 ICO finding of breaches of Articles 5, 6, 9 and 10 with advisory action only, and the ICO publicly denying it had given Facewatch blanket approval."
+    },
+    {
+      "title": "Landmark legal challenges launched against facial recognition after police and retailer misidentifications (Big Brother Watch)",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/landmark-legal-challenges-launched-against-facial-recognition-after-police-and-retailer-misidentifications/",
+      "date": "2024-05-24",
+      "what_it_supports": "The 'Sara' claim against Facewatch and Home Bargains over a February 2024 misidentification, and Facewatch's admission of it."
+    },
+    {
+      "title": "Facewatch comes under the public eye again (Biometric Update)",
+      "url": "https://www.biometricupdate.com/202506/facewatch-comes-under-the-public-eye-again",
+      "date": "2025-06",
+      "what_it_supports": "The Danielle Horan and 39p paracetamol cases; Iceland's Bradford and Salford trial; Chris Philp's closed-door meeting during the ICO investigation; Fraser Sampson joining the Facewatch board."
+    },
+    {
+      "title": "High Court to hear landmark legal challenge against police live facial recognition (Big Brother Watch)",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/high-court-to-hear-landmark-legal-challenge-against-police-live-facial-recognition/",
+      "date": "2026-01",
+      "what_it_supports": "The 27-28 January 2026 judicial review of Met police LFR, the ruling that it was lawful, and the appeal - the legal backdrop against which no retail challenge has succeeded."
+    },
+    {
+      "title": "Shops' use of live facial recognition - FAQs (Big Brother Watch)",
+      "url": "https://bigbrotherwatch.org.uk/blog/shops-use-of-live-facial-recognition-faqs/",
+      "date": "2024-12-19",
+      "what_it_supports": "The Co-op Group's statement that it has no plans to implement LFR (a non-adoption, not a withdrawal), and the absence of any published store list or map."
+    },
+    {
+      "title": "Asda denies claims 'thousands' of complaints were made over facial recognition pilot (Retail Gazette)",
+      "url": "https://www.retailgazette.co.uk/blog/2025/04/asda-rejects-claims/",
+      "date": "2025-04",
+      "what_it_supports": "The Asda five-store Greater Manchester trial and the Big Brother Watch ICO complaint - a separate system from Facewatch, included so it is not miscounted as a Facewatch withdrawal."
+    },
+    {
+      "title": "Met police trials new tech to counter shoplifting scourge (The Register)",
+      "url": "https://theregister.com/2026/04/21/met_police_trials_tech_platform",
+      "date": "2026-04-21",
+      "what_it_supports": "The Met's separate January 2026 retail-crime reporting pilot in Lewisham and central London, and the confirmation that it is not Facewatch - useful for keeping the two London systems apart."
+    }
+  ],
+  "uncertain": [
+    "vendor",
+    "known_pauses_or_withdrawals"
+  ]
+}

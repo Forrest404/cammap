@@ -1,0 +1,251 @@
+{
+  "item_name": "British Transport Police facial recognition",
+  "operator": "British Transport Police (BTP), the national police force for the rail network, operating on Network Rail managed stations and - since August 2026 - inside Transport for London Underground stations under a joint arrangement with TfL.",
+  "system_type": "police_van",
+  "vendor": "NEC NeoFace M40 algorithm. BTP procured the capability alongside/behind the Metropolitan Police's NEC-based LFR programme; the specific integrator and camera/vehicle supplier for BTP's own units is not published.",
+  "london_coverage_summary": "BTP has no permanent facial recognition camera network. It runs a time-limited pilot of Live Facial Recognition using temporary, redeployable camera rigs set up on station concourses for a single shift of roughly 3-7 hours, then removed. The pilot began at London Bridge on 11 February 2026 and had run 22 published deployments across ten London station sites by 27 August 2026, expanding from Network Rail mainline termini into TfL Underground stations from 11 August 2026. Every deployment to date has been inside Greater London; the pilot is scheduled to run until November 2026.",
+  "cameras": [
+    {
+      "site_name": "London Bridge station (Network Rail concourse)",
+      "address": "London Bridge Station, Station Approach Road, London",
+      "postcode": "SE1 9SP",
+      "borough": "Southwark",
+      "lat": 51.5052,
+      "lng": -0.0864,
+      "camera_type": "van",
+      "installed_date": "2026-02-11",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "deployment_dates": ["2026-02-11"],
+      "notes": "First BTP LFR deployment. 4h35m, watchlist 381, threshold 0.64, 16,156 estimated faces seen, zero alerts. Camera rig is temporary and removed at end of shift - this is a deployment site, not an installation. 'van' is used here as the survey's code for mobile/redeployable, not as a claim that a marked LFR van was parked on the concourse."
+    },
+    {
+      "site_name": "London Waterloo station (Network Rail concourse)",
+      "address": "Waterloo Station, Station Approach Road, London",
+      "postcode": "SE1 8SW",
+      "borough": "Lambeth",
+      "lat": 51.5031,
+      "lng": -0.1132,
+      "camera_type": "van",
+      "installed_date": "2026-02-13",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "deployment_dates": ["2026-02-13", "2026-05-22", "2026-08-18"],
+      "notes": "Three published deployments. 13 Feb: 4h45m, watchlist 409, 56,186 faces, 0 alerts. 22 May: 4h25m, watchlist 474, 36,598 faces, 0 alerts. 18 Aug: 7h30m, watchlist 662, 72,990 faces, 0 alerts - the longest single deployment in the register and the largest face count."
+    },
+    {
+      "site_name": "London Euston station (Network Rail concourse)",
+      "address": "Euston Station, Euston Road, London",
+      "postcode": "NW1 2RT",
+      "borough": "Camden",
+      "lat": 51.5282,
+      "lng": -0.1337,
+      "camera_type": "van",
+      "installed_date": "2026-02-17",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "deployment_dates": ["2026-02-17", "2026-03-13", "2026-06-11", "2026-07-17"],
+      "notes": "Four published deployments, the joint-most of any site. 17 Feb: 4h50m, watchlist 386, 46,420 faces. 13 Mar: 3h55m, watchlist 439, 25,525 faces. 11 Jun: 4h30m, watchlist 491, 51,001 faces. 17 Jul: 4h55m, watchlist 546, 68,952 faces. Zero alerts at all four."
+    },
+    {
+      "site_name": "King's Cross station (Network Rail concourse)",
+      "address": "King's Cross Station, Euston Road, London",
+      "postcode": "N1 9AL",
+      "borough": "Camden",
+      "lat": 51.5308,
+      "lng": -0.1238,
+      "camera_type": "van",
+      "installed_date": "2026-02-24",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "deployment_dates": ["2026-02-24", "2026-03-04", "2026-04-02", "2026-07-11"],
+      "notes": "Four published deployments. The 24 February deployment (4h21m, watchlist 455, 19,313 faces) produced the pilot's only confirmed false alert - 1 alert, logged as a confirmed false alert, false alert rate 0.00517%. The other three produced zero alerts."
+    },
+    {
+      "site_name": "St Pancras International station (Network Rail concourse)",
+      "address": "St Pancras International, Euston Road, London",
+      "postcode": "N1C 4QP",
+      "borough": "Camden",
+      "lat": 51.5320,
+      "lng": -0.1263,
+      "camera_type": "van",
+      "installed_date": "2026-03-19",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "deployment_dates": ["2026-03-19"],
+      "notes": "One published deployment: 3h45m, watchlist 465, 17,478 faces, zero alerts. Listed in the register as 'St Pancras', distinct from the separate 'Kings Cross St Pancras Underground' entry of 20 August."
+    },
+    {
+      "site_name": "Liverpool Street station (Network Rail concourse)",
+      "address": "Liverpool Street Station, Liverpool Street, London",
+      "postcode": "EC2M 7PY",
+      "borough": "City of London",
+      "lat": 51.5178,
+      "lng": -0.0823,
+      "camera_type": "van",
+      "installed_date": "2026-03-26",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "deployment_dates": ["2026-03-26", "2026-05-28"],
+      "notes": "Two published deployments. 26 Mar: 3h50m, watchlist 455, 18,089 faces. 28 May: 2h36m (the shortest in the register), watchlist 478, 17,219 faces. Zero alerts at both. This is the only BTP LFR site inside the City of London police area, though the operation is BTP's, not City of London Police's."
+    },
+    {
+      "site_name": "London Victoria station (Network Rail concourse)",
+      "address": "Victoria Station, Terminus Place, London",
+      "postcode": "SW1E 5ND",
+      "borough": "City of Westminster",
+      "lat": 51.4952,
+      "lng": -0.1441,
+      "camera_type": "van",
+      "installed_date": "2026-04-09",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "deployment_dates": ["2026-04-09", "2026-05-20", "2026-06-27", "2026-07-02"],
+      "notes": "Four published mainline deployments, logged in the register as 'Victoria' and distinct from the 'Victoria Underground' entry of 11 August. 9 Apr: 3h45m, 24,213 faces. 20 May: 4h30m, 27,735 faces. 27 Jun: 5h42m, 36,028 faces. 2 Jul: 5h45m, 33,422 faces. Zero alerts at all four."
+    },
+    {
+      "site_name": "Victoria Underground station (TfL)",
+      "address": "Victoria Underground Station, Terminus Place, London",
+      "postcode": "SW1E 5ND",
+      "borough": "City of Westminster",
+      "lat": 51.4962,
+      "lng": -0.1447,
+      "camera_type": "van",
+      "installed_date": "2026-08-11",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "deployment_dates": ["2026-08-11"],
+      "notes": "The first-ever use of live facial recognition inside a London Underground station, on 11 August 2026: 6h30m, watchlist 673, 33,545 estimated faces, zero alerts. Same station complex as the mainline Victoria entries but logged separately by BTP as an Underground deployment; the coordinate is the Underground ticket hall side of the complex and is approximate to within the station footprint."
+    },
+    {
+      "site_name": "King's Cross St Pancras Underground station (TfL)",
+      "address": "King's Cross St Pancras Underground Station, Euston Road, London",
+      "postcode": "N1 9AL",
+      "borough": "Camden",
+      "lat": 51.5301,
+      "lng": -0.1240,
+      "camera_type": "van",
+      "installed_date": "2026-08-20",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "deployment_dates": ["2026-08-20"],
+      "notes": "6h20m, watchlist 673, 50,754 faces. Produced 1 alert, logged as an UNCONFIRMED true alert - the only non-false alert in the whole register. Coordinate is the Underground ticket hall, approximate within the station complex."
+    },
+    {
+      "site_name": "Stratford Underground station (TfL)",
+      "address": "Stratford Station, Station Street, London",
+      "postcode": "E15 1AZ",
+      "borough": "Newham",
+      "lat": 51.5416,
+      "lng": -0.0042,
+      "camera_type": "van",
+      "installed_date": "2026-08-27",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "deployment_dates": ["2026-08-27"],
+      "notes": "Most recent deployment in the register as published: 6h5m, watchlist 719 (the largest watchlist to date), 37,931 faces, zero alerts. Only BTP LFR site so far in an outer/east London borough."
+    }
+  ],
+  "camera_count_confirmed": 10,
+  "camera_count_claimed": "BTP claims no fixed camera estate at all, so there is no larger claimed number to reconcile. The comparable published figure is deployments rather than cameras: 22 individual LFR operations between 11 February and 27 August 2026 across the 10 sites above, totalling roughly 733,000 estimated faces seen. Press reporting in August 2026 cited '18 deployments and more than 530,000 faces' for the mainline-only phase, which matches the register's first 18 rows (537,697 faces). The number of physical camera heads used per deployment is not published; each operation appears to use a single rig covering one defined recognition zone. [uncertain]",
+  "fixed_vs_mobile": "Zero fixed, all mobile/redeployable. This is the single most important finding for a survey about fixed cameras: BTP has installed no permanent LFR cameras anywhere on the rail or Underground network. Each deployment uses a temporary, health-and-safety-assessed camera rig placed on a station concourse for one shift and removed afterwards, with the recognition zone signed and stewarded and alternative routes offered to people who do not want to pass through it. The rig is not a marked street van of the Metropolitan Police type - inside an Underground ticket hall a vehicle is impossible - but it is redeployable equipment rather than infrastructure, so it is coded 'van' against this survey's fixed/van axis. BTP has explicitly framed the pilot as temporary concourse deployments 'rather than a permanent network-wide system'. Notably, this is the opposite of the direction the Metropolitan Police is moving in over the same period, having announced permanently installed LFR cameras for the West End and Soho by the end of 2026.",
+  "geographic_concentration": "Overwhelmingly the central London mainline termini, and within those the Euston Road corridor. Camden alone accounts for 9 of the 22 deployments (Euston x4, King's Cross x4, St Pancras x1, plus King's Cross St Pancras Underground). Westminster accounts for 5 (Victoria mainline x4, Victoria Underground x1), Lambeth 3 (Waterloo), Southwark 1 (London Bridge), City of London 2 (Liverpool Street), Newham 1 (Stratford Underground). Every published deployment has been inside Zone 1 except Stratford. No deployments outside Greater London have been published, and none in south, west or outer north London. BTP describes site selection as intelligence-led targeting of 'crime hotspots' - the register's LFR Use Case column reads 'Crime hotspot' for all 22 rows without exception, so no deployment has yet been justified on any other ground such as a specific manhunt, protest or event.",
+  "status_as_of_2026": "active",
+  "last_confirmed_active_date": "27 August 2026 - Stratford Underground station, the most recent row in BTP's own published LFR deployment register (6h5m, watchlist 719, 37,931 estimated faces). This is a primary-source operational record published by the force itself, not a press claim. The pilot is scheduled to continue until November 2026, so it should be treated as live as of the September 2026 date of this research, but no deployment dated September 2026 had been added to the register at the time it was retrieved.",
+  "evidence_of_current_activity": "Four independent strands. (1) BTP's own deployment register PDF, updated through 27 August 2026, listing 22 completed operations with per-deployment duration, watchlist size, threshold, alert counts and face estimates. (2) BTP's 11 August 2026 press release and the accompanying TfL statement announcing the extension into Underground stations, with the first such deployment at Victoria that day. (3) An explicit force statement that the pilot has been extended and runs until November 2026, with deployments continuing to rotate between Underground and Network Rail stations. (4) Contemporaneous August 2026 press coverage (The Register, Biometric Update, Emergency Services Times, Rail Business UK) reporting the Victoria deployment as it happened, including Big Brother Watch's response. Signage and QR-coded information at each deployment is a further, physically verifiable indicator for anyone at a station on a deployment day.",
+  "known_pauses_or_withdrawals": "No site has been withdrawn and no deployment has been publicly abandoned. The pilot was originally announced in February 2026 as a six-month trial, which would have ended in August 2026; instead of stopping, BTP extended it to November 2026 and simultaneously widened its scope from Network Rail mainline stations into TfL Underground stations. So the trajectory is expansion, not withdrawal. Two related things BTP has NOT switched on: it states it does not currently use operator-initiated facial recognition (the officer-phone 'point and identify' capability other forces have adopted), and it has not yet published its documentation for retrospective facial recognition. The gap between deployments is also worth noting - there were no published deployments at all between 2 April and 20 May 2026, and none between 17 July and 11 August, but the force has not described either gap as a pause.",
+  "locations_published_publicly": "yes",
+  "publication_channel": "BTP publishes both a forward notice and a retrospective record. Forward: the force states that the dates and locations of all BTP LFR operations are published on the BTP website and its social media channels before they take place, with clear signage and QR-code access to information and a feedback route at the deployment itself. Retrospective: a per-deployment register published as a PDF at https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf, linked from the force's LFR policy page at https://www.btp.police.uk/police-forces/british-transport-police/areas/about-us/about-us/facial-recognition-technology/ . The register gives location, date, duration, use case, watchlist size, minimum threshold, total/true/false alerts, false alert rate, outcomes and estimated faces seen for every deployment. Note that both BTP web pages sit behind a Cloudflare interstitial that blocks automated fetching; the register PDF asset itself is directly downloadable.",
+  "live_feed_or_map_available": "No. There is no live map, no live feed and no machine-readable location endpoint - official or third-party - for BTP facial recognition deployments. What exists is (a) an advance text announcement of an upcoming deployment on the BTP website and social media, and (b) the after-the-fact PDF register. Neither carries coordinates; the register's Location column is a bare station name such as 'Waterloo rail' or 'Kings Cross St Pancras Underground', with no indication of where within the station the recognition zone was set up, which concourse or entrance it covered, or which direction it faced. There is no BTP equivalent of the Metropolitan Police's published upcoming-deployment listings page, and no third-party tracker specifically covering BTP. For a mapping project this means BTP deployments can be plotted at station granularity with confident dates, but the sub-station camera position is simply not public, and there is nothing to poll for a live 'is it on right now' status - the only real-time signal is the physical signage at the station.",
+  "advance_notice_period": "BTP commits to publishing each deployment's date and location before it happens, but publishes no defined minimum notice period. Reporting of the Victoria Underground deployment indicates same-day or near-same-day announcement - the 11 August press release announced a deployment taking place that same day - which suggests notice is measured in hours rather than days and is not enough to plan avoidance in advance. [uncertain]",
+  "foi_or_audit_sources": "The strongest enumerating source here is not an FOI at all but BTP's own voluntarily published deployment register, which is more granular than most FOI responses would be. Beyond that: Big Brother Watch tracks and criticises police LFR nationally and responded directly to the Underground expansion (director Silkie Carlo: 'a disturbing and dystopian expansion of live facial recognition that will capture millions of innocent people's faces'), and was co-claimant in the 2026 High Court challenge to Met LFR policy. Statewatch published an analysis in June 2026 on the rapid growth of police facial recognition in England. The London Assembly has scrutinised LFR in London during 2026, including a report by Zoe Garbett AM urging a pause on the Met's expansion, and City Hall sessions that also touched the BTP trial - though the Assembly's remit is the Met and TfL rather than BTP. The Biometrics and Surveillance Camera Commissioner function and the ICO have both commented on police LFR generally in 2026. No dedicated independent audit of BTP's pilot specifically has been published; the November 2026 pilot evaluation, when it appears, will be the first. [uncertain]",
+  "legal_basis": "Common law policing powers together with the statutory duty to prevent and detect crime, processed as sensitive/biometric data under Part 3 of the Data Protection Act 2018 (law enforcement processing), with an Appropriate Policy Document, a Data Protection Impact Assessment and an Equality Impact Assessment, and interference with Article 8 ECHR justified as necessary and proportionate. Watchlists are limited to people wanted by police or the courts or subject to ancillary court orders with conditions, and each deployment is authorised in advance for a defined location, time window and purpose. There is still no dedicated UK statute governing live facial recognition - the whole practice runs on force policy and general data protection law, a gap the biometrics commissioners warned in May 2026 could take around three years to close. Operational safeguards claimed: a deliberately high minimum match threshold of 0.64 across every deployment, immediate deletion of biometric data for anyone not matched, deletion of alert images within 24 hours, retention of ordinary CCTV for 31 days, human officer review of every alert before any approach, and alternative routes for people who do not wish to enter the recognition zone.",
+  "regulatory_challenges": "No litigation has been brought against BTP's pilot specifically. The governing authority is R (Bridges) v Chief Constable of South Wales Police [2020] EWCA Civ 1058, which found that force's LFR deployment unlawful for excessive discretion over who and where, inadequate DPIA and an unmet public sector equality duty - not that LFR is unlawful in principle. The decisive recent case is R (Thompson and Carlo) v Commissioner of Police of the Metropolis, judgment 21 April 2026, in which the High Court dismissed a challenge to the Met's 2024 LFR policy, holding it had sufficient clarity, foreseeability and safeguards to meet the ECHR 'quality of law' standard under Articles 8, 10 and 11. Shaun Thompson had been wrongly stopped after being matched to his brother. Big Brother Watch and Thompson stated an intention to appeal. That ruling is the legal foundation on which BTP's and the Met's 2026 expansions have proceeded, and an appeal succeeding would put both at risk. Separately, research cited in 2026 that LFR deployments fall disproportionately in areas with higher Black, Asian and Mixed ethnic populations keeps a public sector equality duty challenge live as a possibility.",
+  "oversight_body": "No single dedicated regulator. In practice: the British Transport Police Authority as the force's governance body; the Information Commissioner's Office for the data protection aspects; the Biometrics and Surveillance Camera Commissioner function (now largely folded into the Investigatory Powers Commissioner's Office and the Home Office after the Data Protection and Digital Information reforms); the College of Policing and NPCC LFR authorised professional practice as the operational standard; the courts by judicial review; and, for the Underground deployments only, Transport for London as landowner and the London Assembly's Police and Crime Committee as an indirect scrutiny route. BTP is not accountable to the Mayor of London or MOPAC, which is a real accountability gap given that every deployment so far has been in London. [uncertain]",
+  "research_confidence": "high",
+  "key_uncertainties": "1) SUB-STATION LOCATION IS NOT PUBLIC. The site list is complete and primary-sourced at station granularity, but BTP publishes only a station name. Which concourse, entrance, gateline or ticket hall the camera rig stood on, and which way it pointed, is nowhere published. Every coordinate in the cameras list is the station's standard published location, not a surveyed camera position; treat them as accurate to the station complex, not to the rig. Victoria Underground and King's Cross St Pancras Underground are listed at the Underground ticket hall side of complexes they share with the mainline entries, which is an inference from the register's own distinction between the two, not a stated fact. 2) THESE ARE DEPLOYMENT SITES, NOT INSTALLATIONS. Nothing is permanently mounted; a 'camera' here is a station that has hosted at least one shift. If the survey's map implies a standing camera at these ten points, it will overstate what exists. 3) POST-AUGUST GAP. The register as retrieved ends at 27 August 2026. Deployments almost certainly occurred in September 2026, since the pilot runs to November, but they could not be confirmed - the register had not been updated with them and no September press coverage was found. The site list should therefore be treated as complete to 27 August 2026 and incomplete after it. 4) NUMBER OF PHYSICAL CAMERAS PER DEPLOYMENT IS UNPUBLISHED. The register counts deployments, not camera heads; whether a deployment uses one camera or several covering a single zone is not stated. 5) EQUIPMENT FORM FACTOR. Sources describe 'temporary, health-and-safety-assessed camera setups on station concourses'. Whether these are tripod/mast rigs, trolley units, or a marked vehicle parked outside mainline termini feeding cameras inside is not established; the 'van' code in this file means 'mobile/redeployable', and should not be read as a confirmed vehicle. 6) RETROSPECTIVE FACIAL RECOGNITION IS A BLANK. BTP has said it will publish further documentation on retrospective facial recognition but had not done so; how much RFR searching of recorded rail and Underground CCTV BTP already does, against which databases, at what volume, is unknown and is very likely far larger in reach than the LFR pilot. It states it does not currently use operator-initiated facial recognition. 7) ADVANCE NOTICE PERIOD is committed to but not defined; the Victoria case suggests same-day. 8) BTP's website is Cloudflare-protected against automated retrieval, so the force's narrative pages could not be read directly and their content here is reconstructed from the directly downloadable register PDF plus press reporting of BTP statements. 9) The November 2026 pilot evaluation, and the decision on whether LFR becomes permanent on the network, had not been published and is the single biggest open question about what happens next.",
+  "sources": [
+    {
+      "title": "Live Facial Recognition deployments 2026 - BTP LFR deployment register (PDF)",
+      "url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+      "date": "retrieved 2026-09-06, last row dated 2026-08-27",
+      "what_it_supports": "PRIMARY SOURCE and the backbone of this file. Every station name, date, duration, watchlist size, threshold, alert count and face estimate in the cameras list comes from this table. Establishes 22 deployments across 10 sites, one confirmed false alert (King's Cross, 24 Feb) and one unconfirmed true alert (King's Cross St Pancras Underground, 20 Aug), and a uniform 0.64 threshold and 'Crime hotspot' use case throughout."
+    },
+    {
+      "title": "British Transport Police use of Live Facial Recognition Technology",
+      "url": "https://www.btp.police.uk/police-forces/british-transport-police/areas/about-us/about-us/facial-recognition-technology/",
+      "date": "2026 (ongoing)",
+      "what_it_supports": "The force's own policy page: NEC NeoFace M40, intelligence-led targeting of crime hotspots, watchlist composition, deletion of non-matched images, commitment to publish dates and locations in advance, pilot start 11 Feb 2026 and run to Nov 2026. Blocked to automated fetching by Cloudflare; content here is from search-result extracts of the page."
+    },
+    {
+      "title": "BTP expands Live Facial Recognition (LFR) trial into London Underground stations",
+      "url": "https://www.btp.police.uk/news/btp/news/england/btp-expands-live-facial-recognition-lfr-trial-into-london-underground-stations/",
+      "date": "2026-08-11",
+      "what_it_supports": "Official announcement of the extension into TfL stations, the Victoria Underground first deployment on 11 August, rotation between Underground and Network Rail stations, and extension of the pilot to November 2026."
+    },
+    {
+      "title": "British Transport Police extends live facial recognition trial into Underground stations",
+      "url": "https://www.biometricupdate.com/202608/british-transport-police-extends-live-facial-recognition-trial-into-underground-stations",
+      "date": "2026-08-11",
+      "what_it_supports": "Confirms temporary health-and-safety-assessed camera setups on concourses rather than permanent installation, NEC NeoFace M40, notification before each deployment with signage and QR codes, and the statement that BTP does not currently use operator-initiated facial recognition and will publish further documents on retrospective facial recognition."
+    },
+    {
+      "title": "Brit rail cops bring live facial recognition to the London Underground",
+      "url": "https://www.theregister.com/security/2026/08/12/brit-rail-cops-bring-live-facial-recognition-to-the-london-underground/5286697",
+      "date": "2026-08-12",
+      "what_it_supports": "Independent contemporaneous confirmation of the Victoria deployment, the NEC NeoFace M40 algorithm, the November 2026 end date, and Big Brother Watch's on-record objection ('a disturbing and dystopian expansion...'). Also public opinion polling on LFR."
+    },
+    {
+      "title": "BTP's First London Underground Facial Recognition Deployment: 33,545 Estimated Faces, No Alerts",
+      "url": "https://www.railway.supply/btps-first-london-underground-facial-recognition-deployment-33545-estimated-faces-no-alerts/",
+      "date": "2026-08",
+      "what_it_supports": "Identifies the existence and URL of the BTP deployment register, and independently corroborates the London Bridge (11 Feb) and Victoria Underground (11 Aug) register rows including durations, watchlist sizes and face counts."
+    },
+    {
+      "title": "British Transport Police to launch trial of Live Facial Recognition technology today - London",
+      "url": "https://www.btp.police.uk/news/btp/news/appeals/british-transport-policeto-launchtrial-of-live-facial-recognition-technologytoday-london/",
+      "date": "2026-02-11",
+      "what_it_supports": "The original launch announcement: pilot begins 11 February 2026 at selected key transport hubs in London, initially framed as a six-month trial."
+    },
+    {
+      "title": "British Transport Police start using live facial recognition (Computer Weekly)",
+      "url": "https://www.computerweekly.com/news/366639077/British-Transport-Police-start-using-live-facial-recognition",
+      "date": "2026-02",
+      "what_it_supports": "Launch-phase reporting naming London Bridge, Waterloo, Liverpool Street and King's Cross as initial hub sites, corroborating the register's first rows."
+    },
+    {
+      "title": "Londoners wary of live facial recognition rollout as police trial operations at major shopping and transport hubs (Fitzrovia News)",
+      "url": "https://fitzrovianews.com/2026/08/17/londoners-wary-of-live-facial-recognition-rollout-as-police-trial-operations-at-major-shopping-and-transport-hubs/",
+      "date": "2026-08-17",
+      "what_it_supports": "The collateral-arrest figures during BTP LFR operations (13 arrests for breach of criminal behaviour orders, theft and public order offences; 4 arrested as wanted by other forces) and BTP's statement that these are excluded from LFR performance data because they did not result from a facial match. Also the contrast with the Met's planned FIXED cameras in the West End, Soho and Oxford Street."
+    },
+    {
+      "title": "Summary of judgment: Thompson and Carlo v Metropolitan Police Commissioner (Judiciary of England and Wales)",
+      "url": "https://www.judiciary.uk/wp-content/uploads/2026/04/Summary-of-judgment-Thomson-and-Carlo-v-Metropolitan-Police-Commmissioner-AC-2024-LON-001764-21-04-2026.pdf",
+      "date": "2026-04-21",
+      "what_it_supports": "The current legal position on police LFR in London: the High Court dismissed the challenge to the Met's LFR policy on 21 April 2026, holding it met the ECHR quality-of-law standard. The controlling precedent under which BTP's pilot proceeds."
+    },
+    {
+      "title": "England: Police use of facial recognition technology growing rapidly (Statewatch)",
+      "url": "https://statewatch.org/news/2026/june/england-police-use-of-facial-recognition-technology-growing-rapidly/",
+      "date": "2026-06",
+      "what_it_supports": "Independent civil-society tracking of the 2026 expansion of police facial recognition in England, and context for the absence of dedicated statute."
+    }
+  ],
+  "uncertain": [
+    "camera_count_claimed",
+    "advance_notice_period",
+    "foi_or_audit_sources",
+    "oversight_body"
+  ]
+}

@@ -47,8 +47,8 @@ var NONFUNCTIONAL_TYPE = "nonfunccam";
 
 /* South-west corner, then north-east: Heathrow across to Upminster,
    Coulsdon up to Enfield. All 32 boroughs and the City. Moving the
-   map to another city is this, the two check constraints in
-   schema.sql, and the opening centre in map.js. */
+   map to another city is this, LONDON_CENTRE just below, the three
+   check constraints in schema.sql, and the opening zoom in map.js. */
 var LONDON_BOUNDS = [[51.28, -0.51], [51.70, 0.33]];
 
 /* Where a map opens when it has no reason to look anywhere else.

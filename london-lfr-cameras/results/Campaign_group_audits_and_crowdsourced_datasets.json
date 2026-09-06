@@ -1,0 +1,194 @@
+{
+  "item_name": "Campaign group audits and crowdsourced camera datasets",
+  "operator": "Not a camera operator. This unit covers third-party observers and data producers: Big Brother Watch, Liberty, Privacy International, Defend Digital Me, the OpenStreetMap community and OSM-derived viewers (Surveillance under Surveillance, Open Surveillance Mapper, OSM-Camera), plus the London Assembly's Green group (Zoe Garbett AM) as a quasi-audit source. The cameras they describe are run by the Metropolitan Police, British Transport Police, Facewatch's retail customers and local authorities.",
+  "system_type": "mixed",
+  "vendor": "Not applicable - these groups do not supply hardware or software. The systems they audit use NEC NeoFace Live Facial Recognition (Metropolitan Police and British Transport Police), Facewatch (retail), and in adjacent trials FaceTech (Asda) and Corsight/other suppliers. The crowdsourced side runs on OpenStreetMap infrastructure (Overpass API, ODbL) with front ends by independent volunteers (Hartmut Holzgraefe / Bryan McBride for Open Surveillance Mapper; hiljade.kamera.rs for Surveillance under Surveillance).",
+  "london_coverage_summary": "No campaign group and no crowdsourced project currently publishes a site-level, machine-readable dataset of facial recognition cameras in London. Big Brother Watch comes closest: it maintains an in-page list of police forces and private companies using facial recognition on its Stop Facial Recognition campaign page, and a deployment-by-deployment table (date, location, true/false matches) inside its 'Understanding live facial recognition statistics' blog post, but both are HTML prose and tables with no CSV, JSON, API or stated open licence. Liberty and Privacy International publish legal and policy briefings and campaign material, not location data. Defend Digital Me's research is about biometrics in schools, is survey-based and nationwide, and names almost no individual sites. On the crowdsourced side, OpenStreetMap holds roughly 2,456 surveillance nodes inside the Greater London bounding box (queried 2026-09-06), of which about 1,980 carry surveillance:type=camera and 99 surveillance:type=ALPR - but zero are tagged as facial recognition. The only facial-recognition tagging convention in use anywhere in OSM, surveillance:type=AFR, has 67 uses worldwide and every single one is in Quebec City, Canada.",
+  "cameras": [],
+  "camera_count_confirmed": 0,
+  "camera_count_claimed": "[uncertain] Not a camera operator, so no claimed count of its own. The relevant dataset sizes are: OpenStreetMap holds ~2,456 man_made=surveillance nodes inside the Greater London bounding box (51.28,-0.51 to 51.70,0.33), of which 0 are tagged as facial recognition; Big Brother Watch's campaign page lists 10+ police forces and a table of private companies using LFR but does not enumerate individual London addresses; Facewatch itself is reported to serve 125+ retailers across thousands of UK stores, none of which any campaign group has enumerated site by site.",
+  "fixed_vs_mobile": "The audit and crowdsourced material barely distinguishes the two, which is the central weakness for anyone wanting fixed-camera data. Big Brother Watch's deployment tables are organised around Metropolitan Police van deployments (a date and a street or town centre per row) rather than around installed cameras, so they describe events, not fixtures. The exception is Big Brother Watch's 2025-2026 reporting on the fixed installation in Croydon town centre (North End and London Road), which it describes as an unprecedented network of permanently mounted LFR cameras, and its comment on British Transport Police deployments at London stations. OpenStreetMap's ~2,456 London surveillance nodes are overwhelmingly fixed ordinary CCTV, not LFR, and OSM has no established way of representing a redeployable van at all. No dataset from any of these sources separates fixed LFR from van-mounted LFR in a machine-readable field.",
+  "geographic_concentration": "Where the audit material does localise, it clusters in the same places the Met deploys: Croydon (Thornton Heath and central Croydon, including the fixed North End / London Road installation), Haringey (Northumberland Park), Lewisham (Deptford High Street), Westminster and the West End, Camden, and Notting Hill in Kensington and Chelsea around Carnival. Zoe Garbett AM's February 2026 London Assembly report found that over half of all 2024 LFR deployments took place in areas with higher-than-average Black populations, naming Thornton Heath (40% Black population), Northumberland Park (36%) and Deptford High Street (34%). The OpenStreetMap surveillance data for London is concentrated instead where individual mappers have been systematic - the London Borough of Newham (89 nodes with an explicit operator tag), the Queen Elizabeth Olympic Park (27), Royal Wharf and Britannia Village in Newham (40 between them), Hackney (15), Tower Hamlets and Waltham Forest (9 each) - which reflects mapper attention, not surveillance density.",
+  "status_as_of_2026": "active",
+  "last_confirmed_active_date": "2026-09-06, from direct query. The OpenStreetMap Overpass API returned 2,456 Greater London surveillance nodes against an OSM base timestamp of 2026-09-05T23:23:50Z, and taginfo data current to 2026-09-05 confirmed 376,291 global uses of surveillance:type=camera and 67 of surveillance:type=AFR. On the campaign side, Liberty's briefings page lists a submission to the Government digital identity consultation dated May 2026 and a response to the Government consultation on the legal framework for law enforcement use of biometrics dated February 2026; Zoe Garbett AM's London Assembly report on Met LFR was published February 2026; Big Brother Watch was publicly commenting on the Met's West End static LFR expansion in June 2026 and on the May 2026 protest deployment.",
+  "evidence_of_current_activity": "OpenStreetMap is demonstrably live: the Overpass query run on 2026-09-06 returned a database timestamp less than a day old, and taginfo's tag counts were current to 2026-09-05. Surveillance under Surveillance states it refreshes from OSM hourly. Liberty published a consultation response in May 2026 and another in February 2026. Big Brother Watch issued press comment on British Transport Police station deployments, on the first LFR deployment at a London protest (16 May 2026, Unite the Kingdom, Camden), on Sainsbury's expansion (September 2025 trial, expanded January 2026 and again mid-2026), and on the Met's West End static rollout announced June 2026. Big Brother Watch and Privacy International sent letters before action to the Government over facial recognition searches of the passport database, with litigation expected to proceed during 2026. Zoe Garbett AM's report and the Mayor's subsequent disclosure of a ~100-device, ~GBP 763,000 Operator-Initiated Facial Recognition handheld pilot are 2026 material. What is NOT evidenced as current is any site-level dataset: no group has published one this year or any year.",
+  "known_pauses_or_withdrawals": "No campaign-group dataset has been withdrawn, because none was ever published in a downloadable form. Two things are worth recording as stale rather than omitted. First, Big Brother Watch's headline LFR accuracy dataset - 175 matches, 150 false, 25 true, an 84.7% false-match rate - covers 2016 to 16 May 2023 and has not been reissued as a table since; the organisation's more recent statements cite the same 85% figure. Second, Defend Digital Me's flagship biometrics work, The State of Biometrics, is dated May 2022 and its facial-recognition-in-schools figures (27 schools using FRT in England, 35 more in the pipeline through one supplier) date from 2021; nothing more recent from that group enumerates sites. On the operator side rather than the dataset side, the ICO found Facewatch had breached data protection law on eight counts but took no further regulatory action, requiring only that retailers limit watchlists to serious or repeated offenders - and individual retailers have quietly started and stopped trials (Asda's Greater Manchester FaceTech trial was time-limited to two months) without any group tracking the churn.",
+  "locations_published_publicly": "partial",
+  "publication_channel": "Big Brother Watch, Stop Facial Recognition campaign page (in-page tables of police forces and private companies, no download): https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/ . Big Brother Watch, Understanding live facial recognition statistics (in-page deployment table with dates and locations, 2016 to May 2023): https://bigbrotherwatch.org.uk/blog/understanding-live-facial-recognition-statistics/ . Big Brother Watch reports Biometric Britain (May 2023) and Face Off (May 2018), both PDFs: https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/report/ . Liberty briefings and reports index (policy documents only, no location data): https://www.libertyhumanrights.org.uk/issue/facial-recognition-briefings-and-reports/ . Privacy International, Neighbourhood Watched campaign (guidance and force-by-force campaigning material, no camera locations): https://privacyinternational.org/neighbourhood-watched . Defend Digital Me, The State of Biometrics 2022: https://defenddigitalme.org/research/state-biometrics-2022/ . OpenStreetMap raw data, the only genuinely reusable source, queryable via the Overpass API at https://overpass-api.de/api/interpreter with man_made=surveillance and surveillance:type=camera, tag documentation at https://wiki.openstreetmap.org/wiki/Key:surveillance and https://wiki.openstreetmap.org/wiki/Tag:man_made=surveillance , tag counts at https://taginfo.openstreetmap.org . OSM-derived viewers: Surveillance under Surveillance https://hiljade.kamera.rs/map/ , Open Surveillance Mapper (editor) https://surveillance.get-map.org/ , OSM-Camera https://osmcamera.dihe.de/ , and a static extract at https://www.pelicanzero.com/openstreetmapcams/ . For comparison, the Metropolitan Police publishes its own forthcoming and past deployment record on met.police.uk, which is the nearest thing to an official location feed and is a list rather than a map.",
+  "live_feed_or_map_available": "Effectively no, for facial recognition specifically. There is no live map or feed - official or third-party, campaign-run or crowdsourced - showing where LFR cameras or LFR vans are in London today. The three OSM-derived maps (Surveillance under Surveillance, OSM-Camera, Open Surveillance Mapper) are live in the sense that they refresh from OpenStreetMap continuously (Surveillance under Surveillance states hourly), and they are the only reusable geographic layer that exists - but they show ordinary CCTV, and the London extract contains zero facial-recognition-tagged nodes. The tagging convention that would be needed, surveillance:type=AFR, exists but has only 67 uses worldwide, all of them in Quebec City; the alternative key surveillance:facial_recognition has 2 uses globally and is not documented on the wiki. Big Brother Watch does not run a map or a tracker; it attends deployments when tipped off, which means its knowledge of upcoming vans is real but informal and never published as a feed. Liberty and Privacy International publish no locations at all. In short: anyone wanting a live London LFR map has to build it, because the closest existing artefacts are a crowdsourced CCTV layer with no LFR attribute and a set of campaign PDFs.",
+  "advance_notice_period": "[uncertain] Not applicable to these groups - they publish retrospectively, not in advance. Big Brother Watch acts on tip-offs about forthcoming deployments and turns up to observe and leaflet, but does not publish a forward schedule. The forward-notice question belongs to the Metropolitan Police, which publishes intended deployment locations on its own site typically only a day or two ahead, and to Facewatch retailers, which give no advance notice at all beyond a sticker at the door.",
+  "foi_or_audit_sources": "Big Brother Watch uses Freedom of Information requests routinely and cites them in its campaign material (for example North Wales Police deployment data obtained by FOI), but publishes the responses as prose rather than as a released-data archive. mySociety's WhatDoTheyKnow (https://www.whatdotheyknow.com) holds the raw FOI correspondence with the Metropolitan Police, British Transport Police and individual boroughs and is the most reusable FOI channel available, though it is unstructured and must be scraped or read by hand. Formal audits: Big Brother Watch's Biometric Britain (May 2023) and Face Off (May 2018); the ICO's own investigation of Facewatch, which found breaches on eight counts and imposed the serious-or-repeat-offender watchlist limit but took no enforcement action; the ICO's earlier opinion on LFR in public places; and Zoe Garbett AM's February 2026 London Assembly report, which is the most recent London-specific audit and includes the demographic breakdown of 2024 deployment sites. Big Brother Watch's ICO complaints against Southern Co-op/Facewatch (July 2022) and against Asda's trial are documented on its site. Academic and quasi-official audits of Met LFR exist from earlier years (the University of Essex 2019 independent report on the Met's trials) but are pre-2020 and now describe a different system.",
+  "legal_basis": "Not applicable in the operator sense - these groups process no biometric data. Their own legal footing is the right to receive and impart information under Article 10 ECHR, the Freedom of Information Act 2000 as requesters, and for the crowdsourced side the Open Database License 1.0, under which OpenStreetMap contributors licence their work and which permits reuse with attribution and share-alike on derived databases. The legal bases they scrutinise in others are: for the Metropolitan Police and British Transport Police, common law policing powers plus Part 3 of the Data Protection Act 2018 for law enforcement processing of biometric data, together with the Surveillance Camera Code of Practice and the College of Policing authorised professional practice; for Facewatch and its retail customers, UK GDPR Article 6(1)(f) legitimate interests and Article 9(2)(g) substantial public interest under Schedule 1 of the Data Protection Act 2018.",
+  "regulatory_challenges": "R (Bridges) v Chief Constable of South Wales Police [2020] EWCA Civ 1058 remains the only binding UK appellate authority; Liberty brought it on Ed Bridges's behalf and the Court of Appeal held the deployment unlawful on privacy (Article 8), data protection and public sector equality duty grounds - while not holding LFR unlawful in principle. Since then: Big Brother Watch's July 2022 ICO complaint against Southern Co-op and Facewatch, closed by the ICO with findings of breach on eight counts but no further regulatory action; Big Brother Watch's ICO complaint against Asda's FaceTech trial; landmark legal challenges announced by Big Brother Watch against both a police force and a retailer following misidentifications; and letters before action from Big Brother Watch and Privacy International to the Government over facial recognition searching of the passport photo database, with the challenge expected to proceed in 2026. Politically, 65 parliamentarians have called for an immediate stop to LFR surveillance, and Zoe Garbett AM called in February 2026 for an immediate pause on the Met's expansion. None of this has yet produced a second binding judgment, and none of it constrains what these groups may publish.",
+  "oversight_body": "For the groups themselves: none specific. Big Brother Watch, Liberty and Privacy International are independent NGOs (Liberty and Privacy International are registered charities or have charitable arms and are accountable to the Charity Commission); OpenStreetMap data is governed by the OpenStreetMap Foundation and its Data Working Group, which enforces the ODbL and the import and mechanical-edit policies. For what they oversee: the Information Commissioner's Office regulates the data protection aspects; the Metropolitan Police is accountable to the Mayor's Office for Policing and Crime and scrutinised by the London Assembly's Police and Crime Committee; the Biometrics and Surveillance Camera Commissioner role (whose surveillance camera functions were reduced by the Data Protection and Digital Information reforms) and His Majesty's Inspectorate of Constabulary and Fire and Rescue Services also have a part; the College of Policing sets authorised professional practice. The recurring complaint across all four campaign groups is precisely that no single body holds statutory responsibility for authorising an LFR deployment.",
+  "research_confidence": "high",
+  "key_uncertainties": "The site-level list is empty and that is the correct answer, not a gap in searching: no campaign group publishes camera coordinates, and the crowdsourced layer that does publish coordinates contains no facial-recognition cameras in London. That negative was verified directly rather than inferred - the Overpass query for man_made=surveillance in the Greater London bounding box returned 2,456 nodes with zero facial-recognition tagging, and every one of the 67 global surveillance:type=AFR nodes is in Quebec City. What remains genuinely uncertain: (1) whether Big Brother Watch holds an internal deployment spreadsheet it has simply never published - its campaign material reads like an extract from one, and it is worth asking them directly, since a private dataset shared on request would change the picture entirely; (2) whether Big Brother Watch's in-page tables carry any licence at all - no licence statement was found, so reuse would need permission or would have to be limited to facts, which are not copyrightable in the UK; (3) whether the Metropolitan Police's own deployment record page is retained as an archive or overwritten each time, which determines whether a historical series can be reconstructed from it or only accumulated going forward; (4) the exact publication date and download format of Zoe Garbett AM's February 2026 report and whether its deployment-by-borough analysis is backed by a released data annex - the demographic percentages quoted in press coverage imply a table exists; (5) whether Defend Digital Me has published anything on school biometrics since The State of Biometrics 2022, which the searches did not surface; (6) the current size of the Facewatch estate in London specifically - the 125+ retailers and thousands of stores figures are national and supplier-sourced, and no group has broken them down by borough. Finally, none of the OSM-derived viewers (Surveillance under Surveillance, OSM-Camera, pelicanzero) hold any data of their own; they are renderings of the same ODbL database, so there is exactly one reusable crowdsourced dataset here, not four.",
+  "sources": [
+    {
+      "title": "Stop Facial Recognition campaign page - Big Brother Watch",
+      "url": "https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/",
+      "date": "2026 (continuously updated)",
+      "what_it_supports": "In-page tables of police forces and private companies using facial recognition; confirms no downloadable dataset, map or tracker is offered"
+    },
+    {
+      "title": "Understanding live facial recognition statistics - Big Brother Watch",
+      "url": "https://bigbrotherwatch.org.uk/blog/understanding-live-facial-recognition-statistics/",
+      "date": "2023, covering 2016 to 16 May 2023",
+      "what_it_supports": "The deployment-by-deployment table with dates and locations; the 175 matches / 150 false / 25 true figures and 84.7% false-match rate; the methodological critique of the Met's FPIR metric; and that no raw data file is offered"
+    },
+    {
+      "title": "Biometric Britain (May 2023) and Face Off (May 2018) reports - Big Brother Watch",
+      "url": "https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/report/",
+      "date": "2023-05 and 2018-05",
+      "what_it_supports": "The two flagship audit reports, PDF only"
+    },
+    {
+      "title": "Update: Big Brother Watch's complaint to the ICO on retailer facial recognition",
+      "url": "https://bigbrotherwatch.org.uk/blog/update-big-brother-watchs-complaint-to-the-ico-on-retailer-facial-recognition/",
+      "date": "2022 onwards",
+      "what_it_supports": "The July 2022 ICO complaint against Southern Co-op and Facewatch, the ICO's eight findings of breach and its decision that no further regulatory action was required, and the serious-or-repeat-offender watchlist limit"
+    },
+    {
+      "title": "Big Brother Watch comments on British Transport Police deploying facial recognition at London stations",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/big-brother-watch-comments-on-british-transport-police-deploying-facial-recognition-at-london-stations/",
+      "date": "2025-2026",
+      "what_it_supports": "BTP LFR at London stations, and the informal tip-off-and-attend methodology"
+    },
+    {
+      "title": "Landmark legal challenges launched against facial recognition after police and retailer misidentifications - Big Brother Watch",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/landmark-legal-challenges-launched-against-facial-recognition-after-police-and-retailer-misidentifications/",
+      "date": "2025",
+      "what_it_supports": "Live litigation against both a police force and a retailer"
+    },
+    {
+      "title": "Facial Recognition briefings and reports - Liberty",
+      "url": "https://www.libertyhumanrights.org.uk/issue/facial-recognition-briefings-and-reports/",
+      "date": "listing current to 2026-05",
+      "what_it_supports": "Liberty's output is policy briefings and consultation responses (digital identity May 2026; law enforcement biometrics framework February 2026; surveillance camera code January 2022 and September 2021 with Big Brother Watch), and Liberty publishes no dataset, map or camera list"
+    },
+    {
+      "title": "Facial Recognition - Liberty",
+      "url": "https://www.libertyhumanrights.org.uk/fundamental/facial-recognition/",
+      "date": "2026",
+      "what_it_supports": "Liberty's role in Bridges v South Wales Police (2020) and its position that every UK force now uses some form of FRT"
+    },
+    {
+      "title": "Neighbourhood Watched - Privacy International",
+      "url": "https://privacyinternational.org/neighbourhood-watched",
+      "date": "ongoing since 2019",
+      "what_it_supports": "PI's UK police surveillance campaign covering facial recognition, social media monitoring and IMSI catchers, run jointly with Liberty; guidance and force-level campaigning material rather than camera locations"
+    },
+    {
+      "title": "UK MPs Asleep at the Wheel as Facial Recognition Technology Spells The End of Privacy in Public - Privacy International",
+      "url": "https://privacyinternational.org/long-read/5155/uk-mps-asleep-wheel-facial-recognition-technology-spells-end-privacy-public",
+      "date": "2025",
+      "what_it_supports": "PI's analysis of the UK regulatory gap; no location dataset"
+    },
+    {
+      "title": "The State of Biometrics 2022 - Defend Digital Me",
+      "url": "https://defenddigitalme.org/research/state-biometrics-2022/",
+      "date": "2022-05",
+      "what_it_supports": "Survey of 550 schools across the four UK nations covering over a quarter of a million pupils; finding that around three quarters of secondary schools use fingerprint or other biometrics. Nationwide and survey-based, not site-level or London-specific, and now stale"
+    },
+    {
+      "title": "Facial recognition and biometrics in schools - Defend Digital Me",
+      "url": "https://defenddigitalme.org/2021/11/04/biometrics-in-schools/",
+      "date": "2021-11",
+      "what_it_supports": "27 schools in England already using facial recognition as of 2021 with 35 more in the pipeline through a single supplier; the call for a ban on biometrics in education"
+    },
+    {
+      "title": "Key:surveillance - OpenStreetMap Wiki",
+      "url": "https://wiki.openstreetmap.org/wiki/Key:surveillance",
+      "date": "current",
+      "what_it_supports": "The de facto tagging scheme: surveillance=indoor/outdoor/public, surveillance:type=camera/guard/ALPR, surveillance:zone, camera:type, camera:mount, camera:direction. Confirms the wiki documents no facial recognition tag"
+    },
+    {
+      "title": "Tag:man_made=surveillance - OpenStreetMap Wiki",
+      "url": "https://wiki.openstreetmap.org/wiki/Tag:man_made=surveillance",
+      "date": "current",
+      "what_it_supports": "The primary tag used to find surveillance devices in OSM"
+    },
+    {
+      "title": "OpenStreetMap taginfo API",
+      "url": "https://taginfo.openstreetmap.org/api/4/key/values?key=surveillance%3Atype",
+      "date": "data_until 2026-09-05",
+      "what_it_supports": "Global tag counts queried directly on 2026-09-06: surveillance:type=camera 376,291; ALPR 150,064; gunshot_detector 3,517; guard 2,009; AFR only 67. The key surveillance:facial_recognition has just 2 uses worldwide"
+    },
+    {
+      "title": "OpenStreetMap Overpass API - Greater London surveillance query",
+      "url": "https://overpass-api.de/api/interpreter",
+      "date": "queried 2026-09-06, OSM base timestamp 2026-09-05T23:23:50Z",
+      "what_it_supports": "2,456 man_made=surveillance nodes in the Greater London bounding box (1,980 surveillance:type=camera, 99 ALPR, 8 guard, 368 untyped); top operator tags London Borough of Newham 89, National Highways 61, Queen Elizabeth Olympic Park 27, TfL 24; zero nodes mentioning facial recognition or Facewatch. Separately, all 67 global surveillance:type=AFR nodes are in Quebec City, Canada. Data licensed ODbL"
+    },
+    {
+      "title": "Surveillance under Surveillance",
+      "url": "https://hiljade.kamera.rs/map/",
+      "date": "live, refreshed hourly from OSM",
+      "what_it_supports": "The most established OSM-derived surveillance camera map; confirms it holds no data of its own and refreshes from OpenStreetMap hourly, and that contributions go back into OSM via an OSM account"
+    },
+    {
+      "title": "Open Surveillance Mapper (surveillance.get-map.org)",
+      "url": "https://surveillance.get-map.org/",
+      "date": "current",
+      "what_it_supports": "Open source editor for adding and updating OSM surveillance cameras, by Hartmut Holzgraefe after original work by Bryan McBride; explicitly states data is ODbL via the OpenStreetMap Foundation; no facial recognition field"
+    },
+    {
+      "title": "OSM-Camera - the CCTV map based on OpenStreetMap data",
+      "url": "https://osmcamera.dihe.de/",
+      "date": "current",
+      "what_it_supports": "A third independent renderer of the same ODbL OSM surveillance data"
+    },
+    {
+      "title": "OpenStreetMap Surveillance Camera Database - pelicanzero",
+      "url": "https://www.pelicanzero.com/openstreetmapcams/",
+      "date": "unknown, treat as a static extract",
+      "what_it_supports": "A downloadable extract of OSM surveillance camera data; derived from OSM so ODbL applies, but the extraction date is not stated and it should be regarded as stale relative to a live Overpass query"
+    },
+    {
+      "title": "New report: Zoe Garbett AM urges immediate pause on the Met's rapid expansion of live facial recognition - London Assembly",
+      "url": "https://www.london.gov.uk/new-report-zoe-garbett-am-urges-immediate-pause-mets-rapid-expansion-live-facial-recognition",
+      "date": "2026-02",
+      "what_it_supports": "The most recent London-specific audit: over half of 2024 LFR deployments in areas with higher-than-average Black populations, naming Thornton Heath (40%), Northumberland Park (36%) and Deptford High Street (34%); criticism that the Met withholds the data needed to scrutinise its success claims"
+    },
+    {
+      "title": "Zoe Garbett urges Met to 'immediately stop' use of 'invasive' facial recognition tools - Hackney Citizen",
+      "url": "https://www.hackneycitizen.co.uk/2026/02/16/zoe-garbett-met-police-live-facial-recognition-lfr/",
+      "date": "2026-02-16",
+      "what_it_supports": "Press confirmation of the February 2026 report and its findings"
+    },
+    {
+      "title": "Mayor forced to reveal handheld live facial recognition trial to be rolled out in London - London Assembly",
+      "url": "https://www.london.gov.uk/mayor-forced-reveal-handheld-live-facial-recognition-trial-be-rolled-out-london-following",
+      "date": "2026",
+      "what_it_supports": "Disclosure obtained through Assembly questioning of a six-month Operator-Initiated Facial Recognition pilot of around 100 handheld devices costing approximately GBP 763,000 - an example of scrutiny producing facts that no dataset records"
+    },
+    {
+      "title": "Met pushes ahead with major facial-recognition expansion - Computer Weekly",
+      "url": "https://www.computerweekly.com/news/366645018/Met-pushes-ahead-with-major-facial-recognition-expansion",
+      "date": "2026-06",
+      "what_it_supports": "The West End and Soho static LFR rollout by end of 2026 following the Croydon pilot of 24 operations between October 2025 and March 2026; criticism of limited transparency about where the technology is deployed"
+    },
+    {
+      "title": "UK's first permanent facial recognition cameras installed in South London - The Register",
+      "url": "https://www.theregister.com/2025/03/27/uk_facial_recognition/",
+      "date": "2025-03-27",
+      "what_it_supports": "The first permanent fixed LFR installation in Croydon, on North End and London Road - the one fixed site campaign reporting consistently names"
+    },
+    {
+      "title": "Sainsbury's triples Facewatch facial recognition deployment across UK stores - Biometric Update",
+      "url": "https://www.biometricupdate.com/202607/sainsburys-triples-facewatch-facial-recognition-deployment-across-uk-stores",
+      "date": "2026-07",
+      "what_it_supports": "Facewatch runs the UK's largest retail LFR network, serving 125+ retailers across thousands of stores; Sainsbury's live in 55+ stores with ~150 more planned. No store-level list is published by anyone"
+    },
+    {
+      "title": "WhatDoTheyKnow - mySociety FOI archive",
+      "url": "https://www.whatdotheyknow.com",
+      "date": "ongoing",
+      "what_it_supports": "The most reusable public archive of FOI correspondence with the Met, BTP and London boroughs on LFR; unstructured, requires scraping or manual reading"
+    }
+  ],
+  "uncertain": [
+    "camera_count_claimed",
+    "advance_notice_period"
+  ]
+}

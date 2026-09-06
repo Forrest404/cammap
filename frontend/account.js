@@ -1367,6 +1367,13 @@ function setUpModeratePage() {
       return function () {
         var j;
         var which = button.getAttribute("data-tab");
+
+        /* Leaving the Cameras tab only hides it, so an open move
+           panel would sit there off screen with a live map behind
+           it. Coming back the other way is covered - that reloads
+           the list, which rebuilds every row. */
+        closeMove();
+
         for (j = 0; j < tabs.length; j++) {
           tabs[j].className = tabs[j] === button ? "toggle on" : "toggle";
         }
@@ -1398,6 +1405,13 @@ function setUpModeratePage() {
 var allCameras = [];
 var camerasLoaded = false;
 var showHiddenCameras = false;
+
+/* The one camera whose position is open for correcting, and the map
+   that is open for it. One at a time: two draggable pins on a page
+   is two chances to save the wrong one, and each map is a WebGL
+   context a browser only has so many of. */
+var movingCamera = null;
+var movePicker = null;
 
 function setUpCamerasTab() {
   var search = document.getElementById("c-search");
@@ -1454,6 +1468,12 @@ function renderCameras() {
   var i;
   var c;
 
+  /* Every row is built afresh below, so an open move panel is about
+     to be thrown out of the document with the row it sits in. Take
+     its map down properly first, or the discarded element keeps a
+     live WebGL context and a set of tile workers behind it. */
+  closeMove();
+
   list.innerHTML = "";
 
   for (i = 0; i < allCameras.length; i++) {
@@ -1484,10 +1504,7 @@ function cameraRow(c) {
 
   var meta = document.createElement("span");
   meta.className = "coords";
-  meta.textContent = typeLabel(c.type) + " · " + c.status + " · " +
-    (c.visible ? "on the map" : "hidden") + " · " +
-    { seed: "from the published record", report: "from a report", admin: "added by hand" }[c.source] +
-    " · " + Number(c.lat).toFixed(5) + ", " + Number(c.lon).toFixed(5);
+  meta.textContent = cameraMeta(c);
   head.appendChild(meta);
 
   if (c.note) {
@@ -1495,7 +1512,8 @@ function cameraRow(c) {
     body.appendChild(document.createElement("br"));
   }
   var onMap = document.createElement("a");
-  onMap.href = pageHref("index.html") + "#" + Number(c.lat).toFixed(5) + "," + Number(c.lon).toFixed(5);
+  onMap.className = "on-map";
+  onMap.href = cameraMapHref(c);
   onMap.target = "_blank";
   onMap.rel = "noopener noreferrer";
   onMap.textContent = "See on the map →";
@@ -1526,12 +1544,259 @@ function cameraRow(c) {
     });
   };
 
+  /* Correcting where it is, which is a different kind of act from
+     taking it off the map: the camera is right, the pin is not.
+     Opening the panel is what makes the map, so a moderator who
+     never moves anything never pays for MapLibre drawing London. */
+  var move = document.createElement("button");
+  move.className = "quiet";
+  move.textContent = "Move";
+  move.onclick = function () {
+    if (movingCamera === c.id) {
+      closeMove();
+      return;
+    }
+    openMove(c, row);
+  };
+
+  actions.appendChild(move);
   actions.appendChild(b);
   actions.appendChild(outcome);
   row.appendChild(head);
   row.appendChild(body);
   row.appendChild(actions);
   return row;
+}
+
+/* The line under a camera's name, and where "See on the map" points.
+   Both are written twice - once when the row is built, once when a
+   move rewrites them in place - so they are here rather than inline. */
+
+function cameraMeta(c) {
+  return typeLabel(c.type) + " · " + c.status + " · " +
+    (c.visible ? "on the map" : "hidden") + " · " +
+    { seed: "from the published record", report: "from a report", admin: "added by hand" }[c.source] +
+    " · " + Number(c.lat).toFixed(5) + ", " + Number(c.lon).toFixed(5);
+}
+
+function cameraMapHref(c) {
+  return pageHref("index.html") + "#" + Number(c.lat).toFixed(5) + "," + Number(c.lon).toFixed(5);
+}
+
+/* ---------------- moving a camera ----------------
+
+   A pin in the wrong place is the commonest thing wrong with a camera
+   that is otherwise right: the published record gives a van site as a
+   borough rather than a street, and a reporter drops the pin where
+   they were standing rather than on the pole opposite. Everything
+   else about a camera could already be corrected - its state through
+   the reports, its presence through Remove from map - and its
+   position could not.
+
+   It is the report form's own picker, on purpose. A moderator moving
+   a camera and a visitor placing one are answering the same question,
+   so they should be looking at the same map: same dark style, same
+   crosshair, same Satellite toggle, and the same pair of coordinate
+   boxes beside it for anyone who already has the numbers.
+
+   A moved seed camera diverges from data/points.js, which still
+   carries the position the published record gave. That is the right
+   way round - the database is what the map reads and points.js is
+   the fallback if it cannot be reached - and the correction survives
+   a re-run of seed.sql, because move_camera leaves seed_key alone
+   and the seed's on-conflict never writes coordinates. The comment
+   above move_camera in backend/schema.sql is the long version. */
+
+function closeMove() {
+  var panel = document.getElementById("c-move-panel");
+
+  if (movePicker) {
+    movePicker.remove();
+    movePicker = null;
+  }
+  if (panel) {
+    panel.parentNode.removeChild(panel);
+  }
+  movingCamera = null;
+}
+
+/* A labelled number box. The panel wants two, and they differ only
+   in their name. */
+function moveField(id, label, value) {
+  var wrap = document.createElement("div");
+  var tag = document.createElement("label");
+  var input = document.createElement("input");
+
+  tag.setAttribute("for", id);
+  tag.textContent = label;
+
+  input.type = "number";
+  input.id = id;
+  input.step = "any";
+  input.setAttribute("inputmode", "decimal");
+  input.value = Number(value).toFixed(6);
+
+  wrap.appendChild(tag);
+  wrap.appendChild(input);
+  return wrap;
+}
+
+function openMove(c, row) {
+  var panel   = document.createElement("div");
+  var holder  = document.createElement("div");
+  var hint    = document.createElement("p");
+  var pair    = document.createElement("div");
+  var latBox  = moveField("c-move-lat", "Latitude", c.lat);
+  var lonBox  = moveField("c-move-lon", "Longitude", c.lon);
+  var buttons = document.createElement("div");
+  var save    = document.createElement("button");
+  var cancel  = document.createElement("button");
+  var note    = document.createElement("p");
+  var latIn   = latBox.querySelector("input");
+  var lonIn   = lonBox.querySelector("input");
+
+  closeMove();
+  movingCamera = c.id;
+
+  panel.className = "move-panel";
+  panel.id = "c-move-panel";
+
+  /* makePicker takes an element id, so the map needs one. Nothing
+     else in here does, because only one panel is ever open. */
+  holder.id = "c-move-map";
+  holder.className = "pick-map";
+  panel.appendChild(holder);
+
+  hint.className = "hint";
+  hint.textContent = "Drag the crosshair onto the camera, or click where it should be. " +
+    "The dimmed dots are the other cameras on the map. Nothing moves until you save.";
+  panel.appendChild(hint);
+
+  pair.className = "pair";
+  pair.appendChild(latBox);
+  pair.appendChild(lonBox);
+  panel.appendChild(pair);
+
+  buttons.className = "row";
+  save.textContent = "Save the new position";
+  cancel.className = "quiet";
+  cancel.textContent = "Cancel";
+  buttons.appendChild(save);
+  buttons.appendChild(cancel);
+  panel.appendChild(buttons);
+
+  note.className = "note";
+  panel.appendChild(note);
+
+  row.appendChild(panel);
+
+  /* The map and the boxes are the same answer written twice, and the
+     guard is the one the report form needs for the same reason:
+     writing the boxes from a drag fires their input handler, which
+     moves the pin, which fires drag again. */
+  var syncing = false;
+
+  movePicker = typeof makePicker === "function" ? makePicker({
+    container: "c-move-map",
+    lat: Number(c.lat),
+    lon: Number(c.lon),
+    draggable: true,
+    onMove: function (lat, lon) {
+      syncing = true;
+      latIn.value = lat.toFixed(6);
+      lonIn.value = lon.toFixed(6);
+      syncing = false;
+      note.textContent = "";
+    }
+  }) : null;
+
+  /* The other cameras behind the pin, so a moderator can see what the
+     corrected spot sits among - and whether what is in front of them
+     is one of a pair that wants merging rather than moving. This one
+     is left out: the crosshair is already where it is, and a dot
+     under the pin would only argue with it. The list is loaded for
+     the page anyway, so this costs no request. */
+  if (movePicker) {
+    movePicker.cameras(allCameras.filter(function (other) {
+      return other.visible && other.id !== c.id;
+    }));
+  }
+
+  function pinFromBoxes(fly) {
+    var lat = parseFloat(latIn.value);
+    var lon = parseFloat(lonIn.value);
+
+    if (movePicker && !syncing && !isNaN(lat) && !isNaN(lon)) {
+      movePicker.setPoint(lat, lon, fly);
+    }
+  }
+
+  /* The same split the report form makes: move the pin on every
+     keystroke, but only fly to it once the number is finished, or
+     the map runs off through every partial number on the way. */
+  latIn.oninput  = function () { pinFromBoxes(false); };
+  lonIn.oninput  = function () { pinFromBoxes(false); };
+  latIn.onchange = function () { pinFromBoxes(true); };
+  lonIn.onchange = function () { pinFromBoxes(true); };
+
+  cancel.onclick = function () {
+    closeMove();
+  };
+
+  save.onclick = function () {
+    var lat = parseFloat(latIn.value);
+    var lon = parseFloat(lonIn.value);
+
+    if (isNaN(lat) || isNaN(lon)) {
+      note.textContent = "Both coordinates need to be numbers.";
+      return;
+    }
+
+    /* The same box the cameras table is held to by its check
+       constraint. Asking here only makes the answer readable; the
+       constraint is what actually refuses the row. */
+    if (!inLondon(lat, lon)) {
+      note.textContent = "That is outside London. This map covers Greater London only.";
+      return;
+    }
+
+    if (lat === Number(c.lat) && lon === Number(c.lon)) {
+      note.textContent = "That is where it already is.";
+      return;
+    }
+
+    save.disabled = true;
+    note.textContent = "Moving…";
+
+    sb.rpc("moderate_move_camera", {
+      cam_id: c.id,
+      cam_lat: lat,
+      cam_lon: lon
+    }).then(function (result) {
+      if (result.error) {
+        save.disabled = false;
+        note.textContent = result.error.message || "That did not go through.";
+        return;
+      }
+      forgetCameraCache();
+      c.lat = lat;
+      c.lon = lon;
+      save.disabled = false;
+
+      /* The row above the panel is rewritten rather than the whole
+         list rebuilt. Re-rendering would take this map down and
+         build another one - a second download of every tile, and a
+         flicker - for a change to two numbers in one line of text,
+         and it would close the panel under a moderator who may well
+         want to nudge the pin again. */
+      row.querySelector(".coords").textContent = cameraMeta(c);
+      row.querySelector("a.on-map").href = cameraMapHref(c);
+      note.textContent = "Moved. It is at " + lat.toFixed(5) + ", " + lon.toFixed(5) + " now.";
+    }).catch(function () {
+      save.disabled = false;
+      note.textContent = "That did not go through. Try again in a moment.";
+    });
+  };
 }
 
 function addCameraByHand() {

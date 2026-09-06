@@ -16,14 +16,35 @@
                   the map weighs its heat by this, so a spot used
                   twenty times reads hotter than one used once
 
-   A van site is active only if the newest Met record (2025) lists a
-   deployment there; the rest are legacy and sit behind the toggle.
+   Every van site is legacy, and that is not a statement about age.
+   An LFR van parks for a shift and drives away, so there is no hour
+   at which "a van is at this spot" is a thing this map can honestly
+   say. What the record supports is that a van was deployed here, so
+   many times, most recently in year Y - and `last` and `deployments`
+   are where that lives. Marking the lot legacy puts them behind the
+   toggle, which is the difference between a map that shows what was
+   recorded and one that reads as a map of what is out there today.
+
+   It used to split them: active if the newest Met record we held
+   (2025) listed a deployment, legacy otherwise. That drew a line
+   between two things that are equally uncertain in the only sense
+   that matters to somebody looking at the map now.
+
+   So `status` no longer varies across the van sites, and the
+   recency that used to be folded into it is still in `last`. The
+   default view is the 17 cameras that are actually fixed somewhere:
+   the two Croydon installs, the station deployments and the shops.
+
    The only permanent police cameras in this list are the two Croydon
    fixedcam entries. Croydon appears twice on purpose: once as the
    fixed install and once as the van hotspot it also is.
 
-   Written out by build_points.py. A hand-typed entry may leave out
-   type, status and last - the map assumes vancam, active, null.
+   Written out by build_points.py - which is not in this repository,
+   and which computed the split described above. Whoever finds it
+   again: it must not be allowed to set a van site active, or the
+   next build undoes all of this. A hand-typed entry may leave out
+   type, status and last - the map assumes vancam, and a vancam
+   without a status is legacy.
    ------------------------------------------------------------------ */
 
 var POINTS = [
@@ -45,7 +66,7 @@ var POINTS = [
     lat: 51.540268,
     lon: 0.079324,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -111,7 +132,7 @@ var POINTS = [
     lat: 51.514256,
     lon: -0.149786,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 4
   },
@@ -144,7 +165,7 @@ var POINTS = [
     lat: 51.470254,
     lon: -0.112507,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -155,7 +176,7 @@ var POINTS = [
     lat: 51.467895,
     lon: -0.112637,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -188,7 +209,7 @@ var POINTS = [
     lat: 51.593711,
     lon: -0.070005,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -199,7 +220,7 @@ var POINTS = [
     lat: 51.474907,
     lon: -0.092601,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -210,7 +231,7 @@ var POINTS = [
     lat: 51.542797,
     lon: -0.162480,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 4
   },
@@ -221,7 +242,7 @@ var POINTS = [
     lat: 51.534932,
     lon: -0.138995,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -276,7 +297,7 @@ var POINTS = [
     lat: 51.411443,
     lon: -0.300439,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 4
   },
@@ -287,7 +308,7 @@ var POINTS = [
     lat: 51.512873,
     lon: -0.122564,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -298,7 +319,7 @@ var POINTS = [
     lat: 51.510040,
     lon: -0.133936,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -331,7 +352,7 @@ var POINTS = [
     lat: 51.541327,
     lon: 0.148114,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -342,7 +363,7 @@ var POINTS = [
     lat: 51.541553,
     lon: 0.145638,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -364,7 +385,7 @@ var POINTS = [
     lat: 51.545284,
     lon: -0.074968,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -375,7 +396,7 @@ var POINTS = [
     lat: 51.548191,
     lon: -0.076053,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 4
   },
@@ -386,7 +407,7 @@ var POINTS = [
     lat: 51.476412,
     lon: -0.025856,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -397,7 +418,7 @@ var POINTS = [
     lat: 51.514980,
     lon: -0.300407,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 5
   },
@@ -452,7 +473,7 @@ var POINTS = [
     lat: 51.546269,
     lon: 0.048904,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 6
   },
@@ -463,7 +484,7 @@ var POINTS = [
     lat: 51.520193,
     lon: -0.166764,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 4
   },
@@ -474,7 +495,7 @@ var POINTS = [
     lat: 51.624500,
     lon: -0.061402,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -507,7 +528,7 @@ var POINTS = [
     lat: 51.564835,
     lon: -0.106414,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -518,7 +539,7 @@ var POINTS = [
     lat: 51.373900,
     lon: -0.098912,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 8
   },
@@ -529,7 +550,7 @@ var POINTS = [
     lat: 51.546903,
     lon: 0.031186,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 5
   },
@@ -540,7 +561,7 @@ var POINTS = [
     lat: 51.546553,
     lon: 0.031288,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -573,7 +594,7 @@ var POINTS = [
     lat: 51.493174,
     lon: -0.223804,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -595,7 +616,7 @@ var POINTS = [
     lat: 51.536357,
     lon: -0.257833,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -606,7 +627,7 @@ var POINTS = [
     lat: 51.520049,
     lon: -0.108371,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -628,7 +649,7 @@ var POINTS = [
     lat: 51.591166,
     lon: -0.104195,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -639,7 +660,7 @@ var POINTS = [
     lat: 51.440647,
     lon: 0.153083,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -650,7 +671,7 @@ var POINTS = [
     lat: 51.404694,
     lon: 0.015094,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -672,7 +693,7 @@ var POINTS = [
     lat: 51.535102,
     lon: -0.243402,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -683,7 +704,7 @@ var POINTS = [
     lat: 51.470414,
     lon: -0.355498,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -694,7 +715,7 @@ var POINTS = [
     lat: 51.580967,
     lon: 0.021934,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 6
   },
@@ -705,7 +726,7 @@ var POINTS = [
     lat: 51.478673,
     lon: -0.026051,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -716,7 +737,7 @@ var POINTS = [
     lat: 51.365440,
     lon: -0.194008,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 4
   },
@@ -738,7 +759,7 @@ var POINTS = [
     lat: 51.552867,
     lon: -0.113009,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -760,7 +781,7 @@ var POINTS = [
     lat: 51.469580,
     lon: -0.357680,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -782,7 +803,7 @@ var POINTS = [
     lat: 51.569645,
     lon: 0.125724,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -804,7 +825,7 @@ var POINTS = [
     lat: 51.537748,
     lon: -0.191353,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 5
   },
@@ -815,7 +836,7 @@ var POINTS = [
     lat: 51.528842,
     lon: -0.216062,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -826,7 +847,7 @@ var POINTS = [
     lat: 51.492733,
     lon: -0.227664,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -870,7 +891,7 @@ var POINTS = [
     lat: 51.532395,
     lon: -0.123022,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -914,7 +935,7 @@ var POINTS = [
     lat: 51.500844,
     lon: -0.166965,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -936,7 +957,7 @@ var POINTS = [
     lat: 51.509961,
     lon: -0.130394,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 4
   },
@@ -958,7 +979,7 @@ var POINTS = [
     lat: 51.462867,
     lon: -0.010360,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -969,7 +990,7 @@ var POINTS = [
     lat: 51.569673,
     lon: -0.015681,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1024,7 +1045,7 @@ var POINTS = [
     lat: 51.387128,
     lon: -0.111014,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -1035,7 +1056,7 @@ var POINTS = [
     lat: 51.395254,
     lon: -0.172116,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1057,7 +1078,7 @@ var POINTS = [
     lat: 51.513184,
     lon: -0.158905,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1068,7 +1089,7 @@ var POINTS = [
     lat: 51.541551,
     lon: -0.055248,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -1079,7 +1100,7 @@ var POINTS = [
     lat: 51.375660,
     lon: -0.101318,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 7
   },
@@ -1101,7 +1122,7 @@ var POINTS = [
     lat: 51.377881,
     lon: -0.102542,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 21
   },
@@ -1134,7 +1155,7 @@ var POINTS = [
     lat: 51.515361,
     lon: -0.140779,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 16
   },
@@ -1145,7 +1166,7 @@ var POINTS = [
     lat: 51.515984,
     lon: -0.135174,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1156,7 +1177,7 @@ var POINTS = [
     lat: 51.515714,
     lon: -0.176603,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -1189,7 +1210,7 @@ var POINTS = [
     lat: 51.470006,
     lon: -0.069413,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -1200,7 +1221,7 @@ var POINTS = [
     lat: 51.510138,
     lon: -0.133936,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -1211,7 +1232,7 @@ var POINTS = [
     lat: 51.504078,
     lon: -0.148443,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -1222,7 +1243,7 @@ var POINTS = [
     lat: 51.512129,
     lon: -0.014437,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1244,7 +1265,7 @@ var POINTS = [
     lat: 51.492083,
     lon: 0.064301,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 9
   },
@@ -1255,7 +1276,7 @@ var POINTS = [
     lat: 51.515479,
     lon: -0.175365,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1266,7 +1287,7 @@ var POINTS = [
     lat: 51.440553,
     lon: -0.307639,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1277,7 +1298,7 @@ var POINTS = [
     lat: 51.469623,
     lon: -0.263326,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1288,7 +1309,7 @@ var POINTS = [
     lat: 51.576046,
     lon: 0.182265,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 5
   },
@@ -1310,7 +1331,7 @@ var POINTS = [
     lat: 51.467074,
     lon: -0.065766,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 5
   },
@@ -1431,7 +1452,7 @@ var POINTS = [
     lat: 51.562813,
     lon: -0.108782,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -1453,7 +1474,7 @@ var POINTS = [
     lat: 51.504247,
     lon: -0.221755,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -1464,7 +1485,7 @@ var POINTS = [
     lat: 51.523253,
     lon: -0.074467,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1475,7 +1496,7 @@ var POINTS = [
     lat: 51.506532,
     lon: -0.113420,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1486,7 +1507,7 @@ var POINTS = [
     lat: 51.572017,
     lon: 0.183993,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 6
   },
@@ -1497,7 +1518,7 @@ var POINTS = [
     lat: 51.511146,
     lon: -0.375517,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -1552,7 +1573,7 @@ var POINTS = [
     lat: 51.561243,
     lon: 0.221379,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1563,7 +1584,7 @@ var POINTS = [
     lat: 51.548937,
     lon: 0.199284,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 4
   },
@@ -1585,7 +1606,7 @@ var POINTS = [
     lat: 51.502715,
     lon: -0.421300,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1607,7 +1628,7 @@ var POINTS = [
     lat: 51.541374,
     lon: 0.002803,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 7
   },
@@ -1629,7 +1650,7 @@ var POINTS = [
     lat: 51.543064,
     lon: -0.006417,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 6
   },
@@ -1640,7 +1661,7 @@ var POINTS = [
     lat: 51.417335,
     lon: -0.126424,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1651,7 +1672,7 @@ var POINTS = [
     lat: 51.469273,
     lon: -0.451799,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1684,7 +1705,7 @@ var POINTS = [
     lat: 51.427739,
     lon: -0.168291,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 9
   },
@@ -1695,7 +1716,7 @@ var POINTS = [
     lat: 51.516134,
     lon: -0.132800,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 5
   },
@@ -1706,7 +1727,7 @@ var POINTS = [
     lat: 51.588123,
     lon: -0.059944,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1717,7 +1738,7 @@ var POINTS = [
     lat: 51.583780,
     lon: -0.021346,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1728,7 +1749,7 @@ var POINTS = [
     lat: 51.535106,
     lon: 0.033984,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -1750,7 +1771,7 @@ var POINTS = [
     lat: 51.506491,
     lon: -0.239410,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -1772,7 +1793,7 @@ var POINTS = [
     lat: 51.497980,
     lon: -0.133591,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 2
   },
@@ -1783,7 +1804,7 @@ var POINTS = [
     lat: 51.584470,
     lon: -0.018819,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -1794,7 +1815,7 @@ var POINTS = [
     lat: 51.582893,
     lon: -0.019994,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 6
   },
@@ -1805,7 +1826,7 @@ var POINTS = [
     lat: 51.582208,
     lon: -0.030573,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1816,7 +1837,7 @@ var POINTS = [
     lat: 51.489848,
     lon: -0.096681,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 6
   },
@@ -1827,7 +1848,7 @@ var POINTS = [
     lat: 51.490318,
     lon: -0.096975,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1882,7 +1903,7 @@ var POINTS = [
     lat: 51.552328,
     lon: -0.296675,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 6
   },
@@ -1893,7 +1914,7 @@ var POINTS = [
     lat: 51.378808,
     lon: -0.102039,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -1904,7 +1925,7 @@ var POINTS = [
     lat: 51.507848,
     lon: -0.221808,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -1981,7 +2002,7 @@ var POINTS = [
     lat: 51.517486,
     lon: -0.065968,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -2003,7 +2024,7 @@ var POINTS = [
     lat: 51.597205,
     lon: -0.109959,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 3
   },
@@ -2014,7 +2035,7 @@ var POINTS = [
     lat: 51.589876,
     lon: -0.105348,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 1
   },
@@ -2025,7 +2046,7 @@ var POINTS = [
     lat: 51.482670,
     lon: 0.062334,
     type: "vancam",
-    status: "active",
+    status: "legacy",
     last: 2025,
     deployments: 8
   }

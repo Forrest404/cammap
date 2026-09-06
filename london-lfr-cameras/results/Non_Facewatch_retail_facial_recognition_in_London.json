@@ -1,0 +1,130 @@
+{
+  "item_name": "Non-Facewatch retail facial recognition in London",
+  "operator": "Individual retailers, each running its own watchlist: Asda (via FaiceTech), Tesco (via Auror), Asda again (via Auror Core, non-biometric), Iceland (via SAI, non-biometric today), Morrisons (via Auror and Everseen, non-biometric), plus unnamed 'leading UK retailers' running Auror Subject Recognition. There is no single operator - this category is a set of separate private retail deployments that do not go through Facewatch.",
+  "system_type": "other_private",
+  "vendor": "FaiceTech (Asda live facial recognition, Greater Manchester); Auror - Auror Core crime-reporting platform (no biometrics) and Auror Subject Recognition, a live facial recognition product launched November 2025 and live in UK stores from July 2026, which integrates third-party face-matching engines Auror does not name publicly; Everseen Evercheck (Morrisons, checkout computer vision, no face matching); SAI vision platform (Iceland, behaviour/loss detection, no face matching as deployed); Veesion (gesture recognition, explicitly not facial recognition); Corsight (UK presence is police-side - Essex Police - with no confirmed UK retail store deployment found); FaceMe / CyberLink (no evidence found of any UK retail deployment).",
+  "london_coverage_summary": "As of September 2026 no named London store is publicly confirmed to be running non-Facewatch live facial recognition. The Facewatch-free retail FR that exists in the UK is either outside London (Asda's FaiceTech live FR ran only in five Greater Manchester stores in spring 2025), retrospective rather than live (Tesco applies non-live facial recognition to CCTV stills at its Daventry Security Hub, from a trial run in Nottinghamshire and Leicestershire), or live but with no locations disclosed (Auror Subject Recognition went live in unnamed UK stores in July 2026). Asda's only confirmed London deployment - Auror Core across 30 London stores, announced August 2026 - explicitly involves no facial recognition at all. The practical effect is that the vast majority of live facial recognition a Londoner will actually walk past in a shop is Facewatch (Sainsbury's, B&M, Home Bargains, Sports Direct, Spar, Southern Co-op, Frasers Group), and therefore belongs to the separate Facewatch research unit, not this one.",
+  "cameras": [],
+  "camera_count_confirmed": 0,
+  "camera_count_claimed": "No operator in this category claims a London store count for facial recognition. The nearest figures are: Asda, 30 London stores running Auror Core (not facial recognition, announced August 2026); Asda, 5 Greater Manchester stores for FaiceTech live FR (March-May 2025, not London); Tesco, 40 stores for the Auror trial in Nottinghamshire and Leicestershire (from 26 January 2026, not London); Iceland, 1,000+ UK stores running SAI's non-biometric vision platform (August 2026); Morrisons, up to 200 UK stores for Everseen Evercheck (non-biometric). Auror states Subject Recognition is 'live in UK stores' with 'leading UK retailers' but publishes no store count or locations. [uncertain]",
+  "fixed_vs_mobile": "Everything in this category is fixed. These are cameras bolted into a retailer's existing in-store CCTV estate - usually at the entrance, so a face is captured on the way in - and in most cases the facial recognition is a software layer applied to cameras that were already there rather than new hardware. There is no vehicle-mounted or redeployable element anywhere in non-Facewatch retail FR: 100 percent fixed, 0 percent mobile. Tesco's use is not even fixed-camera FR in the live sense - the matching happens later, on stills pulled from ordinary store CCTV and processed at a central security hub in Daventry.",
+  "geographic_concentration": "For confirmed live facial recognition, the concentration is outside London: Greater Manchester (Asda/FaiceTech - Ashton, Chadderton, Eastlands, Harpurhey, Trafford Park), and the East Midlands (Tesco/Auror retrospective - Nottinghamshire and Leicestershire). Within London, the only confirmed retailer estate at this scale is Asda's 30-store Auror Core deployment, which is non-biometric and whose stores are not individually named. Any London clustering of retail FR that a map would show is Facewatch clustering - Sainsbury's Sydenham and Elephant and Castle among the reported sites - not this category. [uncertain]",
+  "status_as_of_2026": "mixed - partly ended, partly active but unlocated. Asda's FaiceTech live facial recognition trial: ENDED as a trial (two months from 31 March 2025, Greater Manchester only); FaiceTech's own March 2025 partnership page describes deploying 'across its stores' with 'early deployments', but no independent 2026 source confirms a live Asda LFR estate, and Asda's own August 2026 announcement is for a system that explicitly does not use facial recognition. Auror Subject Recognition: ACTIVE - Auror announced on 20 July 2026 that it is live in UK stores. Tesco's retrospective, non-live facial recognition at its Security Hub: ACTIVE as of 2026, following a trial that started 26 January 2026. Morrisons/Everseen, Iceland/SAI, Veesion: ACTIVE but NOT facial recognition. Corsight and FaceMe in UK retail: no confirmed deployment, status unknown. [uncertain]",
+  "last_confirmed_active_date": "20 July 2026 - Auror's own media-centre announcement that Auror Subject Recognition, its live facial recognition product, is 'now live in UK stores', reported the same month by Biometric Update and Asian Trader. That is the most recent hard evidence of non-Facewatch live retail facial recognition operating in the UK, though it names no store and no city. For a London-specific date, the most recent hard evidence is August 2026, Asda's announcement of an Auror Core rollout following a trial in 30 London stores - and that evidence explicitly says no live facial recognition was used, so it confirms a London retail surveillance deployment, not a London facial recognition one. For Asda's actual LFR, the last date with hard evidence is late May 2025, when the two-month Greater Manchester trial would have concluded and Big Brother Watch filed its ICO complaint.",
+  "evidence_of_current_activity": "Auror press release of 20 July 2026 ('Auror's facial recognition system now live in UK stores') plus Biometric Update's July 2026 report of an expanded UK rollout of Subject Recognition for violent retail offenders - both confirm live operation, neither names a location. Biometric Update, 22 January 2026, and Retail Gazette, January 2026, confirm Tesco's Auror trial including retrospective facial recognition on CCTV stills at the Daventry hub, with Tesco stating the trial does not involve live facial recognition. Biometric Update, August 2026, confirms the Asda Auror Core London rollout and states plainly that no live facial recognition was used in the 30-store London trial. There is no 2026 press report, signage photograph, FOI response or arrest figure that places a specific non-Facewatch live facial recognition camera in a specific London shop.",
+  "known_pauses_or_withdrawals": "Asda's FaiceTech live facial recognition trial was time-limited to two months and there is no independent evidence it continued or expanded; Asda's subsequent public moves have been towards Auror Core, which does not do facial recognition - a de facto retreat from live FR, though Asda has never announced a withdrawal and FaiceTech's site still describes a partnership 'across its stores'. Asda received over 5,000 complaints via a Big Brother Watch campaign and a formal ICO complaint in May 2025 arguing the trial was unlawful; no ICO decision has been published. Separately, Essex Police paused its Corsight live facial recognition deployment pending evaluation (reported March 2026), which is police rather than retail but is the reason Corsight's UK footprint is police-side. Veesion, Everseen and SAI have not withdrawn anything - they were never facial recognition.",
+  "locations_published_publicly": "no",
+  "publication_channel": "None. No retailer in this category publishes a store list for facial recognition. Auror publishes a trust centre describing Subject Recognition's safeguards (https://www.auror.co/uk/auror-subject-recognition) but no deployment locations or customer names. Asda's newsroom named its five Greater Manchester FaiceTech stores in a press release (https://corporate.asda.com/newsroom/2025/31/03/asda-launches-facial-recognition-trial-in-five-stores-to-combat-retail-crime) - the only instance in this whole category of a retailer naming its own FR store list, and it was for a trial, not London. Tesco named the counties but not the 40 stores. Asda named neither the 30 London Auror Core stores nor their boroughs. In-store signage is the only place a shopper learns a given branch is running FR, and it is not aggregated anywhere.",
+  "live_feed_or_map_available": "No. There is no live feed, no map and no list - official or third-party - showing where non-Facewatch retail facial recognition is running in London, and nothing that shows it in real time. This is a harder no than for police LFR: the Met at least publishes deployment notices in advance, whereas a retailer running Subject Recognition or FaiceTech has no publication duty at all beyond a sign at the door, and Auror's July 2026 go-live announcement deliberately withholds both the retailers and the stores. Big Brother Watch maintains campaign pages and has crowdsourced reports of Facewatch stores, but no equivalent inventory exists for the non-Facewatch vendors, and no third party has mapped them. The only way a Londoner establishes that a particular shop is scanning their face is to read the notice on the door - which is exactly the gap a project like cammap exists to fill, and why the honest entry here is an empty camera list rather than a plausible-looking one.",
+  "advance_notice_period": "None. Retail facial recognition carries no advance-notice obligation and no retailer in this category gives one. Notice is contemporaneous at best - a sign at the store entrance - and the store list is disclosed, if at all, only in a corporate press release after the fact.",
+  "foi_or_audit_sources": "FOI is largely unavailable here because these are private companies, not public authorities - the single most important structural fact about this category. What exists instead: Big Brother Watch's ICO complaint against Asda (May 2025) and its condemnation of Asda's Greater Manchester trial, both of which enumerate the five trial stores; Big Brother Watch's 'Shops' use of live facial recognition - FAQs' page; the ICO's earlier reprimand-adjacent work on Southern Co-op and Facewatch (Facewatch category, not this one). No Liberty audit, no ICO enforcement notice and no published FOI response enumerates non-Facewatch retail FR sites in London. The Home Office consultation on a legal framework for biometrics, which closed 12 February 2026, covered law enforcement use and not retailer-operated systems.",
+  "legal_basis": "Legitimate interests under UK GDPR Article 6(1)(f), with the special-category biometric processing justified under Article 9(2)(g) - substantial public interest, specifically the prevention and detection of unlawful acts, per Schedule 1 Part 2 of the Data Protection Act 2018. Retailers rely on a data protection impact assessment plus in-store signage as the transparency measure. Auror's framing adds retailer-controlled watchlists, a human always in the loop before action, exclusion of race, ethnicity, religion, political affiliation and sexual orientation from the underlying records, biometric templates not stored in the retailer's Auror data, and audit tooling. Big Brother Watch's contested position, in the Asda complaint, is that this basis does not hold: that the processing is high-risk, that shoppers are not told when their biometric data is added to a watchlist, and that the trial was therefore unlawful.",
+  "regulatory_challenges": "Big Brother Watch filed a legal complaint with the ICO against Asda in May 2025 over the FaiceTech trial, arguing it infringed shoppers' data rights and processed data with a high degree of risk; more than 5,000 individual complaints were sent to Asda through the associated campaign. No ICO decision on that complaint has been published as of September 2026. There is no reported court case against a non-Facewatch retail FR operator. The governing precedent remains R (Bridges) v South Wales Police [2020] EWCA Civ 1058, which concerned police rather than retail LFR and left the legal position for private operators to be worked out through data protection law rather than through a bespoke statute - a gap the Home Office consultation that closed on 12 February 2026 addressed only for law enforcement, leaving retail FR still governed by UK GDPR alone. [uncertain]",
+  "oversight_body": "The Information Commissioner's Office is the only regulator with jurisdiction over retailer-operated facial recognition, acting through UK GDPR and the Data Protection Act 2018. There is no sector regulator and no equivalent of a police oversight route: the Biometrics and Surveillance Camera Commissioner's remit covered public authorities, not shops. Compliance is self-declared by the retailer through its DPIA, and enforcement happens only if someone complains.",
+  "research_confidence": "high",
+  "key_uncertainties": "The single largest uncertainty is whether any non-Facewatch live facial recognition is running in a London shop at all right now, and I could not establish that it is. Auror says Subject Recognition is live in UK stores from July 2026 but names neither the retailers nor a single location, so it may or may not include London; I have treated it as active-but-unlocated rather than assuming London coverage. Vendor conflation is the trap this task warned about and it is worse than expected, because the picture changed during 2026. Veesion is gesture recognition on body movement with no face matching and no identity registration, by the company's own explicit statement. Everseen Evercheck (Morrisons) is checkout computer vision watching items, not faces. SAI's platform (Iceland, 1,000+ stores) detects concealment and non-scans, not identities, although Iceland has said it is exploring facial recognition to bar repeat offenders - so Iceland is a live candidate for future FR, not a current one. Auror is the genuinely tricky case: Auror Core, the crime-reporting platform used by Asda in 30 London stores and Morrisons, does not do facial recognition and Asda and Morrisons both said so explicitly, but Auror separately launched Subject Recognition in November 2025 which unambiguously is live facial recognition. Classing all Auror deployments together in either direction would be wrong. Tesco is a third case again: real biometric face matching, but applied retrospectively to CCTV stills at a central hub, not live at the door - whether a project mapping cameras should show that at all is a judgement call, since the camera itself is an ordinary CCTV camera. Corsight has a real UK presence but it is police-side (Essex, paused pending evaluation as of March 2026); no UK retail store deployment was found. FaceMe/CyberLink: no evidence of any UK retail deployment found at all, and it may have been included in the research brief on the strength of vendor marketing rather than a UK installation. I also could not establish the outcome of the ICO complaint against Asda, nor whether Asda's FaiceTech deployment continued past the two-month trial - FaiceTech's own page claims a rollout 'across its stores' while every independent 2026 source describes only the five-store Manchester trial, and Asda's own 2026 announcements are all for the non-biometric Auror Core. Finally, note the boundary of this research unit: Sainsbury's, B&M, Home Bargains, Sports Direct, Spar, Farmfoods, Frasers Group and Southern Co-op all appear in London retail FR coverage but are Facewatch customers and belong to the Facewatch unit, not here.",
+  "sources": [
+    {
+      "title": "Asda launches facial recognition trial in five stores to combat retail crime",
+      "url": "https://corporate.asda.com/newsroom/2025/31/03/asda-launches-facial-recognition-trial-in-five-stores-to-combat-retail-crime",
+      "date": "2025-03-31",
+      "what_it_supports": "Primary source: Asda's own naming of the five Greater Manchester trial stores (Ashton, Chadderton, Harpurhey, Eastlands, Trafford Park), the two-month duration, and the integration into existing CCTV."
+    },
+    {
+      "title": "Supermarket chain Asda chooses FaiceTech for facial recognition surveillance",
+      "url": "https://www.biometricupdate.com/202503/supermarket-chain-asda-chooses-faicetech-for-facial-recognition-surveillance",
+      "date": "2025-03",
+      "what_it_supports": "Identifies FaiceTech, not Facewatch, as Asda's live facial recognition vendor - the fact that places Asda in this research unit."
+    },
+    {
+      "title": "Asda Rolls Out FaiceTech Facial Recognition (vendor page)",
+      "url": "https://www.faicetech.com/home-page/latest/asda-partnership/",
+      "date": "2025-03-01",
+      "what_it_supports": "Vendor's claim of deployment 'across its stores' with no store count, locations or dates - the source of the unresolved conflict with independent reporting."
+    },
+    {
+      "title": "Asda faces legal complaint after 'unlawful' facial recognition trial",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/asda-faces-legal-complaint-after-unlawful-facial-recognition-trial/",
+      "date": "2025-05",
+      "what_it_supports": "The ICO complaint, the legal argument that the processing was unlawful, and the 5,000+ shopper complaints."
+    },
+    {
+      "title": "Asda to deploy Auror crime intelligence platform across its stores following London trial",
+      "url": "https://www.biometricupdate.com/202608/asda-to-deploy-auror-crime-intelligence-platform-across-its-stores-following-london-trial",
+      "date": "2026-08",
+      "what_it_supports": "The only confirmed London-wide retail deployment in this category - 30 Asda London stores - and the explicit statement that no live facial recognition was used, which is why it yields no map entries."
+    },
+    {
+      "title": "Sainsbury's rolls out Facewatch LFR, Tesco gets retrospective with Auror",
+      "url": "https://www.biometricupdate.com/202601/sainsburys-rolls-out-facewatch-lfr-tesco-gets-retrospective-with-auror",
+      "date": "2026-01-22",
+      "what_it_supports": "Tesco's 40-store Auror trial, the use of non-live facial recognition on CCTV stills at the Tesco Security Hub, and the explicit statement that no live facial recognition is involved."
+    },
+    {
+      "title": "Tesco preps ten week trial of Auror crime reporting platform in Nottinghamshire and Leicestershire",
+      "url": "https://retailtechinnovationhub.com/home/2026/1/21/tesco-preps-ten-week-trial-of-auror-crime-reporting-platform-in-nottinghamshire-and-leicestershire",
+      "date": "2026-01-21",
+      "what_it_supports": "The Tesco trial's geography (East Midlands, not London), the 26 January 2026 start date and the Daventry Security Hub as the place the retrospective matching happens."
+    },
+    {
+      "title": "Auror's facial recognition system now live in UK stores",
+      "url": "https://www.auror.co/media-center/asr-now-live-in-uk",
+      "date": "2026-07-20",
+      "what_it_supports": "Primary source for the most recent confirmed non-Facewatch live retail FR activity in the UK, and for the fact that no retailers or locations are disclosed."
+    },
+    {
+      "title": "Auror expands UK facial recognition rollout for violent retail offenders",
+      "url": "https://www.biometricupdate.com/202607/auror-expands-uk-facial-recognition-rollout-for-violent-retail-offenders",
+      "date": "2026-07",
+      "what_it_supports": "That Auror Subject Recognition launched November 2025, is real-time face matching, and is distinct from the non-biometric Auror Core - the vendor-conflation point."
+    },
+    {
+      "title": "Auror Subject Recognition trust centre",
+      "url": "https://www.auror.co/uk/auror-subject-recognition",
+      "date": "2026",
+      "what_it_supports": "The claimed safeguards and legal framing: retailer-controlled watchlists, human in the loop, exclusion of sensitive attributes, police cannot access retailer lists."
+    },
+    {
+      "title": "Retail Store Video Surveillance - Veesion",
+      "url": "https://veesion.io/en/sectors/cctv-retail-stores/",
+      "date": "2026",
+      "what_it_supports": "Vendor's explicit statement that Veesion uses gesture recognition and does not use facial recognition, customer tracking or identity registration - the basis for excluding it."
+    },
+    {
+      "title": "Morrisons to deploy Everseen AI in 200 UK stores",
+      "url": "https://www.kioskmarketplace.com/news/morrisons-to-deploy-everseen-ai-in-200-uk-stores/",
+      "date": "2026",
+      "what_it_supports": "That the Morrisons rollout is checkout computer vision (Evercheck), not facial recognition, and that Morrisons separately said its Auror use does not involve FR."
+    },
+    {
+      "title": "Iceland reports 80% loss cut from AI store cameras",
+      "url": "https://www.resultsense.com/news/2026-08-21-iceland-sai-shrink-facial-recognition/",
+      "date": "2026-08-21",
+      "what_it_supports": "That Iceland's 1,000+ store SAI deployment does not currently use facial recognition, and that Iceland is only exploring FR - so it is a future, not current, entry."
+    },
+    {
+      "title": "Evaluations of Corsight live facial recognition follow Essex Police pause",
+      "url": "https://www.biometricupdate.com/202603/evaluations-of-corsight-live-facial-recognition-follow-essex-police-pause",
+      "date": "2026-03",
+      "what_it_supports": "That Corsight's confirmed UK footprint is police-side and paused, not retail - the reason no Corsight retail sites appear here."
+    },
+    {
+      "title": "Brit supermarket giant triples down on facial recog to nab shoplifters",
+      "url": "https://www.theregister.com/security/2026/07/06/brit-supermarket-giant-triples-down-on-facial-recog-to-nab-shoplifters/5266935",
+      "date": "2026-07-06",
+      "what_it_supports": "The scale of the Facewatch side of UK retail FR (Sainsbury's 55+ stores heading to 200) - establishing the boundary of what belongs in the separate Facewatch unit rather than this one."
+    },
+    {
+      "title": "Shops' use of live facial recognition - FAQs, Big Brother Watch",
+      "url": "https://bigbrotherwatch.org.uk/blog/shops-use-of-live-facial-recognition-faqs/",
+      "date": "2026",
+      "what_it_supports": "Civil society account of the legal basis retailers rely on, the absence of any published store list, and the lack of an oversight route beyond the ICO."
+    }
+  ],
+  "uncertain": [
+    "camera_count_claimed",
+    "geographic_concentration",
+    "status_as_of_2026",
+    "regulatory_challenges"
+  ]
+}

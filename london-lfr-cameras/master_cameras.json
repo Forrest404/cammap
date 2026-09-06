@@ -1,0 +1,795 @@
+[
+  {
+    "site_name": "King's Cross Central estate (Granary Square and the pedestrian boulevards)",
+    "address": "King's Cross Central estate, London",
+    "postcode": null,
+    "borough": "Camden",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2016-05",
+    "status": "ended",
+    "confidence": "confirmed",
+    "source_url": "https://www.theregister.com/2019/09/06/metropolitan_police_facial/",
+    "_srcs": [
+      "Venue_stadium_and_private_estate_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "Sainsbury's Camden",
+    "address": null,
+    "postcode": null,
+    "borough": "Camden [uncertain]",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2026-01",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+    "_srcs": [
+      "Facewatch_in_Frasers_Group_and_other_named_retail_users",
+      "Facewatch_network_scale_model_and_London_footprint"
+    ]
+  },
+  {
+    "site_name": "North End, Croydon - northern end (North End / London Road, by West Croydon)",
+    "address": "North End at its junction with London Road, Croydon town centre [uncertain - the Met has never published the mounting point; 'North End and London Road' is the Met's own March 2025 description, and 'either end of North End' the description used in Jan 2026 reporting]",
+    "postcode": null,
+    "borough": "Croydon",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2025-07 [uncertain - announced March 2025 for 'summer 2025' installation; first static deployment recorded in the Met's own log is 01/10/2025]",
+    "status": "active",
+    "confidence": "reported",
+    "source_url": "https://www.theregister.com/2025/03/27/uk_facial_recognition/",
+    "notes": "One of the two mounting locations of the UK's first fixed police LFR installation. Cameras are attached to existing lampposts and buildings and the feed is monitored remotely; the Met states the cameras are switched on only during an authorised deployment when officers are on the ground to respond, not continuously. Inside Croydon reported (19 Jan 2026) that 15 individual camera units were installed across the two locations at either end of North End - the Met has never confirmed a unit count. No exact pole, address or coordinate has ever been published.",
+    "_srcs": [
+      "Met_Police_fixed_LFR_installations"
+    ]
+  },
+  {
+    "site_name": "North End, Croydon - southern end (South End of the pedestrianised high street)",
+    "address": "Southern end of North End, Croydon town centre, near the George Street / Croydon flyover end [uncertain - exact mounting point never published]",
+    "postcode": null,
+    "borough": "Croydon",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2025-07 [uncertain - see above]",
+    "status": "active",
+    "confidence": "reported",
+    "source_url": "https://news.met.police.uk/news/met-makes-one-arrest-every-35-minutes-during-live-facial-recognition-pilot-509256",
+    "notes": "The second of the two mounting locations. The Met's own May 2026 statement describes 'static cameras at two locations, at the north and south ends of Croydon's high street'. The Met's published 2025 deployment record logs these operations under the location label 'North End, Croydon' with per-operation dates and durations (e.g. 01/10/25 4h40m, 15/10/25 4h12m, 18/12/25 1h43m), which is the only site-level primary evidence of when the fixed cameras were actually running.",
+    "_srcs": [
+      "Met_Police_fixed_LFR_installations"
+    ]
+  },
+  {
+    "site_name": "Eat 17 (Spar franchise), Hackney",
+    "address": null,
+    "postcode": null,
+    "borough": "Hackney",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2019 [uncertain]",
+    "status": "unknown",
+    "confidence": "reported",
+    "source_url": "https://www.facewatch.co.uk/eat17-hackney-becomes-advocate-of-facewatch/",
+    "_srcs": [
+      "Facewatch_in_Frasers_Group_and_other_named_retail_users"
+    ]
+  },
+  {
+    "site_name": "Sainsbury's Dalston",
+    "address": null,
+    "postcode": null,
+    "borough": "Hackney [uncertain]",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2026-01",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+    "_srcs": [
+      "Facewatch_in_Frasers_Group_and_other_named_retail_users",
+      "Facewatch_network_scale_model_and_London_footprint"
+    ]
+  },
+  {
+    "site_name": "Sainsbury's Ladbroke Grove",
+    "address": null,
+    "postcode": null,
+    "borough": "Kensington and Chelsea [uncertain]",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2026-01",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+    "_srcs": [
+      "Facewatch_in_Frasers_Group_and_other_named_retail_users",
+      "Facewatch_network_scale_model_and_London_footprint"
+    ]
+  },
+  {
+    "site_name": "Village Wholefoods, Clapham",
+    "address": null,
+    "postcode": null,
+    "borough": "Lambeth [uncertain]",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": null,
+    "status": "unknown",
+    "confidence": "reported",
+    "source_url": "https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/",
+    "_srcs": [
+      "Facewatch_network_scale_model_and_London_footprint"
+    ]
+  },
+  {
+    "site_name": "Sainsbury's Sydenham superstore",
+    "address": null,
+    "postcode": null,
+    "borough": "Lewisham [uncertain]",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2025-09",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.thegrocer.co.uk/news/sainsburys-to-extend-facial-recognition-tech-to-200-stores-by-christmas/720799.article",
+    "_srcs": [
+      "Facewatch_in_Frasers_Group_and_other_named_retail_users",
+      "Facewatch_network_scale_model_and_London_footprint"
+    ]
+  },
+  {
+    "site_name": "Genting Casino Stratford (formerly Aspers Casino), Westfield Stratford City",
+    "address": "Westfield Stratford City, Stratford, London",
+    "postcode": null,
+    "borough": "Newham",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "unknown",
+    "status": "active",
+    "confidence": "reported",
+    "source_url": "https://www.gentingcasinos.co.uk/facial-recognition-faqs/",
+    "_srcs": [
+      "Venue_stadium_and_private_estate_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "Sainsbury's Elephant & Castle",
+    "address": null,
+    "postcode": null,
+    "borough": "Southwark [uncertain]",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2026-01",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.theregister.com/2026/02/06/sainsburys_/",
+    "_srcs": [
+      "Facewatch_in_Frasers_Group_and_other_named_retail_users",
+      "Facewatch_network_scale_model_and_London_footprint",
+      "Facewatch_withdrawals_complaints_and_status"
+    ]
+  },
+  {
+    "site_name": "Sainsbury's Dulwich",
+    "address": null,
+    "postcode": null,
+    "borough": "Southwark [uncertain]",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2026 [uncertain]",
+    "status": "paused",
+    "confidence": "confirmed",
+    "source_url": "https://www.retailgazette.co.uk/blog/2026/08/sainsburys-pauses-ai-facial-recognition-cameras-after-shopper-wrongly-ejected/",
+    "_srcs": [
+      "Facewatch_in_Frasers_Group_and_other_named_retail_users",
+      "Facewatch_network_scale_model_and_London_footprint",
+      "Facewatch_withdrawals_complaints_and_status"
+    ]
+  },
+  {
+    "site_name": "Sainsbury's Whitechapel",
+    "address": null,
+    "postcode": null,
+    "borough": "Tower Hamlets [uncertain]",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2026-01",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+    "_srcs": [
+      "Facewatch_in_Frasers_Group_and_other_named_retail_users",
+      "Facewatch_network_scale_model_and_London_footprint"
+    ]
+  },
+  {
+    "site_name": "Eat 17, Walthamstow",
+    "address": null,
+    "postcode": null,
+    "borough": "Waltham Forest",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2018-2019 [uncertain]",
+    "status": "unknown",
+    "confidence": "reported",
+    "source_url": "https://www.facewatch.co.uk/eat17-hackney-becomes-advocate-of-facewatch/",
+    "_srcs": [
+      "Facewatch_in_Frasers_Group_and_other_named_retail_users"
+    ]
+  },
+  {
+    "site_name": "The Hippodrome Casino",
+    "address": "Cranbourn Street, Leicester Square, London",
+    "postcode": "WC2H 7JH",
+    "borough": "Westminster",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": "2021-07 [uncertain] - the operator's own LFR FAQ, published September 2024, does not give a start date; July 2021 comes from secondary industry reporting",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.hippodromecasino.com/wp-content/uploads/2024/09/01.-FAQ.pdf",
+    "_srcs": [
+      "Venue_stadium_and_private_estate_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "Gordon's Wine Bar",
+    "address": "47 Villiers Street, Charing Cross, London",
+    "postcode": "WC2N 6NE",
+    "borough": "Westminster [uncertain]",
+    "lat": null,
+    "lng": null,
+    "camera_type": "fixed",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.gordonswinebar.com/privacy-policy/",
+    "_srcs": [
+      "Facewatch_network_scale_model_and_London_footprint"
+    ]
+  },
+  {
+    "site_name": "Station Parade, Barking",
+    "address": "Station Parade, Barking",
+    "postcode": null,
+    "borough": "Barking and Dagenham",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 4,
+    "notes": "4 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Wembley Central",
+    "address": "Wembley Central, High Road, Wembley",
+    "postcode": null,
+    "borough": "Brent",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 6,
+    "notes": "6 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Kilburn High Road",
+    "address": "Kilburn High Road, London",
+    "postcode": null,
+    "borough": "Brent / Camden [uncertain - Kilburn High Road runs along the Brent/Camden boundary and the record gives no side]",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 5,
+    "notes": "5 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "London Euston station (Network Rail concourse)",
+    "address": "Euston Station, Euston Road, London",
+    "postcode": "NW1 2RT",
+    "borough": "Camden",
+    "lat": 51.5282,
+    "lng": -0.1337,
+    "camera_type": "van",
+    "installed_date": "2026-02-17",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    "deployment_dates": [
+      "2026-02-17",
+      "2026-03-13",
+      "2026-06-11",
+      "2026-07-17"
+    ],
+    "notes": "Four published deployments, the joint-most of any site. 17 Feb: 4h50m, watchlist 386, 46,420 faces. 13 Mar: 3h55m, watchlist 439, 25,525 faces. 11 Jun: 4h30m, watchlist 491, 51,001 faces. 17 Jul: 4h55m, watchlist 546, 68,952 faces. Zero alerts at all four.",
+    "_srcs": [
+      "British_Transport_Police_facial_recognition",
+      "Transport_network_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "King's Cross station (Network Rail concourse)",
+    "address": "King's Cross Station, Euston Road, London",
+    "postcode": "N1 9AL",
+    "borough": "Camden",
+    "lat": 51.5308,
+    "lng": -0.1238,
+    "camera_type": "van",
+    "installed_date": "2026-02-24",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    "deployment_dates": [
+      "2026-02-24",
+      "2026-03-04",
+      "2026-04-02",
+      "2026-07-11"
+    ],
+    "notes": "Four published deployments. The 24 February deployment (4h21m, watchlist 455, 19,313 faces) produced the pilot's only confirmed false alert - 1 alert, logged as a confirmed false alert, false alert rate 0.00517%. The other three produced zero alerts.",
+    "_srcs": [
+      "British_Transport_Police_facial_recognition",
+      "Transport_network_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "St Pancras International station (Network Rail concourse)",
+    "address": "St Pancras International, Euston Road, London",
+    "postcode": "N1C 4QP",
+    "borough": "Camden",
+    "lat": 51.532,
+    "lng": -0.1263,
+    "camera_type": "van",
+    "installed_date": "2026-03-19",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    "deployment_dates": [
+      "2026-03-19"
+    ],
+    "notes": "One published deployment: 3h45m, watchlist 465, 17,478 faces, zero alerts. Listed in the register as 'St Pancras', distinct from the separate 'Kings Cross St Pancras Underground' entry of 20 August.",
+    "_srcs": [
+      "British_Transport_Police_facial_recognition",
+      "Transport_network_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "King's Cross St Pancras Underground station (TfL)",
+    "address": "King's Cross St Pancras Underground Station, Euston Road, London",
+    "postcode": "N1 9AL",
+    "borough": "Camden",
+    "lat": 51.5301,
+    "lng": -0.124,
+    "camera_type": "van",
+    "installed_date": "2026-08-20",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    "deployment_dates": [
+      "2026-08-20"
+    ],
+    "notes": "6h20m, watchlist 673, 50,754 faces. Produced 1 alert, logged as an UNCONFIRMED true alert - the only non-false alert in the whole register. Coordinate is the Underground ticket hall, approximate within the station complex.",
+    "_srcs": [
+      "British_Transport_Police_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "Liverpool Street station (Network Rail concourse)",
+    "address": "Liverpool Street Station, Liverpool Street, London",
+    "postcode": "EC2M 7PY",
+    "borough": "City of London",
+    "lat": 51.5178,
+    "lng": -0.0823,
+    "camera_type": "van",
+    "installed_date": "2026-03-26",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    "deployment_dates": [
+      "2026-03-26",
+      "2026-05-28"
+    ],
+    "notes": "Two published deployments. 26 Mar: 3h50m, watchlist 455, 18,089 faces. 28 May: 2h36m (the shortest in the register), watchlist 478, 17,219 faces. Zero alerts at both. This is the only BTP LFR site inside the City of London police area, though the operation is BTP's, not City of London Police's.",
+    "_srcs": [
+      "British_Transport_Police_facial_recognition",
+      "Transport_network_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "London Victoria station (Network Rail concourse)",
+    "address": "Victoria Station, Terminus Place, London",
+    "postcode": "SW1E 5ND",
+    "borough": "City of Westminster",
+    "lat": 51.4952,
+    "lng": -0.1441,
+    "camera_type": "van",
+    "installed_date": "2026-04-09",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    "deployment_dates": [
+      "2026-04-09",
+      "2026-05-20",
+      "2026-06-27",
+      "2026-07-02"
+    ],
+    "notes": "Four published mainline deployments, logged in the register as 'Victoria' and distinct from the 'Victoria Underground' entry of 11 August. 9 Apr: 3h45m, 24,213 faces. 20 May: 4h30m, 27,735 faces. 27 Jun: 5h42m, 36,028 faces. 2 Jul: 5h45m, 33,422 faces. Zero alerts at all four.",
+    "_srcs": [
+      "British_Transport_Police_facial_recognition",
+      "Transport_network_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "Victoria Underground station (TfL)",
+    "address": "Victoria Underground Station, Terminus Place, London",
+    "postcode": "SW1E 5ND",
+    "borough": "City of Westminster",
+    "lat": 51.4962,
+    "lng": -0.1447,
+    "camera_type": "van",
+    "installed_date": "2026-08-11",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    "deployment_dates": [
+      "2026-08-11"
+    ],
+    "notes": "The first-ever use of live facial recognition inside a London Underground station, on 11 August 2026: 6h30m, watchlist 673, 33,545 estimated faces, zero alerts. Same station complex as the mainline Victoria entries but logged separately by BTP as an Underground deployment; the coordinate is the Underground ticket hall side of the complex and is approximate to within the station footprint.",
+    "_srcs": [
+      "British_Transport_Police_facial_recognition",
+      "Transport_network_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "North End, Croydon",
+    "address": "North End, Croydon town centre",
+    "postcode": null,
+    "borough": "Croydon",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 15,
+    "notes": "15 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment. The most-used location in the 2025 record. Van-delivered until autumn 2025; from 01/10/2025 the rows here are the fixed street-furniture cameras, which belong to the police_fixed item. Listed for completeness because the record does not distinguish the two in its location column.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Powis Street, Woolwich",
+    "address": "Powis Street, Woolwich, London",
+    "postcode": null,
+    "borough": "Greenwich",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 8,
+    "notes": "8 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Dalston Kingsland",
+    "address": "Dalston Kingsland, Kingsland High Street, Dalston",
+    "postcode": null,
+    "borough": "Hackney",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 4,
+    "notes": "4 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment. 'Dalston Junction' and 'Mare St, Hackney' appear separately.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "South Street, Romford",
+    "address": "South Street, Romford",
+    "postcode": null,
+    "borough": "Havering",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 4,
+    "notes": "4 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Clarence Street, Kingston",
+    "address": "Clarence Street, Kingston upon Thames",
+    "postcode": null,
+    "borough": "Kingston upon Thames",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 4,
+    "notes": "4 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "London Waterloo station (Network Rail concourse)",
+    "address": "Waterloo Station, Station Approach Road, London",
+    "postcode": "SE1 8SW",
+    "borough": "Lambeth",
+    "lat": 51.5031,
+    "lng": -0.1132,
+    "camera_type": "van",
+    "installed_date": "2026-02-13",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    "deployment_dates": [
+      "2026-02-13",
+      "2026-05-22",
+      "2026-08-18"
+    ],
+    "notes": "Three published deployments. 13 Feb: 4h45m, watchlist 409, 56,186 faces, 0 alerts. 22 May: 4h25m, watchlist 474, 36,598 faces, 0 alerts. 18 Aug: 7h30m, watchlist 662, 72,990 faces, 0 alerts - the longest single deployment in the register and the largest face count.",
+    "_srcs": [
+      "British_Transport_Police_facial_recognition",
+      "Transport_network_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "Stratford Underground station (TfL)",
+    "address": "Stratford Station, Station Street, London",
+    "postcode": "E15 1AZ",
+    "borough": "Newham",
+    "lat": 51.5416,
+    "lng": -0.0042,
+    "camera_type": "van",
+    "installed_date": "2026-08-27",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    "deployment_dates": [
+      "2026-08-27"
+    ],
+    "notes": "Most recent deployment in the register as published: 6h5m, watchlist 719 (the largest watchlist to date), 37,931 faces, zero alerts. Only BTP LFR site so far in an outer/east London borough.",
+    "_srcs": [
+      "British_Transport_Police_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "Stratford Broadway",
+    "address": "Stratford Broadway, Stratford",
+    "postcode": null,
+    "borough": "Newham",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 7,
+    "notes": "7 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "High Street North, East Ham",
+    "address": "High Street North, East Ham",
+    "postcode": null,
+    "borough": "Newham",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 5,
+    "notes": "5 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Green Street, Newham",
+    "address": "Green Street, Upton Park / Forest Gate",
+    "postcode": null,
+    "borough": "Newham",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 4,
+    "notes": "4 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment. 'Upton Park' appears twice more as a separate label.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "London Bridge station (Network Rail concourse)",
+    "address": "London Bridge Station, Station Approach Road, London",
+    "postcode": "SE1 9SP",
+    "borough": "Southwark",
+    "lat": 51.5052,
+    "lng": -0.0864,
+    "camera_type": "van",
+    "installed_date": "2026-02-11",
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    "deployment_dates": [
+      "2026-02-11"
+    ],
+    "notes": "First BTP LFR deployment. 4h35m, watchlist 381, threshold 0.64, 16,156 estimated faces seen, zero alerts. Camera rig is temporary and removed at end of shift - this is a deployment site, not an installation. 'van' is used here as the survey's code for mobile/redeployable, not as a claim that a marked LFR van was parked on the concourse.",
+    "_srcs": [
+      "British_Transport_Police_facial_recognition",
+      "Transport_network_facial_recognition"
+    ]
+  },
+  {
+    "site_name": "Rye Lane, Peckham",
+    "address": "Rye Lane, Peckham",
+    "postcode": null,
+    "borough": "Southwark",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 5,
+    "notes": "5 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment. 'Peckham Rye' appears as a separate label twice more.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Walworth Road",
+    "address": "Walworth Road, Southwark",
+    "postcode": null,
+    "borough": "Southwark",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 4,
+    "notes": "4 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Walthamstow Central",
+    "address": "Walthamstow Central / Town Square, Walthamstow",
+    "postcode": null,
+    "borough": "Waltham Forest",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 6,
+    "notes": "6 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment. Recorded as both 'Walthamstow Central' and 'Town Sq, Walthamstow'.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Oxford Circus",
+    "address": "Oxford Circus, junction of Oxford Street and Regent Street, London",
+    "postcode": null,
+    "borough": "Westminster",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 8,
+    "notes": "8 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Bond Street station",
+    "address": "Bond Street station, Oxford Street, London",
+    "postcode": null,
+    "borough": "Westminster",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 4,
+    "notes": "4 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  },
+  {
+    "site_name": "Leicester Square",
+    "address": "Leicester Square, London",
+    "postcode": null,
+    "borough": "Westminster",
+    "lat": null,
+    "lng": null,
+    "camera_type": "van",
+    "installed_date": null,
+    "status": "active",
+    "confidence": "confirmed",
+    "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    "deployments_2025": 4,
+    "notes": "4 recorded LFR deployments at this location in the Met's published 2025 deployment record. A recurring van deployment site, not an installation: the camera rig arrives and leaves with the vehicle, so 'installed_date' is null and 'status: active' means the site was still in the deployment rotation at the end of the published record. The Met publishes no parking position, postcode or coordinate for any deployment.",
+    "_srcs": [
+      "Met_Police_LFR_van_deployments_and_their_publication"
+    ]
+  }
+]

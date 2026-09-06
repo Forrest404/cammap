@@ -1,0 +1,157 @@
+{
+  "item_name": "Venue, stadium and private estate facial recognition",
+  "operator": "Private venue and estate operators, each acting on its own account rather than under any common scheme: Hippodrome Casino Limited (Leicester Square); Genting Casinos UK, which states it runs live facial recognition at all its UK casinos; historically the King's Cross Central Limited Partnership, the Argent-led consortium that ran facial recognition on the King's Cross estate between 2016 and 2018. Unibail-Rodamco-Westfield operates Westfield Stratford City and Westfield London (White City) and runs a facial-image exclusion scheme, but not facial recognition matching. A separate strand is police-operated but venue-focused: the Metropolitan Police running live facial recognition around London Premier League grounds under a trial funded by the Premier League.",
+  "system_type": "other_private",
+  "vendor": "Face Recognition Company Limited, named by Genting Casinos UK as its third-party live facial recognition software partner. The Hippodrome Casino does not name its vendor in its published LFR FAQ or privacy notice. The King's Cross Central system's vendor was never publicly identified; reporting described face recognition capability built into two cameras on the estate's pedestrian boulevards. The Met's LFR at football grounds uses NEC NeoFace, as with all Met deployments, and belongs to the police units of this survey rather than here. [uncertain]",
+  "london_coverage_summary": "The live, confirmed private facial recognition at London venues in 2026 is not in the shopping centres or stadiums the question expects - it is in casinos. The Hippodrome Casino on Cranbourn Street covers all its entrances with live facial recognition 24 hours a day, and Genting Casinos UK states it uses live facial recognition at all of its UK casinos, which includes several London venues. The famous cases are all closed or turn out to be something else: King's Cross Central ran facial recognition on two estate cameras from May 2016 to March 2018, using seven images supplied by the Met, and the developer cancelled the technology in 2019 after the ICO opened an investigation; Canary Wharf Group said in 2019 it was considering facial recognition but confirmed it was not using it, and no later deployment has been reported. Westfield Stratford City and Westfield London run a facial-image exclusion scheme shared between retailers, which is image sharing between humans and not automated face matching. Wembley, the O2 and the Emirates have no confirmed venue-operated facial recognition; what happens at London football grounds is police LFR, now funded to the tune of £3.42m by the Premier League itself.",
+  "cameras": [
+    {
+      "site_name": "The Hippodrome Casino",
+      "address": "Cranbourn Street, Leicester Square, London",
+      "postcode": "WC2H 7JH",
+      "borough": "Westminster",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2021-07 [uncertain] - the operator's own LFR FAQ, published September 2024, does not give a start date; July 2021 comes from secondary industry reporting",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.hippodromecasino.com/wp-content/uploads/2024/09/01.-FAQ.pdf"
+    },
+    {
+      "site_name": "Genting Casino Stratford (formerly Aspers Casino), Westfield Stratford City",
+      "address": "Westfield Stratford City, Stratford, London",
+      "postcode": null,
+      "borough": "Newham",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "unknown",
+      "status": "active",
+      "confidence": "reported",
+      "source_url": "https://www.gentingcasinos.co.uk/facial-recognition-faqs/"
+    },
+    {
+      "site_name": "King's Cross Central estate (Granary Square and the pedestrian boulevards)",
+      "address": "King's Cross Central estate, London",
+      "postcode": null,
+      "borough": "Camden",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2016-05",
+      "status": "ended",
+      "confidence": "confirmed",
+      "source_url": "https://www.theregister.com/2019/09/06/metropolitan_police_facial/"
+    }
+  ],
+  "camera_count_confirmed": 3,
+  "camera_count_claimed": "No operator publishes a count. Genting Casinos UK's FAQ says live facial recognition runs at 'all of our UK casinos' across an estate its own site describes as 33 casinos, of which a number are in London (Chinatown, Mayfair, Kensington and Stratford are all reported Genting London venues), but Genting names none of them in the FAQ and I could not retrieve a venue list to enumerate them. The Hippodrome says 'all entrances' are covered, without saying how many cameras that is. King's Cross Central was two cameras. [uncertain]",
+  "fixed_vs_mobile": "Entirely fixed. Every private venue and estate deployment in this category is a camera mounted at or above a fixed entrance, doorway or public boulevard, and the whole point of the use case - catching a self-excluded gambler or a barred individual at the moment of entry - requires the camera to be at a known, permanent threshold. There is no van-mounted or redeployable private FR anywhere in this category. The only mobile element in the vicinity of London venues is police: the Met's LFR vans, which have parked at Westfield Stratford (June 2018) and outside the Emirates Stadium (November 2023), and which under the Premier League-funded trial from 2026 park around London grounds on matchdays. Those belong to the police_van unit of this survey, not here, and are the reason a casual reader thinks Westfield has facial recognition when the shopping centre itself does not.",
+  "geographic_concentration": "Two clusters, both driven by the licensing of casinos rather than by crime geography. The first is the West End - Westminster - where the Hippodrome sits on Leicester Square and Genting's Chinatown and Mayfair casinos are within a mile of it; this is the densest concentration of confirmed private facial recognition in London, and it sits inside the same square mile as the Met's fixed and van LFR in the West End. The second is Stratford in Newham, where a Genting casino sits inside Westfield Stratford City. The historic King's Cross Central deployment was in Camden. Everything else - White City in Hammersmith and Fulham, Canary Wharf in Tower Hamlets, Wembley in Brent, Greenwich Peninsula - has been reported on but has no confirmed venue-operated facial recognition.",
+  "status_as_of_2026": "mixed. ACTIVE: the Hippodrome Casino, per its own published LFR FAQ and dedicated LFR privacy notice, covering all entrances 24/7; Genting Casinos UK, per a facial recognition FAQ last updated 28 May 2025 stating LFR runs at all its UK casinos, which covers its London venues. ACTIVE but police-operated rather than venue-operated: Met LFR around London Premier League grounds, under a trial funded by £3.42m from the Premier League, reported August 2026. ENDED: King's Cross Central, which ran from May 2016 to March 2018 and whose developer cancelled all future use in 2019; Liverpool World Museum (2018, outside London); Meadowhall Sheffield and the Trafford Centre (outside London). NEVER STARTED: Canary Wharf, which said in 2019 it was considering the technology and confirmed it was not using it, with no reported deployment since. NOT FACIAL RECOGNITION: Westfield Stratford City and Westfield London, whose safeguarding notice dated 11 June 2026 describes sharing a person's name and facial image among retail scheme members for 12 months - human circulation of photographs, not automated matching.",
+  "last_confirmed_active_date": "11 June 2026 is the most recent dated primary document in this category, but it is the Westfield Stratford City safeguarding and security privacy notice, and it confirms the absence of facial recognition rather than its presence. For confirmed live facial recognition, the most recent primary evidence is Genting Casinos UK's facial recognition FAQ, last updated 28 May 2025 and next reviewed December 2025, stating in the present tense that 'We currently use Live Facial Recognition Technology at all of our UK casinos'. The Hippodrome's LFR FAQ was published September 2024 and its general privacy policy was refreshed 15 December 2025, with the dedicated LFR privacy notice still linked from the site in 2026 - so its deployment is standing, though no 2026-dated confirmation exists. The most recent 2026-dated evidence of any facial recognition operating at a London venue is the August 2026 reporting of the Premier League-funded Met LFR trial at London matches, which is police rather than private.",
+  "evidence_of_current_activity": "For the casinos, the evidence is the operators' own standing published notices, which is unusually good evidence for private FR: the Hippodrome publishes an LFR FAQ stating that all entrances are covered by LFR 24 hours a day, seven days a week, that clear signage is displayed before entry, and that a DPIA was completed before implementation; Genting publishes a facial recognition FAQ naming Face Recognition Company Limited as its software partner and stating current use at all UK casinos. Both are the kind of notice a company only maintains while the system is running, and both are enforceable statements to the ICO. For the Premier League trial, the evidence is the August 2026 reporting of the £3.42m funding routed through Cheshire Constabulary under Section 93 of the Police Act 1996, with each deployment requiring superintendent-level authorisation and supporters being told when LFR is in use. There is no 2026 evidence of any London shopping centre, stadium, arena or private estate operating its own facial recognition.",
+  "known_pauses_or_withdrawals": "King's Cross Central is the significant withdrawal and the reason this category exists as a question. The estate ran facial recognition on two cameras from May 2016 to March 2018, in an arrangement under which the Metropolitan Police shared images of seven convicted or repeat offenders with the private landlord - an arrangement the Met initially denied and then admitted in September 2019. After the Financial Times revealed the deployment in August 2019, the ICO opened an investigation and said many millions of innocent people would have had their faces scanned without knowing, the Mayor of London wrote to Argent questioning its legality, and the developer cancelled all plans for future use. Canary Wharf Group, which was reported in 2019 as the next estate to follow, publicly confirmed it was not using the technology and no deployment has been reported since - a plan abandoned rather than a system withdrawn. Outside London, Sheffield's Meadowhall and Manchester's Trafford Centre both stopped; British Land told Big Brother Watch that of its two centres only Meadowhall had actually deployed it. Liverpool World Museum's 2018 use ended with the exhibition.",
+  "locations_published_publicly": "partial",
+  "publication_channel": "Only in the weakest possible form, and only by the casinos. The Hippodrome names its single venue implicitly by publishing an LFR FAQ (https://www.hippodromecasino.com/wp-content/uploads/2024/09/01.-FAQ.pdf) and a dedicated LFR privacy notice (https://www.hippodromecasino.com/facial-recognition-privacy-policy/) on the website of a one-site business, so the location is unambiguous. Genting publishes a facial recognition FAQ (https://www.gentingcasinos.co.uk/facial-recognition-faqs/) that covers its estate in the aggregate - 'all of our UK casinos' - and names no venue, so the London sites must be derived from its separate casino directory rather than from anything it publishes about facial recognition. Unibail-Rodamco-Westfield publishes per-centre safeguarding and security privacy notices (https://www.westfield.com/en/united-kingdom/stratfordcity/safeguarding-and-security-privacy-notice) which are how one establishes that Westfield does not use facial recognition. In-store and on-door signage is the only site-specific notice a visitor actually receives. No stadium, arena or estate publishes anything, because none of them has anything to publish.",
+  "live_feed_or_map_available": "No. Nothing shows current or upcoming private venue facial recognition in London, live or otherwise: no official map, no official list, no third-party inventory, and no advance schedule - and unlike police LFR, there is nothing that could be scheduled, because these are permanent installations that run continuously rather than deployments that are announced. Big Brother Watch's 2019 'facial recognition epidemic' work is the closest thing to an inventory of private UK sites and it is seven years old, pre-dates every current deployment, and was national rather than London-specific. The one adjacent live-ish source is the Met's own LFR deployment page, which does publish upcoming deployment locations and which is where a Premier League matchday LFR deployment around a London ground would appear - but that is police data covering police vans, not the venue's own cameras. For a Londoner wanting to know whether the casino, mall or arena they are walking into is scanning their face, the answer available today is: read the sign at the door, or read that operator's privacy notice if it has one. There is no aggregated view, which is precisely the gap this survey is filling.",
+  "advance_notice_period": "None, and the concept barely applies. Private venue facial recognition is permanently installed and runs continuously, so there is no deployment to announce in advance; notice is contemporaneous signage at the entrance, which both the Hippodrome and Genting say they display. The one exception is the police LFR around Premier League grounds, where the Met's normal practice applies - deployment locations published on the Met website typically a day or two ahead, plus on-street signage and leafleting, and supporters told when the technology is in use.",
+  "foi_or_audit_sources": "FOI is only usable for the police half of this category, which is the structural problem: the Met has answered FOI requests on its automated facial recognition between Stratford station and Westfield Stratford City on 28 June 2018, and on the Premier League funding arrangement, but no FOI reaches a casino or a shopping centre. The King's Cross case is documented by the ICO's August 2019 investigation announcement, by the Met's September 2019 admission that it supplied seven images to the estate, by Privacy International's case study 'King's Cross has been watching you - and the police helped', and by the Mayor of London's correspondence with Argent. Big Brother Watch's 2019 'Facial Recognition Epidemic in the UK' report enumerates private UK sites including King's Cross, Meadowhall, the Trafford Centre and Liverpool World Museum, and is the only audit of private-sector FR sites that exists, but it has not been refreshed for the 2020s. The ICO has published no enforcement notice against any private London venue operator.",
+  "legal_basis": "For the casinos, the strongest legal basis in UK private facial recognition, and the reason casinos are the one sector where it is uncontroversially standing: Genting cites compliance with UK Gambling Commission licence conditions, legitimate business interests, and the substantial public interest in safeguarding individuals at risk, matching against two watchlist categories - people barred or suspended for responsible-gambling reasons including those enrolled in the SENSE national self-exclusion scheme, and people barred for crime or disorder. The Hippodrome makes the same proportionality argument explicitly, that scanning all visitors momentarily is proportionate to stopping problem gamblers breaching their own exclusion agreements, and says a DPIA was completed before implementation. In UK GDPR terms this is Article 6(1)(f) with Article 9(2)(g) substantial public interest under Schedule 1 of the Data Protection Act 2018. King's Cross Central relied on legitimate interests for public safety and was widely argued to fail the necessity and transparency tests. Westfield's facial-image exclusion scheme cites public interest, legitimate interests and the prevention or detection of unlawful acts. The Premier League funding of police LFR is made lawful by Section 93 of the Police Act 1996, which permits police authorities to accept donations and sponsorship.",
+  "regulatory_challenges": "The ICO opened an investigation into King's Cross Central in August 2019 after the Financial Times revelation, saying it would inspect the system on site and that scanning faces without people knowing engaged serious data protection concerns; the developer cancelled the technology and the ICO published no enforcement notice, so the episode ended in abandonment rather than a ruling - which is why it settles nothing and why the same questions recur. R (Bridges) v South Wales Police [2020] EWCA Civ 1058 remains the governing authority and concerned police rather than private use, leaving venue operators regulated only by UK GDPR. The Premier League-funded Met trial has drawn objections from Liberty and Big Brother Watch on privacy, mass surveillance and misidentification grounds, and raises a distinct question about a commercial body funding police biometric surveillance, but no legal challenge to it has been filed. No court case, ICO fine or enforcement notice exists against a London casino, shopping centre, stadium or private estate for facial recognition. [uncertain]",
+  "oversight_body": "The Information Commissioner's Office, as the only regulator with jurisdiction over private facial recognition through UK GDPR and the Data Protection Act 2018. For casinos there is a second and in practice more attentive overseer, the Gambling Commission, because the LFR exists to enforce licence conditions on self-exclusion - the operator has to be able to show it works. The Biometrics and Surveillance Camera Commissioner's surveillance camera code covered relevant public authorities, not private landlords, and that office's functions have since been reorganised. Nobody supervises a private venue's watchlist composition, and no body inspects these systems as a matter of routine.",
+  "research_confidence": "medium",
+  "key_uncertainties": "The site-level list is thin and I want to be plain about why. The Hippodrome entry is solid - a single-venue business publishing its own LFR FAQ and a dedicated LFR privacy notice, with a sourced street address and postcode from its own privacy policy. The Genting Casino Stratford entry is an inference and marked 'reported' accordingly: Genting's FAQ says live facial recognition runs at all its UK casinos, and Genting operates a casino inside Westfield Stratford City, so the deployment follows - but Genting names no venue in the FAQ, I could not retrieve its casino directory to enumerate the London sites, and the Stratford venue's rebrand from Aspers to Genting in 2025 rests on a single secondary source. There are almost certainly several more live Genting LFR sites in London - Chinatown, Mayfair and Kensington venues are all reported to exist - and I have deliberately not listed them because I could not source their names and addresses, and inventing an address here would be worse than an incomplete list. No latitude or longitude is given for any site because none was published in any source I found. The bigger uncertainty is the negative: I cannot prove that no London stadium, arena or shopping centre operates facial recognition, only that none publishes that it does and that none has been reported to. The O2 publishes a privacy policy and security page with no mention of biometrics, and I could not retrieve enough of the full policy to be certain. Wembley, Tottenham Hotspur Stadium and the Emirates have no venue-operated FR in any source I found; what happens at those grounds is Met LFR, including the 2023 Emirates deployment and the Premier League-funded 2026 trial, and it is easy to misread that as the club's system. Westfield is the sharpest example of the same trap: URW's Stratford City safeguarding notice of 11 June 2026 describes circulating a barred person's name and facial image among retail scheme members for 12 months, which is human image-sharing and not automated face matching, and the 2018 Met LFR van outside Stratford station is what people actually remember. Canary Wharf said in 2019 it was considering FR and was not using it; no source establishes what it decided, so the honest answer is that no deployment has ever been reported rather than that it was ruled out. King's Cross Central is included with status ended and should never be shown as current - it ran May 2016 to March 2018 and was cancelled in 2019 - but the exact camera positions were never published beyond 'two cameras on the pedestrian boulevards', which is why its entry has an estate-level location rather than a point. Finally, the system_type of this unit is genuinely mixed: the casinos and estates are other_private, while the Premier League-funded LFR at London grounds is a police deployment paid for by a private body, and I have recorded it as context here rather than as camera entries because it belongs to the Met's van deployments.",
+  "sources": [
+    {
+      "title": "Live Facial Recognition 'LFR' - Frequently Asked Questions (Hippodrome Casino)",
+      "url": "https://www.hippodromecasino.com/wp-content/uploads/2024/09/01.-FAQ.pdf",
+      "date": "2024-09",
+      "what_it_supports": "Primary source: all entrances of the Hippodrome are covered by LFR 24/7, signage is displayed before entry, a DPIA was completed, and the self-exclusion proportionality argument."
+    },
+    {
+      "title": "Hippodrome Casino Privacy Policy and Facial Recognition Privacy Policy",
+      "url": "https://www.hippodromecasino.com/privacy-policy/",
+      "date": "2025-12-15",
+      "what_it_supports": "The venue address (Cranbourn Street, Leicester Square, WC2H 7JH), the company identity and Gambling Commission licence, and the existence of a standing dedicated LFR privacy notice."
+    },
+    {
+      "title": "Facial Recognition FAQs - Genting Casinos UK",
+      "url": "https://www.gentingcasinos.co.uk/facial-recognition-faqs/",
+      "date": "2025-05-28",
+      "what_it_supports": "Primary source: 'We currently use Live Facial Recognition Technology at all of our UK casinos'; Face Recognition Company Limited as the software partner; the two watchlist categories including SENSE self-exclusion; the three claimed legal bases."
+    },
+    {
+      "title": "Safeguarding and Security Privacy Notice - Westfield Stratford City",
+      "url": "https://www.westfield.com/en/united-kingdom/stratfordcity/safeguarding-and-security-privacy-notice",
+      "date": "2026-06-11",
+      "what_it_supports": "The current, dated evidence that Westfield Stratford City runs a facial-image exclusion scheme shared among retail scheme members and not facial recognition matching - the single most important negative finding here."
+    },
+    {
+      "title": "Met Police 'provided seven images' for King's Cross face recognition scheme",
+      "url": "https://www.theregister.com/2019/09/06/metropolitan_police_facial/",
+      "date": "2019-09-06",
+      "what_it_supports": "The Met's admission, after earlier denial, that it shared seven images with the King's Cross estate between 2016 and 2018 - the fact that turned the story from a private deployment into a police one."
+    },
+    {
+      "title": "ICO to probe facial recognition at King's Cross",
+      "url": "https://www.computerweekly.com/news/252468723/ICO-to-probe-facial-recognition-at-Kings-Cross",
+      "date": "2019-08",
+      "what_it_supports": "The ICO investigation into Granary Square and the King's Cross Central estate, and the Mayor of London's letter to Argent - the regulatory response that ended the deployment."
+    },
+    {
+      "title": "King's Cross has been watching you - and the police helped (Privacy International)",
+      "url": "https://privacyinternational.org/case-study/3973/kings-cross-has-been-watching-you-and-police-helped",
+      "date": "2019",
+      "what_it_supports": "The two-camera scope on the pedestrian boulevards, the 2016-2018 operating window, and Argent's cancellation of future use."
+    },
+    {
+      "title": "London landlord deploys cameras with facial biometric capabilities over 67 acres",
+      "url": "https://www.biometricupdate.com/201908/london-landlord-deploys-cameras-with-facial-biometric-capabilities-over-67-acres",
+      "date": "2019-08",
+      "what_it_supports": "The 67-acre extent of the King's Cross estate deployment and the reporting that Canary Wharf was expected to follow."
+    },
+    {
+      "title": "Facial recognition begins creeping roll-out across London with installation on Kings Cross estate and Canary Wharf set to follow",
+      "url": "https://www.computing.co.uk/news/3080352/facial-recognition-london",
+      "date": "2019-08",
+      "what_it_supports": "Canary Wharf Group's confirmation that facial recognition was not in use and was only under consideration - the basis for recording Canary Wharf as never-started rather than active."
+    },
+    {
+      "title": "Facial Recognition 'Epidemic' in the UK - Big Brother Watch",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/facial-recognition-epidemic-in-the-uk/",
+      "date": "2019-08",
+      "what_it_supports": "The only audit of private UK FR sites: shopping centres (Meadowhall deployed, Trafford Centre), museums (Liverpool World Museum 2018), conference centres, casinos and property developers including King's Cross."
+    },
+    {
+      "title": "Premier League steps up policing tech with £3.42m facial recognition trial",
+      "url": "https://businessday.ng/sports/article/premier-league-steps-up-policing-tech-with-3-42m-facial-recognition-trial/",
+      "date": "2026-08",
+      "what_it_supports": "The Premier League's £3.42m funding of Met LFR at London matchdays, routed via Cheshire Constabulary under Section 93 of the Police Act 1996, with superintendent authorisation and the Met's retention rules."
+    },
+    {
+      "title": "Use of automated facial recognition between Stratford Station and Westfield Stratford City on 28 June 2018 (Met FOI disclosure)",
+      "url": "https://www.met.police.uk/foi-ai/metropolitan-police/disclosure-2018/october/use-automated-facial-recognition-stratford-station-westfield-stratford-city-28-june-2018/",
+      "date": "2018-10",
+      "what_it_supports": "That the facial recognition people associate with Westfield Stratford was a Met deployment on the transport hub next to the centre, not a system operated by the shopping centre."
+    },
+    {
+      "title": "Live Facial Recognition Tech at North London Derby - Tottenham Hotspur Supporters' Trust",
+      "url": "https://thstofficial.com/live-facial-recognition-tech-at-north-london-derby/",
+      "date": "2023-11",
+      "what_it_supports": "Met LFR outside the Emirates Stadium on a matchday, targeting football banning orders - police-operated venue-adjacent LFR, not a club system."
+    },
+    {
+      "title": "Moving Goalposts: Football, Facial Recognition and the Expansion of Surveillance (Privacy International)",
+      "url": "https://privacyinternational.org/long-read/5759/moving-goalposts-football-facial-recognition-and-expansion-surveillance",
+      "date": "2026",
+      "what_it_supports": "Civil society analysis of facial recognition around UK football, and the critique of commercially funded police biometric surveillance. Listed for the record; the page did not load during this research."
+    }
+  ],
+  "uncertain": [
+    "vendor",
+    "camera_count_claimed",
+    "regulatory_challenges"
+  ]
+}

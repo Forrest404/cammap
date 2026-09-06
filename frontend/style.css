@@ -1187,6 +1187,28 @@ ul.queue .row .note {
   align-self: center;
 }
 
+/* The map for correcting where a camera is, opened inside its row in
+   the Cameras tab. Not a .box: a box inside .prose is held to 42ch,
+   which is right for the short forms on the account page and far too
+   narrow for a map you are meant to place a pin on. It takes the
+   width of the list instead, and is set off by a rule and an indent
+   rather than a border, so the row it belongs to still reads as one
+   thing rather than two.
+
+   Shorter than the report form's map, where the map is the point of
+   the half of the page it sits in. Here it is opened over a list a
+   moderator is working down, and 420px would push the next camera
+   off the bottom of the screen. */
+.move-panel {
+  margin: 10px 0 4px 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--rule);
+}
+
+.move-panel .pick-map {
+  height: 300px;
+}
+
 /* ---------- the leaderboard ----------
 
    Wide content scrolls inside its own box, so the page itself never

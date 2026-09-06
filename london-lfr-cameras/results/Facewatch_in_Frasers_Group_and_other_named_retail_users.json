@@ -1,0 +1,234 @@
+{
+  "item_name": "Facewatch in Frasers Group and other named retail users",
+  "operator": "The retailers themselves are the deployers and data controllers in store - Frasers Group plc (Sports Direct, Flannels, House of Fraser, USC), J Sainsbury plc, Iceland Foods, Home Bargains (TJ Morris), B&M, Southern Co-op, and independent franchisees trading as Budgens, Spar, Costcutter, Morrisons Daily and Eat 17. Facewatch Limited (company number 07209931, active, registered at 89 High Street, Hadleigh, Ipswich IP7 5EA) runs the shared watchlist and matching service behind all of them.",
+  "system_type": "facewatch",
+  "vendor": "Facewatch Limited. Facewatch does not publish which underlying biometric engine it uses; it describes a dual-algorithm pipeline with human review and claims 99.98% accuracy. [uncertain]",
+  "london_coverage_summary": "Facewatch's London presence is real but almost entirely unmapped. The only London sites that any source actually names are Sainsbury's stores - Sydenham (the September 2025 trial site), then Dalston, Elephant & Castle, Ladbroke Grove, Camden and Whitechapel from January 2026, plus Dulwich, which surfaced only because a shopper was wrongly ejected there in August 2026 - and two older Facewatch case-study stores, the Eat 17 Spar in Hackney and its sister store in Walthamstow. Frasers Group is the most-reported retail user in the UK (Sports Direct, Flannels, House of Fraser and USC, 27 stores as of March 2023, a rollout the company said would continue) but no source in the public record names a single Frasers branch, in London or anywhere else. Facewatch's own claim of 125+ retailers and 'thousands of stores' cannot be broken down by borough from anything published.",
+  "cameras": [
+    {
+      "site_name": "Sainsbury's Sydenham superstore",
+      "address": null,
+      "postcode": null,
+      "borough": "Lewisham [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2025-09",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.thegrocer.co.uk/news/sainsburys-to-extend-facial-recognition-tech-to-200-stores-by-christmas/720799.article"
+    },
+    {
+      "site_name": "Sainsbury's Elephant & Castle",
+      "address": null,
+      "postcode": null,
+      "borough": "Southwark [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.theregister.com/2026/02/06/sainsburys_/"
+    },
+    {
+      "site_name": "Sainsbury's Dalston",
+      "address": null,
+      "postcode": null,
+      "borough": "Hackney [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch"
+    },
+    {
+      "site_name": "Sainsbury's Ladbroke Grove",
+      "address": null,
+      "postcode": null,
+      "borough": "Kensington and Chelsea [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch"
+    },
+    {
+      "site_name": "Sainsbury's Camden",
+      "address": null,
+      "postcode": null,
+      "borough": "Camden [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch"
+    },
+    {
+      "site_name": "Sainsbury's Whitechapel",
+      "address": null,
+      "postcode": null,
+      "borough": "Tower Hamlets [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch"
+    },
+    {
+      "site_name": "Sainsbury's Dulwich",
+      "address": null,
+      "postcode": null,
+      "borough": "Southwark [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026 [uncertain]",
+      "status": "paused",
+      "confidence": "confirmed",
+      "source_url": "https://www.retailgazette.co.uk/blog/2026/08/sainsburys-pauses-ai-facial-recognition-cameras-after-shopper-wrongly-ejected/"
+    },
+    {
+      "site_name": "Eat 17 (Spar franchise), Hackney",
+      "address": null,
+      "postcode": null,
+      "borough": "Hackney",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2019 [uncertain]",
+      "status": "unknown",
+      "confidence": "reported",
+      "source_url": "https://www.facewatch.co.uk/eat17-hackney-becomes-advocate-of-facewatch/"
+    },
+    {
+      "site_name": "Eat 17, Walthamstow",
+      "address": null,
+      "postcode": null,
+      "borough": "Waltham Forest",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2018-2019 [uncertain]",
+      "status": "unknown",
+      "confidence": "reported",
+      "source_url": "https://www.facewatch.co.uk/eat17-hackney-becomes-advocate-of-facewatch/"
+    }
+  ],
+  "camera_count_confirmed": 9,
+  "camera_count_claimed": "Facewatch claims 125+ retailer clients operating 'thousands of stores' across the UK (June and July 2026 statements). Frasers Group: at least 27 stores as of March 2023, fascias Sports Direct, Flannels, House of Fraser and USC, with the rollout confirmed as continuing across a UK estate of 950+ stores. Sainsbury's: 2 stores from September 2025, 7 by January 2026, 55 by mid-2026, with a stated target of 150 more (200+ total) before Christmas 2026. Southern Co-op: 35 of ~200 stores (2022 figure, south of England, not London). None of these figures is broken out for Greater London.",
+  "fixed_vs_mobile": "All of it is fixed. Facewatch is a permanently installed, entrance-mounted camera wired to a cloud matching service; there is no van-mounted or redeployable variant in the retail product. Of the 9 London sites named above, 9 are fixed and 0 are mobile. The only mobility in the system is the watchlist itself, which is shared between subscribing stores, so an entry created in one shop follows a person into every other Facewatch store they enter.",
+  "geographic_concentration": "The nameable London sites cluster in inner south and east London - Southwark (Elephant & Castle, Dulwich), Lewisham (Sydenham), Hackney (Dalston, Eat 17), Tower Hamlets (Whitechapel), Waltham Forest (Walthamstow) - with two outliers north and west in Camden and Kensington and Chelsea. This pattern is an artefact of which stores Sainsbury's chose for its trial and which incidents reached the press, not a measured distribution. Frasers Group's Sports Direct, Flannels and House of Fraser branches are concentrated on major high streets and shopping centres (Oxford Street, Westfield Stratford and Shepherd's Bush, Croydon and the outer-London retail parks), but no source confirms facial recognition at any specific one of them.",
+  "status_as_of_2026": "active",
+  "last_confirmed_active_date": "2026-08-17/18. On 17 August 2026 the Facewatch system at Sainsbury's Dulwich generated an alert that led to Matt Arnold being wrongly ejected from the store; Facewatch confirmed the following day that he had been wrongly removed. That is direct, dated evidence of a live camera producing a live alert in a London shop three weeks before the date of this research. Corroborating: Facewatch reported nearly 300,000 real-time alerts to retail clients in the first half of 2026, and a record 55,462 positive alerts in May 2026 alone.",
+  "evidence_of_current_activity": "Four independent strands, all 2026-dated. (1) The Dulwich ejection of 17 August 2026, which only happens if a camera is running. (2) Sainsbury's July 2026 announcement, reported by The Grocer, The Register and Biometric Update, that it was going from 55 stores to more than 200 by Christmas 2026 - an expansion, not a wind-down. (3) Facewatch's own July 2026 launch of a Crime Management Platform that notifies police within four seconds of a repeat-offender match, and its June 2026 PharmacyProtect launch aimed at community pharmacies, both of which name Frasers Group, Flannels, Sports Direct, Budgens, Home Bargains and Sainsbury's as current clients. (4) Facewatch Limited filed accounts made up to 31 March 2026 and a confirmation statement dated 31 March 2026 at Companies House, and is listed as Active with 24 employees as of April 2026.",
+  "known_pauses_or_withdrawals": "One confirmed pause: Sainsbury's suspended facial recognition at its Dulwich store on or about 17 August 2026 after Matt Arnold was wrongly ejected. The pause was store-level and Sainsbury's publicly kept its commitment to the technology elsewhere; the wider rollout continued. No retail chain has been confirmed to have withdrawn from Facewatch. The Co-op Group (distinct from Southern Co-op) told a parliamentary committee it has no plans to implement LFR, but that is a non-adoption rather than a withdrawal. Frasers Group has never announced a stop; the last direct statement on record, March 2023, was that the rollout would continue, and it is still named as a client in Facewatch's June 2026 material. Southern Co-op's 35-store deployment has not been publicly confirmed or denied since roughly 2023 and its current state is unknown. [uncertain]",
+  "locations_published_publicly": "no",
+  "publication_channel": "There is no public register, list or map of Facewatch store locations from Facewatch or from any of its retail clients. Facewatch's website (https://www.facewatch.co.uk/) publishes client testimonials and case studies that occasionally name a single store - the Eat 17 Spar in Hackney, a Budgens at Jubilee Square, Buckingham Park near Aylesbury - but this is marketing, not an inventory, and it is neither complete nor maintained. The only disclosure required at a site is a sign at the entrance, which means a location is discoverable by standing in front of it and no other way.",
+  "live_feed_or_map_available": "No. There is no live feed, no official map and no third-party map of Facewatch-equipped shops in London or anywhere in the UK. Big Brother Watch campaigns hard on this technology and runs a support line for people wrongly flagged, but publishes no store list or map. There is no FOI route either, because these are private companies rather than public authorities, so the Freedom of Information Act does not bite. The practical consequence is that a shopper cannot find out in advance whether a given branch is scanning them; the entrance signage, seen after arriving, is the entire notification mechanism. For a map project this is the central obstacle: Facewatch sites in London have to be collected by observation, photograph or crowd report, one storefront at a time.",
+  "advance_notice_period": "None. Deployment is permanent rather than scheduled, so there is nothing to announce in advance. Notice consists of signage at or near the store entrance, encountered on arrival.",
+  "foi_or_audit_sources": "Big Brother Watch's July 2022 legal complaint to the ICO over Southern Co-op's use of Facewatch in 35 stores; Big Brother Watch's April 2023 open letter to Frasers Group CEO Michael Murray, signed by nearly 50 parliamentarians and peers alongside Liberty and Privacy International; the ICO's investigation into Facewatch, concluded 31 March 2023, which found breaches of data protection law across eight counts but required no further regulatory action after remediation; Big Brother Watch's 2025 complaint to the ICO over Asda's separate facial recognition trial in five Greater Manchester stores. None of these documents enumerates store addresses - they name chains, not branches. The Freedom of Information Act does not apply to any of these retailers.",
+  "legal_basis": "UK GDPR Article 6(1)(f), legitimate interests, for the underlying processing, with Article 9(2)(g) and the substantial-public-interest condition for the prevention and detection of unlawful acts (Data Protection Act 2018, Schedule 1) relied on for the special-category biometric data. Facewatch positions itself as a UK GDPR data controller for the watchlist and deletes the biometric template immediately where no match is found. The ICO accepted in March 2023 that Facewatch has a legitimate purpose in using personal information to detect and prevent crime, though it found the company's policies had breached the law before remediation.",
+  "regulatory_challenges": "ICO investigation into Facewatch concluded 31 March 2023: breaches found on eight counts, policies overhauled, no further regulatory action. Big Brother Watch's Southern Co-op complaint (July 2022) and Frasers Group letter (April 2023). A 2024 case in which a 19-year-old, 'Sara', was wrongly flagged at a Home Bargains store, and the June 2025 Danielle Horan case at two Manchester Home Bargains stores over a pack of toilet roll she had in fact paid for. A separate June 2025 ICO complaint from a London shopper added to the database over 39p of paracetamol. Two 2026 London misidentifications at Sainsbury's - Warren Rajah at Elephant & Castle in February and Matt Arnold at Dulwich in August. No court has ruled on retail LFR in the UK; Bridges v South Wales Police (2020) concerned police use and has never been tested against a private retail operator. The Crime and Policing Act 2026 removed the £200 low-value shoplifting threshold, which Facewatch expects to increase alert volumes.",
+  "oversight_body": "The Information Commissioner's Office is the only regulator with jurisdiction. The Biometrics and Surveillance Camera Commissioner's surveillance camera code applied only to public authorities and that office has been wound down - notably, its former holder Fraser Sampson subsequently joined Facewatch as a non-executive director. There is no sector regulator for retail facial recognition and no licensing requirement.",
+  "research_confidence": "medium",
+  "key_uncertainties": "The biggest gap is Frasers Group itself, which is the named subject of this research item. Sports Direct, Flannels, House of Fraser and USC are repeatedly and reliably named as Facewatch users - by the Daily Mail in March 2023, by Big Brother Watch, and by Facewatch's own June 2026 client list - but in three and a half years of coverage not one source names a single branch. The '27 stores' figure is from March 2023 and has never been updated, broken down by fascia, or broken down by region; how many of the 27 are in London, or whether the number is now higher or lower after Frasers said the rollout would continue, is simply not public. I found no Frasers Group annual report disclosure on facial recognition either. Every London site in the cameras list above is therefore a Sainsbury's or an Eat 17, not a Frasers store.\n\nSecond: no address, postcode or coordinate is published for any of these sites, so every camera entry has null address, postcode, lat and lng. Boroughs are inferred from the place name in the source (Sydenham to Lewisham, Whitechapel to Tower Hamlets, and so on) and are marked uncertain because the sources give a neighbourhood, not an administrative boundary. 'Sainsbury's Dulwich' and 'Sainsbury's Camden' are the weakest - both names could denote more than one branch, and neither source gives a street. A map project would need to confirm each storefront by observation before pinning it.\n\nThird: the Eat 17 Hackney and Walthamstow entries come from Facewatch's own undated marketing case studies, roughly 2018-2019. Both stores may or may not still run the system; I found nothing confirming either way, so their status is unknown rather than active.\n\nFourth: several chains are named as Facewatch users - B&M, Budgens, Costcutter, Spar, Morrisons Daily, Home Bargains, Iceland - but always as brands rather than branches, and most of these are franchise or symbol-group fascias where the decision is taken store by store by an independent owner. That means chain membership tells you nothing about whether any particular London branch is equipped. Iceland's confirmed sites are in Bradford and Salford; Southern Co-op does not trade in London at all, so the recurring '35 stores across Portsmouth, Bristol, Hove, Bournemouth and London' phrasing in campaign material may be conflating operators, and I could not verify a London Southern Co-op site.\n\nFifth: 'confirmed' in the cameras list means a credible source names the store, not that I have seen a camera or signage there. The confirmed count of 9 is a floor several orders of magnitude below the real number - Facewatch claims thousands of UK stores, and Greater London plausibly holds hundreds of them.",
+  "sources": [
+    {
+      "title": "Sports Direct owner using facial recognition in 27 stores (Daily Mail, via Freevacy)",
+      "url": "https://www.freevacy.com/news/daily-mail/sports-direct-owner-using-facial-recognition-in-27-stores/3445",
+      "date": "2023-03-14",
+      "what_it_supports": "Frasers Group using Facewatch in at least 27 stores across Sports Direct and Flannels; ICO confirming an investigation; no branch named."
+    },
+    {
+      "title": "Parliamentarians and rights groups call on Frasers Group to drop facial recognition cameras (Big Brother Watch)",
+      "url": "https://bigbrotherwatch.org.uk/uncategorised/parliamentarians-and-rights-groups-call-on-frasers-group-to-drop-facial-recognition-cameras/",
+      "date": "2023-04-24",
+      "what_it_supports": "The Flannels, House of Fraser and Sports Direct fascias; the joint letter from nearly 50 parliamentarians with Liberty and Privacy International; absence of any named branch."
+    },
+    {
+      "title": "Sports Direct slammed over use of facial recognition tech in stores (Retail Gazette)",
+      "url": "https://www.retailgazette.co.uk/blog/2023/03/sports-direct-slammed-over-use-of-facial-recognition-tech-in-stores/",
+      "date": "2023-03",
+      "what_it_supports": "Frasers Group's 950+ UK store estate and its statement that the rollout would continue."
+    },
+    {
+      "title": "Sainsbury's to extend facial recognition tech to 200 stores by Christmas (The Grocer)",
+      "url": "https://www.thegrocer.co.uk/news/sainsburys-to-extend-facial-recognition-tech-to-200-stores-by-christmas/720799.article",
+      "date": "2026-07",
+      "what_it_supports": "Sydenham and Bath Oldfield Park as the September 2025 trial sites, expansion to five more London stores in January 2026, 55 stores live, 150 more planned, and the 99.98% accuracy and 92% non-return claims."
+    },
+    {
+      "title": "Sainsbury's expands AI powered facial recognition technology trial in partnership with Facewatch (Retail Technology Innovation Hub)",
+      "url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+      "date": "2026-07-01",
+      "what_it_supports": "The five named January 2026 London stores: Dalston, Elephant & Castle, Ladbroke Grove, Camden and Whitechapel."
+    },
+    {
+      "title": "Shopper wrongfully ejected after facial recognition alert (The Register)",
+      "url": "https://www.theregister.com/2026/02/06/sainsburys_/",
+      "date": "2026-02-06",
+      "what_it_supports": "The Elephant & Castle misidentification of Warren Rajah; six Sainsbury's sites live across Greater London at that date; Facewatch also naming B&M, Budgens, Iceland and Sports Direct as users."
+    },
+    {
+      "title": "Sainsbury's pauses AI facial recognition cameras after shopper wrongly ejected (Retail Gazette)",
+      "url": "https://www.retailgazette.co.uk/blog/2026/08/sainsburys-pauses-ai-facial-recognition-cameras-after-shopper-wrongly-ejected/",
+      "date": "2026-08",
+      "what_it_supports": "The Dulwich store, the 17 August 2026 wrongful ejection of Matt Arnold, and the store-level pause; the most recent hard evidence of a live London camera."
+    },
+    {
+      "title": "Facewatch wants to bring live facial recognition to UK pharmacies (Biometric Update)",
+      "url": "https://www.biometricupdate.com/202606/facewatch-wants-to-bring-live-facial-recognition-to-uk-pharmacies",
+      "date": "2026-06-09",
+      "what_it_supports": "Facewatch's current named client list including Frasers Group, Flannels and Sports Direct as of mid-2026; 125+ retailers; 500,000+ alerts in 2025."
+    },
+    {
+      "title": "Facewatch retail facial recognition to notify police of repeat offender matches (Biometric Update)",
+      "url": "https://www.biometricupdate.com/202607/facewatch-retail-facial-recognition-to-notify-police-of-repeat-offender-matches",
+      "date": "2026-07",
+      "what_it_supports": "Nearly 300,000 alerts in H1 2026; 125+ retailers operating thousands of UK stores; the Crime and Policing Act 2026 removing the £200 shoplifting threshold."
+    },
+    {
+      "title": "Eat17 Hackney sees a significant drop in store crime since installing Facewatch (Facewatch)",
+      "url": "https://www.facewatch.co.uk/eat17-hackney-becomes-advocate-of-facewatch/",
+      "date": "2019 [uncertain]",
+      "what_it_supports": "The two named London independent-chain sites, Eat 17's Spar in Hackney and its Walthamstow store."
+    },
+    {
+      "title": "Shops' use of live facial recognition - FAQs (Big Brother Watch)",
+      "url": "https://bigbrotherwatch.org.uk/blog/shops-use-of-live-facial-recognition-faqs/",
+      "date": "2024-12-19",
+      "what_it_supports": "The retailer roll-call including Costcutter, Budgens, Eat 17, Spar and Morrisons Daily; the Co-op Group's statement that it has no plans to implement LFR; absence of any published store list or map."
+    },
+    {
+      "title": "Facewatch comes under the public eye again (Biometric Update)",
+      "url": "https://www.biometricupdate.com/202506/facewatch-comes-under-the-public-eye-again",
+      "date": "2025-06",
+      "what_it_supports": "Iceland's Bradford and Salford trial sites; the Danielle Horan and 39p paracetamol cases; the ICO's finding of data protection breaches; Fraser Sampson's move to Facewatch's board."
+    },
+    {
+      "title": "FACEWATCH LIMITED overview (Companies House)",
+      "url": "https://find-and-update.company-information.service.gov.uk/company/07209931",
+      "date": "2026",
+      "what_it_supports": "Company status Active, incorporated 31 March 2010, accounts made up to 31 March 2026, confirmation statement dated 31 March 2026."
+    },
+    {
+      "title": "ICO clears live facial recognition system from Facewatch as legally compliant (IFSEC Insider)",
+      "url": "https://www.ifsecglobal.com/video-surveillance/ico-clears-live-facial-recognition-system-from-facewatch-as-legally-compliant/",
+      "date": "2023-03-31",
+      "what_it_supports": "The ICO's conclusion of its investigation, the legitimate-purpose finding, and that no further regulatory action was required."
+    }
+  ],
+  "uncertain": [
+    "vendor",
+    "known_pauses_or_withdrawals"
+  ]
+}

@@ -1145,9 +1145,86 @@ revoke all on function public.moderate_add_camera(text, text, double precision, 
 grant execute on function public.moderate_add_camera(text, text, double precision, double precision, text, text)
   to authenticated, service_role;
 
--- What the moderator's browser calls for any of the above. Same gate
--- as moderate_report. Actions: hide_camera and unhide_camera take a
--- camera id; retract and reapprove take a report id.
+-- Move a camera. A pin in the wrong place is the commonest thing
+-- wrong with a camera that is otherwise right - a van site the
+-- published record gives as a borough rather than a street, a report
+-- whose sender dropped the pin on their own doorstep rather than on
+-- the pole opposite. Everything else about the row is already
+-- correctable: the state through the reports, the presence through
+-- hide_camera. The position was the one thing nothing could touch.
+--
+-- Nothing else on the row changes, and that includes seed_key. It
+-- reads "name|lat|lon|type" as the published record gave them, and
+-- it is how seed.sql finds a row it has already written. Leaving it
+-- alone is what makes a correction survive a re-run of the seed:
+-- the row is still matched, its name and note and state are brought
+-- up to date, and its coordinates - which the seed's on-conflict
+-- deliberately does not write - stay where the moderator put them.
+-- Rewriting the key to the new position would make the seed insert
+-- a second camera at the old one on its next run.
+--
+-- The London box is not repeated here. The check constraint on the
+-- table is the lock, and the browser checks against LONDON_BOUNDS
+-- before sending, so a third copy of the numbers in this function
+-- would be one more thing to drift. Out-of-bounds arrives as a
+-- constraint violation, which is the honest answer.
+create or replace function public.move_camera(
+  cid bigint, new_lat double precision, new_lon double precision)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  if new_lat is null or new_lon is null then
+    raise exception 'a camera needs both coordinates';
+  end if;
+
+  update public.cameras
+     set lat = new_lat, lon = new_lon
+   where id = cid;
+
+  -- Silence here would look like success to the moderator watching,
+  -- and the camera would not have moved. A wrong id is worth hearing
+  -- about, unlike hide_camera's second call on an already hidden
+  -- camera, which is genuinely nothing to do.
+  if not found then
+    raise exception 'no camera with id %', cid;
+  end if;
+end;
+$fn$;
+
+revoke all on function public.move_camera(bigint, double precision, double precision)
+  from public, anon, authenticated;
+grant execute on function public.move_camera(bigint, double precision, double precision)
+  to service_role;
+
+-- The browser's way in for a moderator. Checks the role, then moves.
+create or replace function public.moderate_move_camera(
+  cam_id bigint, cam_lat double precision, cam_lon double precision)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  if not public.is_moderator() then
+    raise exception 'moderators only' using errcode = '42501';
+  end if;
+  perform public.move_camera(cam_id, cam_lat, cam_lon);
+end;
+$fn$;
+
+revoke all on function public.moderate_move_camera(bigint, double precision, double precision)
+  from public, anon, authenticated;
+grant execute on function public.moderate_move_camera(bigint, double precision, double precision)
+  to authenticated, service_role;
+
+-- What the moderator's browser calls to undo a decision. Same gate as
+-- moderate_report. Actions: hide_camera and unhide_camera take a
+-- camera id; retract and reapprove take a report id. Adding and
+-- moving a camera are not here - they carry arguments of their own,
+-- so each has its own moderate_ function above.
 create or replace function public.moderate_undo(target bigint, action text, note text default null)
 returns bigint
 language plpgsql

@@ -1,0 +1,116 @@
+{
+  "item_name": "Facewatch in convenience and grocery chains",
+  "operator": "The subscribing retailer in each case - Southern Co-op (now trading under Co-op Group ownership), Budgens, Costcutter, Nisa Local, Londis, Spar, Iceland, Home Bargains, QD Stores, Morrisons Daily and, from August 2026, Heron Foods. In symbol-group chains such as Budgens, Spar, Costcutter, Nisa and Londis the real operator is the individual franchisee, not the brand: the sign over the door says Budgens but the decision to install Facewatch, and the watchlist entries it produces, belong to the person who owns that one shop. Facewatch Limited remains the data controller for the biometric processing in every case.",
+  "system_type": "facewatch",
+  "vendor": "Facewatch Limited throughout. One exception matters and is easy to get wrong: Iceland's headline 2026 loss-prevention rollout across its 1,000+ store estate uses SAI's computer-vision platform, which is behaviour detection rather than facial recognition. Iceland's Facewatch live facial recognition is a separate and much smaller deployment. Asda, often listed alongside these chains, is a FaiceTech customer, not a Facewatch one.",
+  "london_coverage_summary": "Not one London branch of any convenience or grocery chain has ever been named by any source as running Facewatch. Every branch that is named in the public record - eighteen Southern Co-op stores, a Spar, a Budgens, two Iceland stores, a QD Stores - is outside Greater London, and in the QD Stores case is explicitly described as 'outside London'. The chains named in this research item are real Facewatch users and several are expanding, so it is very likely they have equipped London shops; but likely is not the same as evidenced, and no source closes that gap. The one convenience-format retailer with confirmed London Facewatch sites is Sainsbury's, whose Local and superstore branches at Dalston, Elephant and Castle, Ladbroke Grove, Camden, Whitechapel, Sydenham and East Dulwich are covered in the other Facewatch items in this survey.",
+  "cameras": [],
+  "camera_count_confirmed": 0,
+  "camera_count_claimed": "No chain publishes a site count for London and Facewatch publishes none at all. Chain-level claims, all national: Southern Co-op, 35 stores (from a base of 173 food stores plus 77 Welcome franchises); Iceland, 2 stores at launch in June 2025 rising to a planned 6 by October 2025; Heron Foods, a rollout announced across its 340+ store estate in August 2026; Home Bargains, Budgens, Costcutter, Nisa Local, Londis, Spar, QD Stores and Morrisons Daily, no figure ever given. Facewatch's own aggregate is '125+ businesses' operating 'thousands of stores' UK-wide, of which convenience and grocery is the largest single slice.",
+  "fixed_vs_mobile": "Fixed, without exception. Every deployment is a permanently installed camera at the shop entrance, screening everyone who enters. There is no mobile or redeployable element in any convenience or grocery Facewatch installation. Of the confirmed London sites for these chains: 0 fixed, 0 mobile, because there are none.",
+  "geographic_concentration": "The named branches cluster in southern coastal England and the north, not London. Southern Co-op: all 18 branches Big Brother Watch enumerated in January 2021 are in the Portsmouth area - Elm Grove Southsea, Copnor Road, Havant Road Drayton, Eastney Road, Fawcett Road, Francis Avenue, Great Southsea Street, Highland Road, New Road, Northern Parade, Park Lane Leigh Park, White Hart Lane Portchester, London Road Purbrook, The Hard Southsea, Tregaron Avenue Cosham, Twyford Avenue, St Albans Road West Leigh and Winter Road. London Road, Purbrook is in Hampshire and is a trap for anyone grepping for London. Spar: Twydall Green, Gillingham, Kent, live since 2023. Budgens: Jubilee Square, Buckingham Park, Aylesbury, Buckinghamshire, installed mid-2018 by owner Paul Wilks - Facewatch's oldest published convenience case study - with a further Budgens at Chatham Waterfront, Kent, disclosing planned Facewatch use in an alcohol licence application. Iceland: Bradford and Salford. QD Stores: described by the New York Times as 'outside London', with no town given. Home Bargains: no branch named anywhere, though the misidentification of a teenager that Facewatch later admitted took place at a Home Bargains in Manchester. Costcutter, Nisa Local, Londis, Morrisons Daily and Heron Foods: no branch named anywhere, in London or outside it.",
+  "status_as_of_2026": "active",
+  "last_confirmed_active_date": "August 2026, but for the sector rather than for any London site. Heron Foods announced a Facewatch deployment across its 340+ stores on 4 August 2026. Facewatch reported on 9 July 2026 that repeat offenders had entered subscriber shops almost 300,000 times in the first half of 2026, and its July 2026 press cycle put the network at 125+ retailers naming Budgens among them. The most recent confirmed date for any individually named convenience or grocery branch is much older: the Spar at Twydall Green (August 2023), the Southern Co-op Portsmouth stores (2021-2022) and the Budgens at Buckingham Park (2018-2019). Nothing confirms a specific branch of any of these chains is running Facewatch in London on any date.",
+  "evidence_of_current_activity": "Facewatch's own homepage as captured in July 2026 carries live testimonials from Morrisons Daily, Home Bargains and Southern Co-op, which is a company that would not leave a dead customer on its front page. Heron Foods signed in August 2026. Big Brother Watch's 'Shops Using Facial Recognition' table, maintained through 2026, still lists Budgens, Costcutter, Nisa Local, Londis, Spar, Iceland, Home Bargains, QD Stores and Southern Co-op against Facewatch as supplier. Iceland told the trade press in August 2026 it is extending facial recognition to add repeat-visit alerts. What none of this evidence does is attach a date to a place: the sector is demonstrably live, the individual shop is not demonstrable at all.",
+  "known_pauses_or_withdrawals": "No convenience or grocery chain has been confirmed to have dropped Facewatch. The one structural change is Southern Co-op, the longest-standing and most-scrutinised user: its members voted for merger on 21 May 2026, it ceased to exist as a separate legal entity on 26 July 2026 after 153 years, and its engagements transferred into Siena Co-operative Limited, a wholly owned Co-op Group subsidiary, on 27 July 2026, still trading as Southern Co-op pending CMA clearance expected later in 2026. That matters here because Co-op Group itself has publicly rejected live facial recognition - Paul Gerrard told the Lords Justice and Home Affairs Committee the Group had no plans to implement it because it 'cannot see what intervention it would drive helpfully'. So the largest convenience-sector Facewatch estate in the country has just passed to an owner on record against the technology. Whether the 35 stores have been switched off is not established either way. Separately, One Stop appears on no Facewatch list and I found no evidence it has ever used the system, so it should be treated as a non-user rather than a withdrawal.",
+  "locations_published_publicly": "no",
+  "publication_channel": "None of these chains publishes which of its branches are equipped, and Facewatch publishes nothing at all. Every branch name in the record above reached the public by one of three accidents: a campaign group's investigation (Big Brother Watch's January 2021 press release naming the 18 Southern Co-op stores at https://bigbrotherwatch.org.uk/press-releases/co-op-facial-recognition-supermarkets-revealed/, still the only complete branch-level list ever produced for any Facewatch customer); a local newspaper noticing a sign on a door (KentOnline on the Spar at Twydall Green, and on the Budgens at Chatham Waterfront where a licensing application disclosed it in advance); or Facewatch's own marketing choosing to name a happy customer (the Budgens at Buckingham Park). None of these is a disclosure channel. There is no route by which a Londoner could look up whether their local Budgens, Nisa or Spar is running it.",
+  "live_feed_or_map_available": "No. There is no live feed, no map and no list of Facewatch-equipped convenience or grocery shops anywhere - not from Facewatch, not from any of the chains, not from any campaign group, and not crowdsourced. This is worse here than for the big supermarkets, because these are symbol groups: even a hypothetical list of participating brands would not tell you which of the several hundred Budgens or Nisa shops in London are equipped, since the decision sits with each individual franchisee. Freedom of Information reaches none of it, every party being a private company. Big Brother Watch, the only organisation that has ever produced a branch-level list for this sector, did so once, in January 2021, for one retailer, by investigation rather than disclosure - and is still soliciting tips from the public by email and Signal, which is the plainest possible evidence that no such list can be obtained. For a shopper in London the only working method is to read the notice at the door: the required wording is 'Facial recognition in operation', usually on a small sticker or window poster at the entrance, and sometimes, as one documented case had it, obscured by whatever the shop has stacked in front of it.",
+  "advance_notice_period": "None, with one incidental exception. A franchisee can install and switch on Facewatch with no announcement; the sign on the door is the notice. The exception is licensing: the Budgens at Chatham Waterfront disclosed intended Facewatch use in its application for an alcohol licence, which put it in the public domain before the shop opened. That is a quirk of licensing paperwork, not a notice regime, and it would only ever catch new premises.",
+  "foi_or_audit_sources": "Freedom of Information does not reach any of this - every organisation involved is a private company. The audit record is entirely Big Brother Watch's: the January 2021 investigation that identified all 18 Southern Co-op stores, the July 2022 legal complaint to the ICO about Facewatch and Southern Co-op, the FOI-obtained and partly redacted ICO/Facewatch correspondence published June 2023, the June 2025 press release condemning Iceland's rollout, and the maintained supplier table. Privacy International's advocacy on Southern Co-op's Facewatch trial adds detail on the model. The ICO's March 2023 Facewatch decision arose from the Southern Co-op complaint, making the convenience sector the origin of the only regulatory finding against Facewatch - but the decision names no stores.",
+  "legal_basis": "Legitimate interests under Article 6(1)(f) UK GDPR, now also the 'recognised legitimate interests' ground at Article 6(1)(ea) introduced by the Data (Use and Access) Act 2025, with the substantial public interest condition in Schedule 1 of the Data Protection Act 2018 for the biometric and criminal offence data. The wording on a Spar door in Gillingham puts it almost verbatim: 'Facial recognition in operation. To protect our employees, customers and stock. Our legal process for processing your data is our legitimate interest and the substantial public interest of preventing and detecting crime.' The controller is Facewatch, not the shop; the shop is a subscriber whose only obligation is to display that sign.",
+  "regulatory_challenges": "The ICO's investigation into Facewatch, which concluded in March 2023 finding breaches of Articles 5, 6, 9 and 10 UK GDPR and Schedule 1 DPA 2018, was triggered by Big Brother Watch's July 2022 complaint about this exact sector - Southern Co-op's convenience stores. Facewatch was required to overhaul its processing and the ICO then took advisory action only. Southern Co-op publicly defended the technology throughout and afterwards praised Facewatch for the improvements. Big Brother Watch supported a legal claim by a teenager wrongly ejected from a Home Bargains in Manchester in 2024, where Facewatch admitted its system and its human 'super-recogniser' both got it wrong - the clearest documented harm in this sector. Big Brother Watch has also argued that in practice shoppers are added to watchlists over accusations worth as little as GBP 1, contrary to the ICO's requirement that only serious or repeat offenders be listed.",
+  "oversight_body": "The Information Commissioner's Office, and nothing else. The Surveillance Camera Code binds relevant authorities such as police and councils, not corner shops. There is no licensing, registration or inspection regime for a convenience store running live facial recognition. [uncertain]",
+  "research_confidence": "high",
+  "key_uncertainties": "The camera list is empty and that is the correct answer, not a gap in effort. No source names a London branch of Southern Co-op, Budgens, Costcutter, Nisa, One Stop, Spar, Iceland, Home Bargains or QD Stores as running Facewatch, and I will not invent one. The specific things I could not establish: (1) Whether Southern Co-op ever had a London store at all. Big Brother Watch's campaign page says its 35 Facewatch stores span 'Portsmouth, Bristol, Hove, Bournemouth and London', and IFSEC Insider adds Croydon to that list, but Southern Co-op's own trading area is given as Hampshire, the Isle of Wight, Sussex, Berkshire, Somerset, Surrey, Devon, Bristol, Kent and parts of Dorset and Wiltshire - which does not include Greater London. Croydon was historically in Surrey, which is how a Surrey-area chain might have a store inside the modern London boundary, so the claim is not impossible; it is simply unevidenced, and no Croydon or London Southern Co-op branch has ever been named. I treated it as unproven. (2) Whether Southern Co-op's 35 Facewatch stores are still switched on after the 26-27 July 2026 transfer to Co-op Group, whose own position is against live facial recognition. This is the single most likely near-term change in this sector and no source addresses it. (3) One Stop: I found no evidence it has ever used Facewatch. It is absent from Big Brother Watch's supplier table and from Facewatch's own materials. Treat it as a non-user, but absence of evidence is weaker than a denial and I have neither a denial nor a confirmation. (4) QD Stores is confirmed as a Facewatch user by the New York Times, which places the store 'outside London' without naming a town; QD is an East Anglian chain, so its Facewatch site is very unlikely to be in Greater London, and I did not record one. (5) Costcutter, Nisa Local, Londis, Morrisons Daily and Heron Foods are confirmed at brand level only - no branch has ever been named for any of them, anywhere in the UK. Because these are symbol groups of independently owned shops, brand-level confirmation says almost nothing about any particular shop: two Nisa Locals on the same road can differ. (6) Iceland's two named Facewatch stores are Bradford and Salford; whether the planned expansion to six by October 2025 happened, and where those further four are, is not published. Iceland's much larger 2026 rollout is SAI behaviour-detection software, not facial recognition, and conflating the two would overstate Iceland's LFR footprint by roughly a thousand stores. (7) No installation dates, addresses, postcodes or coordinates exist for any of these chains' London shops because no such shop has been identified. In practice the only way to establish one is to stand outside the shop and read the door notice.",
+  "sources": [
+    {
+      "title": "Big Brother Watch - Stop Facial Recognition campaign, 'Shops Using Facial Recognition' company table",
+      "url": "https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/",
+      "date": "2026",
+      "what_it_supports": "Facewatch confirmed as supplier to Budgens, Costcutter, Nisa Local, Londis, Spar, Iceland, Home Bargains, QD Stores and Southern Co-op. One Stop does not appear. The table is chain-level only, which is the core finding of this item. Also the Southern Co-op '35 stores across Portsmouth, Bristol, Hove, Bournemouth and London' claim."
+    },
+    {
+      "title": "Big Brother Watch - Co-op facial recognition supermarkets revealed",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/co-op-facial-recognition-supermarkets-revealed/",
+      "date": "2021-01-14",
+      "what_it_supports": "The only branch-level list ever published for a convenience Facewatch customer: all 18 Southern Co-op stores, every one in the Portsmouth area, none in London. Includes the London Road, Purbrook entry that misleads keyword searches."
+    },
+    {
+      "title": "Southern Co-operative - Wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Southern_Co-operative",
+      "date": "2026",
+      "what_it_supports": "Southern Co-op ceased to exist as a legal entity on 26 July 2026 after 153 years, transferring into Siena Co-operative Limited, a Co-op Group subsidiary, after a members' vote on 21 May 2026. Its estate at merger: 173 food stores, 77 Welcome franchises. Its trading area - Hampshire, Isle of Wight, Sussex, Berkshire, Somerset, Surrey, Devon, Bristol, Kent, parts of Dorset and Wiltshire - does not include Greater London."
+    },
+    {
+      "title": "Southern Co-op completes transfer of engagements to Group - Co-operative News",
+      "url": "https://www.thenews.coop/southern-co-op-completes-transfer-of-engagement-to-group/",
+      "date": "2026-07-27",
+      "what_it_supports": "Completion of the transfer on 27 July 2026, continued trading under the Southern Co-op name, and that the transaction remains subject to CMA review expected to conclude later in 2026."
+    },
+    {
+      "title": "AI facial recognition to be used at SPAR in Twydall Green, Gillingham - KentOnline",
+      "url": "https://www.kentonline.co.uk/medway/news/ai-facial-recognition-to-be-used-at-kent-shop-291009/",
+      "date": "2023-08-01",
+      "what_it_supports": "The only named Spar branch running Facewatch, in Kent not London, and the verbatim wording of the door notice these chains are required to display."
+    },
+    {
+      "title": "Budgens Buckingham Park continues to praise Facewatch / Budgens convenience store endorses the success of Facewatch - Facewatch case study",
+      "url": "https://www.facewatch.co.uk/budgens-buckingham-park-continues-to-praise-facewatch/",
+      "date": "2019-06-28",
+      "what_it_supports": "The named Budgens branch: Jubilee Square, Buckingham Park, Aylesbury, owner Paul Wilks, camera installed inside the main entrance in mid-2018, shoplifting reported down from ten incidents a week to two, 'plenty of signs' displayed. Not London. Cited from search summary; facewatch.co.uk blocks direct fetch and no archive snapshot exists. [uncertain]"
+    },
+    {
+      "title": "Budgens to use AI facial recognition tech after being granted alcohol licence for new shop at Chatham Waterfront - KentOnline",
+      "url": "https://www.kentonline.co.uk/medway/news/budgens-to-use-ai-shopper-watchlist-to-detect-customers-b-332957/",
+      "date": "2025 [uncertain]",
+      "what_it_supports": "A second named Budgens, in Kent, and the one route by which a Facewatch install becomes public before it goes live - an alcohol licence application."
+    },
+    {
+      "title": "Big Brother Watch condemns Iceland's facial recognition rollout",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/big-brother-watch-condemns-icelands-facial-recognition-rollout/",
+      "date": "2025-06-24",
+      "what_it_supports": "Iceland deploying Facewatch live facial recognition in two shops in the north of England with plans to expand; no store named by Big Brother Watch. Trade press identifies the two as Bradford and Salford and a plan for six by October 2025."
+    },
+    {
+      "title": "Iceland cuts store losses by 80% with AI-powered theft detection - Grocery Gazette",
+      "url": "https://www.grocerygazette.co.uk/2026/08/19/iceland-cuts-store-losses-by-80-with-ai-powered-theft-detection/",
+      "date": "2026-08-19",
+      "what_it_supports": "The distinction that matters for Iceland: the 1,000+ store 2026 rollout is SAI computer vision, not facial recognition, with facial recognition and repeat-visit alerts described as a separate and prospective extension."
+    },
+    {
+      "title": "Barred from grocery stores by facial recognition (Adam Satariano, New York Times, syndicated by the Seattle Times)",
+      "url": "https://www.seattletimes.com/business/barred-from-grocery-stores-by-facial-recognition/",
+      "date": "2023-06 [uncertain]",
+      "what_it_supports": "QD Stores confirmed as a Facewatch user, at a branch explicitly described as 'outside London'; the sharing rule that an upload alerts 'any shop within a few miles that uses Facewatch'; and the subscription price of about GBP 250 a month, which is what puts this technology within reach of a single-shop franchisee."
+    },
+    {
+      "title": "Big Brother Watch - Shops' use of live facial recognition, FAQs",
+      "url": "https://bigbrotherwatch.org.uk/blog/shops-use-of-live-facial-recognition-faqs/",
+      "date": "2026",
+      "what_it_supports": "The Home Bargains misidentification that Facewatch admitted; the ICO's March 2023 findings against Facewatch arising from the Southern Co-op complaint; and Co-op Group's evidence to the Lords Justice and Home Affairs Committee that it has no plans to use live facial recognition - the position of Southern Co-op's new owner."
+    },
+    {
+      "title": "Heron Foods deploys Facewatch retail crime prevention technology across its stores - Retail Technology Innovation Hub",
+      "url": "https://retailtechinnovationhub.com/home/2026/8/4/heron-foods-deploys-facewatch-retail-crime-prevention-technology-across-its-stores-in-uk",
+      "date": "2026-08-04",
+      "what_it_supports": "The most recent convenience-sector signing: 340+ stores across Northern England, the Midlands and Wales, no branches named, no London presence stated."
+    },
+    {
+      "title": "Facewatch to launch UK-first real-time police alert capability for shops - Talking Retail",
+      "url": "https://www.talkingretail.com/featured/facewatch-to-launch-uk-first-real-time-police-alert-capability-for-shops-01-07-2026/",
+      "date": "2026-07-01",
+      "what_it_supports": "Currency for the sector as a whole in 2026: 125+ retailers and thousands of stores, Budgens named among them, and the autumn 2026 police-alerting feature."
+    },
+    {
+      "title": "Facewatch homepage (archived 26 July 2026)",
+      "url": "https://web.archive.org/web/20260726094120/https://www.facewatch.co.uk/",
+      "date": "2026-07-26",
+      "what_it_supports": "Live 2026 testimonials from Morrisons Daily (Alex Kapadia, MD, theft down nearly 90% at the store), Home Bargains (Nigel Morley, incidents down about 70%) and Southern Co-op (Gareth Lewis) - and the absence of any store locator on Facewatch's own site."
+    }
+  ],
+  "uncertain": [
+    "oversight_body",
+    "sources"
+  ]
+}

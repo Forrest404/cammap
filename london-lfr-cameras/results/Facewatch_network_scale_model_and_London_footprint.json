@@ -1,0 +1,246 @@
+{
+  "item_name": "Facewatch network - scale, model and London footprint",
+  "operator": "Facewatch Limited (company number 07209931, registered office High Street, Hadleigh, Ipswich, Suffolk IP7 5EA; CEO Nick Fisher; founded by Simon Gordon of Gordon's Wine Bar, London). Facewatch is the data controller for all the facial recognition processing; the shop is a 'subscriber' that hosts the camera, receives the alerts and decides what to do with the person. So the operator a shopper meets is the retailer, but the operator of the biometric system is Facewatch itself.",
+  "system_type": "facewatch",
+  "vendor": "Facewatch Limited - it is both the vendor and the controller. Its own description of the pipeline is two AI algorithms plus a human check: a match is only sent as an alert at greater than 99% similarity or when a Facewatch facial analyst agrees. It names AWS UK as the host and says it uses an AWS face-matching API as a non-storage secondary accuracy check; it does not name the primary engine. Facewatch claims 99.98% operational accuracy and holds ISO/IEC 42001:2023 certification for AI management (June 2026).",
+  "london_coverage_summary": "Facewatch is by a wide margin the largest private live-facial-recognition network in the UK, and London is where its most visible 2025-26 growth has happened - but its London footprint is only knowable second-hand, because Facewatch itself never says where its cameras are. The named London sites in the public record are seven Sainsbury's stores (Sydenham from September 2025; Dalston, Elephant & Castle, Ladbroke Grove, Camden and Whitechapel from January 2026; East Dulwich, paused August 2026) plus Gordon's Wine Bar on Villiers Street and a Village Wholefoods in Clapham. Everything else in London - Frasers Group's Sports Direct, Flannels, USC and House of Fraser shops, B&M, Home Bargains, Iceland, Budgens, Costcutter, Nisa, Spar and Londis franchises - is known only at the level of the chain, because no source names a London branch.",
+  "cameras": [
+    {
+      "site_name": "Sainsbury's Sydenham superstore",
+      "address": null,
+      "postcode": null,
+      "borough": "Lewisham [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2025-09",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://corporate.sainsburys.co.uk/purpose-in-action/we-must-put-safety-first-in-our-stores/"
+    },
+    {
+      "site_name": "Sainsbury's Dalston",
+      "address": null,
+      "postcode": null,
+      "borough": "Hackney [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://corporate.sainsburys.co.uk/purpose-in-action/we-must-put-safety-first-in-our-stores/"
+    },
+    {
+      "site_name": "Sainsbury's Elephant and Castle",
+      "address": null,
+      "postcode": null,
+      "borough": "Southwark [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://corporate.sainsburys.co.uk/purpose-in-action/we-must-put-safety-first-in-our-stores/"
+    },
+    {
+      "site_name": "Sainsbury's Ladbroke Grove",
+      "address": null,
+      "postcode": null,
+      "borough": "Kensington and Chelsea [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://corporate.sainsburys.co.uk/purpose-in-action/we-must-put-safety-first-in-our-stores/"
+    },
+    {
+      "site_name": "Sainsbury's Camden",
+      "address": null,
+      "postcode": null,
+      "borough": "Camden [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://corporate.sainsburys.co.uk/purpose-in-action/we-must-put-safety-first-in-our-stores/"
+    },
+    {
+      "site_name": "Sainsbury's Whitechapel",
+      "address": null,
+      "postcode": null,
+      "borough": "Tower Hamlets [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026-01",
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://corporate.sainsburys.co.uk/purpose-in-action/we-must-put-safety-first-in-our-stores/"
+    },
+    {
+      "site_name": "Sainsbury's East Dulwich (also reported simply as 'Dulwich')",
+      "address": null,
+      "postcode": null,
+      "borough": "Southwark [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2026 [uncertain]",
+      "status": "paused",
+      "confidence": "confirmed",
+      "source_url": "https://idtechwire.com/sainsburys-pauses-facial-recognition-at-london-store-after-customer-ejection/"
+    },
+    {
+      "site_name": "Gordon's Wine Bar",
+      "address": "47 Villiers Street, Charing Cross, London",
+      "postcode": "WC2N 6NE",
+      "borough": "Westminster [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": null,
+      "status": "active",
+      "confidence": "confirmed",
+      "source_url": "https://www.gordonswinebar.com/privacy-policy/"
+    },
+    {
+      "site_name": "Village Wholefoods, Clapham",
+      "address": null,
+      "postcode": null,
+      "borough": "Lambeth [uncertain]",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": null,
+      "status": "unknown",
+      "confidence": "reported",
+      "source_url": "https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/"
+    }
+  ],
+  "camera_count_confirmed": 9,
+  "camera_count_claimed": "Facewatch's own homepage claims '125+ businesses trust Facewatch' (July 2026) and 2026 trade press repeats 'more than 125 retailers operating thousands of stores across the UK'. Earlier press (2024) put it at 'nearly 400 stores'. Facewatch never publishes a site count for London, and no source breaks the network down by city. For scale of use rather than sites: 252,943 alerts in 2024, 516,739 in 2025, a record 55,462 positive alerts in May 2026, and nearly 300,000 in the first half of 2026.",
+  "fixed_vs_mobile": "Entirely fixed. Every Facewatch installation is a dedicated facial-recognition camera permanently mounted at a shop's entrance, installed by Facewatch's own team, and screening everyone who walks in. There is no van, no redeployable unit and no mobile element anywhere in the Facewatch model - which makes it the opposite of the police LFR the rest of this survey covers, and the only part of London's LFR estate that is genuinely a fixed installation you could put a pin in. Of the 9 named London sites: 9 fixed, 0 mobile.",
+  "geographic_concentration": "No borough-level pattern can be established, because the evidence is not granular enough to support one. What the named sites show is a cluster of Sainsbury's stores on inner-London high streets and transport nodes - Dalston, Elephant and Castle, Camden, Whitechapel, Ladbroke Grove, Sydenham, East Dulwich - spread across at least five boroughs rather than concentrated in one. The unnamed remainder will follow the retail estates of the subscribing chains, which in London means high streets, retail parks and station-adjacent convenience shops. Big Brother Watch says Southern Co-op's 35 Facewatch stores span 'Portsmouth, Bristol, Hove, Bournemouth and London', but every Southern Co-op branch it has ever named individually (18 of them, 2021) is in the Portsmouth area, so no London Co-op branch is actually evidenced.",
+  "status_as_of_2026": "active",
+  "last_confirmed_active_date": "September 2026. The most recent hard evidence is a chain of 2026 events: Facewatch's July 2026 announcement of a UK-first real-time police alerting capability due to go live in autumn 2026; its 9 July 2026 statement that repeat offenders entered subscriber shops almost 300,000 times in the first half of 2026; the 17 August 2026 pause of the system at Sainsbury's East Dulwich after a wrongful ejection (which confirms it was running there); and Heron Foods' announcement on 4 August 2026 that it is deploying Facewatch across its 340+ stores. Sainsbury's stated in July 2026 that it was live in over 55 stores and would reach 200+ by Christmas 2026.",
+  "evidence_of_current_activity": "Facewatch's own site, captured 26 July 2026, advertises a live monthly alert counter and '125+ businesses'. Its privacy notice, updated in 2026, is written against the Data (Use and Access) Act 2025 and its new Article 6(1)(ea) 'recognised legitimate interests' ground - a document nobody maintains for a dormant service. Sainsbury's confirmed the East Dulwich pause on 17 August 2026 while explicitly continuing the wider rollout. Heron Foods signed on in August 2026. Facewatch appointed Dean Armstrong KC as Data Protection Officer in May 2026 and gained ISO/IEC 42001 certification in June 2026. Big Brother Watch is running a live 'Stop Sainsbury's Spying' campaign against the 200-store expansion as of 2026.",
+  "known_pauses_or_withdrawals": "One confirmed pause at a named site: Sainsbury's East Dulwich, 17 August 2026, after an innocent man was wrongly identified and ejected. Sainsbury's said the alert itself was correct but was 'handled and communicated incorrectly'. A separate wrongful ejection at Sainsbury's Elephant and Castle on 27 January 2026 (Warren Rajah, offered a GBP 75 voucher) did not stop that store. No chain anywhere has been confirmed to have dropped Facewatch. Asda's 2025 Greater Manchester trial is sometimes lumped in with Facewatch withdrawals but is not a Facewatch deployment at all - its supplier was FaiceTech. Facewatch is not the whole private-LFR market and its subscriber list is not stable, so quiet non-renewals by individual franchisees would be invisible.",
+  "locations_published_publicly": "no",
+  "publication_channel": "Facewatch publishes nothing. Its website (facewatch.co.uk) has exactly five sections - Home, Retail Sector, PharmacyProtect, Privacy, News, Contact - and no store locator, no map, no list, not even a count of sites. Its privacy notice, which is the document that would have to carry such a list if anything did, names no premises at all. What exists instead is scattered and second-hand: (1) Big Brother Watch's 'Shops Using Facial Recognition' table at https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/ which lists roughly 40 companies against their supplier, but is a list of chains, not shops; (2) individual retailers' own announcements - Sainsbury's corporate page at https://corporate.sainsburys.co.uk/purpose-in-action/we-must-put-safety-first-in-our-stores/ is the single most useful document in this entire research item, because it names seven specific stores; (3) local newspaper reporting of individual shops, e.g. KentOnline on the Spar at Twydall Green; (4) Facewatch's own marketing case studies, which occasionally name a subscriber (Flannels, Gordon's Wine Bar, a Budgens at Jubilee Square) but frame them as testimonials rather than disclosure.",
+  "live_feed_or_map_available": "No. There is no live feed, no map and no list of current Facewatch locations anywhere - official or third-party - and this is a structural fact rather than an oversight. Facewatch is a private company, so it is outside the Freedom of Information Act entirely: you cannot FOI it the way you can FOI the Met's van deployments. The ICO, which is subject to FOIA and does hold material about Facewatch, redacted the substance of what it obtained when Big Brother Watch asked - the remedial steps Facewatch was ordered to take were withheld, in part under section 44 as information supplied in confidence. Retailers have no obligation to say which of their branches are equipped, and most do not. Big Brother Watch, the organisation with the strongest incentive and the most FOI experience in this area, has never published a site-level list and continues to solicit tips from the public by email and Signal - which is itself the clearest evidence that no such list is obtainable. Nor is there a crowdsourced map: no OpenStreetMap tagging convention, no campaign-group map, nothing. The only thing that resembles a map on Big Brother Watch's site is a 'Facial Recognition Map' element covering police deployments, not shops. Practically, the answer to 'is my local shop running Facewatch' can only be obtained by standing outside it and reading the door.",
+  "advance_notice_period": "None. There is no announcement mechanism at all - a shop can install Facewatch overnight and the only notice given is the sign that appears on the door on the day it goes live. Retailers announce chain-level rollouts to trade press after the fact, and local licensing applications occasionally surface an install in advance (a Budgens at Chatham Waterfront disclosed planned Facewatch use in an alcohol licence application), but neither is systematic.",
+  "foi_or_audit_sources": "Big Brother Watch is the only body doing sustained audit work, and its material is the backbone of what is publicly known: the January 2021 press release naming all 18 Southern Co-op stores (the only complete branch-level list Facewatch has ever been subject to, and it is five years old and entirely Portsmouth); the July 2022 legal complaint to the ICO about Facewatch and Southern Co-op; the June 2023 FOI-obtained ICO/Facewatch correspondence, partly redacted; the 'Biometric Britain' report (May 2023); the 'Private sector use of live facial recognition' Q&A briefing, most recently updated February 2026; and the running 'Shops Using Facial Recognition' company table. Privacy International's 'Facewatch: the Reality Behind the Marketing Discourse' is the other substantial critical analysis. IPVM has published a technical GDPR-compliance analysis. None of these enumerates sites in London.",
+  "legal_basis": "Article 6(1)(f) UK GDPR legitimate interests for the general processing, which the ICO accepted in March 2023 for crime prevention specifically. Since the Data (Use and Access) Act 2025 came into force Facewatch also asserts the new Article 6(1)(ea) 'recognised legitimate interests' ground in Annex 1, under which the Article 6(1)(f) balancing test does not apply - though Facewatch says it continues to publish a Legitimate Interests Assessment voluntarily. For the biometric templates, which are special category data, it relies on the substantial public interest condition in Schedule 1 of the Data Protection Act 2018; for criminal offence data, Article 10 UK GDPR plus the same Schedule 1 condition. It asserts it does no solely automated decision-making, because a trained human reviews every alert before action - which is how it stays outside Articles 22A-22D.",
+  "regulatory_challenges": "The ICO investigation triggered by Big Brother Watch's July 2022 complaint concluded in March 2023 that Facewatch had breached data protection law on a considerable number of points - Article 5 lawfulness, fairness and transparency, purpose limitation and storage limitation, Article 6 lawfulness of processing, Article 9 special category data, Article 10 criminal offence data, and children's rights. Facewatch was required to overhaul its practices; having done so, the ICO took only advisory action and confirmed no further regulatory action was required, while warning the industry that this was not 'a green light to the blanket use of this technology'. Bridges v South Wales Police (Court of Appeal, 2020) is the governing UK authority on LFR but concerns police use, not private use, and does not directly bind Facewatch. Big Brother Watch has supported individual legal claims arising from misidentifications (notably a teenager wrongly ejected from a Home Bargains in Manchester in 2024, where Facewatch admitted the error) and filed a complaint against Asda's separate FaiceTech deployment. Comparable European regulators have gone further: the Dutch DPA ruled retail LFR disproportionate and the Spanish regulator fined a supermarket EUR 2,520,000. The words 'facial recognition' still appear in no Act of Parliament.",
+  "oversight_body": "The Information Commissioner's Office, as data protection regulator - and effectively nobody else. The Biometrics and Surveillance Camera Commissioner (Professor William Webster since 1 November 2025) oversees the Surveillance Camera Code, which binds relevant authorities such as police and councils, not private retailers. There is no sectoral licensing regime, no registration requirement and no inspectorate for private LFR. [uncertain]",
+  "research_confidence": "medium",
+  "key_uncertainties": "The central finding is a negative and it is solid: no public list of Facewatch store locations exists, from Facewatch, from the ICO, from FOI, or from campaign groups, and there is no realistic route to one. Facewatch is a private company outside FOIA; the ICO redacts what it holds; retailers are not required to disclose which branches are equipped. Everything below follows from that. (1) The nine London sites named here are almost certainly a small fraction of the real London total - Facewatch claims thousands of stores nationally, and the seven Sainsbury's stores are named only because Sainsbury's chose to name them in a press release. There is no way to estimate the London figure, and I have not tried to. (2) No address, postcode or coordinate is given for any Sainsbury's site because no source gives one; the borough values are my inference from the store's common name and are marked uncertain. Gordon's Wine Bar is the one entry with a real address, taken from the venue's own privacy policy. (3) Several businesses on Big Brother Watch's supplier table are single-site or near-single-site London venues - Palm Beach Casino, Tian Tian Market, EAT 17, Symposium - but Big Brother Watch names the business, not the branch or the city, so putting them on a map would mean inventing a location. They are deliberately excluded from the camera list. (4) Big Brother Watch's assertion that Southern Co-op's 35 Facewatch stores include London is unsupported by any named branch; the only Southern Co-op branches ever enumerated are the 18 Portsmouth-area stores from 2021, and one of them is on a road called London Road in Purbrook, Hampshire, which is an obvious trap. (5) The Facewatch privacy notice now says 'the subscriber can only view incidents and SOIs that they have uploaded', while its retail page still describes an alert firing when a subject 'goes to another store with the Facewatch system installed'. Both are 2026 text on the same website. The sharing model is therefore: Facewatch holds one central database and decides which subscribers get alerted about whom, on a geographic and offence-type basis it calls 'a defined area relevant to the subscriber' - the subscriber never sees the wider watchlist, but is alerted from it. Facewatch has never published the rule that defines that area; the only figure I found is the New York Times' 2023 description, sourced from a Facewatch-using shop, that a person uploaded at one store will trigger an alert at 'any shop within a few miles that uses Facewatch'. Treat 'a few miles' as journalism, not a specification. Big Brother Watch separately refers to suppliers offering 'National Watchlists'. (6) The oversight position after the Data (Use and Access) Act 2025 is marked uncertain: sources disagree about whether and when the ICO becomes the Information Commission, and about the current standing of the Surveillance Camera Code, though neither affects the substantive point that private retail LFR has one regulator and no inspectorate. (7) Facewatch's accuracy and alert-volume figures are all self-reported and unaudited.",
+  "sources": [
+    {
+      "title": "Facewatch Privacy Notice (facewatch.co.uk/privacy, archived 13 July 2026)",
+      "url": "https://web.archive.org/web/20260713083705/https://www.facewatch.co.uk/privacy/",
+      "date": "2026-07-13",
+      "what_it_supports": "Primary source for the model: Facewatch is the data controller, subscribers must display signage at the entry point, subjects of interest require a formal witness statement, alerts sent only above 99% similarity or on analyst review, biometric data of non-matches deleted instantly, SOI retention 12 months (2 years for weapons), alert location data 48 hours, legal basis under Article 6(1)(f) and the new 6(1)(ea), Schedule 1 DPA 2018 for special category and criminal offence data, AWS UK hosting. Also demonstrates by omission that no store list is published."
+    },
+    {
+      "title": "Facewatch homepage (archived 26 July 2026)",
+      "url": "https://web.archive.org/web/20260726094120/https://www.facewatch.co.uk/",
+      "date": "2026-07-26",
+      "what_it_supports": "'125+ businesses trust Facewatch', 99.98% claimed accuracy, live monthly alert counter, named subscriber testimonials from Morrisons Daily, Frasers Group, Home Bargains, Southern Co-op and Ruxley Manor. Site navigation shows there is no store locator or location list of any kind."
+    },
+    {
+      "title": "Facewatch - Facial recognition for retail (archived 13 July 2026)",
+      "url": "https://web.archive.org/web/20260713083717/https://www.facewatch.co.uk/facial-recognition-for-retail-sector/",
+      "date": "2026-07-13",
+      "what_it_supports": "Facewatch installs the cameras itself; the cross-store sharing mechanism, in Facewatch's own words: an alert fires when a subject of interest 'returns to your store - or goes to another store with the Facewatch system installed'."
+    },
+    {
+      "title": "We must put safety first in our stores - J Sainsbury plc",
+      "url": "https://corporate.sainsburys.co.uk/purpose-in-action/we-must-put-safety-first-in-our-stores/",
+      "date": "2026-01-20",
+      "what_it_supports": "The only document that names specific Facewatch sites in London: Sydenham and Bath Oldfield Park as the September 2025 trial stores, then Dalston, Elephant and Castle, Ladbroke Grove, Camden and Whitechapel. Also Sainsbury's statement that clear signage is in place at all stores using the technology."
+    },
+    {
+      "title": "Big Brother Watch - Stop Facial Recognition campaign, including the 'Shops Using Facial Recognition' table",
+      "url": "https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/",
+      "date": "2026",
+      "what_it_supports": "The nearest thing to a public register: roughly 40 companies mapped to their LFR supplier, with Facewatch as the supplier for the large majority. Names Village Wholefoods, Clapham. Confirms the list is chain-level, and that Big Brother Watch is still soliciting public tips rather than publishing sites."
+    },
+    {
+      "title": "Big Brother Watch - Co-op facial recognition supermarkets revealed",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/co-op-facial-recognition-supermarkets-revealed/",
+      "date": "2021-01-14",
+      "what_it_supports": "The only complete branch-level list ever published for a Facewatch subscriber: all 18 Southern Co-op stores, every one in the Portsmouth area, none in London."
+    },
+    {
+      "title": "Big Brother Watch - Update: complaint to the ICO on retailer facial recognition",
+      "url": "https://bigbrotherwatch.org.uk/blog/update-big-brother-watchs-complaint-to-the-ico-on-retailer-facial-recognition/",
+      "date": "2023-06-28",
+      "what_it_supports": "FOI-obtained ICO/Facewatch correspondence; the March 2023 finding of breaches of Articles 5, 6, 9, 10 and Schedule 1 DPA 2018; the redaction of the remedial steps; the ICO taking advisory action only."
+    },
+    {
+      "title": "Big Brother Watch - Private sector use of live facial recognition: Q&A briefing (February 2026 update)",
+      "url": "https://bigbrotherwatch.org.uk/wp-content/uploads/2026/02/BRIEFING_-Facial-recognition-QA-briefing-Private-sector-Feb-2026-update.pdf",
+      "date": "2026-02",
+      "what_it_supports": "Current campaign-group account of how retail LFR works, the existence of supplier-run 'National Watchlists', and the absence of any specific statutory basis - 'facial recognition' appears in no Act of Parliament."
+    },
+    {
+      "title": "AI facial recognition to be used at SPAR in Twydall Green, Gillingham - KentOnline",
+      "url": "https://www.kentonline.co.uk/medway/news/ai-facial-recognition-to-be-used-at-kent-shop-291009/",
+      "date": "2023-08-01",
+      "what_it_supports": "The verbatim wording of a Facewatch door notice: 'Facial recognition in operation. To protect our employees, customers and stock. Our legal process for processing your data is our legitimate interest and the substantial public interest of preventing and detecting crime.' This is the single most useful thing a member of the public can look for."
+    },
+    {
+      "title": "Gordon's Wine Bar privacy policy",
+      "url": "https://www.gordonswinebar.com/privacy-policy/",
+      "date": "2026 [uncertain]",
+      "what_it_supports": "A named London Facewatch site with a real address - 47 Villiers Street, Charing Cross, London WC2N 6NE - confirmed by the venue's own privacy policy: 'we use facial recognition for the prevention of unlawful acts ... by using the Facewatch real time alerting service'."
+    },
+    {
+      "title": "Facewatch to launch UK-first real-time police alert capability for shops - Talking Retail",
+      "url": "https://www.talkingretail.com/featured/facewatch-to-launch-uk-first-real-time-police-alert-capability-for-shops-01-07-2026/",
+      "date": "2026-07-01",
+      "what_it_supports": "Scale and currency as of mid-2026: 125+ retailers operating thousands of UK stores, 516,739 alerts in 2025, record 55,462 positive alerts in May 2026, and the autumn 2026 police-alerting feature that notifies police within about four seconds."
+    },
+    {
+      "title": "Sainsbury's pauses facial recognition at London store after customer ejection - ID Tech",
+      "url": "https://idtechwire.com/sainsburys-pauses-facial-recognition-at-london-store-after-customer-ejection/",
+      "date": "2026-08-17",
+      "what_it_supports": "The East Dulwich pause of 17 August 2026 and the reason for it - the most recent hard evidence of live operation at a named London site."
+    },
+    {
+      "title": "Sainsbury's to extend facial recognition tech to 200 stores by Christmas - The Grocer",
+      "url": "https://www.thegrocer.co.uk/news/sainsburys-to-extend-facial-recognition-tech-to-200-stores-by-christmas/720799.article",
+      "date": "2026-07-01",
+      "what_it_supports": "55 stores live, 150 more before Christmas 2026, target above 200 - and that even the retailer expanding fastest names only two of them."
+    },
+    {
+      "title": "Heron Foods deploys Facewatch retail crime prevention technology across its stores - Retail Technology Innovation Hub",
+      "url": "https://retailtechinnovationhub.com/home/2026/8/4/heron-foods-deploys-facewatch-retail-crime-prevention-technology-across-its-stores-in-uk",
+      "date": "2026-08-04",
+      "what_it_supports": "August 2026 evidence of continued network growth: a 340+ store grocery chain joining, with no branches named and no London presence stated."
+    },
+    {
+      "title": "Barred from grocery stores by facial recognition (Adam Satariano, New York Times, syndicated by the Seattle Times)",
+      "url": "https://www.seattletimes.com/business/barred-from-grocery-stores-by-facial-recognition/",
+      "date": "2023-06 [uncertain]",
+      "what_it_supports": "The only published figure for the sharing radius: an upload at one shop alerts 'any shop within a few miles that uses Facewatch'. Also the subscription price of about GBP 250 a month, and a named subscriber - QD Stores - described as being outside London."
+    },
+    {
+      "title": "Privacy International - Facewatch: the Reality Behind the Marketing Discourse",
+      "url": "https://privacyinternational.org/long-read/4216/facewatch-reality-behind-marketing-discourse",
+      "date": "2022 [uncertain]",
+      "what_it_supports": "Critical analysis of the centralised watchlist model - that Facewatch centralises subjects of interest uploaded by subscribers and shares them with surrounding subscribing businesses. Cited from search summary; the page returned HTTP 526 on direct fetch. [uncertain]"
+    }
+  ],
+  "uncertain": [
+    "oversight_body",
+    "sources"
+  ]
+}

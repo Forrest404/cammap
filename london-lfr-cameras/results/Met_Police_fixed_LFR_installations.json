@@ -1,0 +1,146 @@
+{
+  "item_name": "Met Police fixed LFR installations",
+  "operator": "Metropolitan Police Service (MPS), with the Croydon pilot part-funded by the Home Office and delivered alongside Croydon Council / Croydon BID",
+  "system_type": "police_fixed",
+  "vendor": "NEC (NeoFace) facial recognition algorithm; cameras supplied by Axis Communications (Swedish, Canon subsidiary). Cameras are mounted on existing street furniture - lampposts and building fascias - rather than on dedicated vehicles.",
+  "london_coverage_summary": "The Met's only operational fixed (street-furniture-mounted) live facial recognition installation in London is in Croydon town centre, on North End and London Road. It ran as a Home Office-funded six-month pilot from October 2025 to March 2026 - the UK's first non-vehicle LFR installation - and the Met has said it will keep using the Croydon static cameras as part of routine LFR deployments. In June 2026 Commissioner Sir Mark Rowley announced an expansion of static LFR into the West End and Soho by the end of 2026, with a wider London rollout in 2027; as of early September 2026 no West End site has been publicly named as installed and live. Everywhere else in London, Met LFR is still van-mounted.",
+  "cameras": [
+    {
+      "site_name": "North End, Croydon - northern end (North End / London Road, by West Croydon)",
+      "address": "North End at its junction with London Road, Croydon town centre [uncertain - the Met has never published the mounting point; 'North End and London Road' is the Met's own March 2025 description, and 'either end of North End' the description used in Jan 2026 reporting]",
+      "postcode": null,
+      "borough": "Croydon",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2025-07 [uncertain - announced March 2025 for 'summer 2025' installation; first static deployment recorded in the Met's own log is 01/10/2025]",
+      "status": "active",
+      "confidence": "reported",
+      "source_url": "https://www.theregister.com/2025/03/27/uk_facial_recognition/",
+      "notes": "One of the two mounting locations of the UK's first fixed police LFR installation. Cameras are attached to existing lampposts and buildings and the feed is monitored remotely; the Met states the cameras are switched on only during an authorised deployment when officers are on the ground to respond, not continuously. Inside Croydon reported (19 Jan 2026) that 15 individual camera units were installed across the two locations at either end of North End - the Met has never confirmed a unit count. No exact pole, address or coordinate has ever been published."
+    },
+    {
+      "site_name": "North End, Croydon - southern end (South End of the pedestrianised high street)",
+      "address": "Southern end of North End, Croydon town centre, near the George Street / Croydon flyover end [uncertain - exact mounting point never published]",
+      "postcode": null,
+      "borough": "Croydon",
+      "lat": null,
+      "lng": null,
+      "camera_type": "fixed",
+      "installed_date": "2025-07 [uncertain - see above]",
+      "status": "active",
+      "confidence": "reported",
+      "source_url": "https://news.met.police.uk/news/met-makes-one-arrest-every-35-minutes-during-live-facial-recognition-pilot-509256",
+      "notes": "The second of the two mounting locations. The Met's own May 2026 statement describes 'static cameras at two locations, at the north and south ends of Croydon's high street'. The Met's published 2025 deployment record logs these operations under the location label 'North End, Croydon' with per-operation dates and durations (e.g. 01/10/25 4h40m, 15/10/25 4h12m, 18/12/25 1h43m), which is the only site-level primary evidence of when the fixed cameras were actually running."
+    }
+  ],
+  "camera_count_confirmed": 2,
+  "camera_count_claimed": "2 mounting locations, consistently stated by the Met. Inside Croydon (19 Jan 2026) reported 15 individual camera units across those two locations. The West End / Soho expansion announced 23 June 2026 is described only as 'multiple locations' with no number given. [uncertain]",
+  "fixed_vs_mobile": "Fixed: 2 locations, both in Croydon town centre, permanently mounted on street furniture but only powered up for authorised deployments. Mobile: the rest of the Met's LFR estate - the force said in its 2025 annual report that LFR was 'typically carried out twice a week using two dedicated vans'; van deployments continue across all 32 boroughs and are covered by the separate police_van item. The Met describes the coming West End/Soho cameras as 'static but not permanent in any one location' - they can be unbolted and repositioned as hotspots move, which makes them a third, intermediate category rather than true fixed installs.",
+  "geographic_concentration": "Entirely Croydon town centre: the pedestrianised North End retail corridor and its junction with London Road at West Croydon. Croydon was chosen after roughly two years of van deployments in the same streets (55 Croydon deployments since 2020, second only to Westminster's 75). Announced expansion is to the West End and Soho - Oxford Street has been named in reporting - inside Westminster borough, with a further London-wide rollout signalled for 2027.",
+  "status_as_of_2026": "active",
+  "last_confirmed_active_date": "2026-05-13 - the Met's own press release reporting the completed pilot (24 operations, October 2025 to March 2026) stated 'We will continue using static cameras in Croydon as part of our regular live facial recognition deployments', attributed to Lindsey Chiswick, the Met's LFR lead. The last individual static-camera operation with a published date and duration is 18/12/2025 (North End, Croydon, 1h43m) in the Met's 2025 deployment record; the 2026 record covering January onward is listed on the Met's website but could not be retrieved (see key_uncertainties).",
+  "evidence_of_current_activity": "Four strands. (1) The Met's 13 May 2026 press release closing out the pilot with 173 arrests and an explicit commitment to keep using the Croydon static cameras. (2) The 23 June 2026 announcement by Commissioner Sir Mark Rowley of static LFR for the West End and Soho by end-2026 and London-wide from 2027 - an expansion of the fixed programme, not a wind-down. (3) The Met's facial recognition page, as archived on 3 August 2026, lists a 'Live Facial Recognition - Deployment Record 2026', i.e. the force is still logging deployments this year. (4) In an LBC report of 12 August 2026 Rowley said the Met had arrested more than 2,000 people using LFR since the start of 2024 and Mayor Sadiq Khan discussed the West End rollout as live policy. No 2026 source describes the Croydon cameras being removed.",
+  "known_pauses_or_withdrawals": "None found. The pilot phase formally ended in March 2026 but the hardware stayed up and the Met said use would continue as business as usual - a transition, not a withdrawal. Croydon councillors told AM Zoe Garbett that the Met did not deliver the community consultation it had promised before installation, and Croydon Council passed motions critical of LFR, but neither stopped the deployment. The one nuance is that the Met has said the coming West End cameras will be 'static but not permanent in any one location', so individual sites may be moved rather than retired.",
+  "locations_published_publicly": "partial",
+  "publication_channel": "Retrospectively, in the Met's own published deployment records at https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/ - a per-year PDF grid giving location label, date, duration, use case, watchlist size, threshold, alert counts, arrests and estimated faces seen. The Croydon static operations appear there under the label 'North End, Croydon'. Prospectively, only signage put up on the day and a post on the local borough X/Twitter account. The street name is published; the mounting point, the camera count and the hours of operation are not.",
+  "live_feed_or_map_available": "No. There is no live or near-live map or list of the Croydon fixed cameras, official or third-party. The Met publishes no upcoming-deployment page: as archived on 3 August 2026, its facial recognition page carries policy documents, impact assessments and four retrospective deployment-record PDFs (2020-2022, 2023-2024, 2025, 2026) and nothing forward-looking. The Met's own 2025 annual report describes the notification practice as displaying signage 'on the day' and announcing the deployment via social media. Because the fixed cameras are bolted to lampposts and buildings, there is no marked van to give the visual cue a van deployment gives - a point AM Zoe Garbett makes explicitly: Londoners now have to infer a live operation from an unusually large number of officers in the street. No campaign group, Big Brother Watch included, runs a live tracker for these cameras.",
+  "advance_notice_period": "None. Signage on the day and a same-day social media post; the deployment record is published retrospectively. [uncertain - no published policy states a minimum notice period, and the LFR Policy document requires signage before the Zone of Recognition but sets no advance-publication duty]",
+  "foi_or_audit_sources": "The unchecked expansion of live facial recognition technology in London, Zoe Garbett AM (Green Party), London Assembly, February 2026 - the most detailed independent audit, built on MQT answers and FOI; covers Croydon's fixed cameras, deployment counts by year and borough and the consultation failure. Mayor's Question Time answers 'Live Facial Recognition (LFR) trial in Croydon' and 'Permanent Facial Recognition Tech in Croydon' (london.gov.uk, June 2025) - the Home Office funding and the 'cameras are not permanent and may be removed' wording. Liberty and Big Brother Watch campaign pages; Big Brother Watch's director was second claimant in the 2026 judicial review. Statewatch, June 2026, reports the Met refused an FOI for the full Croydon pilot evaluation, saying it would appear in the annual report due around October 2026. Inside Croydon's local reporting supplies the 15-unit figure and the 249-arrests / 193-charges Croydon breakdown.",
+  "legal_basis": "No primary legislation. The Met relies on common law policing powers, the Data Protection Act 2018 Part 3 (law enforcement processing of sensitive/biometric data), the Human Rights Act 1998 and ECHR Article 8, the Surveillance Camera Code of Practice, and its own published MPS LFR Policy, Data Protection Impact Assessment, Equality Impact Assessment and Legal Mandate. The policy admits only three delivery mechanisms - a static MPS-liveried vehicle, a secure MPS-liveried hoarding, or 'a limited series of networked CCTV cameras back to a central control point' - the last of which is the clause the Croydon fixed install sits under. Each operation requires authorisation by a senior authorising officer, a bespoke intelligence-led watchlist compiled no more than 24 hours ahead and deleted immediately afterwards, and a threshold setting (0.64 throughout the published records).",
+  "regulatory_challenges": "Thompson and Carlo v Commissioner of Police of the Metropolis, judicial review heard in the High Court and dismissed on 21 April 2026: the court held the Met's 2024 LFR policy has sufficient clarity, foreseeability and safeguards to satisfy the ECHR 'quality of law' test under Articles 8, 10 and 11. Claimants Shaun Thompson (wrongly stopped after a misidentification) and Silkie Carlo of Big Brother Watch said they would appeal; the Equality and Human Rights Commission intervened arguing the deployment breached human rights law. The earlier binding authority remains R (Bridges) v Chief Constable of South Wales Police [2020] EWCA Civ 1058, which found the South Wales scheme unlawful for excessive officer discretion - the deficiency the Met's 2024 policy was written to cure. A Home Office consultation on a new legal framework for law enforcement biometrics ran 4 December 2025 to 12 February 2026 and the May 2026 King's Speech promised a dedicated framework, but no bill had been laid as of mid-2026.",
+  "oversight_body": "No statutory regulator specific to LFR. In practice: the Mayor's Office for Policing and Crime (MOPAC), the London Assembly Police and Crime Committee, the Information Commissioner's Office for data protection, the London Policing Ethics Panel, the (now largely wound-down) Biometrics and Surveillance Camera Commissioner functions, and the Met's own internal authorising-officer and community-engagement processes. Critics' central complaint is that the Met authorises, evaluates and reports on its own deployments.",
+  "research_confidence": "medium",
+  "key_uncertainties": "1. Exact mounting points are not public. The Met has published the street names (North End and London Road, Croydon) and the phrase 'two locations at the north and south ends of Croydon's high street', but never an address, a lamppost, a building or a coordinate - so the two camera entries above carry null postcode, lat and lng rather than fabricated ones. 2. Unit count is disputed: the Met consistently says 'two locations' / 'two cameras'; Inside Croydon reported 15 individual camera units across those two locations in January 2026. Both readings are compatible if 15 units sit on 2 masts, but the Met has never confirmed it. 3. Go-live date is soft. Announced March 2025 for 'summer 2025' installation; the pilot is dated from October 2025; the first static Croydon operation in the Met's published record is 1 October 2025. Whether the hardware was physically up before October is not established, and one August 2026 report (LBC) gives the pilot window as October 2025 to May 2026 rather than to March 2026. 4. Operating hours are not published at all. The Met says only that the cameras are on 'during a deployment when there are officers present to respond'; the published record shows individual operations of roughly 1h43m to 5h47m. Garbett's report notes there is no way for a passer-by to tell whether a fixed camera is live, and no technical barrier to 24/7 operation. 5. The 2026 deployment record could not be read. It is listed on the Met's facial recognition page (archived 3 August 2026) but the link has no file extension and every retrieval attempt was blocked by Cloudflare or returned 404; the Wayback Machine has no copy. So the number and dates of Croydon static operations in 2026 are unknown, and the 'active' status rests on the Met's May 2026 statement of intent rather than on a logged 2026 operation. 6. The West End / Soho expansion is announced but unevidenced at site level. No street, camera count, installation date or go-live date has been published, and as of 6 September 2026 nothing confirms any West End camera is physically installed - so none appear in the cameras list. Oxford Street is named in press coverage as a target, not as a confirmed install. 7. Whether the programme has extended beyond Croydon: as of September 2026, no - Croydon remains the only operating fixed police LFR site in the UK. 8. Note that separately, Hammersmith and Fulham Council said in September 2025 it was adding facial recognition to 20 council CCTV cameras at 10 locations; that is council-operated, not Met-operated, and is outside this item.",
+  "sources": [
+    {
+      "title": "Met makes one arrest every 35 minutes during live facial recognition pilot (MPS press release)",
+      "url": "https://news.met.police.uk/news/met-makes-one-arrest-every-35-minutes-during-live-facial-recognition-pilot-509256",
+      "date": "2026-05-13",
+      "what_it_supports": "PRIMARY. Two static cameras on existing street furniture at the north and south ends of Croydon's high street; pilot October 2025 to March 2026; 24 operations; 173 arrests; 470,000+ people passed the cameras; one false alert; 10.5% crime drop and 21% VAWG drop; watchlists built no more than 24 hours ahead and deleted after; cameras on only during deployments with officers present; and the commitment to continue using the Croydon static cameras."
+    },
+    {
+      "title": "Met Commissioner to announce plans to introduce LFR into crime hotspots across the West End (MPS press release)",
+      "url": "https://news.met.police.uk/news/met-commissioner-to-announce-plans-to-introduce-lfr-into-crime-hotspots-across-the-west-end-510675",
+      "date": "2026-06-23",
+      "what_it_supports": "PRIMARY. The expansion of static LFR beyond Croydon: West End and Soho by December 2026, accelerated London-wide rollout from 2027, no camera count or named site given. Rowley quote 'We want to build on our success by introducing this capability to the West End and Soho by December'."
+    },
+    {
+      "title": "MPS LFR Deployments 2025 - Live Facial Recognition Deployment Record 2025 (PDF)",
+      "url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+      "date": "retrieved 2026-09-06; last row 23/12/2025",
+      "what_it_supports": "PRIMARY. The only site-level operational log. 231 deployments in 2025; 28 rows referencing Croydon; the static-pilot operations appear as 'North End, Croydon' from 01/10/2025 onward (01/10, 07/10, 15/10, 29/10, 06/11, 14/11, 19/11, 21/11, 26/11, 04/12, 10/12, 18/12) with durations, watchlist sizes (~15,000-16,900), a uniform 0.64 threshold, alert counts and arrests. Earlier 2025 Croydon rows ('London Rd, Croydon' 02/05/25, 'West Croydon' 05/03/25, 'George St, Croydon' 22/04/25) are van-era deployments."
+    },
+    {
+      "title": "Live Facial Recognition Annual Report 2025 (MPS)",
+      "url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/other-lfr-documents/live-facial-recognition-annual-report-2025.pdf",
+      "date": "published 2025-10-31",
+      "what_it_supports": "PRIMARY. 173 arrests and 128 people put before the courts from Croydon deployments; the deployment authorisation chain (Central Tasking and Co-Ordination Group); 'LFR deployments are typically carried out twice a week using two dedicated vans'; and the notification practice - engage locally, 'display signage on the day, and announce the deployment via social media'."
+    },
+    {
+      "title": "MPS Live Facial Recognition Policy document",
+      "url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/policy-documents/lfr-policy-document2.pdf",
+      "date": "2024 policy, under annual review to March 2026",
+      "what_it_supports": "PRIMARY. The three permitted delivery mechanisms - static MPS-liveried vehicle, secure MPS-liveried hoarding, or a limited series of networked CCTV cameras back to a central control point (the clause the Croydon fixed cameras sit under); the use cases; watchlist and authorisation rules; signage before the Zone of Recognition. This is the policy upheld in April 2026."
+    },
+    {
+      "title": "Metropolitan Police - Facial Recognition Technology page (Wayback capture)",
+      "url": "https://web.archive.org/web/20260803093454/https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+      "date": "captured 2026-08-03",
+      "what_it_supports": "PRIMARY, and the key negative finding: the Met's own LFR page as of August 2026 lists policy documents, impact assessments and four retrospective deployment records (2026, 2025, 2023-24, 2020-22) and contains no upcoming-deployment listing, no map and no live feed."
+    },
+    {
+      "title": "The unchecked expansion of live facial recognition technology in London - report by Zoe Garbett AM",
+      "url": "https://www.london.gov.uk/sites/default/files/2026-02/The%20unchecked%20expansion%20of%20live%20facial%20recognition%20technology%20in%20London%20-%20Zo%C3%AB%20Garbett%20Feb%202026.pdf",
+      "date": "2026-02-10",
+      "what_it_supports": "Independent audit. Vendor (NEC software, Axis cameras); deployments by year (2020:3, 2021:0, 2022:6, 2023:23, 2024:180, 2025:231) and by borough (Westminster 75, Croydon 55, Newham 35); the March 2025 decision to install permanent Croydon cameras without a formal effectiveness evaluation; Croydon councillors saying the promised consultation never happened; and the argument that fixed cameras remove the visual cue a van gives."
+    },
+    {
+      "title": "UK's first permanent facial recognition cameras installed in South London (The Register)",
+      "url": "https://www.theregister.com/2025/03/27/uk_facial_recognition/",
+      "date": "2025-03-27",
+      "what_it_supports": "The original announcement: two cameras in Croydon town centre on North End and London Road, installation in summer 2025, Superintendent Mitch Carr's statement that they will be switched on only when officers are in the area, and the intent to make LFR 'business as usual' rather than dependent on van availability."
+    },
+    {
+      "title": "Permanent Facial Recognition Tech in Croydon / Live Facial Recognition (LFR) trial in Croydon - Mayor's Question Time answers",
+      "url": "https://www.london.gov.uk/who-we-are/what-london-assembly-does/questions-mayor/find-an-answer/permanent-facial-recognition-tech-croydon",
+      "date": "2025-06-03",
+      "what_it_supports": "PRIMARY. Home Office-funded pilot commencing summer 2025 testing LFR cameras mounted on street furniture rather than vehicles; 'cameras are only on during a deployment when there are officers present to respond to any alerts'; and the caveat that 'the cameras are not permanent and may be removed at the conclusion of the pilot'."
+    },
+    {
+      "title": "Met claims 103 arrests during facial recognition camera trial (Inside Croydon)",
+      "url": "https://insidecroydon.com/2026/01/19/met-claims-103-arrests-during-facial-recognition-camera-trial/",
+      "date": "2026-01-19",
+      "what_it_supports": "The only source giving a unit count: 15 cameras at two locations at either end of North End. Also 13 activations October-December 2025, 103 arrests, and the Croydon-wide figure of 249 LFR arrests since the start of 2024 leading to 193 charges or cautions."
+    },
+    {
+      "title": "London cops hail fixed facial recognition cams after suspects collared every 35 mins (The Register)",
+      "url": "https://www.theregister.com/public-sector/2026/05/13/london-cops-hail-fixed-facial-recognition-cams-after-suspects-collared-every-35-mins/5239521",
+      "date": "2026-05-13",
+      "what_it_supports": "Independent confirmation that the cameras stayed up after the pilot ended, quoting the Met on continuing to use static cameras in Croydon; one camera at each end of the high street, mounted on lampposts and other existing infrastructure; not running continuously."
+    },
+    {
+      "title": "Summary of judgment: Thompson and Carlo v Commissioner of Police of the Metropolis (Judiciary of England and Wales)",
+      "url": "https://www.judiciary.uk/wp-content/uploads/2026/04/Summary-of-judgment-Thomson-and-Carlo-v-Metropolitan-Police-Commmissioner-AC-2024-LON-001764-21-04-2026.pdf",
+      "date": "2026-04-21",
+      "what_it_supports": "PRIMARY. The High Court's dismissal of the judicial review of the Met's 2024 LFR policy on Articles 8, 10 and 11 grounds - the legal clearance the Met cited when announcing the West End expansion two months later."
+    },
+    {
+      "title": "Met Police tout arrests, crime drop from permanent LFR camera pilot (Biometric Update)",
+      "url": "https://www.biometricupdate.com/202605/met-police-tout-arrests-crime-drop-from-permanent-lfr-camera-pilot",
+      "date": "2026-05",
+      "what_it_supports": "Vendor confirmation (NEC NeoFace algorithm), cameras 'installed on lampposts or buildings', and the Met's statement that static camera use in Croydon continues after the pilot."
+    },
+    {
+      "title": "UK's busiest shopping street to get permanent live facial recognition cameras (LBC)",
+      "url": "https://www.lbc.co.uk/article/oxford-street-permanent-live-facial-recognition-cameras-5Hjdfwc_2/",
+      "date": "2026-08-12",
+      "what_it_supports": "Most recent currency evidence: Oxford Street named as a target for static cameras; Rowley's claim of more than 2,000 LFR arrests since the start of 2024; Sadiq Khan's 'we test on individual sites before rolling out, we do not do a big bang'. Also gives the Croydon pilot window as October 2025 to May 2026, which conflicts with the Met's own March 2026 end date."
+    }
+  ],
+  "uncertain": [
+    "camera_count_claimed",
+    "advance_notice_period",
+    "cameras"
+  ]
+}

@@ -1,0 +1,205 @@
+{
+  "item_name": "Regulatory and legal status as of 2026",
+  "operator": "Not a camera operator. This unit covers the rule-makers and the courts: the High Court (Administrative Court, Divisional Court), the Court of Appeal, the Information Commissioner's Office, the Home Office, the College of Policing, the Equality and Human Rights Commission, the Biometrics and Surveillance Camera Commissioner, and the Mayor's Office for Policing and Crime with the London Assembly's Police and Crime Committee. The operators these bodies constrain are the Metropolitan Police, British Transport Police and, through UK GDPR only, Facewatch and its retail customers.",
+  "system_type": "mixed",
+  "vendor": "Not applicable. The regime is technology-neutral in form and does not name suppliers, though the systems it governs in London are NEC NeoFace Live Facial Recognition (Metropolitan Police and British Transport Police) and Facewatch in retail. The Home Office consultation notes that algorithms it funds must undergo independent bias testing, and reports that recent testing found no statistically significant differences in performance by age, gender or ethnicity - a claim campaign groups dispute.",
+  "london_coverage_summary": "The position has changed materially since 2024, and in the direction of permitting more, not less. The governing London authority is now R (Thompson and Carlo) v Commissioner of Police of the Metropolis [2026] EWHC 915 (Admin), handed down on 21 April 2026, in which a Divisional Court of Lord Justice Holgate and Mrs Justice Farbey unanimously dismissed a challenge to the Met's 11 September 2024 LFR policy and held it sufficiently clear and foreseeable to satisfy Articles 8, 10 and 11 ECHR. Bridges remains good law but the court held that its specific deficiencies - no clear criteria for who goes on a watchlist or where LFR may be deployed - do not arise under the 2024 policy. There is still no statute specifically authorising LFR: the Home Office consulted on a new legal framework between 4 December 2025 and 12 February 2026, the consultation closed, and legislation is expected in roughly two years, so through 2026 police LFR continues to rest on common law policing powers, Part 3 of the Data Protection Act 2018, the College of Policing authorised professional practice and each force's own policy. Retail LFR in London is governed only by UK GDPR and the ICO's Facewatch outcome, which limits watchlists to serious or repeat offenders but imposes no restriction whatever on where a shop may put a camera.",
+  "cameras": [],
+  "camera_count_confirmed": 0,
+  "camera_count_claimed": "Not applicable - this unit is about the legal regime, not an installed base. The regulatory record does contain some figures: forces in England and Wales run over 25,000 retrospective facial recognition searches per month against the Police National Database; police facial recognition searches of the passport database rose from 2 in 2020 to 417 in 2023, and of the immigration database from 16 in 2023 to 102 in 2024, against holdings covering over 150 million people; and the ICO audited five police forces in 2026, issuing 107 recommendations. None of these are camera counts.",
+  "fixed_vs_mobile": "The law barely distinguishes them, and that is the single most important gap for anyone mapping fixed cameras. The Met's September 2024 policy and the Thompson and Carlo judgment are both written around discrete, time-limited, van-based deployments: a Use Case, an authorising officer, a defined small geographical area, a start and an end time. When the claimants tried to raise how that framework would apply to permanently installed cameras such as those in Croydon, the court dismissed the point as speculation and declined to decide it, notwithstanding the Biometrics Commissioner's observation that LFR is entering the static CCTV network. So as of September 2026 the leading authority validates a policy designed for mobile deployments while the Met is installing fixed cameras in Croydon and extending them across the West End and Soho, and no court has yet tested whether a permanent installation can satisfy the clear-start-and-end-time and defined-duration logic the policy relies on. Private fixed LFR in shops sits outside all of this: it is regulated by UK GDPR alone, with no deployment authorisation, no location criteria and no time limits.",
+  "geographic_concentration": "The rules themselves push deployments toward crime hotspots rather than crowds. Under the Met policy examined in Thompson and Carlo, Use Case A hotspots are identified by scoring crime data over a three-year period across a hexagonal grid, with only hexagons in the top 25% crime percentile qualifying, supplemented by corporate operational experience and intelligence reporting. The court expressly held that footfall is not a criterion and that there is no necessary connection between busy locations and LFR deployment, accepting evidence that both high- and low-footfall areas can qualify as hotspots while many busy places do not. In practice London deployments have clustered in Croydon (Thornton Heath and the town centre), Haringey (Northumberland Park), Lewisham (Deptford High Street), Westminster and the West End, and Camden - and Zoe Garbett AM's February 2026 London Assembly report found over half of 2024 deployments fell in areas with higher-than-average Black populations. The court noted that the claimants did not bring a Public Sector Equality Duty challenge under section 149 of the Equality Act 2010, so that geographic-disparity argument remains formally untested since Bridges.",
+  "status_as_of_2026": "active",
+  "last_confirmed_active_date": "2026-08-18 for the most recent regulatory action, being the ICO's publication of its audits of five police forces' use of facial recognition with 107 recommendations, all accepted in full or in part. The most recent judicial action is 2026-04-21, the handing down of R (Thompson and Carlo) v Commissioner of Police of the Metropolis [2026] EWHC 915 (Admin). The most recent legislative-process date is 2026-02-12, the close of the Home Office consultation on a new legal framework for law enforcement use of biometrics, facial recognition and similar technologies. As of 2026-09-06 no government response to that consultation and no bill had been published.",
+  "evidence_of_current_activity": "The regime is unmistakably live and moving. In sequence: the College of Policing published national technology guidance and authorised professional practice covering AI, ANPR and live facial recognition in June 2025; the EHRC was granted permission to intervene in the Thompson judicial review and stated in August 2025 that the Met's LFR policy was unlawful and incompatible with Articles 8, 10 and 11; the Home Office consultation ran 4 December 2025 to 12 February 2026, proposing a single consolidated regulatory body with powers to set standards, investigate misuse and enforce compliance, and asking whether senior-officer or independent authorisation and harm-based seriousness thresholds should gate deployments; Liberty, the Independent Reviewer of Terrorism Legislation, Statewatch and the ICO all filed consultation responses in January and February 2026; the judicial review was heard in January 2026 and decided on 21 April 2026; the ICO published a blog on why data protection lies at the heart of responsible police FRT in March 2026 and its five-force audit summary in August 2026; Big Brother Watch and Privacy International have pre-action correspondence outstanding with the Home Office and the Met over facial recognition searching of the passport and immigration databases, with proceedings expected during 2026; and testing of a national facial matching service was slated for later in 2026. What has NOT happened, and should be said plainly: no new statute governing LFR has been enacted, none was before Parliament as of September 2026, and the substantive legal basis for placing an LFR camera in London is unchanged since 2024 apart from having now been tested and upheld.",
+  "known_pauses_or_withdrawals": "No pause has been imposed by any court or regulator, and every call for one has been refused or ignored. 65 parliamentarians called for an immediate stop to LFR surveillance; Zoe Garbett AM called in February 2026 for an immediate pause on the Met's expansion; the EHRC argued the policy was unlawful; the ICO found compliance inconsistent across five audited forces. The Met has continued and expanded regardless - the Croydon fixed-camera pilot ran 24 operations between October 2025 and March 2026 and the West End and Soho static rollout was announced in June 2026 for completion by the end of 2026, with wider London expansion signalled for 2027. Two things did change direction: the abolition of the Biometrics and Surveillance Camera Commissioner and of the Surveillance Camera Code of Practice, proposed in the earlier Data Protection and Digital Information Bill, was dropped from the Data (Use and Access) Act 2025, so both survive - though the post has been vacant since Tony Eastaugh resigned in August 2024, which is arguably worse than abolition. And the ICO, having found Facewatch in breach of data protection law on eight counts, decided no further regulatory action was required, so no retail deployment has been stopped by a regulator either.",
+  "locations_published_publicly": "partial",
+  "publication_channel": "Judgment and case summary: R (Thompson and Carlo) v Commissioner of Police of the Metropolis [2026] EWHC 915 (Admin), summary at https://www.judiciary.uk/wp-content/uploads/2026/04/Summary-of-judgment-Thomson-and-Carlo-v-Metropolitan-Police-Commmissioner-AC-2024-LON-001764-21-04-2026.pdf with the full judgment at https://caselaw.nationalarchives.gov.uk/ . College of Policing authorised professional practice on live facial recognition: https://www.college.police.uk/app/live-facial-recognition . Home Office consultation document: https://assets.publishing.service.gov.uk/media/69318bb2cdec734f4dff4257/PDF_Consultation_FINAL.pdf . ICO position and audits: https://ico.org.uk/about-the-ico/media-centre/news-and-blogs/2026/08/facial-recognition-in-policing/ and https://ico.org.uk/about-the-ico/media-centre/news-and-blogs/2026/03/why-data-protection-lies-at-the-heart-of-responsible-police-use-of-facial-recognition-technology/ and the ICO biometrics report at https://ico.org.uk/media2/3qnk3xqx/rr_ico_biometrics_report.pdf . ICO consultation response: https://ico.org.uk/about-the-ico/consultations/2026/02/home-office-consultation-on-a-new-legal-framework-for-law-enforcement/ . EHRC: https://www.equalityhumanrights.com/met-polices-use-facial-recognition-tech-must-comply-human-rights-law-says-regulator . London Assembly scrutiny: https://www.london.gov.uk/new-report-zoe-garbett-am-urges-immediate-pause-mets-rapid-expansion-live-facial-recognition . On actual camera locations, the regime requires very little: the Met publishes intended deployment locations on met.police.uk, usually only a day or two ahead; nothing requires a retailer to publish anything beyond a notice at the door; and no regulator maintains a register of LFR sites.",
+  "live_feed_or_map_available": "No, and nothing in the law as it stands in 2026 requires one. There is no statutory register of live facial recognition sites, no obligation on any force to publish a forward deployment schedule, and no regulator-maintained map. The Metropolitan Police publishes forthcoming and past deployment locations on its own website as a list, typically with only a day or two of notice - that is the closest thing to a feed and it is voluntary, unstructured and not archived in any documented way. Signage at the deployment itself is the practical notice mechanism for police LFR, and a door sticker is the practical notice mechanism for Facewatch retail LFR. The Home Office consultation's four stated objectives include accessibility and transparency, and it canvasses independent authorisation, so a future statutory framework could mandate publication - but the consultation closed on 12 February 2026, no government response had appeared by September 2026, and legislation is expected around two years out. Both the ICO and Zoe Garbett AM have criticised the Met specifically for withholding the data needed to scrutinise its claims. So for anyone building a map of London LFR cameras today, the legal position is that the information must be assembled from the Met's short-notice list, FOI requests, press reporting and direct observation, because nothing compels its publication.",
+  "advance_notice_period": "[uncertain] No minimum notice period is prescribed by law, by the College of Policing authorised professional practice, or by the ICO. The Met's practice is to publish intended deployment locations on its website shortly before a deployment - reported as a day or two - and to sign the area on the day. The APP requires deployments to have clear start and end times and to be intelligence-led, authorised at a senior level and overseen by the police and crime commissioner or equivalent, but none of that translates into a public notice period. Facewatch retailers give no advance notice at all. The exact Met notice interval was not confirmed from a primary source and should be verified against met.police.uk before relying on it.",
+  "foi_or_audit_sources": "The ICO's audits of five police forces' facial recognition use, published 18 August 2026, are the most substantial regulatory audit to date: 107 recommendations, accepted in full or in part, with findings that compliance is inconsistent and improvement needed in senior oversight, accountability and staff training, record-keeping of what personal information is used and where it came from, sourcing retrospective facial recognition images from appropriate sources and limiting retention, and accuracy checking and bias mitigation. No enforcement action followed. Earlier and adjacent: the ICO's investigation of Facewatch, finding breaches on eight counts with no further action but a requirement that retail watchlists be limited to serious or repeated offenders; the ICO's biometrics research report; the EHRC's August 2025 intervention analysis concluding the Met policy was incompatible with Articles 8, 10 and 11; Zoe Garbett AM's February 2026 London Assembly report with borough-level deployment demographics; and the FOI-derived work by Big Brother Watch and Privacy International revealing the scale of police facial recognition searching of the passport and immigration databases (2 searches in 2020 rising to 417 in 2023; 16 immigration-database searches in 2023 rising to 102 in 2024). The Independent Reviewer of Terrorism Legislation and Statewatch both published consultation responses in January and February 2026. Raw FOI correspondence is on WhatDoTheyKnow. Note that in Thompson and Carlo the court excluded or gave no weight to substantial parts of Silkie Carlo's witness evidence as inadmissible opinion rather than fact, and refused permission to rely on Professor Utley's expert reports on the geographical reach and effectiveness of LFR - a caution for anyone hoping campaign-group observation data will carry weight in litigation.",
+  "legal_basis": "For police LFR in England and Wales as at September 2026 there is still no bespoke statute. The claimed basis is: common law policing powers to prevent and detect crime, locate wanted or missing persons and protect the public; Part 3 of the Data Protection Act 2018 governing law enforcement processing, including the sensitive-processing conditions in Schedule 8; section 6 of the Human Rights Act 1998 read with Articles 8, 10 and 11 ECHR; the Surveillance Camera Code of Practice under section 30 of the Protection of Freedoms Act 2012, which relevant authorities must have regard to and which survived the Data (Use and Access) Act 2025; the College of Policing authorised professional practice on live facial recognition, updated with wider technology guidance in June 2025; and each force's own published policy - for the Met, the policy adopted on 11 September 2024 that Thompson and Carlo upheld. That policy permits deployment only within three Use Cases: A, crime and missing-person hotspots; B, protective security operations including major events and critical national infrastructure; C, deployment on specific intelligence that a sought individual is likely to be at a particular location. Outside those three, LFR cannot be used. Every deployment requires a mandatory proportionality assessment expressly addressing ECHR impact including chilling effects on lawful protest, and authorisation and oversight at senior level. Biometric data of unmatched faces is deleted automatically and immediately, unmatched images are blurred, and a trained operator monitors the feed in real time. For private and retail LFR, including Facewatch, the basis is UK GDPR Article 6(1)(f) legitimate interests together with Article 9(2)(g) substantial public interest under Schedule 1 of the Data Protection Act 2018, plus a data protection impact assessment - a materially thinner regime with no authorisation step and no location criteria.",
+  "regulatory_challenges": "R (Bridges) v Chief Constable of South Wales Police [2020] EWCA Civ 1058: the Court of Appeal held South Wales Police's LFR use unlawful on Article 8 quality-of-law grounds because there were no clear criteria for who could be on a watchlist or where LFR could be deployed, and also found breaches of data protection law and of the Public Sector Equality Duty - while expressly not holding LFR unlawful in principle. R (Thompson and Carlo) v Commissioner of Police of the Metropolis [2026] EWHC 915 (Admin), 21 April 2026, Divisional Court, Holgate LJ and Farbey J, with the EHRC intervening: the claimants - Shaun Thompson, wrongly matched to his brother during a deployment near London Bridge on 23 February 2024, stopped, questioned and threatened with arrest when he declined to give fingerprints, and Silkie Carlo of Big Brother Watch - argued that the Met's policy left officers too much discretion as to where, why and against whom LFR is used, contrary to Articles 8, 10 and 11. They did not argue LFR is unlawful in principle. The court dismissed both grounds unanimously, finding clear, interlocking and cumulative constraints, describing the chain of command as a far cry from the hunch or professional intuition of an individual officer, holding that operational experience means corporate evidence-based judgment rather than officer instinct, that footfall is not a deployment criterion, and that the Bridges deficiencies do not arise under the 2024 policy. It also held LFR is not materially more intrusive than it was at the time of Bridges. The claimants have said they will appeal. What the judgment does not decide, and this matters for fixed installations: it addressed only quality of law, not the necessity or proportionality of any actual deployment; it declined as speculative the question of applying the policy to permanent camera systems such as Croydon's; it did not examine whether identical watchlists reused across different locations indicate arbitrariness, though it acknowledged one may have been used twice; and no Public Sector Equality Duty challenge was brought, so the geographic and racial disparity argument is undecided. Also live: Big Brother Watch and Privacy International's pre-action correspondence to the Home Office and the Met over facial recognition searches of the passport and immigration databases, with litigation expected in 2026 and a moratorium demanded; Big Brother Watch's ICO complaints against Southern Co-op with Facewatch (July 2022) and against Asda's trial; and further legal challenges announced against a police force and a retailer following misidentifications.",
+  "oversight_body": "Fragmented, which is the central complaint of every critic and the reason for the Home Office consultation. Currently: the Information Commissioner's Office for data protection compliance, with audit and enforcement powers it has so far used for audit rather than enforcement; the Biometrics and Surveillance Camera Commissioner, whose office survived the Data (Use and Access) Act 2025 after abolition was dropped from the earlier bill, but which has had no incumbent since Tony Eastaugh resigned in August 2024; the College of Policing, which sets non-binding authorised professional practice; the Equality and Human Rights Commission, which intervenes rather than regulates; His Majesty's Inspectorate of Constabulary and Fire and Rescue Services; and locally in London the Mayor's Office for Policing and Crime with the London Assembly's Police and Crime Committee, whose questioning forced disclosure of the Met's handheld Operator-Initiated Facial Recognition pilot of around 100 devices at roughly GBP 763,000. Within the Met itself, authorisation sits with senior officers under the September 2024 policy. The Home Office consultation proposes replacing this patchwork with a single regulatory body empowered to set standards, investigate misuse and enforce compliance, and asks whether some deployments should require that body's independent authorisation rather than a senior officer's - but as of September 2026 that body does not exist and no bill has been introduced.",
+  "research_confidence": "high",
+  "key_uncertainties": "The cameras list is empty because this unit is a legal regime, not an installed base; that is the correct answer. Confidence is high on the law itself: the Thompson and Carlo citation, court, judges, date, grounds and reasoning were read from the judiciary's own press summary rather than from press coverage, and the Home Office consultation dates were confirmed from two independent sources. What remains uncertain: (1) whether the appeal in Thompson and Carlo has been lodged or permission granted - the claimants said they would appeal, but no listing or permission decision was found as of 2026-09-06, and an appeal would put the whole quality-of-law analysis back in play; (2) whether the Home Office has published a summary of consultation responses and if so what it says - one source refers to a summary of responses being available but the document itself was not located, and no government response or draft bill was found; (3) the exact identity of the five police forces the ICO audited in August 2026 and whether the Metropolitan Police was among them - the coverage says five forces in England and Wales without naming them, which matters because the audit's watchlist and retention findings would then bind the largest London operator directly; (4) the precise advance notice interval the Met applies to publishing deployment locations, which was reported rather than verified against met.police.uk; (5) whether the vacancy in the Biometrics and Surveillance Camera Commissioner post has been filled since August 2024; (6) whether the Surveillance Camera Code of Practice has been amended since the Data (Use and Access) Act 2025 and whether its commencement schedule, which phased changes through to June 2026, altered its application to police LFR; (7) the current legal status of British Transport Police LFR at London stations specifically, which sits under the same common law and DPA 2018 basis but was not separately litigated. The single most consequential gap for a map of fixed cameras is (8): no court has ruled on whether a permanently installed LFR camera can satisfy a policy built around time-limited deployments, because Thompson and Carlo expressly declined to decide it as speculation - so the Croydon installation and the West End rollout are operating on a legal footing that has been assumed rather than tested.",
+  "sources": [
+    {
+      "title": "Press summary: R (Shaun Thompson and Silkie Carlo) v The Commissioner of Police of the Metropolis, with the Equality and Human Rights Commission intervening",
+      "url": "https://www.judiciary.uk/wp-content/uploads/2026/04/Summary-of-judgment-Thomson-and-Carlo-v-Metropolitan-Police-Commmissioner-AC-2024-LON-001764-21-04-2026.pdf",
+      "date": "2026-04-21",
+      "what_it_supports": "Citation [2026] EWHC 915 (Admin), King's Bench Division Administrative Court Divisional Court, Holgate LJ and Farbey J; challenge to the Met's LFR policy adopted 11 September 2024; the two grounds under Articles 8, 10 and 11; the three Use Cases A, B and C; mandatory proportionality assessment addressing chilling effects; automatic deletion of unmatched biometric data and blurring of unmatched images; unanimous dismissal; the finding that Bridges deficiencies do not arise; footfall not a deployment criterion; operational experience meaning corporate rather than individual judgment; exclusion of much of Carlo's evidence and refusal of the Utley expert reports; and the absence of any Public Sector Equality Duty challenge under section 149 Equality Act 2010"
+    },
+    {
+      "title": "High Court upholds Metropolitan Police's live facial recognition policy - CMS legal update",
+      "url": "https://cms.law/en/gbr/legal-updates/high-court-upholds-metropolitan-police-s-live-facial-recognition-policy-thompson-anor-r-on-the-application-of-v-commissioner-of-police-of-the",
+      "date": "2026",
+      "what_it_supports": "Independent legal confirmation of the 21 April 2026 outcome and the parties"
+    },
+    {
+      "title": "The Legality of Police Live Facial Recognition Policy: The Scope and Limitations of Thompson and Carlo - William Page, Inforrm",
+      "url": "https://inforrm.org/2026/05/19/the-legality-of-police-live-facial-recognition-policy-the-scope-and-limitations-of-thompson-and-carlo-william-page/",
+      "date": "2026-05-19",
+      "what_it_supports": "That the judgment is narrower than Bridges, addressing only clarity and foreseeability rather than necessity or proportionality in practice; the hexagonal grid scoring three years of crime data with only top-25%-percentile hexagons qualifying as hotspots; the court's refusal to consider permanent installations such as Croydon's as anything but speculation, against the Biometrics Commissioner's observation that LFR is entering the static CCTV network; the unexamined question of watchlists reused across locations; and the undeveloped discrimination argument"
+    },
+    {
+      "title": "R (Bridges) v Chief Constable of South Wales Police [2020] EWCA Civ 1058, as summarised by Liberty",
+      "url": "https://www.libertyhumanrights.org.uk/fundamental/facial-recognition/",
+      "date": "2020-08-11",
+      "what_it_supports": "The Court of Appeal's findings that police LFR use breached privacy rights, data protection law and equality law, without holding LFR unlawful in principle; Liberty's role acting for Ed Bridges"
+    },
+    {
+      "title": "Home Office consultation: legal framework for using facial recognition in law enforcement",
+      "url": "https://assets.publishing.service.gov.uk/media/69318bb2cdec734f4dff4257/PDF_Consultation_FINAL.pdf",
+      "date": "opened 2025-12-04, closed 2026-02-12",
+      "what_it_supports": "The consultation document itself, its scope and its proposals"
+    },
+    {
+      "title": "Home Office launches consultation on legal framework for police use of facial recognition - techUK",
+      "url": "https://www.techuk.org/resource/home-office-launches-consultation-on-legal-framework-for-police-use-of-facial-recognition.html",
+      "date": "2025-12",
+      "what_it_supports": "Consultation title and dates (4 December 2025 to 12 February 2026); the proposed single regulatory body with powers to set standards, investigate misuse and enforce compliance; the four objectives of accessibility and transparency, clear limits on authority, consolidated oversight and future-proofing; questions on senior-officer versus independent authorisation and harm-based seriousness thresholds; the scope questions on voice, iris, gait and inferential technologies; and the bias-testing requirement for Home Office-funded algorithms"
+    },
+    {
+      "title": "New legal framework for law enforcement use of biometrics, facial recognition and similar technologies - CETaS, Alan Turing Institute",
+      "url": "https://cetas.turing.ac.uk/government-resource/new-legal-framework-law-enforcement-use-biometrics-facial-recognition-and",
+      "date": "2026",
+      "what_it_supports": "Independent characterisation of the consultation and the proposed new oversight body"
+    },
+    {
+      "title": "ICO response to the Home Office consultation on a new legal framework for law enforcement use of biometrics",
+      "url": "https://ico.org.uk/about-the-ico/consultations/2026/02/home-office-consultation-on-a-new-legal-framework-for-law-enforcement/",
+      "date": "2026-02",
+      "what_it_supports": "The ICO's formal position on the proposed framework"
+    },
+    {
+      "title": "Statewatch submission to the Home Office consultation",
+      "url": "https://www.statewatch.org/news/2026/february/submission-to-home-office-consultation-on-a-new-legal-framework-for-law-enforcement-use-of-biometrics-facial-recognition-and-similar-technologies/",
+      "date": "2026-02",
+      "what_it_supports": "That the Home Office framed the consultation narrowly, confining reform to law enforcement and leaving private-sector LFR such as Facewatch outside the proposed framework"
+    },
+    {
+      "title": "Independent Reviewer of Terrorism Legislation - biometrics consultation response",
+      "url": "https://terrorismlegislationreviewer.independent.gov.uk/wp-content/uploads/2026/01/Biometrics-consultation-response-Jan-26.pdf",
+      "date": "2026-01",
+      "what_it_supports": "That statutory office-holders as well as campaign groups engaged with the consultation"
+    },
+    {
+      "title": "Facial recognition in policing: earning public trust through strong data protection governance - ICO",
+      "url": "https://ico.org.uk/about-the-ico/media-centre/news-and-blogs/2026/08/facial-recognition-in-policing/",
+      "date": "2026-08",
+      "what_it_supports": "The ICO's 2026 position: LFR can assist law enforcement but a false match has serious consequences; benefits must be balanced against risks with lawful and proportionate use, strong oversight, accountability and safeguards; watchlists must be limited so that personal information is adequate, relevant and not excessive; only accurate, verifiable and lawfully held images may be used; public support is conditional on accuracy, absence of bias and respect for privacy"
+    },
+    {
+      "title": "ICO urges police to improve data governance in facial recognition rollout - Infosecurity Magazine",
+      "url": "https://www.infosecurity-magazine.com/news/ico-police-data-governance-facial/",
+      "date": "2026-08-18",
+      "what_it_supports": "Audits of five forces in England and Wales published 18 August 2026; inconsistent compliance; improvement needed on senior oversight, accountability and training, on record-keeping of what personal information is used and where it came from, on sourcing retrospective facial recognition images appropriately and limiting retention, and on accuracy checks and bias mitigation; no enforcement action taken"
+    },
+    {
+      "title": "ICO police facial recognition audits reveal 'mixed' bag - Computer Weekly",
+      "url": "https://www.computerweekly.com/news/366649479/ICO-police-facial-recognition-audits-reveal-mixed-bag",
+      "date": "2026-08",
+      "what_it_supports": "The 107 recommendations issued across the five audited forces, accepted in full or in part"
+    },
+    {
+      "title": "Why data protection lies at the heart of responsible police use of facial recognition technology - ICO",
+      "url": "https://ico.org.uk/about-the-ico/media-centre/news-and-blogs/2026/03/why-data-protection-lies-at-the-heart-of-responsible-police-use-of-facial-recognition-technology/",
+      "date": "2026-03",
+      "what_it_supports": "The ICO's March 2026 restatement of its expectations, showing continuous regulatory attention through 2026"
+    },
+    {
+      "title": "Live facial recognition - authorised professional practice, College of Policing",
+      "url": "https://www.college.police.uk/app/live-facial-recognition",
+      "date": "first published 2022, technology guidance updated 2025-06",
+      "what_it_supports": "The APP standard: LFR only where less intrusive methods would not achieve the same result; proportionate, responsible, fair and ethical use; intelligence-based; clear start and end times; police and crime commissioner oversight"
+    },
+    {
+      "title": "New technology guidance and APPs published - College of Policing",
+      "url": "https://www.college.police.uk/article/new-technology-guidance-and-apps-published",
+      "date": "2025-06",
+      "what_it_supports": "The June 2025 national guidance covering AI, ANPR and live facial recognition"
+    },
+    {
+      "title": "Met Police's use of facial recognition tech must comply with human rights law, says regulator - EHRC",
+      "url": "https://www.equalityhumanrights.com/met-polices-use-facial-recognition-tech-must-comply-human-rights-law-says-regulator",
+      "date": "2025-08",
+      "what_it_supports": "The EHRC's grant of permission to intervene and its position that the Met's LFR policy is unlawful and incompatible with Articles 8, 10 and 11, with a chilling effect risk at protests - a position the court subsequently rejected"
+    },
+    {
+      "title": "UK equality watchdog: Met Police facial recognition unlawful - Computer Weekly",
+      "url": "https://www.computerweekly.com/news/366629843/UK-equality-watchdog-Met-Police-facial-recognition-unlawful",
+      "date": "2025-08",
+      "what_it_supports": "Press confirmation of the EHRC intervention and the January 2026 hearing listing"
+    },
+    {
+      "title": "Campaigners reveal skyrocketing increase in police facial recognition searches of passport and immigration databases - Big Brother Watch",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/passport-searches/",
+      "date": "2025-08",
+      "what_it_supports": "Six years of searches without legal basis or parliamentary oversight against holdings covering over 150 million people; passport-database searches rising from 2 in 2020 to 417 in 2023 and immigration-database searches from 16 in 2023 to 102 in 2024; pre-action correspondence to the Home Office and the Met and the demand for a moratorium"
+    },
+    {
+      "title": "Revealed: skyrocketing scale of UK police's secret facial recognition searches of passport and immigration databases - Privacy International",
+      "url": "https://privacyinternational.org/news-analysis/5635/revealed-skyrocketing-scale-uk-polices-secret-facial-recognition-searches",
+      "date": "2025-08",
+      "what_it_supports": "The joint PI and Big Brother Watch challenge, the absence of judicial check or oversight, the absence of any reasonable-grounds requirement, and the 2025 Home Office guidance on handling facial image search requests issued in response"
+    },
+    {
+      "title": "Update: Big Brother Watch's complaint to the ICO on retailer facial recognition",
+      "url": "https://bigbrotherwatch.org.uk/blog/update-big-brother-watchs-complaint-to-the-ico-on-retailer-facial-recognition/",
+      "date": "2022 onwards",
+      "what_it_supports": "The ICO's finding that Facewatch breached data protection law on eight counts, its decision that no further regulatory action was required, and its requirement that retailers place only serious or repeated offenders on watchlists - the only substantive constraint on private LFR in London"
+    },
+    {
+      "title": "Two cameras, two rules: should law reform cover private facial recognition? - University of Birmingham",
+      "url": "https://www.birmingham.ac.uk/news/2026/two-cameras-two-rules-should-law-reform-cover-private-facial-recognition",
+      "date": "2026-02",
+      "what_it_supports": "That the proposed 2026 reform covers law enforcement only, leaving retail and other private LFR governed by UK GDPR alone"
+    },
+    {
+      "title": "Briefing: Data Use and Access Bill - Open Rights Group",
+      "url": "https://www.openrightsgroup.org/publications/briefing-data-use-and-access-bill-hl/",
+      "date": "2025",
+      "what_it_supports": "That the Data (Use and Access) Act 2025 did not carry over the earlier Data Protection and Digital Information Bill's abolition of the Biometrics and Surveillance Camera Commissioner and the Surveillance Camera Code of Practice, so both survive; the Act passed at the end of June 2025 with provisions phased in to June 2026"
+    },
+    {
+      "title": "Biometrics and Surveillance Camera Commissioner - UK Parliament written question",
+      "url": "https://questions-statements.parliament.uk/written-questions/detail/2024-01-23/HL1862/",
+      "date": "2024-01",
+      "what_it_supports": "The status of the Commissioner role; the incumbent Tony Eastaugh resigned in August 2024 leaving the post vacant"
+    },
+    {
+      "title": "New report: Zoe Garbett AM urges immediate pause on the Met's rapid expansion of live facial recognition - London Assembly",
+      "url": "https://www.london.gov.uk/new-report-zoe-garbett-am-urges-immediate-pause-mets-rapid-expansion-live-facial-recognition",
+      "date": "2026-02",
+      "what_it_supports": "The February 2026 London Assembly scrutiny report: deployment without clear legal authority or transparency; over half of 2024 deployments in areas with higher-than-average Black populations; the Met withholding data needed for scrutiny"
+    },
+    {
+      "title": "Mayor forced to reveal handheld live facial recognition trial to be rolled out in London - London Assembly",
+      "url": "https://www.london.gov.uk/mayor-forced-reveal-handheld-live-facial-recognition-trial-be-rolled-out-london-following",
+      "date": "2026",
+      "what_it_supports": "The Operator-Initiated Facial Recognition pilot of around 100 handheld devices at approximately GBP 763,000, disclosed only through Assembly questioning - an entirely separate technology to fixed and van LFR and outside the deployment-location framework"
+    },
+    {
+      "title": "Met pushes ahead with major facial-recognition expansion - Computer Weekly",
+      "url": "https://www.computerweekly.com/news/366645018/Met-pushes-ahead-with-major-facial-recognition-expansion",
+      "date": "2026-06",
+      "what_it_supports": "The static LFR rollout across the West End and Soho by end of 2026 following a Croydon pilot of 24 operations between October 2025 and March 2026, with wider London expansion signalled for 2027 - expansion continuing despite the calls for a pause"
+    },
+    {
+      "title": "UK plans national facial recognition: testing in 2026 - State of Surveillance",
+      "url": "https://stateofsurveillance.org/news/uk-national-facial-recognition-framework-2026/",
+      "date": "2026",
+      "what_it_supports": "That over 25,000 retrospective facial recognition searches per month are run against the Police National Database, that testing of a national facial matching service was expected during 2026, and that new legislation is expected in approximately two years"
+    },
+    {
+      "title": "65 parliamentarians call for immediate stop to live facial recognition surveillance - Big Brother Watch",
+      "url": "https://bigbrotherwatch.org.uk/press-releases/65-parliamentarians-call-for-immediate-stop-to-live-facial-recognition-surveillance/",
+      "date": "2023-2025",
+      "what_it_supports": "The cross-party parliamentary call for a halt, which has not been acted upon"
+    }
+  ],
+  "uncertain": [
+    "advance_notice_period"
+  ]
+}
