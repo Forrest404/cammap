@@ -91,13 +91,13 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | MAP-2 | 2 | map | in-flight | | Near me, pressed never automatic |
 | MAP-5 | 2 | map | in-flight | | stacked dots; Croydon pair is the test |
 | REACH-5 | 2 | map | in-flight | | moved from Wave 1/3: the count line belongs with `render()` |
-| MOD-1 | 2 | moderation | in-flight | | `.range()` + Load more on queue and history |
-| MOD-7 | 2 | moderation | in-flight | | head count on nav link |
-| MOD-2 | 2 | moderation | in-flight | | *migration*; `moderate_edit_camera` |
-| MOD-4 | 2 | moderation | in-flight | | bulk via the same `security definer` functions |
-| MOD-5 | 2 | moderation | in-flight | | sort/filter where the whole queue is visible |
-| MOD-6 | 2 | moderation | in-flight | | activity view, paginated |
-| MOD-3 | 2 | moderation | in-flight | | *migration*; `moderate_merge_cameras`, non-destructive |
+| MOD-1 | 2 | moderation | merged | d864979 | `loadPage()`/`makePager()`; queue, history, activity paged; Wave 4's list reuses it |
+| MOD-7 | 2 | moderation | merged | e9e374a | head count on the nav link and the oldest report's age at the top of the queue |
+| MOD-2 | 2 | moderation | merged | c3e4a33 | *migrations 004 + 005, unapplied*; `moderate_edit_camera`; `seed_key` untouched; server refuses vancam+active; new `moderation_log` table |
+| MOD-4 | 2 | moderation | merged | 2fae7d2 | per-row `moderate_report`, per-row failures shown; no list-taking server function by design |
+| MOD-5 | 2 | moderation | merged | 9a77bc4 | whole pending set fetched light, distance to nearest camera computed client-side, paged by id |
+| MOD-6 | 2 | moderation | merged | 9f17ab8 | Activity tab: decisions with resolver, and camera actions from `moderation_log` |
+| MOD-3 | 2 | moderation | merged | e8b24e2 | *migration 006, unapplied*; `moderate_merge_cameras` returns `{survivor, loser, moved, kept}`; nothing deleted |
 | MAP-8 | 3 | map-a11y | todo | | reduced motion, re-read on change |
 | MAP-9 | 3 | map-a11y | todo | | `aria-hidden` canvas, live region |
 | MAP-6 | 3 | map-a11y | todo | | legend solo, keyboard reachable |
@@ -137,8 +137,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | Status | Count |
 | --- | --- |
 | todo | 31 |
-| in-flight | 12 |
-| merged | 0 |
+| in-flight | 5 |
+| merged | 7 |
 | verified | 15 |
 | blocked | 0 |
 | dropped | 0 |
