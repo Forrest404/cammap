@@ -74,18 +74,18 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | KEEP-3 | 0 | keep3 | verified | 052c8eb | `tools/check.js`, zero deps |
 | KEEP-1 | 0 | keep1 | verified | 15599a0 | `stamp.py` → checker; nav check must normalise hrefs and `current` |
 | KEEP-2 | 0 | keep2 | verified | 97b2bfc | GitHub Actions; "green" only observable after a push the maintainer makes |
-| REACH-4 | 1 | chrome | in-flight | | root `404.html`, must carry the CSP and join stamp.py's page set |
-| REACH-3 | 1 | chrome | in-flight | | `robots.txt`, `sitemap.xml` at `https://forrest404.github.io/cammap/` |
-| REACH-7 | 1 | chrome | in-flight | | licence: proceeds on QUESTIONS default until the maintainer decides |
-| WORD-5 | 1 | chrome | in-flight | | hosting figure: `TODO` in footer until answered |
-| REACH-2 | 1 | chrome | in-flight | | favicon SVG, 180px PNG, manifest |
-| REACH-1 | 1 | chrome | in-flight | | per-page title/description, 1200×630 PNG in `img/` |
+| REACH-4 | 1 | chrome | merged | c8d897b | root `404.html` with a same-origin `<base>`; no account.js there; 8 pages in stamp.py's set |
+| REACH-3 | 1 | chrome | merged | 857c528 | six URLs: moderate is `noindex` and left out; robots allows all, reasoning in the file |
+| REACH-7 | 1 | chrome | merged | 99c471a | MIT code, ODbL 1.0 data; `LICENSE` and a footer line on all eight pages |
+| WORD-5 | 1 | chrome | merged | a6c5ef4 | done on default: figure unknown, `TODO (WORD-5)` comment beside the footer sentence |
+| REACH-2 | 1 | chrome | merged | 81f018e | SVG, .ico, 180/192/512 PNG, manifest, theme-color |
+| REACH-1 | 1 | chrome | merged | da59a54 | per-page description, canonical, OG and Twitter; `img/share.png` from `tools/share-card.html` |
 | DATA-5 | 1 | generator | in-flight | | byte-identical regeneration is the gate; orchestrator verifies by hand |
 | DATA-3 | 1 | generator | in-flight | | *migration*; by source period, not calendar year — see ground truth |
 | DATA-1 (schema) | 1 | generator | in-flight | | *migration*; `source_url`, `source_label` nullable; UI is Wave 5 |
 | DATA-7 (schema) | 1 | generator | in-flight | | *migration*; `approximate` boolean derived once at generation, never at runtime |
-| MAP-7 | 1 | stylesheet | in-flight | | one `:focus-visible` rule |
-| MAP-10 | 1 | stylesheet | in-flight | | print stylesheet; list rows already carry coordinates |
+| MAP-7 | 1 | stylesheet | merged | dca47c0 | one `:focus-visible` rule; ring moves inside pressed toggles; attribution bar 0.86→0.94 for contrast |
+| MAP-10 | 1 | stylesheet | merged | 83e23a5 | `@media print`: list on white with coordinates, legend and filter state kept |
 | MAP-3 | 2 | map | todo | | remove `edit-only`, add debounce and empty state |
 | MAP-1 | 2 | map | todo | | `#zoom/lat/lon`, `#camera=<id>`, keep `#lat,lon` |
 | MAP-2 | 2 | map | todo | | Near me, pressed never automatic |
@@ -137,8 +137,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | Status | Count |
 | --- | --- |
 | todo | 43 |
-| in-flight | 12 |
-| merged | 0 |
+| in-flight | 4 |
+| merged | 8 |
 | verified | 3 |
 | blocked | 0 |
 | dropped | 0 |

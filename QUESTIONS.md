@@ -20,7 +20,9 @@ a dashboard action, not a code change:
 Until that is done the deployed site contradicts its own data note, and every wave's
 browser checks will show the old split. Nothing in the programme depends on it, but it
 is the first thing a visitor sees. *(The five rows beyond the seed are report- or
-admin-sourced cameras; the programme leaves them alone.)*
+admin-sourced cameras; the programme leaves them alone.)* The same re-seed also fixes the
+glow: the live rows still carry `deployments = 1` from before that column existed, so on the
+deployed site every spot weighs the same and the glow is flat.
 
 ## Answered
 
