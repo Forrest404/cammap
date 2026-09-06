@@ -98,10 +98,10 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | MOD-5 | 2 | moderation | verified | 9a77bc4 | whole pending set fetched light, distance to nearest camera computed client-side, paged by id |
 | MOD-6 | 2 | moderation | verified | 9f17ab8 | Activity tab: decisions with resolver, and camera actions from `moderation_log` |
 | MOD-3 | 2 | moderation | verified | e8b24e2 | *migration 006, unapplied*; `moderate_merge_cameras` returns `{survivor, loser, moved, kept}`; nothing deleted |
-| MAP-8 | 3 | map-a11y | in-flight | | reduced motion, re-read on change |
-| MAP-9 | 3 | map-a11y | in-flight | | `aria-hidden` canvas, live region |
-| MAP-6 | 3 | map-a11y | in-flight | | legend solo, keyboard reachable |
-| WORD-6 | 3 | map-a11y | in-flight | | how to read this map, open on first visit only |
+| MAP-8 | 3 | map-a11y | merged | 8c337b9 | `moveMap()` cuts with `easeTo({duration:0})` under reduced motion (jumpTo drops the offset); re-read on change |
+| MAP-9 | 3 | map-a11y | merged | b846003 | canvas kept focusable as `role=application` with a label naming the list (aria-hidden on a focusable element is a violation); list region labelled; hidden `role=status` count |
+| MAP-6 | 3 | map-a11y | merged | d72884d | an `[only]` button per legend key; solo derived from the hidden set; Legacy switched on for an all-legacy kind, and back |
+| WORD-6 | 3 | map-a11y | merged | c846abb | `<details open>` under the legend; `STORAGE.explained`; open every visit where storage is refused |
 | ACCT-5 | 3 | accounts | in-flight | | sign out everywhere |
 | ACCT-1 | 3 | accounts | in-flight | | change password, current password required |
 | ACCT-4 | 3 | accounts | in-flight | | *migration*; leaderboards are materialized views, so the opt-out is enforced in their definition, not RLS — see QUESTIONS |
@@ -137,8 +137,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | Status | Count |
 | --- | --- |
 | todo | 21 |
-| in-flight | 10 |
-| merged | 0 |
+| in-flight | 6 |
+| merged | 4 |
 | verified | 27 |
 | blocked | 0 |
 | dropped | 0 |

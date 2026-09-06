@@ -1071,7 +1071,9 @@ JavaScript shows no search that does nothing; paper drops it.
 
 **Movement, in one place.** Every deliberate move the page makes - a
 list row, a search result, Near me, the reset in edit mode - goes
-through `moveMap(lat, lon, zoom, below)`. It flies today. When the page
+through `moveMap(lat, lon, zoom, below)`. It flies, unless the visitor has
+asked for less motion - see "Reading the map without a mouse, or without
+sight" below, which is where that choice is made. When the page
 comes to honour `prefers-reduced-motion` that is the one function to
 change, and the note above about `jumpTo` and `offset` is the one
 thing to know before changing it. The hash on load is a `jumpTo` on
