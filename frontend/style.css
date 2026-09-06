@@ -1588,9 +1588,40 @@ button.toggle.on:focus-visible {
   display: none;
 }
 
-/* Paper cannot move the map. The results and the note go with it. */
+/* ---------- the line under the map ----------
+
+   What the map has to say when it has something to say - a link it
+   could not follow, what Near me found - in the note voice the forms
+   use. Silent, it takes no room: .note reserves a line so a form does
+   not jump when a message arrives, and under the map that reserved
+   line was a gap. */
+
+.map-note {
+  margin: 6px 0 0 0;
+}
+
+.map-note:empty {
+  display: none;
+}
+
+/* ---------- the link in the popup ----------
+
+   Where the clipboard is refused, the address is put in a box under
+   "Copy link" and selected. It is a text field like any other on the
+   site, only smaller, because a popup is 240 pixels wide and an
+   address is long: it is there to be copied, not read. */
+
+.maplibregl-popup-content input.copy-box {
+  margin: 6px 0 2px 0;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+/* Paper cannot move the map or copy a link. The search, its results
+   and the note go; the popup was never on paper. */
 @media print {
-  .map-search {
+  .map-search,
+  .map-note {
     display: none;
   }
 }

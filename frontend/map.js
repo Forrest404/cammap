@@ -321,12 +321,33 @@ map.addControl(new maplibregl.AttributionControl({ compact: false }));
    Not for the hash on load: that is a jumpTo, on purpose - the page
    has not drawn yet, so there is nowhere to fly from.
 
+   `below` is for a move that is about to open a popup: the point
+   lands that many pixels below the middle of the map instead of on
+   it, so the popup has room to stand above its dot. Without it, on a
+   phone - where the map is 460 pixels tall and a popup with a note in
+   it is half that - MapLibre finds no room above the dot, hangs the
+   popup below it instead, and the bottom rows are cut off by the
+   map's edge. popupRoom() is the number to pass. If this is ever
+   made a cut rather than a flight, it must be easeTo with a duration
+   of 0 and not jumpTo: jumpTo ignores `offset`, silently.
+
    Worth knowing before believing a flight is broken: MapLibre advances
    a flight on requestAnimationFrame, which a hidden or headless tab
    never runs, so in a harness the map appears not to move. It has;
    it is waiting for a frame. */
-function moveMap(lat, lon, zoom) {
-  map.flyTo({ center: lngLat(lat, lon), zoom: zoom, speed: 1.6 });
+function moveMap(lat, lon, zoom, below) {
+  map.flyTo({ center: lngLat(lat, lon), zoom: zoom, speed: 1.6, offset: [0, below || 0] });
+}
+
+/* How far below the middle a dot should sit for its popup to fit
+   above it: three tenths of the map's height. On the tall desktop map
+   that is a little; on the short phone map it is the difference
+   between a popup you can read and one cut off at the knees. Three
+   tenths and not a fifth because the popup grows when the copy box
+   opens under "Copy link", and at a fifth the title of a grown popup
+   went off the top of the phone map. */
+function popupRoom() {
+  return Math.round((map.getCanvas().clientHeight || 600) * 0.3);
 }
 
 /* The LIFT table, lift() and its cache are in frontend/shared.js.
@@ -746,6 +767,24 @@ function tidy(list) {
 
     clean.push({
       id: nextId++,
+
+      /* The entry's identity in the published record, fixed here
+         before anything can move it: name, position and type as
+         points.js gives them, which is what seed.sql wrote into the
+         row's seed_key. Two things read it. The database overlay
+         matches rows by it, and has to keep matching after a
+         moderator's Move has changed the point's position - so it
+         cannot be worked out from the point later. And a link to a
+         camera that the database has not given an id carries it, so
+         that "here is the camera outside my station" is a link that
+         works for anyone, whether or not the database answers. */
+      seedKey: seedKeyOf({
+        name: entry.name,
+        lat: parseFloat(entry.lat),
+        lon: parseFloat(entry.lon),
+        type: kind
+      }),
+
       name: entry.name,
       note: typeof entry.note === "string" ? entry.note : "",
       lat: parseFloat(entry.lat),
@@ -843,6 +882,7 @@ function saveDraft() {
 function addPoint(lat, lon, name, note, type) {
   var point = {
     id: nextId++,
+    seedKey: seedKeyOf({ name: name, lat: lat, lon: lon, type: type || "vancam" }),
     name: name,
     note: note,
     lat: lat,
@@ -1244,6 +1284,23 @@ function openPopup(id) {
     .addTo(map);
 
   popupId = point.id;
+
+  /* The address bar says which camera is open, so it is written the
+     moment one opens and again when it closes - the close button is
+     MapLibre's, so the closing is heard rather than done here. Only
+     this popup's own closing counts: the one being replaced closes
+     too, a line above, and must not clear what is about to be set. */
+  (function (own) {
+    own.on("close", function () {
+      if (popup === own) {
+        popup = null;
+        popupId = null;
+        writeHash();
+      }
+    });
+  })(popup);
+
+  writeHash();
 }
 
 function closePopup() {
@@ -1295,6 +1352,9 @@ function popupFor(point) {
   coords.textContent = point.lat.toFixed(4) + ", " + point.lon.toFixed(4);
   box.appendChild(coords);
 
+  box.appendChild(document.createElement("br"));
+  box.appendChild(copyLinkRow(point));
+
   /* Only a camera that lives in the database can have its state
      reported on; a seed-only entry has nothing to attach a report to
      until the seed has been loaded. */
@@ -1340,6 +1400,112 @@ function popupFor(point) {
   }
 
   return box;
+}
+
+/* The address a link to this page starts with: what is in the bar,
+   less any query and any hash. The query goes because ?edit is not
+   something to send anyone. */
+function pageAddress() {
+  return window.location.href.split("#")[0].split("?")[0];
+}
+
+/* A link to a camera: the view as it stands, and the camera - the
+   same thing the address bar holds while its popup is open, so the
+   two can never disagree about what a link to a camera is. Worked
+   out when the link is asked for, not when the popup was built,
+   because the view may have moved since. */
+function linkTo(point) {
+  var centre = map.getCenter();
+  var zoom = Math.round(map.getZoom() * 100) / 100;
+
+  return pageAddress() + "#" + zoom + "/" + centre.lat.toFixed(5) + "/" +
+         centre.lng.toFixed(5) + "&camera=" + cameraLinkId(point);
+}
+
+/* "Copy link" in the popup. An <a> and not a <button>, because it is
+   the link: its href is the address, so a right-click and "copy link
+   address" works before any script does, and so does dragging it to
+   an address bar. A left click copies it instead of following it.
+
+   Three ways to copy, tried in turn, because none is everywhere. The
+   clipboard API is refused on a page opened off the disk and on a
+   plain http address, and a browser may refuse it for a page that is
+   not focused; execCommand is deprecated but is what works on
+   file://; and where both fail the address is put in a box, selected,
+   so that one keystroke finishes the job the page could not. */
+function copyLinkRow(point) {
+  var link = document.createElement("a");
+  var box = null;
+  var said = null;
+  var resetTimer = null;
+
+  link.className = "report-link copy-link";
+  link.href = linkTo(point);
+  link.textContent = "Copy link →";
+  link.title = "A link to this camera, to send or keep";
+
+  function say(text) {
+    link.textContent = text;
+    window.clearTimeout(resetTimer);
+    resetTimer = window.setTimeout(function () {
+      link.textContent = "Copy link →";
+    }, 2500);
+  }
+
+  function showBox(url) {
+    if (!box) {
+      box = document.createElement("input");
+      box.type = "text";
+      box.readOnly = true;
+      box.className = "copy-box";
+      box.setAttribute("aria-label", "Link to this camera");
+      said = document.createElement("span");
+      said.className = "kind";
+      link.parentNode.insertBefore(box, link.nextSibling);
+      box.parentNode.insertBefore(said, box.nextSibling);
+    }
+    box.value = url;
+    box.focus();
+    box.select();
+  }
+
+  function byCommand(url) {
+    var copied = false;
+
+    showBox(url);
+    try {
+      copied = document.execCommand("copy");
+    } catch (err) {
+      copied = false;
+    }
+
+    if (copied) {
+      said.textContent = "Copied.";
+      say("Copied ✓");
+    } else {
+      said.textContent = "Selected — press Ctrl-C, or Cmd-C on a Mac, to copy.";
+    }
+  }
+
+  link.onclick = function (event) {
+    var url = linkTo(point);
+
+    event.preventDefault();
+    link.href = url;
+
+    if (window.navigator.clipboard && window.navigator.clipboard.writeText) {
+      window.navigator.clipboard.writeText(url).then(function () {
+        say("Copied ✓");
+      }, function () {
+        byCommand(url);
+      });
+      return;
+    }
+
+    byCommand(url);
+  };
+
+  return link;
 }
 
 /* ------------------------------------------------------------------
@@ -1441,7 +1607,7 @@ function rowFor(point) {
   go.appendChild(coords);
 
   go.onclick = function () {
-    moveMap(point.lat, point.lon, 17);
+    moveMap(point.lat, point.lon, 17, popupRoom());
     openPopup(point.id);
   };
 
@@ -1990,13 +2156,16 @@ function overlayCameras(rows) {
 
   /* Seed entries, each replaced by its database row if there is one.
 
-     The key is worked out once, before anything is copied over: it is
-     built from the entry's own name, position and type, and the
-     position is about to be overwritten by the row's. Asking for it
-     again afterwards would be asking a different question. */
+     The key is the one tidy() fixed on the point when it was read from
+     points.js, not one worked out here: it is built from the entry's
+     own name, position and type, and the position is about to be
+     overwritten by the row's - and may already have been, if this is
+     a second overlay. Asking the moved point for its key would be
+     asking a different question, and a moved camera would then come
+     up as two. */
   for (i = 0; i < points.length; i++) {
     point = points[i];
-    key = seedKeyOf(point);
+    key = point.seedKey || seedKeyOf(point);
     row = bySeed[key];
     if (row) {
       point.name = row.name;
@@ -2043,6 +2212,12 @@ function overlayCameras(rows) {
     merged.push(takeRecordFields({
       id: nextId++,
       cameraId: row.id,
+
+      /* A seed row the record no longer lists under that key - an
+         entry since renamed or moved in the CSV - still carries the
+         key it was written with, and a link made from the old record
+         should still find it. */
+      seedKey: typeof row.seed_key === "string" ? row.seed_key : null,
       name: row.name,
       note: row.note || "",
       lat: Number(row.lat),
@@ -2061,6 +2236,18 @@ function overlayCameras(rows) {
   points = merged;
   refreshCameras();
   render();
+
+  /* A popup that was open before the database answered - a link
+     opened it - is made again: its camera may now stand where the
+     row says rather than where the seed did, and has an id to hang
+     "Report its state" on. */
+  if (popupId !== null) {
+    openPopup(popupId);
+  }
+
+  /* A link to a camera by its database id could not be answered until
+     now - see "Deep links" below. */
+  cameraLinkSettled();
 }
 
 /* The four newer record fields, from a database row onto a point -
@@ -2112,6 +2299,9 @@ function loadCamerasFromDatabase() {
   var cached;
 
   if (EDITING || typeof configured === "undefined" || !configured || !sb) {
+    /* No database on this page, so no camera will ever get an id: a
+       link that names one can be answered now. */
+    cameraLinkSettled();
     return;
   }
 
@@ -2139,34 +2329,303 @@ function loadCamerasFromDatabase() {
     .limit(5000)
     .then(function (result) {
       if (result.error || !Array.isArray(result.data)) {
+        /* The seed stands, and so a camera link by database id has
+           no answer here; say so rather than wait for one. */
+        cameraLinkSettled();
         return;
       }
       cacheCameras(result.data);
       overlayCameras(result.data);
+    }, function () {
+      cameraLinkSettled();
     });
 }
 
-loadCamerasFromDatabase();
+/* ------------------------------------------------------------------
+   Deep links
 
-/* index.html#51.51234,-0.12345 opens on that spot, close in. The
-   moderation queue links here so a report can be checked against
-   the map without leaving the queue. */
-(function () {
-  var m = /^#(-?\d+\.\d+),(-?\d+\.\d+)$/.exec(window.location.hash);
-  var lat;
-  var lon;
+   "Here is the camera outside my station" is the sentence this map
+   exists to let people say, and a sentence needs a link. The address
+   bar carries the view, and the popup carries a link to itself.
 
-  if (!m) {
+   What the hash can say, and in what order it is read:
+
+     #camera=<id>            open that camera's popup, and centre on it
+                             close in unless a view is given as well.
+     #14/51.5169/-0.0977     zoom, latitude, longitude - the form
+                             OpenStreetMap uses, which people already
+                             know how to read and edit by hand. The
+                             zoom may be fractional.
+     #51.51234,-0.12345      the old form, kept exactly as it was: a
+                             spot, close in. The moderation queue
+                             writes it - cameraMapHref() in account.js
+                             - so a report can be checked against the
+                             map without leaving the queue.
+
+   The page writes the second form as the map moves, and adds the
+   first after it - #14/51.5169/-0.0977&camera=42 - while a popup is
+   open, so that copying the address bar and opening it elsewhere
+   gives back the view and the popup both. It writes with
+   replaceState, never pushState: every pan as a history entry would
+   turn the back button into a tour of everywhere you have been, and
+   a throttle holds the writes to one every quarter of a second so a
+   drag does not flood the browser's own bookkeeping either. The
+   hash is written only once the map has moved; a page that was
+   opened plain keeps a plain address.
+
+   Which id a camera carries. A row from the database has an id that
+   is the same for everyone and survives a rename, so a camera that
+   came from the database links by that. A camera the database has
+   not given an id - the seed, when the database is unreachable or
+   not configured - links by its seed_key, URL-encoded, which is its
+   identity in the published record and is what the row carries too.
+   Either resolves on load: a number against cameraId, anything else
+   against seedKey. A numeric id cannot be answered until the database
+   has, so it waits for the overlay and is answered then - or, if the
+   database does not answer, says so under the map.
+
+   A link is allowed to change what the map is showing - a legacy van
+   site while Legacy is off, a kind switched off in the legend - because
+   a link to a camera that then does not appear is a broken link. It
+   switches the filter for this visit and does not save it: the link
+   asked, the visitor did not.
+   ------------------------------------------------------------------ */
+
+var HASH_VIEW   = /^(\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/;
+var HASH_CAMERA = /^camera=(.+)$/;
+var HASH_SPOT   = /^(-?\d+\.\d+),(-?\d+\.\d+)$/;
+
+var HASH_GAP = 250;   /* milliseconds between writes, at most one */
+var hashTimer = null;
+var lastWrittenHash = null;
+
+/* A camera link the page could not answer yet, and whether answering
+   it should also centre the map. */
+var pendingCameraLink = null;
+var pendingCameraCentre = false;
+
+var mapNote = document.getElementById("map-note");
+
+/* The one line under the map for what the map has to say: a link it
+   could not follow, and later what Near me found or did not. Empty is
+   hidden by the stylesheet, so it costs no room until it speaks. */
+function sayUnderMap(text) {
+  if (mapNote) {
+    mapNote.textContent = text || "";
+  }
+}
+
+/* What the link to a camera calls it: the database id if it has one,
+   the seed key otherwise. */
+function cameraLinkId(point) {
+  if (point.cameraId) {
+    return String(point.cameraId);
+  }
+  return encodeURIComponent(point.seedKey || seedKeyOf(point));
+}
+
+function pointByLinkId(value) {
+  var wanted;
+  var i;
+
+  if (/^\d+$/.test(value)) {
+    wanted = Number(value);
+    for (i = 0; i < points.length; i++) {
+      if (points[i].cameraId === wanted) {
+        return points[i];
+      }
+    }
+    return null;
+  }
+
+  try {
+    wanted = decodeURIComponent(value);
+  } catch (err) {
+    return null;   /* not a seed key, and not a number either */
+  }
+
+  for (i = 0; i < points.length; i++) {
+    if (points[i].seedKey === wanted) {
+      return points[i];
+    }
+  }
+
+  return null;
+}
+
+/* The hash as the map stands: the view, and the open camera if one is
+   open. Five decimals is about a metre; the zoom to two places so a
+   fractional zoom survives the trip and a whole one reads whole. */
+function currentHash() {
+  var centre = map.getCenter();
+  var zoom = Math.round(map.getZoom() * 100) / 100;
+  var open = popupId !== null ? pointById(popupId) : null;
+  var hash = "#" + zoom + "/" + centre.lat.toFixed(5) + "/" + centre.lng.toFixed(5);
+
+  if (open) {
+    hash += "&camera=" + cameraLinkId(open);
+  }
+
+  return hash;
+}
+
+function writeHash() {
+  var hash = currentHash();
+
+  if (hash === lastWrittenHash) {
+    return;
+  }
+  lastWrittenHash = hash;
+
+  try {
+    window.history.replaceState(null, "", hash);
+  } catch (err) {
+    /* A browser that refuses replaceState here - some do on file://
+       - still takes a fragment through location.replace, which does
+       not reload or add a history entry either. It does fire
+       hashchange, which the listener below knows to ignore. */
+    try {
+      window.location.replace(hash);
+    } catch (err2) {
+      /* then the address bar simply does not follow the map */
+    }
+  }
+}
+
+/* One write per quarter second at most, taken at the end of the
+   interval so a drag that is still going writes where it got to, not
+   where it started. */
+function scheduleHashWrite() {
+  if (hashTimer !== null) {
+    return;
+  }
+  hashTimer = window.setTimeout(function () {
+    hashTimer = null;
+    writeHash();
+  }, HASH_GAP);
+}
+
+/* What the hash asks for: a view, a camera, or both. */
+function readHash() {
+  var raw = window.location.hash.replace(/^#/, "");
+  var parts = raw.split("&");
+  var wanted = { view: null, camera: null };
+  var m;
+  var i;
+
+  for (i = 0; i < parts.length; i++) {
+    if ((m = HASH_VIEW.exec(parts[i]))) {
+      wanted.view = { zoom: parseFloat(m[1]), lat: parseFloat(m[2]), lon: parseFloat(m[3]) };
+    } else if ((m = HASH_CAMERA.exec(parts[i]))) {
+      wanted.camera = m[1];
+    } else if ((m = HASH_SPOT.exec(parts[i]))) {
+      wanted.view = { zoom: 17, lat: parseFloat(m[1]), lon: parseFloat(m[2]) };
+    }
+  }
+
+  return wanted;
+}
+
+/* Bring a camera into view for a link: the filter that hides it is
+   switched off for this visit, unsaved, and its popup opens. `centre`
+   says whether to go there as well - not when the link gave a view of
+   its own, which is the visitor's to keep. */
+function showCameraLink(point, centre) {
+  var changed = false;
+
+  if (point.status === "legacy" && !showLegacy) {
+    showLegacy = true;
+    markLegacy();
+    changed = true;
+  }
+  if (hiddenTypes[point.type]) {
+    hiddenTypes[point.type] = false;
+    drawLegend();
+    changed = true;
+  }
+  if (changed) {
+    applyFilters();
+  }
+
+  if (centre) {
+    /* easeTo with no duration, not jumpTo: it is the same cut, but
+       jumpTo ignores `offset`, and the popup needs its room. */
+    map.easeTo({ center: lngLat(point.lat, point.lon), zoom: 17, offset: [0, popupRoom()], duration: 0 });
+  }
+
+  openPopup(point.id);
+}
+
+function followCameraLink(value, centre) {
+  var point = pointByLinkId(value);
+
+  if (!point) {
+    pendingCameraLink = value;
+    pendingCameraCentre = centre;
     return;
   }
 
-  lat = parseFloat(m[1]);
-  lon = parseFloat(m[2]);
+  pendingCameraLink = null;
+  sayUnderMap("");
+  showCameraLink(point, centre);
+}
 
-  if (inLondon(lat, lon)) {
-    map.jumpTo({ center: lngLat(lat, lon), zoom: 17 });
+/* Called once the database has answered, or once it is known that it
+   will not: the moment a camera link by database id can be resolved,
+   or given up on. */
+function cameraLinkSettled() {
+  var point;
+
+  if (!pendingCameraLink) {
+    return;
   }
-})();
+
+  point = pointByLinkId(pendingCameraLink);
+  if (point) {
+    pendingCameraLink = null;
+    showCameraLink(point, pendingCameraCentre);
+    return;
+  }
+
+  pendingCameraLink = null;
+  sayUnderMap("The camera this link points to is not on the map: it may have been taken off, or the database could not be reached.");
+}
+
+function applyHash() {
+  var wanted = readHash();
+
+  if (wanted.view && inLondon(wanted.view.lat, wanted.view.lon)) {
+    /* jumpTo, not moveMap(): on load there is nothing to fly from,
+       and a change to the hash by hand is a request for a place, not
+       a journey. */
+    map.jumpTo({
+      center: lngLat(wanted.view.lat, wanted.view.lon),
+      zoom: Math.max(WIDEST_ZOOM, Math.min(CLOSEST_ZOOM, wanted.view.zoom))
+    });
+  }
+
+  if (wanted.camera) {
+    followCameraLink(wanted.camera, !wanted.view);
+  }
+}
+
+applyHash();
+
+map.on("moveend", scheduleHashWrite);
+
+/* A hash changed by hand, or by a link within the page, is followed
+   like one the page opened with. The page's own writes do not fire
+   this in most browsers, and are known by their text where they do. */
+window.addEventListener("hashchange", function () {
+  if (window.location.hash !== lastWrittenHash) {
+    applyHash();
+  }
+});
+
+/* After the hash, not before: a camera link by database id is left
+   pending by applyHash() and answered the moment the database has
+   spoken - which, from the cache, is inside this call. */
+loadCamerasFromDatabase();
 
 /* A remembered legacy setting has to show on the button straight away;
    the map side of it is applied when the layers are built. */
