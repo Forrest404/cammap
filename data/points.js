@@ -5,9 +5,10 @@
    deployment records (2020-2025), the British Transport Police
    deployment register (2026), and named press reporting for the
    shops. Nothing here is estimated. Where a source gave only a
-   borough, the note says the pin is approximate.
+   borough, the note says the pin is approximate and `approximate`
+   is true.
 
-   Six fields:
+   Ten fields:
      name, note, lat, lon   as before
      type    fixedcam | vancam | transportcam | facewatchcam | privatecam
      status  active | legacy
@@ -15,6 +16,28 @@
      deployments  how many times a source records it being used;
                   the map weighs its heat by this, so a spot used
                   twenty times reads hotter than one used once
+     periods  those uses counted by the period the source gives
+              them in - {"2023-24": 1}, {"2023-2025": 3},
+              {"2026": 4} - or null where the source names no
+              period, which is every shop and fixed install. The
+              key is the period exactly as the record states it.
+              The Met publishes "3 deployments 2023-2025", not
+              which year each fell in, and a per-year breakdown
+              of that would be an estimate dressed as a record.
+              deployments is always the sum of the values.
+     source_label  the record or report the entry rests on, named:
+                   "Met Police LFR deployment record, 2025", "The
+                   Register, 6 February 2026". null where none is
+                   known, and the map then says nothing rather
+                   than something vague.
+     source_url    where that record or report is, or null. Only
+                   ever the document itself or the page it is
+                   published on; never a homepage, never a guess.
+     approximate   true where the pin marks the surrounding area
+                   rather than an exact spot - the record gave a
+                   borough or a district, and the pin sits at the
+                   middle of it. A field, so the map can draw the
+                   difference without reading the note for it.
 
    Every van site is legacy, and that is not a statement about age.
    An LFR van parks for a shift and drives away, so there is no hour
@@ -39,12 +62,15 @@
    fixedcam entries. Croydon appears twice on purpose: once as the
    fixed install and once as the van hotspot it also is.
 
-   Written out by build_points.py - which is not in this repository,
-   and which computed the split described above. Whoever finds it
-   again: it must not be allowed to set a van site active, or the
-   next build undoes all of this. A hand-typed entry may leave out
-   type, status and last - the map assumes vancam, and a vancam
-   without a status is legacy.
+   Written out by tools/build_points.py from data/cameras.csv, which
+   is the record, and never edited by hand: edit the CSV, run the
+   script, commit both. tools/stamp.py regenerates this file on every
+   run and fails if it is not what the CSV produces. The script
+   writes every van site legacy and refuses to build a record that
+   says otherwise - the original build_points.py computed the split
+   described above, and this one will not, whatever it is given. A
+   hand-typed entry may leave out type, status and last - the map
+   assumes vancam, and a vancam without a status is legacy.
    ------------------------------------------------------------------ */
 
 var POINTS = [
@@ -57,7 +83,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -68,7 +98,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -79,7 +113,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -90,7 +128,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -101,7 +143,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -112,7 +158,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -123,7 +173,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -134,7 +188,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2025": 4},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -145,7 +203,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -156,7 +218,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -167,7 +233,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -178,7 +248,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -189,7 +263,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -200,7 +278,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -211,7 +293,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -222,7 +308,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -233,7 +323,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2023-2025": 4},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: true
   },
 
   {
@@ -244,7 +338,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-2025": 2},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -255,7 +353,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -266,7 +368,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 6
+    deployments: 6,
+    periods: {"2023-24": 6},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -277,7 +383,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -288,7 +398,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -299,7 +413,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2025": 4},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -310,7 +428,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -321,7 +443,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -332,7 +458,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -343,7 +473,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 5
+    deployments: 5,
+    periods: {"2023-24": 5},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -354,7 +488,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: true
   },
 
   {
@@ -365,7 +503,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -376,7 +518,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -387,7 +533,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -398,7 +548,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2025": 4},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -409,7 +563,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -420,7 +578,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2023-2025": 5},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -431,7 +593,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -442,7 +608,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -453,7 +623,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -464,7 +638,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -475,7 +653,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2025": 6},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -486,7 +668,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2023-2025": 4},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -497,7 +683,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2025": 3},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -508,7 +698,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -519,7 +713,11 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 4
+    deployments: 4,
+    periods: {"2026": 4},
+    source_label: "British Transport Police LFR deployment register, 2026",
+    source_url: "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    approximate: false
   },
 
   {
@@ -530,7 +728,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -541,7 +743,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 8
+    deployments: 8,
+    periods: {"2023-2025": 8},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -552,7 +758,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2025": 5},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -563,7 +773,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -574,7 +788,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -585,7 +803,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -596,7 +818,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -607,7 +833,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -618,7 +848,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-2025": 2},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -629,7 +863,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: true
   },
 
   {
@@ -640,7 +878,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -651,7 +893,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -662,7 +908,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: true
   },
 
   {
@@ -673,7 +923,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -684,7 +938,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -695,7 +953,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -706,7 +968,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -717,7 +983,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2023-2025": 6},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -728,7 +998,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -739,7 +1013,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2023-2025": 4},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -750,7 +1028,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -761,7 +1043,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -772,7 +1058,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 4
+    deployments: 4,
+    periods: {"2023-24": 4},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -783,7 +1073,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -794,7 +1088,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -805,7 +1103,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -816,7 +1118,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -827,7 +1133,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2025": 5},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -838,7 +1148,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -849,7 +1163,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -860,7 +1178,11 @@ var POINTS = [
     type: "privatecam",
     status: "legacy",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null,
+    source_label: "The Register, 6 September 2019",
+    source_url: "https://www.theregister.com/2019/09/06/metropolitan_police_facial/",
+    approximate: false
   },
 
   {
@@ -871,7 +1193,11 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 1
+    deployments: 1,
+    periods: {"2026": 1},
+    source_label: "British Transport Police LFR deployment register, 2026",
+    source_url: "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    approximate: false
   },
 
   {
@@ -882,7 +1208,11 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 4
+    deployments: 4,
+    periods: {"2026": 4},
+    source_label: "British Transport Police LFR deployment register, 2026",
+    source_url: "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    approximate: false
   },
 
   {
@@ -893,7 +1223,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -904,7 +1238,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -915,7 +1253,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -926,7 +1268,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -937,7 +1283,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: true
   },
 
   {
@@ -948,7 +1298,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2022,
-    deployments: 1
+    deployments: 1,
+    periods: {"2020-22": 1},
+    source_label: "Met Police LFR deployment record, 2020-22",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/new/lfr-deployment-grid-2020-2022.pdf",
+    approximate: false
   },
 
   {
@@ -959,7 +1313,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2025": 4},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -970,7 +1328,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -981,7 +1343,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2025": 3},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -992,7 +1358,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: true
   },
 
   {
@@ -1003,7 +1373,11 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 2
+    deployments: 2,
+    periods: {"2026": 2},
+    source_label: "British Transport Police LFR deployment register, 2026",
+    source_url: "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    approximate: false
   },
 
   {
@@ -1014,7 +1388,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1025,7 +1403,11 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 1
+    deployments: 1,
+    periods: {"2026": 1},
+    source_label: "British Transport Police LFR deployment register, 2026",
+    source_url: "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    approximate: false
   },
 
   {
@@ -1036,7 +1418,11 @@ var POINTS = [
     type: "fixedcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null,
+    source_label: "Met Police press release, 13 May 2026",
+    source_url: "https://news.met.police.uk/news/met-makes-one-arrest-every-35-minutes-during-live-facial-recognition-pilot-509256",
+    approximate: false
   },
 
   {
@@ -1047,7 +1433,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-2025": 2},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1058,7 +1448,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: true
   },
 
   {
@@ -1069,7 +1463,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -1080,7 +1478,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1091,7 +1493,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1102,7 +1508,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 7
+    deployments: 7,
+    periods: {"2025": 7},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1113,7 +1523,11 @@ var POINTS = [
     type: "fixedcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null,
+    source_label: "Met Police press release, 13 May 2026",
+    source_url: "https://news.met.police.uk/news/met-makes-one-arrest-every-35-minutes-during-live-facial-recognition-pilot-509256",
+    approximate: false
   },
 
   {
@@ -1124,7 +1538,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 21
+    deployments: 21,
+    periods: {"2023-2025": 21},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1135,7 +1553,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1146,7 +1568,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1157,7 +1583,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 16
+    deployments: 16,
+    periods: {"2020-2025": 16},
+    source_label: "Met Police LFR deployment records, 2020-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1168,7 +1598,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1179,7 +1613,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2025": 3},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1190,7 +1628,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1201,7 +1643,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-24": 3},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -1212,7 +1658,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1223,7 +1673,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2020-2025": 3},
+    source_label: "Met Police LFR deployment records, 2020-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1234,7 +1688,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1245,7 +1703,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1256,7 +1718,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1267,7 +1733,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 9
+    deployments: 9,
+    periods: {"2023-2025": 9},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1278,7 +1748,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1289,7 +1763,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: true
   },
 
   {
@@ -1300,7 +1778,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1311,7 +1793,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2023-2025": 5},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: true
   },
 
   {
@@ -1322,7 +1808,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1333,7 +1823,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2025": 5},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1344,7 +1838,11 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null,
+    source_label: "Retail Technology Innovation Hub, 1 July 2026",
+    source_url: "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+    approximate: false
   },
 
   {
@@ -1355,7 +1853,11 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null,
+    source_label: "Retail Technology Innovation Hub, 1 July 2026",
+    source_url: "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+    approximate: false
   },
 
   {
@@ -1366,7 +1868,11 @@ var POINTS = [
     type: "facewatchcam",
     status: "legacy",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null,
+    source_label: "Retail Gazette, August 2026",
+    source_url: "https://www.retailgazette.co.uk/blog/2026/08/sainsburys-pauses-ai-facial-recognition-cameras-after-shopper-wrongly-ejected/",
+    approximate: false
   },
 
   {
@@ -1377,7 +1883,11 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null,
+    source_label: "The Register, 6 February 2026",
+    source_url: "https://www.theregister.com/2026/02/06/sainsburys_/",
+    approximate: false
   },
 
   {
@@ -1388,7 +1898,11 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null,
+    source_label: "Retail Technology Innovation Hub, 1 July 2026",
+    source_url: "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+    approximate: false
   },
 
   {
@@ -1399,7 +1913,11 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null,
+    source_label: "The Grocer, July 2026",
+    source_url: "https://www.thegrocer.co.uk/news/sainsburys-to-extend-facial-recognition-tech-to-200-stores-by-christmas/720799.article",
+    approximate: false
   },
 
   {
@@ -1410,7 +1928,11 @@ var POINTS = [
     type: "facewatchcam",
     status: "active",
     last: null,
-    deployments: 1
+    deployments: 1,
+    periods: null,
+    source_label: "Retail Technology Innovation Hub, 1 July 2026",
+    source_url: "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+    approximate: false
   },
 
   {
@@ -1421,7 +1943,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -1432,7 +1958,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1443,7 +1973,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1454,7 +1988,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1465,7 +2003,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1476,7 +2018,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2025": 3},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1487,7 +2033,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1498,7 +2048,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: true
   },
 
   {
@@ -1509,7 +2063,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2023-2025": 6},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1520,7 +2078,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-2025": 2},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: true
   },
 
   {
@@ -1531,7 +2093,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -1542,7 +2108,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1553,7 +2123,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1564,7 +2138,11 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 1
+    deployments: 1,
+    periods: {"2026": 1},
+    source_label: "British Transport Police LFR deployment register, 2026",
+    source_url: "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    approximate: false
   },
 
   {
@@ -1575,7 +2153,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1586,7 +2168,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 4
+    deployments: 4,
+    periods: {"2025": 4},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1597,7 +2183,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1608,7 +2198,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1619,7 +2213,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2020-24": 2},
+    source_label: "Met Police LFR deployment records, 2020-24",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1630,7 +2228,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 7
+    deployments: 7,
+    periods: {"2025": 7},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1641,7 +2243,11 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 1
+    deployments: 1,
+    periods: {"2026": 1},
+    source_label: "British Transport Police LFR deployment register, 2026",
+    source_url: "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    approximate: false
   },
 
   {
@@ -1652,7 +2258,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2023-2025": 6},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1663,7 +2273,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1674,7 +2288,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1685,7 +2303,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-24": 2},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -1696,7 +2318,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -1707,7 +2333,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 9
+    deployments: 9,
+    periods: {"2023-2025": 9},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1718,7 +2348,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 5
+    deployments: 5,
+    periods: {"2023-2025": 5},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1729,7 +2363,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1740,7 +2378,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1751,7 +2393,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1762,7 +2408,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -1773,7 +2423,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2023-2025": 2},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1784,7 +2438,11 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 5
+    deployments: 5,
+    periods: {"2026": 5},
+    source_label: "British Transport Police LFR deployment register, 2026",
+    source_url: "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    approximate: false
   },
 
   {
@@ -1795,7 +2453,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 2
+    deployments: 2,
+    periods: {"2025": 2},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1806,7 +2468,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: true
   },
 
   {
@@ -1817,7 +2483,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2025": 6},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1828,7 +2498,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1839,7 +2513,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2023-2025": 6},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1850,7 +2528,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1861,7 +2543,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -1872,7 +2558,11 @@ var POINTS = [
     type: "transportcam",
     status: "active",
     last: 2026,
-    deployments: 3
+    deployments: 3,
+    periods: {"2026": 3},
+    source_label: "British Transport Police LFR deployment register, 2026",
+    source_url: "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+    approximate: false
   },
 
   {
@@ -1883,7 +2573,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1894,7 +2588,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1905,7 +2603,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 6
+    deployments: 6,
+    periods: {"2025": 6},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1916,7 +2618,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -1927,7 +2633,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: false
   },
 
   {
@@ -1938,7 +2648,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 22
+    deployments: 22,
+    periods: {"2023-24": 22},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -1949,7 +2663,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1960,7 +2678,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1971,7 +2693,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -1982,7 +2708,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: true
   },
 
   {
@@ -1993,7 +2723,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -2004,7 +2738,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2023-2025": 3},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: true
   },
 
   {
@@ -2015,7 +2753,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2024,
-    deployments: 1
+    deployments: 1,
+    periods: {"2023-24": 1},
+    source_label: "Met Police LFR deployment record, 2023-24",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+    approximate: false
   },
 
   {
@@ -2026,7 +2768,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 3
+    deployments: 3,
+    periods: {"2025": 3},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: true
   },
 
   {
@@ -2037,7 +2783,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 1
+    deployments: 1,
+    periods: {"2025": 1},
+    source_label: "Met Police LFR deployment record, 2025",
+    source_url: "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+    approximate: false
   },
 
   {
@@ -2048,7 +2798,11 @@ var POINTS = [
     type: "vancam",
     status: "legacy",
     last: 2025,
-    deployments: 8
+    deployments: 8,
+    periods: {"2023-2025": 8},
+    source_label: "Met Police LFR deployment records, 2023-2025",
+    source_url: "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+    approximate: true
   }
 
 ];

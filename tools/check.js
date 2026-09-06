@@ -70,12 +70,35 @@ var ROOT = path.resolve(__dirname, "..");
    entry missing one is a row the seed cannot write; an entry with one
    more is a field the seed silently drops. Add here when a field is
    added to both - and only then. */
-var FIELDS = ["name", "note", "lat", "lon", "type", "status", "last", "deployments"];
+var FIELDS = ["name", "note", "lat", "lon", "type", "status", "last", "deployments", "periods",
+  "source_label", "source_url", "approximate"];
+
+/* How the record's prose has always said a pin is not exact. The map
+   must never have to look for this - that is what the approximate
+   field is for - but the two must not disagree: a note that says it
+   while the field says false is a column somebody blanked. The other
+   direction is allowed, because a pin can be approximate for a reason
+   the phrase does not cover ("this pin is a guess"). */
+var APPROXIMATE_PHRASE = "(pin marks the surrounding area, not an exact spot)";
+
+/* A source URL is https and has no whitespace in it. http is not
+   accepted: every source this record cites is served over https, and
+   a plain-http link on a page about surveillance would be its own
+   small irony. */
+var SOURCE_URL = /^https:\/\/\S+$/;
 
 /* What the record says about status. The database also knows
    "nonfunctional", but that is a state a moderator sets on a row,
    never something the published file asserts about a camera. */
 var STATUSES = ["active", "legacy"];
+
+/* A period as the sources write one: a year, or a span written either
+   way the Met writes it - "2023-24", "2023-2025". The same expression
+   is the check constraint in schema.sql and PERIOD_KEY in
+   build_points.py; change one, change the three. The key is the period
+   exactly as the record states it, never a year the record does not
+   give, which is why a per-year shape is not accepted here. */
+var PERIOD_KEY = /^\d{4}(-\d{2}|-\d{4})?$/;
 
 var HEX_COLOUR = /^#[0-9a-f]{6}$/i;
 
@@ -464,7 +487,8 @@ if (havePoints && haveShared) {
     var keys = {};
     var off = {
       fields: [], name: [], note: [], coords: [], type: [], status: [],
-      last: [], deployments: [], london: [], van: [], dupKey: []
+      last: [], deployments: [], periods: [], periodsSum: [], sourceLabel: [], sourceUrl: [],
+      approximate: [], approximateNote: [], london: [], van: [], dupKey: []
     };
     var i;
     var e;
@@ -473,6 +497,9 @@ if (havePoints && haveShared) {
     var missing;
     var extra;
     var k;
+    var total;
+    var keysSeen;
+    var badPeriod;
 
     check("POINTS is a non-empty array", Array.isArray(P) && P.length > 0);
     if (!Array.isArray(P)) {
@@ -529,6 +556,59 @@ if (havePoints && haveShared) {
       if (!(isInteger(e.deployments) && e.deployments >= 1)) {
         off.deployments.push(who + " " + JSON.stringify(e.deployments));
       }
+
+      /* periods is null, or a plain object of period keys to positive
+         integers with at least one of them; and where it is given,
+         deployments is its sum - the glow and "Most used" read the
+         total, the popup will read the breakdown, and a record where
+         the two disagreed would be showing two different histories
+         for one camera. */
+      if (e.periods !== null) {
+        if (!e.periods || typeof e.periods !== "object" || Array.isArray(e.periods)) {
+          off.periods.push(who + " " + JSON.stringify(e.periods));
+        } else {
+          total = 0;
+          keysSeen = 0;
+          badPeriod = false;
+          for (k in e.periods) {
+            if (Object.prototype.hasOwnProperty.call(e.periods, k)) {
+              keysSeen++;
+              if (!PERIOD_KEY.test(k) || !isInteger(e.periods[k]) || e.periods[k] < 1) {
+                badPeriod = true;
+              } else {
+                total += e.periods[k];
+              }
+            }
+          }
+          if (keysSeen === 0 || badPeriod) {
+            off.periods.push(who + " " + JSON.stringify(e.periods));
+          } else if (total !== e.deployments) {
+            off.periodsSum.push(who + " periods add up to " + total + " but deployments is " + JSON.stringify(e.deployments));
+          }
+        }
+      }
+
+      /* A source is null, or a label, or a label and a URL. A label is
+         a non-empty string with no surrounding whitespace; a URL is
+         https; a URL without a label is a link with no name, which is
+         not a citation, and the popup would have nothing to show for
+         it but the address. */
+      if (!(e.source_label === null ||
+            (typeof e.source_label === "string" && e.source_label !== "" && e.source_label === e.source_label.trim()))) {
+        off.sourceLabel.push(who + " " + JSON.stringify(e.source_label));
+      }
+      if (!(e.source_url === null || (typeof e.source_url === "string" && SOURCE_URL.test(e.source_url)))) {
+        off.sourceUrl.push(who + " " + JSON.stringify(e.source_url));
+      } else if (e.source_url !== null && e.source_label === null) {
+        off.sourceUrl.push(who + " has a source_url and no source_label");
+      }
+
+      if (typeof e.approximate !== "boolean") {
+        off.approximate.push(who + " " + JSON.stringify(e.approximate));
+      } else if (!e.approximate && typeof e.note === "string" && e.note.indexOf(APPROXIMATE_PHRASE) !== -1) {
+        off.approximateNote.push(who);
+      }
+
       if (typeof e.lat === "number" && typeof e.lon === "number" && !site.inLondon(e.lat, e.lon)) {
         off.london.push(who + " " + JSON.stringify([e.lat, e.lon]));
       }
@@ -553,6 +633,12 @@ if (havePoints && haveShared) {
     check("every status is active or legacy", off.status.length === 0, listOf(off.status));
     check("every last is null or an integer year", off.last.length === 0, listOf(off.last));
     check("every deployments is an integer of at least 1", off.deployments.length === 0, listOf(off.deployments));
+    check("every periods is null or an object of period keys to positive integers", off.periods.length === 0, listOf(off.periods));
+    check("every deployments is the sum of its periods where periods is given", off.periodsSum.length === 0, listOf(off.periodsSum));
+    check("every source_label is null or a trimmed non-empty string", off.sourceLabel.length === 0, listOf(off.sourceLabel));
+    check("every source_url is null or https, and never without a label", off.sourceUrl.length === 0, listOf(off.sourceUrl));
+    check("every approximate is a boolean", off.approximate.length === 0, listOf(off.approximate));
+    check("every note that says the pin marks the surrounding area has approximate true", off.approximateNote.length === 0, listOf(off.approximateNote));
     check("every camera is in London", off.london.length === 0, listOf(off.london));
     check("every vancam is legacy", off.van.length === 0, listOf(off.van));
     check("seed keys are unique across the record", off.dupKey.length === 0, listOf(off.dupKey));

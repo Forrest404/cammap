@@ -26,7 +26,9 @@
                         moderate, leaderboard.
     frontend/           the code that runs in a browser: shared.js, map.js,
                         picker.js, account.js, style.css.
-    data/               points.js, the camera list you edit by hand.
+    data/               cameras.csv, the record - the one file you edit -
+                        and points.js, written out from it by
+                        tools/build_points.py along with backend/seed.sql.
     backend/            schema.sql and seed.sql - the database.
     lib/ fonts/         vendored, pinned by version, not ours to edit.
     tools/              stamp.py and check.js, both run before every
@@ -65,10 +67,14 @@ tells you which pole. **Legacy** filters the context dots, which are active
 cameras by default - a retired camera on your corner does not make your
 sighting a duplicate, and may be the reason you are reporting it.
 
-**The build script is missing.** `points.js`, `seed.sql` and the TODO below all
-name `build_points.py`, but `tools/` holds only `stamp.py`. Until it turns up
-the two data files are maintained by hand, or through `index.html?edit`, and
-they must be kept in step with each other.
+**The build script.** `tools/build_points.py` writes `data/points.js` and
+`backend/seed.sql` from `data/cameras.csv`, which is the record. Edit the
+CSV, run the script, commit all three. `stamp.py` regenerates both outputs
+on every run and fails if either is not what the CSV produces, so neither
+can be hand-edited by accident, and a CSV edit cannot be committed without
+being built. For a long time the script was missing and the two files were
+kept in step by hand; the long version is "The build script and the record"
+below.
 
 ## TODO
 
@@ -80,7 +86,7 @@ they must be kept in step with each other.
 - [x] Add satellite, etc views. (Done: three base views under the map - Dark, Light and Satellite. Light is OpenFreeMap's Bright - blue water, green parks, warm off-white land; Positron was tried first but is colourless by design; Satellite is Esri World Imagery under the dark style's labels. Which one you chose is remembered.)
 - [x] Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password. (Done: the site generates the username - two words, `copper.heron` - and the person sets a password. No email, no name. See "Anonymity" below for what "completely" honestly means.)
 - [ ] Make it so that when reporting the state of a camera, you have to upload an image
-- [ ] Get the Met's 2026 deployment record (met.police.uk blocks scripted downloads; it needs a real browser) and re-run the build.
+- [ ] Get the Met's 2026 deployment record (met.police.uk blocks scripted downloads; it needs a real browser), add its sites to `data/cameras.csv`, and run `python3 tools/build_points.py`.
 - [ ] Other cities. The type identifiers and the schema carry over; the London bounds are now `LONDON_BOUNDS` in `frontend/shared.js` (one place, shared by the map and the report form), the opening centre `LONDON_CENTRE` beside it, the opening zoom in `frontend/map.js`, and three `check` constraints in `backend/schema.sql` - on `cameras`, `reports` and `saved_cameras`. Wherever the user is located, thats where the map displays by default.
 
   Worth saying plainly before that last part is built: asking every visitor for their location, to centre a map, is a real cost to a site whose whole argument is that it collects nothing. `navigator.geolocation` prompts, and a refusal has to work as well as a yes. If it is done, it should be a button the visitor presses rather than something that happens to them on arrival - which is how the report form already does it.
@@ -348,9 +354,12 @@ anywhere.
 
 Two things will quietly undo it:
 
-- **`build_points.py`**, when it turns up. It computed the split, and a re-run
-  would set 97 van sites back to active. It must be made to write every
-  `vancam` as legacy first.
+- **The original `build_points.py`**, if it ever turns up. It computed the
+  split, and a re-run of it would set 97 van sites back to active. The script
+  now in `tools/` is not it and does not compute a status for anything: it
+  writes what `data/cameras.csv` says, treats a blank status on a `vancam` as
+  legacy, and refuses to build a record in which any van site is active. Do
+  not replace it with the old one.
 - **A re-run of `seed.sql` against a database seeded before this change** is
   what applies it, not what breaks it - `status` is in the `on conflict do
   update` list, so the 97 rows are rewritten in place. Do run it.
@@ -363,9 +372,237 @@ To bring those into line too:
 
 ### The build script and the record
 
-*(Written by the Wave 1 generator agent: the source table, what
-`build_points.py` writes and how it is checked, and the shape of the
-per-period deployments, the source columns and the approximate flag.)*
+The record is `data/cameras.csv`: one header row, one camera per line.
+`tools/build_points.py` writes `data/points.js` and `backend/seed.sql` from
+it, and nothing else does. The two outputs were kept in step by hand for a
+long time - both said they were written by a script that was not in the
+repository - and the invariant that they agree was documented in four
+places and enforced in none. Now it is enforced in one: `stamp.py`
+regenerates both from the CSV in memory on every run and fails, naming the
+file and the first differing line, if what is committed is not what the CSV
+produces. A hand edit to either output cannot survive a commit, and neither
+can a CSV edit that was not built.
+
+This is not a build step in the sense the project refuses. The browser runs
+the committed `points.js` exactly as before; nothing has to run for the
+site to be served; CI only reads. It is a generator the maintainer runs by
+hand, the way `stamp.py` is a checker they run by hand.
+
+    python3 tools/build_points.py            write both files from the CSV
+    python3 tools/build_points.py --check    the same comparison stamp.py
+                                             makes, on its own
+    python3 tools/build_points.py --import data/points.js
+                                             read a points.js back into
+                                             the CSV (see below)
+
+**The columns**, in the order they are written: `name`, `type`, `status`,
+`lat`, `lon`, `approximate`, `last`, `periods`, `deployments`,
+`source_label`, `source_url`, `note`. The prose is last because it is the
+long one, so a line reads as the structured fields first and the note
+trailing; `approximate` sits beside the position it qualifies. The
+script's docstring documents each column; the ones worth knowing about
+before editing:
+
+- `status` may be left blank. A `vancam` is then legacy and anything else
+  active - the same default `tidy()` in `map.js` gives a hand-typed entry.
+  A `vancam` written as `active` is refused, naming the row. The script
+  never computes a status from a year: see "What active means" above.
+- `lat` and `lon` are read as exact decimals, at most six places, and
+  written with exactly six. A spreadsheet that drops a trailing zero is
+  fine; a seventh decimal is refused rather than rounded, because rounding
+  it would be the script deciding where a camera is.
+- `last` blank is null. `deployments` blank is one, or the sum of `periods`
+  where that is given - see below.
+- Row order does not matter. The outputs are written in a canonical order
+  - by name, case-insensitively, then type, then position - so a row
+  appended at the bottom lands in its alphabetical place in both files, and
+  the same CSV always produces the same bytes. That order is what the
+  published files already had; the first build reproduced them to the byte
+  from the CSV before anything was changed, which is the proof that the
+  script reads the record right.
+
+**What the script will not do.** It does not look anything up, fetch
+anything, or infer anything. Every value in the outputs is a value in the
+CSV, a fixed default named in the docstring, or `seed_key`, which is built
+from three of them. Where the CSV is wrong the build fails and names the
+row; where it is incomplete the output is null or the default, never a
+plausible value. "Nothing here is estimated" is the record's own promise
+and a generator that filled a blank by guessing would break it quietly.
+
+**Deployments by period.** `deployments` is a single count, and until now
+it was the whole of what the record held about how often a site was used:
+"8 deployments 2023-2025" could not be broken down. The obvious column,
+one count per calendar year, is not one the record can fill. The Met
+publishes "3 deployments 2023-2025" and not which year each fell in, and
+the record's own vocabulary, read off the notes, is `2023-24`, `2025`,
+`2023-2025`, `2020-2025`, `2020-24`, `2020-22` and "the 2026 station
+trial". Splitting any of the spans by year would be estimating, which is
+the one thing this map promises not to do. So the breakdown is **by the
+period the source gives**, exactly as it gives it.
+
+- In the CSV, `periods` is `PERIOD:COUNT` items separated by semicolons -
+  `2023-24:1`, `2023-2025:3`, `2026:4`, or `2023-24:1;2025:3` once a site
+  has counts from more than one record. Text, so it survives a spreadsheet.
+  Blank is null: the source names no period, which is every shop, both
+  fixed installs and the King's Cross estate.
+- In `points.js` it is a JSON object, `periods: {"2023-24": 1}`, keys
+  earliest first; in the database a `jsonb` column of the same shape. A
+  key is `YYYY`, `YYYY-YY` or `YYYY-YYYY` and nothing else, and the same
+  expression checks that in `build_points.py`, `check.js` and the
+  `cameras_periods_check` constraint - change one, change the three.
+- `deployments` stays, because the glow is weighed by it, **Most used**
+  sorts by it, and a camera that came from a report has no history to
+  break down. Where `periods` is given, `deployments` is its sum by
+  construction: the script fills it in if blank and refuses a value that
+  disagrees, `check.js` asserts it, and `cameras_periods_total_check`
+  refuses the row on the server. The old integer is therefore always
+  derivable from the new column, and the two cannot drift.
+- The first values were read off the notes at import - "N deployment(s)
+  PERIOD" for a Met van site, "N deployment(s) in the YYYY station trial"
+  for a BTP one - which is reading the record's own sentence about a
+  site, not guessing at it. Every note in either form agreed with its
+  `deployments`; the import refuses to write a row where they do not.
+  From here on it is a column, edited in the CSV like any other.
+- One row is worth knowing about: **High Road, Haringey** says
+  "3 deployments 2023-24" in its note and `2025` in `last`. Both are
+  preserved exactly as they were; the period is `2023-24` because that is
+  what the note says. One of the two is wrong and the record itself does
+  not say which.
+
+What a per-period column makes possible is a time filter that shows a
+site in every year its period covers and never in one it does not, and a
+popup that lists "1 in 2023-24, 3 in 2025" rather than "4". What it does
+not make possible is a bar per year for a site the record only gives as a
+span - and that is the point. The Met's deployment-record PDFs carry a
+date per deployment, so a finer breakdown is a data-collection task for
+whoever next sits down with those PDFs, not something the script can
+manufacture.
+
+Adding it to the database is `backend/migrations/001_periods.sql`, run in
+the SQL editor and followed by a re-run of `seed.sql`, whose on-conflict
+update fills the column on every seed row. `schema.sql` carries the same
+block as version 2.3 so a fresh database ends up identical.
+
+**Where each camera comes from.** Provenance used to live in the prose of
+`note` with nothing to click: "Met Police LFR van - 3 deployments
+2023-2025" says which record without saying where it is. Two columns now
+carry it. `source_label` names the record or report the entry rests on;
+`source_url` is where that document is. Both are null where none is known,
+and null is what the map should show as nothing at all - a camera without
+a source says nothing rather than something vague. Two rules hold in the
+script, in `check.js` and on the server: a URL is `https` with no
+whitespace, and a URL needs a label, because a link with no name is not a
+citation. The `note` prose is untouched.
+
+How the values were set, so they can be checked one by one:
+
+- **Met van sites (163)**: label and URL derived at import from the period
+  in the note, through the `MET_RECORDS` table in the script, which lists
+  the Met's published deployment-record PDFs and the years each covers. A
+  period inside one record gets that record's PDF and the label "Met
+  Police LFR deployment record, PERIOD": `2023-24` (65 rows) the
+  2023-to-2024 grid, `2025` (63) the 2025 record, `2020-22` (1) the
+  2020-2022 grid. A period spanning more than one record - `2023-2025`
+  (31), `2020-2025` (2), `2020-24` (1) - has no single document to point
+  at, so it gets the Met's page the records are published on, under
+  "Deployment records", and the label reads "records", plural. That page
+  is the most specific address there is for those 34 rows; if it is ever
+  judged too coarse, the honest alternative is null, not a guess at one of
+  the PDFs.
+- **BTP stations (9)**: "British Transport Police LFR deployment register,
+  2026" and the register PDF, also derived from the note.
+- **Everything else (10)** was set by hand in the CSV from the research
+  survey in `london-lfr-cameras/`, per QUESTIONS.md item 8, only where the
+  survey's site and the record's entry are plainly the same place. The
+  label is the publication and date as the survey gives them; the URL is
+  the survey's, verbatim. The two Croydon installs share the Met's own
+  press release of 13 May 2026, which describes the pair ("static cameras
+  at two locations, at the north and south ends of Croydon's high
+  street") - the record's two rows are the two cameras the Met's March
+  2025 announcement named as "North End and London Road", and the release
+  is a source for each, without a claim about which is which:
+
+      King's Cross Central              The Register, 6 September 2019
+      London Road, Croydon (fixed)      Met Police press release, 13 May 2026
+      North End, Croydon (fixed)        Met Police press release, 13 May 2026
+      Sainsbury's Camden Town           Retail Technology Innovation Hub, 1 July 2026
+      Sainsbury's Dalston               Retail Technology Innovation Hub, 1 July 2026
+      Sainsbury's Ladbroke Grove        Retail Technology Innovation Hub, 1 July 2026
+      Sainsbury's Whitechapel           Retail Technology Innovation Hub, 1 July 2026
+      Sainsbury's Elephant and Castle   The Register, 6 February 2026
+      Sainsbury's Sydenham              The Grocer, July 2026
+      Sainsbury's East Dulwich          Retail Gazette, August 2026
+
+  The survey's own dates for these stores - installed January 2026 for the
+  five the record gives as "from early 2026", September 2025 for Sydenham,
+  paused for East Dulwich - agree with the notes, which is the check that
+  they are the same shops and not merely the same names.
+
+None of the URLs was fetched by the programme that set them: the Met and
+BTP sites refuse scripted requests, and the rest are cited as the survey
+cites them. A dead link is a data correction in the CSV, one cell.
+
+Adding the columns to the database is `backend/migrations/002_source.sql`,
+after 001, then a re-run of `seed.sql`. `schema.sql` carries the same block
+as version 2.4. What the popup shows for them is the next wave's; today the
+data is exact and nothing on the page reads it yet.
+
+**What is not known.** The Met's record gives some van sites as a borough
+or a district rather than a street, and the pin for those sits at the
+middle of the area. The note has always said so - "(pin marks the
+surrounding area, not an exact spot)", 43 sites - and the map drew them
+exactly like a pin on a known pole. `approximate` is that fact as a
+column: `true`/`false` in the CSV (blank is false, and TRUE from a
+spreadsheet is read), a boolean in `points.js`, `boolean not null default
+false` in the database. It was filled once at import from the phrase, and
+from here on it is a cell: a pin the maintainer knows to be approximate for
+another reason is a cell to set, not a phrase to match. **Station Parade**
+is the case in point - its note says "this pin is a guess", which is a
+stronger admission than the phrase, and it is not flagged only because the
+import read the one phrase the brief named. Setting it is one cell.
+
+The note keeps its phrase, because the prose is preserved and a reader of
+the popup should still be told. `check.js` holds the two together in one
+direction: a note that carries the phrase while the field says false is a
+column somebody blanked, and fails; the other direction is allowed, for
+Station Parade's reason. The map must never search the note for the
+phrase; the field is what it draws from. Drawing the difference - a wider,
+softer dot or a ring, under the brightness rule - and the legend entry are
+the next wave's, in `map.js` and `shared.js`.
+
+Default false because a camera that came from a report is where the
+reporter dropped the pin, and that is a claim about a spot. A moderator
+who corrects a seed pin with **Move** can then clear the flag - a cell, not
+an edit to prose - and the seed's re-run will not put it back, because a
+re-run rewrites `approximate` from the record, and the record's cell is the
+one that was cleared.
+
+Adding it is `backend/migrations/003_approximate.sql`, after 001 and 002,
+then a re-run of `seed.sql`. `schema.sql` carries the same block as version
+2.5.
+
+**`--import`** reads a `points.js` - the committed one, or one pasted out
+of `index.html?edit` - and writes the CSV from it. It was used once, to make
+the CSV from the published file, and it is kept because a hand-published
+`points.js` is the one situation in which an output knows more than the
+source, and the way back is to import it, read the diff git shows on the
+CSV, and build. It reads the file with the same patterns `stamp.py` does and
+refuses anything it cannot read rather than skipping it. A field the entry
+carries is taken as it is; a field it lacks is read off the note where the
+note states it outright (`periods`, above), and is null otherwise.
+
+**`?edit` and the CSV.** `index.html?edit` still exports a `points.js`.
+Pasting that over the committed file and committing it now fails
+`stamp.py`, correctly: the CSV did not change, so the output should not
+have. Either import it (above) or, better, have `?edit` export CSV rows in
+the column order above and paste those into `data/cameras.csv` instead.
+That change belongs to `map.js` and has not been made yet.
+
+**The download.** When the site publishes the record as a download, the
+file to publish is this one, served as it is. It is already the most
+portable form of the record, it carries nothing that is not public, and a
+file that *is* the record cannot drift from it. A second CSV derived from
+the first would exist only to hide columns, and there are none to hide.
 
 ### Roles
 
