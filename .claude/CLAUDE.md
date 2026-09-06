@@ -293,7 +293,9 @@ Worth looking at after any change to the map or the picker: the console is
 clean (a CSP violation shows up there and nowhere else — known noise that is
 not ours: the `frame-ancestors`-in-`<meta>` line, MapLibre's `wood-pattern`
 image warning, and three "Expected value to be of type number" worker
-warnings from the OpenFreeMap Bright style in the Light view), the camera
+warnings from the OpenFreeMap Bright style in the Light view, and that
+style's "Image … could not be loaded" lines for shop icons at street zoom),
+the camera
 dots survive a Dark → Light → Satellite → Dark round trip, and the glow has
 one layer per colour shown rather than two —
 

@@ -86,28 +86,28 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | DATA-7 (schema) | 1 | generator | verified | 21904e7 | *migration 003, unapplied*; `approximate` boolean, 43 rows true |
 | MAP-7 | 1 | stylesheet | verified | dca47c0 | one `:focus-visible` rule; ring moves inside pressed toggles; attribution bar 0.86→0.94 for contrast |
 | MAP-10 | 1 | stylesheet | verified | 83e23a5 | `@media print`: list on white with coordinates, legend and filter state kept |
-| MAP-3 | 2 | map | merged | 4b8d64c | search box for everyone, under the map; no search-as-you-type (Nominatim policy), empty state, bounded to London |
-| MAP-1 | 2 | map | merged | 5b9b2cd | `#zoom/lat/lon`, `&camera=<db id | seed key>`, `#lat,lon` kept; throttled `replaceState`; Copy link with three fallbacks |
-| MAP-2 | 2 | map | merged | 94a563d | Near me, pressed only; ring brightness 89; three failure paths in words; Nearest sort with metres |
-| MAP-5 | 2 | map | merged | 33a914a | chooser on click for stacked dots plus a count badge at z16; Croydon pair reachable by mouse and keyboard |
-| REACH-5 | 2 | map | merged | 5435bad | `RECORD_SOURCES` in shared.js; count computed ("182 in the record, 5 more from reports") |
-| MOD-1 | 2 | moderation | merged | d864979 | `loadPage()`/`makePager()`; queue, history, activity paged; Wave 4's list reuses it |
-| MOD-7 | 2 | moderation | merged | e9e374a | head count on the nav link and the oldest report's age at the top of the queue |
-| MOD-2 | 2 | moderation | merged | c3e4a33 | *migrations 004 + 005, unapplied*; `moderate_edit_camera`; `seed_key` untouched; server refuses vancam+active; new `moderation_log` table |
-| MOD-4 | 2 | moderation | merged | 2fae7d2 | per-row `moderate_report`, per-row failures shown; no list-taking server function by design |
-| MOD-5 | 2 | moderation | merged | 9a77bc4 | whole pending set fetched light, distance to nearest camera computed client-side, paged by id |
-| MOD-6 | 2 | moderation | merged | 9f17ab8 | Activity tab: decisions with resolver, and camera actions from `moderation_log` |
-| MOD-3 | 2 | moderation | merged | e8b24e2 | *migration 006, unapplied*; `moderate_merge_cameras` returns `{survivor, loser, moved, kept}`; nothing deleted |
-| MAP-8 | 3 | map-a11y | todo | | reduced motion, re-read on change |
-| MAP-9 | 3 | map-a11y | todo | | `aria-hidden` canvas, live region |
-| MAP-6 | 3 | map-a11y | todo | | legend solo, keyboard reachable |
-| WORD-6 | 3 | map-a11y | todo | | how to read this map, open on first visit only |
-| ACCT-5 | 3 | accounts | todo | | sign out everywhere |
-| ACCT-1 | 3 | accounts | todo | | change password, current password required |
-| ACCT-4 | 3 | accounts | todo | | *migration*; leaderboards are materialized views, so the opt-out is enforced in their definition, not RLS — see QUESTIONS |
-| ACCT-6 | 3 | accounts | todo | | match on position client-side |
-| ACCT-3 | 3 | accounts | todo | | printable recovery card |
-| ACCT-2 | 3 | accounts | todo | | *migration*; delete account |
+| MAP-3 | 2 | map | verified | 4b8d64c | search box for everyone, under the map; no search-as-you-type (Nominatim policy), empty state, bounded to London |
+| MAP-1 | 2 | map | verified | 5b9b2cd | `#zoom/lat/lon`, `&camera=<db id | seed key>`, `#lat,lon` kept; throttled `replaceState`; Copy link with three fallbacks |
+| MAP-2 | 2 | map | verified | 94a563d | Near me, pressed only; ring brightness 89; three failure paths in words; Nearest sort with metres |
+| MAP-5 | 2 | map | verified | 33a914a | chooser on click for stacked dots plus a count badge at z16; Croydon pair reachable by mouse and keyboard |
+| REACH-5 | 2 | map | verified | 5435bad | `RECORD_SOURCES` in shared.js; count computed ("182 in the record, 5 more from reports") |
+| MOD-1 | 2 | moderation | verified | d864979 | `loadPage()`/`makePager()`; queue, history, activity paged; Wave 4's list reuses it |
+| MOD-7 | 2 | moderation | verified | e9e374a | head count on the nav link and the oldest report's age at the top of the queue |
+| MOD-2 | 2 | moderation | verified | c3e4a33 | *migrations 004 + 005, unapplied*; `moderate_edit_camera`; `seed_key` untouched; server refuses vancam+active; new `moderation_log` table |
+| MOD-4 | 2 | moderation | verified | 2fae7d2 | per-row `moderate_report`, per-row failures shown; no list-taking server function by design |
+| MOD-5 | 2 | moderation | verified | 9a77bc4 | whole pending set fetched light, distance to nearest camera computed client-side, paged by id |
+| MOD-6 | 2 | moderation | verified | 9f17ab8 | Activity tab: decisions with resolver, and camera actions from `moderation_log` |
+| MOD-3 | 2 | moderation | verified | e8b24e2 | *migration 006, unapplied*; `moderate_merge_cameras` returns `{survivor, loser, moved, kept}`; nothing deleted |
+| MAP-8 | 3 | map-a11y | in-flight | | reduced motion, re-read on change |
+| MAP-9 | 3 | map-a11y | in-flight | | `aria-hidden` canvas, live region |
+| MAP-6 | 3 | map-a11y | in-flight | | legend solo, keyboard reachable |
+| WORD-6 | 3 | map-a11y | in-flight | | how to read this map, open on first visit only |
+| ACCT-5 | 3 | accounts | in-flight | | sign out everywhere |
+| ACCT-1 | 3 | accounts | in-flight | | change password, current password required |
+| ACCT-4 | 3 | accounts | in-flight | | *migration*; leaderboards are materialized views, so the opt-out is enforced in their definition, not RLS — see QUESTIONS |
+| ACCT-6 | 3 | accounts | in-flight | | match on position client-side |
+| ACCT-3 | 3 | accounts | in-flight | | printable recovery card |
+| ACCT-2 | 3 | accounts | in-flight | | *migration*; delete account |
 | REP-1 | 4 | reporting | todo | | form for everyone, account at submit |
 | REP-6 | 4 | reporting | todo | | long-press / right-click on the map → report with pin |
 | REP-2 | 4 | reporting | todo | | *migration* likely; cell check without leaking who |
@@ -136,10 +136,10 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 
 | Status | Count |
 | --- | --- |
-| todo | 31 |
-| in-flight | 0 |
-| merged | 12 |
-| verified | 15 |
+| todo | 21 |
+| in-flight | 10 |
+| merged | 0 |
+| verified | 27 |
 | blocked | 0 |
 | dropped | 0 |
 
@@ -186,3 +186,24 @@ Parade's "this pin is a guess" has `approximate: false` (→ Wave 5 record agent
 QUESTIONS 10); Light view logs three OpenFreeMap style warnings and the glow has one
 layer per colour shown, not "three" (CLAUDE.md wording fixed). Totals after Wave 1: 15
 verified, 43 to go.
+
+**Wave 2 summary (verified 2026-09-06).** Landed: the place search for everyone; deep links
+in the OSM form plus `&camera=<id>` and a Copy link row with three fallbacks; Near me,
+pressed only, with an accuracy ring at brightness 91 and nothing stored or sent; a chooser
+and a count badge for stacked dots (the Croydon pair reachable by mouse and keyboard); the
+record line computed from the data. On the moderation page: paging everywhere, the backlog
+count and the oldest report's age, edit and merge as `security definer` functions with a
+`moderation_log` (migrations 004–006, **unapplied**), bulk decisions through the per-row
+function, sort and filter over the whole pending set, and an Activity tab. Changed shape:
+`?edit` exports CSV rows; `#camera=` is a database id or a seed key; no search-as-you-type;
+a log table; `move_camera` gained `actor`; merge returns jsonb. Blocked: nothing.
+Verification: all twelve met; every gate refused a plain user with 42501 on a throwaway
+PostgreSQL and the old schema plus 004–006 dumped identical to the fresh schema; the fake
+client was audited and rebuilt. Observations carried forward: `hide_camera` re-attributes
+`resolved_by` on a kept approved status report when merge hides the loser (→ Wave 4
+reporting agent, which owns schema.sql then); an out-of-London hash is ignored silently
+(→ Wave 3 map-a11y); the Light view logs seven missing-icon warnings at street zoom
+(CLAUDE.md known noise, done); with the database unreachable the cameras fetch is retried
+four times (→ Wave 5 record agent, DATA-8); the dark base map's label anti-aliasing has
+isolated pixels up to 150, pre-existing and untouched. Totals after Wave 2: 27 verified,
+31 to go.
