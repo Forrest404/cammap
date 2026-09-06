@@ -330,8 +330,113 @@ The satellite view uses Esri's World Imagery from the open tile endpoint, with a
 
 ### Keyboard focus and print
 
-*(Written by the Wave 1 stylesheet agent: the focus ring and what it was
-checked against, and what printing the map page gives you.)*
+**The focus ring.** Everything Tab can reach shows two pixels of the
+accent, two pixels clear of it, on `:focus-visible` - so a keyboard
+sees it and a click does not. Before, only the text fields and Donate
+said where focus was; every button, every nav link, every row of the
+list and the map itself said nothing. The rule and its exceptions are
+under KEYBOARD FOCUS in `frontend/style.css`. This is the arithmetic
+behind the exceptions - WCAG 2.x relative luminance, the bar is 4.5:1
+(`#cf6a58` is the accent):
+
+    the surface the ring lands on                         ratio
+    the page, #0d0d0d                                     5.42:1
+    the page through a scanline, #151515                  5.09:1
+    an input well, #141414                                5.14:1
+    a pressed toggle's accent fill                        1.00:1  ring goes inside, in the page colour: 5.42:1
+    the attribution bar over white at 0.86, #2f2f2f       3.73:1  bar raised to 0.94, #1c1c1c: 4.75:1
+    the light map's land, #f8f4f0                         3.28:1  never landed on
+    the light map's water, #aecfe2                        2.19:1  never landed on
+    the dark map's brightest grey, #5c5c5c                1.86:1  never landed on
+    MapLibre's default white button                       3.59:1  not a surface here; the site paints them #0d0d0d
+
+Where the accent cannot be read the ring moves rather than changing
+colour:
+
+- **Toggles** carry it inside, three pixels in, because the segmented
+  rows (Dark | Light | Satellite, A-Z | Most used, the moderation tabs)
+  abut and a ring outside one would cross a pressed neighbour and
+  vanish on it. A pressed toggle draws the ring in the page colour:
+  the same 5.42:1 seen from the other side.
+- **The zoom buttons and the popup's close button** carry it inside
+  too, because they float over the map, and what the map shows under
+  them changes with the view. MapLibre's own focus - a blue
+  `box-shadow` and a rounded corner - is unset in the same block.
+  Checking a hovered zoom button turned up that MapLibre's hover rule
+  outranked ours, so the buttons had never filled on hover and their
+  glyph, flipped dark to suit the fill, vanished under the pointer;
+  the selector now carries `:not(:disabled)` for weight.
+- **The map canvas** is focusable because MapLibre makes it so (the
+  arrow keys pan, `+`/`-` zoom), and it clips to its box. The ring is
+  drawn round the map's container instead, through `:has()`, on the
+  page, whatever the view. A browser without `:has()` gets a ring
+  inside the canvas.
+- **The attribution bar** is the page colour at 0.94 now, not 0.86:
+  over white land it composited to `#2f2f2f`, where the accent links
+  in it, their ring, and its own dim text all failed. The map still
+  shows through, less.
+- **The compact attribution control** - the round "i" on a map under
+  640px, which is the report form's picker and Move's - is a
+  `<summary>` in MapLibre 5, not a button. `summary` is in the rule
+  for that reason. It is round because MapLibre draws it round and the
+  site has never squared it, so the ring is round with it.
+- **`select`** takes the accent border on focus like a text field.
+  **File inputs** get the ring, and so will a checkbox, radio or range
+  when one is added: the FORMS rule that colours a field's border on
+  focus also says `outline: none`, for every input, and a control with
+  no border to colour went dark.
+
+How it was checked: a Tab walk of the map page in all three views,
+the report form, and the moderation page with Move open, at 1400px
+and 390px, in headless Chrome over the DevTools protocol with real Tab
+keystrokes. Worth knowing before believing the ring is missing: a
+script's `.focus()` does not trigger `:focus-visible` in Chrome until
+the document has seen a keyboard event, so a console `focus()` on a
+freshly loaded page shows nothing, and that is not a bug.
+
+**Printing the map page.** Paper gets the list, not the picture. Before,
+it got the dark page as it stood: a dark rectangle where the map is - a
+WebGL canvas that was never asked to keep its drawing prints as nothing
+- and the list cut off at the bottom of the box it scrolls in. Now it
+is one column, black on white, every camera with its name, its note,
+its coordinates at the size of the name, and the kind and state in
+words at the right of the row - "LFR van site · legacy · last seen
+2024" - so a black-and-white printer loses nothing the swatch's colour
+carried. No row is split across a page.
+
+What the list is a list *of* prints with it, because "17 of 187" on
+its own does not say why: the count, the legend with any kind that is
+switched off struck through, a line saying whether the legacy van sites
+are included, the order in force, and the search term if there is one.
+That is the filter state, and it needs no help from JavaScript: the
+list is rendered from the same state as the dots, so the print view
+only keeps what is already on the page and says it plainly.
+
+Dropped: the map, and its attribution with it, since that credits tiles
+that are not on the page; the view buttons and the sort button not in
+force; the search box while it is empty; the nav; Donate; the star and
+remove buttons on rows; the editing boxes, even in edit mode.
+
+The palette flips once, in `:root` under `@media print` at the end of
+`frontend/style.css`, and every rule that names a variable follows. The
+accent goes to black, because at 3.6:1 on white it cannot carry text
+and there is nothing on paper for a link colour to mean. That one flip
+is why the other pages print as readable prose without a rule each.
+The rest is the PAPER block, which is the whole of it.
+
+To try it: print preview on the map page, with any filter set. A
+borough search with Legacy on is what it was built for. It was checked
+with Chrome's `Page.printToPDF` over the DevTools protocol at A4, and
+the page breaks read back with pypdf: every page starts on a name and
+ends on a coordinates line.
+
+Two things the print view would be better with, and both need markup
+or JavaScript rather than a stylesheet: a text label of the kind in
+each row - it is read back off the swatch's `title` with `attr()` now,
+which works but is a stylesheet reaching for data the row should carry,
+and a screen reader would want the same words (MAP-9); and a line
+saying when the record was last checked, which is REACH-5's count line
+and will print with the list once it exists.
 
 ## Anonymity
 
