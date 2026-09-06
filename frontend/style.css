@@ -287,7 +287,14 @@ footer.foot::before {
   background: var(--bg);
 }
 
-.maplibregl-ctrl-group button:hover {
+/* :not(:disabled) is not a condition, it is weight. MapLibre's own
+   hover rule is written ".maplibregl-ctrl button:not(:disabled):hover"
+   and outranks a plain "button:hover" here, so without it this fill
+   never applied - the button stayed dark on hover while the glyph
+   below was flipped dark to suit a fill that was not there, and the
+   plus sign vanished under the pointer. Found while checking the
+   focus ring against a hovered button. */
+.maplibregl-ctrl-group button:not(:disabled):hover {
   background: var(--accent);
 }
 
@@ -302,8 +309,15 @@ footer.foot::before {
   filter: none;
 }
 
+/* 0.94, not the 0.86 it was. The bar is the one surface on the site
+   that changes with what is under it, and under the light and
+   satellite views that can be white: at 0.86 over white it composited
+   to #2f2f2f, where its own links were 3.7:1 and its dim text 4.0:1.
+   At 0.94 it is #1c1c1c over white, 4.75:1 for the accent and 4.94:1
+   for the dim - and it still lets the map through, just less. The
+   focus ring lands on this bar too, which is what forced the sum. */
 .maplibregl-ctrl-attrib {
-  background: rgba(13, 13, 13, 0.86) !important;
+  background: rgba(13, 13, 13, 0.94) !important;
   color: var(--dim);
   font-family: var(--mono);
   font-size: 11px;
@@ -655,6 +669,14 @@ input.find {
   min-height: 0;
   overflow-y: auto;
 
+  /* Four pixels wider each side, and padded back by the same, so
+     nothing drawn moves. A list that scrolls clips to its own box,
+     and the focus ring round a row sits two pixels clear of it and is
+     two pixels wide: without this room the ring lost its left edge
+     under the box and its right edge under the scrollbar. */
+  margin: 0 -4px;
+  padding: 0 4px;
+
   /* a flat scrollbar, so it reads as part of the page */
   scrollbar-width: thin;
   scrollbar-color: var(--rule) transparent;
@@ -733,7 +755,14 @@ input[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
 }
 
+/* A field says it has focus by turning its border the accent colour.
+   select is in the list so a drop-down says it the same way, rather
+   than in the browser's own blue. This rule takes the outline off
+   every input, which is right for a bordered field and wrong for one
+   with no border to colour - a file picker, a checkbox. Those get the
+   ring instead, under KEYBOARD FOCUS. */
 input:focus,
+select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--accent);
@@ -1288,6 +1317,159 @@ textarea.export {
   font-size: 11px;
   line-height: 1.5;
   white-space: pre;
+}
+
+/* ------------------------------------------------------------------
+   KEYBOARD FOCUS
+
+   One ring for everything Tab can reach: two pixels of the accent,
+   two pixels clear of the thing it marks. It is :focus-visible and
+   not :focus, so it shows for a keyboard and stays out of the way of
+   a click - the hover fill already answers the mouse - and it is an
+   outline and not a shadow, which the header promises.
+
+   Before this a keyboard user had a ring on the text fields and the
+   Donate link and nothing anywhere else. Every button on the site,
+   every nav link, every row of the list and the map itself gave no
+   sign of where they were.
+
+   The accent is the ring's colour because it is the one colour the
+   page has for "this one". Where the accent cannot be seen against
+   what is under it, the ring moves rather than changing colour. It
+   was checked against every surface it can land on - WCAG 2.x, the
+   bar is 4.5:1, the sums are in NOTES.md under "Keyboard focus and
+   print":
+
+     the page, #0d0d0d                          5.42:1
+     the page through a scanline, #151515       5.09:1
+     an input well, #141414                     5.14:1
+     a pressed toggle, filled with the accent   1.00:1  so the ring goes inside it, in the page colour: 5.42:1
+     a hovered zoom button, filled the same     1.00:1  the same answer
+     the attribution bar over white, at 0.86    3.73:1  so the bar is 0.94 now: 4.75:1 (see .maplibregl-ctrl-attrib)
+     the light map's land, #f8f4f0              3.28:1  never landed on: the map's ring is drawn round its box
+     the light map's water, #aecfe2             2.19:1  the same
+     the dark map's brightest grey, #5c5c5c     1.86:1  the same
+     MapLibre's own white button                3.59:1  not a surface here: the site paints them #0d0d0d
+
+   Checked by focusing each kind of element in turn and looking, on
+   the map page in all three views, on the report form and on the
+   moderation page with Move open, at desk and phone widths. The
+   numbers alone would not have found the blue box-shadow MapLibre
+   draws on its own buttons, or the corner it rounds while doing so.
+   ------------------------------------------------------------------ */
+
+/* The inputs are in this list because the rule under FORMS that
+   gives a text field its accent border on focus also says outline:
+   none, and it says it for every input. A file picker has no border
+   to colour, so it went dark; a checkbox, a radio or a slider would
+   too, the day one is added. summary is here for the same reason:
+   nothing uses one yet, and the first page that does should not have
+   to remember this. */
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible,
+input[type="file"]:focus-visible,
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible,
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The toggles sit in rows with no gap between them - Dark | Light |
+   Satellite, A-Z | Most used, Queue | History | Cameras - so a ring
+   outside one would cross its neighbours, and cross the neighbour
+   that is pressed and filled with the accent, where it vanishes. The
+   ring goes inside instead, two pixels in from the border, on the
+   button's own background. A pressed toggle's background is the
+   accent, so on it the ring is drawn in the page colour: the same
+   5.42:1, seen from the other side. Every .toggle gets this, the lone
+   Legacy switch included, so pressed-and-focused looks the same
+   wherever it is. */
+button.toggle:focus-visible {
+  outline-offset: -3px;
+}
+
+button.toggle.on:focus-visible {
+  outline-color: var(--bg);
+}
+
+/* MapLibre's own focus is a blue box-shadow, and a rounded corner on
+   the button while it has it. Wrong on three counts here - a shadow,
+   a radius, and not the accent - and set at button:focus:focus-visible
+   and button:focus:first-child, so it takes the same to unset.
+
+   The ring goes inside these buttons too: the group floats over the
+   map, and a ring outside a 29px button would sit on whatever the
+   base map is drawing under it, which on the light view is land the
+   accent cannot be read against. Inside, it is on the button's own
+   #0d0d0d. The hover fill is the accent, so a button hovered and
+   focused at once gets the page-coloured ring, as a pressed toggle
+   does. */
+.maplibregl-ctrl-group button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.maplibregl-ctrl-group button:focus:focus-visible {
+  box-shadow: none;
+}
+
+.maplibregl-ctrl-group button:focus:first-child,
+.maplibregl-ctrl-group button:focus:last-child,
+.maplibregl-ctrl-group button:focus:only-child {
+  border-radius: 0;
+}
+
+.maplibregl-ctrl-group button:hover:focus-visible {
+  outline-color: var(--bg);
+}
+
+/* On a narrow map the attribution folds into a round "i" button with
+   the same blue shadow. It is over the map like the zoom buttons, so
+   the same inside ring. */
+.maplibregl-ctrl-attrib-button:focus {
+  box-shadow: none;
+}
+
+.maplibregl-ctrl-attrib-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* The close button sits in the popup's top corner, against its
+   border, so a ring outside it would spill over the popup's edge onto
+   the map. Inside, it is on the popup's own page-coloured fill. */
+.maplibregl-popup-close-button:focus-visible {
+  outline-offset: -2px;
+}
+
+/* MapLibre gives its canvas a tabindex so that the arrow keys pan
+   and +/- zoom, which means Tab lands on the map itself. The map
+   clips to its own box, so a ring outside the canvas is never seen,
+   and one inside it would sit on the map's drawing: the dark view's
+   greys at 1.9:1, the light view's land at 3.3:1, the satellite view
+   on anything. So the ring is drawn round the map's container
+   instead, on the page, where it is 5.42:1 whatever the map shows.
+   The container is not the focused element; :has() lets it ask
+   whether its canvas is. A browser without :has() gets the ring
+   inside the canvas - not right on the light view, but not nothing. */
+@supports selector(:has(a)) {
+  .maplibregl-canvas:focus-visible {
+    outline: none;
+  }
+
+  .maplibregl-map:has(.maplibregl-canvas:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@supports not selector(:has(a)) {
+  .maplibregl-canvas:focus-visible {
+    outline-offset: -3px;
+  }
 }
 
 /* ------------------------------------------------------------------
