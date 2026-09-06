@@ -2202,11 +2202,44 @@ ul.queue .row {
 }
 
 /* ------------------------------------------------------------------
-   ACCOUNTS (Wave 3: the accounts agent writes this block)
+   ACCOUNTS
 
-   Rules for the account page's new boxes: change password, sign out
-   everywhere, the leaderboard switch, the recovery card and its print
-   layout, the delete-account confirmation, and the saved-camera state
-   line. If the agent needs no rule here, this block is removed rather
-   than left empty.
+   The account page's boxes for the ordinary operations an account
+   needs and the anonymity principle did not cover: signing out
+   everywhere, changing the password, the leaderboard switch, what a
+   saved camera has since become, the recovery card and its print
+   layout, and deleting the account. Each is a .box like the two
+   forms above them and takes its fields, buttons and notes from the
+   FORMS rules; what is here is only what those boxes have that no
+   other page does.
    ------------------------------------------------------------------ */
+
+/* A confirmation that appears under the button that asked for it -
+   sign out everywhere, and later delete - rather than a browser
+   dialog: the site uses none, a dialog cannot carry a sentence this
+   long, and a second button in the page is reachable by keyboard and
+   read by a screen reader like any other. Bordered in the accent so
+   it reads as the one thing on the page waiting for an answer. */
+.confirm {
+  margin: 12px 0 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+}
+
+.confirm p {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+}
+
+/* Two buttons that do not both fit a phone's width on one line. */
+.confirm .row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* A username inside a sentence: the accent, the weight of the big
+   one, at the size of the words around it. */
+code.username-inline {
+  font-weight: 500;
+  color: var(--accent);
+}

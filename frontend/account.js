@@ -506,31 +506,95 @@ function signUp(username, password, onDone, retried) {
   });
 }
 
+/* What this page forgets when a session ends, whichever way it ended:
+   the nav's Log out, "sign out everywhere" on the account page, or
+   the account being deleted. The server side of each differs; what
+   the page does afterwards does not. */
+function forgetSession() {
+  var message = document.getElementById("account-message");
+
+  currentUser = null;
+  currentRole = "user";
+  currentXp = 0;
+  savedCameras = [];
+  renderNav();
+
+  /* A sentence left from an earlier sign-out would otherwise be read
+     twice; whoever ends this session writes its own afterwards. */
+  if (message) {
+    message.textContent = "";
+  }
+
+  /* The report page is no use signed out, and neither is the signed
+     in half of the account page, so leave for the map. Everywhere
+     else can stay where it is and just redraw. */
+  if (PAGE === "report.html" || PAGE === "moderate.html") {
+    window.location.href = pageHref("index.html");
+    return;
+  }
+
+  if (PAGE === "account.html") {
+    showAccountPage();
+    return;
+  }
+
+  if (typeof render === "function") {
+    render();
+  }
+}
+
 function signOut() {
-  sb.auth.signOut().then(function () {
-    currentUser = null;
-    currentRole = "user";
-    currentXp = 0;
-    savedCameras = [];
-    renderNav();
+  sb.auth.signOut().then(forgetSession);
+}
 
-    /* The report page is no use signed out, and neither is the signed
-       in half of the account page, so leave for the map. Everywhere
-       else can stay where it is and just redraw. */
-    if (PAGE === "report.html" || PAGE === "moderate.html") {
-      window.location.href = pageHref("index.html");
+/* ---------------- sign out everywhere ----------------
+
+   The nav's Log out ends this browser's session and no other. A
+   person who signed in on a borrowed phone, or a library machine,
+   and walked away had no way to close that session from anywhere
+   else - and on a site whose users may be exactly the people with a
+   reason to worry about who is holding their phone, that is the
+   session that matters most.
+
+   Supabase's global scope revokes every refresh token the account
+   holds, so no session anywhere can renew itself, this one included.
+   What it cannot do is reach into a device and take back the access
+   token it already has: that stays good until it runs out, which is
+   the JWT expiry set in the dashboard - an hour by default - and the
+   page says so rather than promising "at once". Nothing about the
+   account is sent or asked: the call carries this session's own
+   token and acts on the account it belongs to.
+
+   Unlike signOut(), a failure here leaves the page signed in and
+   says so. Clearing the page while the server still holds every
+   session would tell the person the opposite of the truth. */
+function signOutEverywhere(onDone) {
+  sb.auth.signOut({ scope: "global" }).then(function (result) {
+    if (result && result.error) {
+      onDone(authProblem(result.error));
       return;
     }
-
-    if (PAGE === "account.html") {
-      showAccountPage();
-      return;
-    }
-
-    if (typeof render === "function") {
-      render();
-    }
+    forgetSession();
+    onDone(null);
+  }).catch(function () {
+    onDone("Could not reach the server. Check your connection and try again.");
   });
+}
+
+/* One sentence for the signed-out half of the account page, after
+   something has ended the session from that page: the person is
+   looking at the sign-in form again and should be told why. It takes
+   focus so a screen reader hears it rather than finding itself at
+   the top of a page that has changed under it. */
+function sayOnSignedOut(text) {
+  var message = document.getElementById("account-message");
+
+  if (!message) {
+    return;
+  }
+  message.textContent = text;
+  message.setAttribute("tabindex", "-1");
+  message.focus();
 }
 
 function restoreSession(onDone) {
@@ -834,9 +898,72 @@ function showAccountPage() {
     if (standing) {
       standing.textContent = currentXp + " XP" + (isModerator() ? " \u00b7 " + currentRole : "");
     }
+    /* The confirmation under "Sign out everywhere" names the account
+       it is about, so nobody confirms it for the wrong one. */
+    var everywhereWho = document.getElementById("everywhere-who");
+    if (everywhereWho) {
+      everywhereWho.textContent = usernameOf(currentUser);
+    }
   }
 
   showSavedList();
+}
+
+/* The "Sign out everywhere" box. The first button only reveals the
+   sentence and the second; nothing is sent until the second is
+   pressed. Focus follows the reveal so a keyboard user lands on the
+   question and not somewhere below it, and goes back to the first
+   button on Cancel. */
+function setUpEverywhere() {
+  var button  = document.getElementById("everywhere-button");
+  var confirm = document.getElementById("everywhere-confirm");
+  var yes     = document.getElementById("everywhere-yes");
+  var cancel  = document.getElementById("everywhere-cancel");
+  var note    = document.getElementById("everywhere-note");
+
+  if (!button || !confirm || !yes || !cancel) {
+    return;
+  }
+
+  button.onclick = function () {
+    note.textContent = "";
+    confirm.style.display = "block";
+    button.style.display = "none";
+    yes.focus();
+  };
+
+  cancel.onclick = function () {
+    confirm.style.display = "none";
+    button.style.display = "";
+    button.focus();
+  };
+
+  yes.onclick = function () {
+    var name = usernameOf(currentUser);
+
+    yes.disabled = true;
+    cancel.disabled = true;
+    note.textContent = "Signing out everywhere\u2026";
+
+    signOutEverywhere(function (problem) {
+      yes.disabled = false;
+      cancel.disabled = false;
+
+      if (problem) {
+        note.textContent = problem + " You are still signed in.";
+        return;
+      }
+
+      /* forgetSession() has shown the signed-out half by now; put the
+         box back the way it was for the next sign-in, and say what
+         happened where the person is now looking. */
+      note.textContent = "";
+      confirm.style.display = "none";
+      button.style.display = "";
+      sayOnSignedOut("Signed out everywhere. Every device that was signed in as " + name +
+        " has been signed out, or will be within the hour.");
+    });
+  };
 }
 
 function setUpAccountPage() {
@@ -853,6 +980,7 @@ function setUpAccountPage() {
   var signinNote = document.getElementById("signin-note");
 
   showAccountPage();
+  setUpEverywhere();
 
   if (!signupBtn || !signinBtn) {
     return;

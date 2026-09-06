@@ -1278,9 +1278,35 @@ Two honest limits. Supabase's own auth logs record request IPs for a period the 
 
 ### Changing, leaving and recovering an account
 
-*(Written by the Wave 3 accounts agent: signing out everywhere, changing
-the password, the leaderboard opt-out and where it is enforced, what a
-saved camera knows, the recovery card, and deleting an account.)*
+The generated username, the absent email and the refusal to build
+`username_available()` are the principled part of the accounts. What
+the principle did not cover were the ordinary things an account needs
+over its life: ending a session you cannot reach, changing a password
+typed on a machine you did not trust, staying off a public list,
+keeping the one thing that gets you back in, and leaving. Each is a
+box on the account page, and each was built against one test: *an
+endpoint that answers questions about accounts leaks as surely as a
+column does.* Before any call below was added, the question asked was
+what a stranger learns by calling it repeatedly with guesses. The
+answer for every one is written beside it here and in the comment
+above the function.
+
+**Sign out everywhere.** The nav's Log out ends this browser's session
+and no other; a session left open on a borrowed phone or a library
+machine could not be closed from anywhere else, and on this site those
+are the sessions that matter most. The box on the account page calls
+Supabase's sign-out with the global scope, which revokes every refresh
+token the account holds, so no session anywhere can renew itself, this
+one included. The honest limit, said in the confirmation: the access
+token a device already holds stays good until it runs out - the JWT
+expiry in the dashboard, an hour by default - and nothing can take it
+back sooner. The confirmation is a second button in the page rather
+than a browser dialog, because the site uses none and a dialog cannot
+carry that sentence. A failure leaves the page signed in and says so:
+clearing the page while the server still held every session would say
+the opposite of the truth. What a stranger learns by calling it: nothing
+- it carries the caller's own token and acts on the account that token
+belongs to.
 
 ## Forrest404
 

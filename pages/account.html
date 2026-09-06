@@ -94,6 +94,12 @@
 
       <h2>An account, without the usual parts</h2>
 
+      <!-- Filled by account.js when something on this page ended the
+           session - signing out everywhere, deleting the account - so
+           the person is told why they are looking at the forms again.
+           Empty otherwise. -->
+      <p class="note" id="account-message"></p>
+
       <p>
         No email address, no real name, nothing about you. The site picks
         a username for you &mdash; two ordinary words &mdash; and you
@@ -198,6 +204,35 @@
           Nothing saved yet. The stars are beside the camera list on the
           <a href="../index.html">map</a>.
         </p>
+      </div>
+
+      <!-- Ends every session the account holds, not only this one.
+           The confirmation is a second button that appears, not a
+           browser dialog: the site uses none, and a dialog cannot say
+           what this one has to say. -->
+      <div class="box" id="everywhere-box">
+        <h3>Sign out everywhere</h3>
+        <p class="hint">
+          Every device that is signed in as this account is signed out,
+          this one included. For a session left open on a shared or
+          borrowed machine.
+        </p>
+        <button id="everywhere-button" class="quiet">Sign out everywhere</button>
+        <div class="confirm" id="everywhere-confirm" style="display:none">
+          <p>
+            This ends every session for
+            <code class="username-inline" id="everywhere-who"></code>,
+            here and everywhere else, and signing back in needs the
+            password. A device that is signed in now keeps going until
+            its current token runs out &mdash; up to an hour &mdash;
+            and cannot renew it after that.
+          </p>
+          <div class="row">
+            <button id="everywhere-yes">Yes, sign out everywhere</button>
+            <button id="everywhere-cancel" class="quiet">Cancel</button>
+          </div>
+        </div>
+        <p class="note" id="everywhere-note"></p>
       </div>
 
     </div>
