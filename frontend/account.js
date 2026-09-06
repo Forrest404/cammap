@@ -581,6 +581,53 @@ function signOutEverywhere(onDone) {
   });
 }
 
+/* ---------------- changing the password ----------------
+
+   There was no way to. A password typed on a shared machine was that
+   account's password for good, and with no email on the account
+   there is no reset to fall back on - so a change has to be possible
+   from inside a session, and it has to be safe from a session that
+   was left open.
+
+   Supabase's updateUser({ password }) does not ask for the old one:
+   any session that holds a token may set a new password. So the old
+   one is asked for here and checked first, by signing in with it -
+   signInWithPassword against this account's own hidden email - and
+   only when that succeeds is the new one set. That is the existing
+   sign-in surface, rate-limited by Supabase like every sign-in, and
+   nothing is added to it: no new endpoint, no new question the
+   server will answer. The username is the caller's own, read off
+   their session, never typed, so a stranger with a list of names
+   learns nothing here they could not already learn from the sign-in
+   form - which is to say nothing, at the sign-in form's rate.
+
+   The refusal is worded for the person it is addressed to. "Wrong
+   username or password" is the sign-in form's line, where the
+   ambiguity is the point; here the username is known and the only
+   thing that can be wrong is the current password, so that is what
+   is said. Success says "Password changed." and nothing more. */
+function changePassword(current, next, onDone) {
+  sb.auth.signInWithPassword({ email: emailFor(usernameOf(currentUser)), password: current })
+    .then(function (result) {
+      var code = result.error && (result.error.code || "");
+      var msg = result.error && result.error.message ? result.error.message : "";
+
+      if (result.error) {
+        onDone(code === "invalid_credentials" || /invalid login/i.test(msg)
+          ? "That is not the current password."
+          : authProblem(result.error));
+        return null;
+      }
+
+      return sb.auth.updateUser({ password: next }).then(function (updated) {
+        onDone(updated.error ? authProblem(updated.error) : null);
+      });
+    })
+    .catch(function () {
+      onDone("Could not reach the server. Check your connection and try again.");
+    });
+}
+
 /* One sentence for the signed-out half of the account page, after
    something has ended the session from that page: the person is
    looking at the sign-in form again and should be told why. It takes
@@ -909,6 +956,79 @@ function showAccountPage() {
   showSavedList();
 }
 
+/* The "Change your password" box. The checks a person can be told
+   about without a round trip come first - the new password's shape,
+   the two copies agreeing, the new one not being the old one - and
+   the current password is only sent once those pass, so a slip does
+   not cost a sign-in attempt against the rate limit. */
+function setUpChangePassword() {
+  var current = document.getElementById("pw-current");
+  var next    = document.getElementById("pw-new");
+  var again   = document.getElementById("pw-new-again");
+  var button  = document.getElementById("pw-button");
+  var note    = document.getElementById("pw-note");
+
+  if (!current || !next || !again || !button) {
+    return;
+  }
+
+  button.onclick = function () {
+    var problem;
+
+    note.textContent = "";
+
+    if (current.value === "") {
+      note.textContent = "The current password is needed first.";
+      current.focus();
+      return;
+    }
+
+    problem = passwordProblem(next.value);
+    if (problem) {
+      note.textContent = problem;
+      next.focus();
+      return;
+    }
+
+    if (next.value !== again.value) {
+      note.textContent = "The two new passwords do not match.";
+      again.focus();
+      return;
+    }
+
+    if (next.value === current.value) {
+      note.textContent = "That is the password you already have.";
+      next.focus();
+      return;
+    }
+
+    button.disabled = true;
+    note.textContent = "Checking the current password…";
+
+    changePassword(current.value, next.value, function (error) {
+      button.disabled = false;
+
+      if (error) {
+        note.textContent = error;
+        current.focus();
+        return;
+      }
+
+      current.value = "";
+      next.value = "";
+      again.value = "";
+      note.textContent = "Password changed.";
+    });
+  };
+
+  again.onkeydown = function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      button.onclick();
+    }
+  };
+}
+
 /* The "Sign out everywhere" box. The first button only reveals the
    sentence and the second; nothing is sent until the second is
    pressed. Focus follows the reveal so a keyboard user lands on the
@@ -980,6 +1100,7 @@ function setUpAccountPage() {
   var signinNote = document.getElementById("signin-note");
 
   showAccountPage();
+  setUpChangePassword();
   setUpEverywhere();
 
   if (!signupBtn || !signinBtn) {

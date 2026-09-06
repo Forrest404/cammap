@@ -206,6 +206,29 @@
         </p>
       </div>
 
+      <!-- The current password is asked for and checked first, by
+           signing in with it, because Supabase's own password change
+           does not ask: without this a session left open on someone
+           else's machine could set a new one. -->
+      <div class="box" id="password-box">
+        <h3>Change your password</h3>
+        <p class="hint">
+          The current one first, so a session left open on another
+          machine cannot set a new one. There is no email on the
+          account: this is the only way it changes.
+        </p>
+        <label for="pw-current">Current password</label>
+        <input type="password" id="pw-current" autocomplete="current-password">
+        <label for="pw-new">New password</label>
+        <input type="password" id="pw-new" autocomplete="new-password">
+        <label for="pw-new-again">New password again</label>
+        <input type="password" id="pw-new-again" autocomplete="new-password">
+        <p class="hint">At least 10 characters, with a capital, a number
+          and a symbol.</p>
+        <button id="pw-button">Change the password</button>
+        <p class="note" id="pw-note"></p>
+      </div>
+
       <!-- Ends every session the account holds, not only this one.
            The confirmation is a second button that appears, not a
            browser dialog: the site uses none, and a dialog cannot say

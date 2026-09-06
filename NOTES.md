@@ -1308,6 +1308,23 @@ the opposite of the truth. What a stranger learns by calling it: nothing
 - it carries the caller's own token and acts on the account that token
 belongs to.
 
+**Changing the password.** There was no way to; a password typed on a
+shared machine was the account's for good, and with no email there is
+no reset. Supabase's `updateUser({ password })` sets a new one for any
+session that holds a token, without asking for the old - which is
+exactly the session left open on someone else's machine. So the box
+asks for the current password and checks it first, by signing in with
+it against the account's own hidden email, and only then sets the new
+one. That is the existing sign-in surface, rate-limited by Supabase
+like every sign-in, and nothing was added to it: no new function, no
+new question the server answers. The username is the caller's own,
+read off their session and never typed. The refusal says "That is not
+the current password" rather than the sign-in form's "Wrong username or
+password", because here the username is known and only one thing can
+be wrong; success says "Password changed." and nothing else. What a
+stranger learns: whatever the sign-in form already tells them, at the
+sign-in form's rate - nothing more.
+
 ## Forrest404
 
 - Leaderboard
