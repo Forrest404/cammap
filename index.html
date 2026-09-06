@@ -191,15 +191,19 @@
         <p class="empty" id="points-empty">No cameras recorded yet.</p>
       </div>
 
-      <!-- Writing the file back out -->
+      <!-- Writing the record back out. CSV rows, not a points.js:
+           points.js is written from data/cameras.csv by
+           tools/build_points.py and a pasted one fails stamp.py. -->
       <div class="box edit-only">
         <h3>Publish</h3>
         <p class="hint">
-          Copy the file below, paste it over everything in
-          <strong>points.js</strong>, then commit and push.
+          Copy the rows below and paste them over everything in
+          <strong>data/cameras.csv</strong>, then run
+          <strong>python3 tools/build_points.py</strong> and commit the
+          CSV with the two files it writes.
         </p>
         <div class="row">
-          <button id="copy-button">Copy points.js</button>
+          <button id="copy-button">Copy cameras.csv</button>
           <button id="reset-button" class="quiet">Start again</button>
         </div>
         <p class="note" id="export-note"></p>

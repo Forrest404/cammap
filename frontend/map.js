@@ -13,13 +13,16 @@
 
      index.html?edit How you add points. The form, the place search,
                      clicking the map and the delete buttons all come
-                     back, and a button writes out a new points.js for
-                     you to paste in and republish.
+                     back, and a button writes out the rows of
+                     data/cameras.csv for you to paste in, build and
+                     republish.
 
    Edit mode is a convenience, not a lock. Anyone may open ?edit on the
    live site, and it will do them no good: their changes live in their
    own browser, disappear when they clear it, and can never reach the
-   published map. The only way onto this map is to commit points.js.
+   published map. The only way onto this map is to commit the record -
+   data/cameras.csv, and the two files tools/build_points.py writes
+   from it.
    ------------------------------------------------------------------ */
 
 var EDITING = window.location.search.indexOf("edit") !== -1;
@@ -741,7 +744,30 @@ function tidy(list) {
          reads hotter than one it visited once. Anything without a
          count - a shop, a fixed camera, a hand-typed entry - is one. */
       deployments: typeof entry.deployments === "number" && entry.deployments > 0
-        ? entry.deployments : 1
+        ? entry.deployments : 1,
+
+      /* The four fields the record grew after the eight above, carried
+         through as they are so that nothing between the file and the
+         page loses them: the ?edit export writes them back out, and
+         the popup will read them once it draws provenance. None of
+         them is drawn yet. A draft saved before the fields existed, or
+         a hand-typed entry, has none, and gets the same defaults the
+         build script gives a blank cell - null, null, null, false -
+         never a plausible value.
+
+         periods       the deployments counted by the period the source
+                       gives them in - {"2023-24": 1} - or null where
+                       it names none. Kept as the object it came as.
+         source_label  the record or report the entry rests on, named,
+         source_url    and where it is; null where none is known, and
+                       null is what the page should show as nothing.
+         approximate   true where the pin marks the surrounding area
+                       rather than a spot. A field, so the map never
+                       has to search the note for the phrase. */
+      periods: entry.periods && typeof entry.periods === "object" ? entry.periods : null,
+      source_label: typeof entry.source_label === "string" ? entry.source_label : null,
+      source_url: typeof entry.source_url === "string" ? entry.source_url : null,
+      approximate: entry.approximate === true
     });
   }
 
@@ -804,7 +830,15 @@ function addPoint(lat, lon, name, note, type) {
 
     /* One, the same default tidy() gives a hand-typed entry: a spot
        nobody has counted deployments at has been used once. */
-    deployments: 1
+    deployments: 1,
+
+    /* And the same blanks tidy() gives it: this form has no boxes for
+       a period, a source or an approximate pin, and the CSV is where
+       those are filled in. */
+    periods: null,
+    source_label: null,
+    source_url: null,
+    approximate: false
   };
 
   points.push(point);
@@ -1614,51 +1648,112 @@ function startEditing() {
     nameInput.focus();
   });
 
-  /* -------- Writing points.js back out -------- */
+  /* -------- Writing the record back out --------
 
-  function fileText() {
-    var lines = [];
+     This used to write a points.js to paste over the committed one.
+     It cannot any more, and should not: points.js is written by
+     tools/build_points.py from data/cameras.csv, and a points.js the
+     CSV did not produce fails stamp.py by design (NOTES.md, "The
+     build script and the record"). So what comes out of here now is
+     the CSV itself - one header, one camera per line, in the column
+     order the script documents - to paste over data/cameras.csv. Then
+     run the script and commit the CSV with the two files it writes.
+
+     Every field is written, the four this page never edits included.
+     The glow is weighed by deployments and the popup will cite
+     source_label, so an export that dropped either would quietly
+     flatten the map or strip its citations the moment anyone
+     published from here. And the round trip is exact: export the
+     published record untouched, paste it over the CSV, run the
+     script, and git reports nothing changed - which is the check
+     that this writes what the script reads.
+     -------- */
+
+  /* The columns of data/cameras.csv, in the order build_points.py
+     writes them and checks the header against. The prose is last
+     because it is the long one. */
+  var CSV_COLUMNS = ["name", "type", "status", "lat", "lon", "approximate", "last",
+                     "periods", "deployments", "source_label", "source_url", "note"];
+
+  /* RFC 4180, the way Python's csv module writes it, because that is
+     what reads the file back: a field is quoted only if it holds a
+     comma, a quote or a line break, and a quote inside is doubled. A
+     field quoted when it need not be would still read, but the CSV
+     would then differ from what the script itself writes, and the
+     round trip above is the point. */
+  function csvField(value) {
+    var text = value === null || value === undefined ? "" : String(value);
+
+    if (/[",\r\n]/.test(text)) {
+      return "\"" + text.replace(/"/g, "\"\"") + "\"";
+    }
+
+    return text;
+  }
+
+  /* {"2023-24": 1, "2025": 3} as the CSV writes it: 2023-24:1;2025:3,
+     earliest period first. Not Object.keys() as it comes: JavaScript
+     puts a key that looks like a whole number - "2025" - ahead of
+     every other key whatever order it was written in, so the object
+     iterates 2025 before 2023-24. The script sorts by the year a
+     period starts and then by the key, and this does the same. */
+  function periodsText(periods) {
+    var keys;
+    var items = [];
+    var i;
+
+    if (!periods) {
+      return "";
+    }
+
+    keys = Object.keys(periods).sort(function (a, b) {
+      var ya = parseInt(a.slice(0, 4), 10);
+      var yb = parseInt(b.slice(0, 4), 10);
+
+      if (ya !== yb) {
+        return ya - yb;
+      }
+      return a < b ? -1 : (a > b ? 1 : 0);
+    });
+
+    for (i = 0; i < keys.length; i++) {
+      items.push(keys[i] + ":" + String(periods[keys[i]]));
+    }
+
+    return items.join(";");
+  }
+
+  function csvText() {
+    var lines = [CSV_COLUMNS.join(",")];
     var i;
     var point;
-
-    lines.push("/* ------------------------------------------------------------------");
-    lines.push("   cammap - the cameras on the published map");
-    lines.push("");
-    lines.push("   Written out by index.html?edit. Paste this over everything in");
-    lines.push("   points.js, then commit and push to publish it.");
-    lines.push("   ------------------------------------------------------------------ */");
-    lines.push("");
-    lines.push("var POINTS = [");
 
     for (i = 0; i < points.length; i++) {
       point = points[i];
 
-      lines.push("");
-      lines.push("  {");
-      lines.push("    name: " + JSON.stringify(point.name) + ",");
-      lines.push("    note: " + JSON.stringify(point.note) + ",");
-      lines.push("    lat: " + point.lat.toFixed(6) + ",");
-      lines.push("    lon: " + point.lon.toFixed(6) + ",");
-      lines.push("    type: " + JSON.stringify(point.type) + ",");
-      lines.push("    status: " + JSON.stringify(point.status) + ",");
-      lines.push("    last: " + (point.last === null ? "null" : String(point.last)) + ",");
-
-      /* Written out even though nothing on this page edits it. The glow
-         is weighed by it, so leaving it off here would quietly flatten
-         the map the moment anyone published from ?edit. */
-      lines.push("    deployments: " + String(point.deployments || 1));
-      lines.push(i === points.length - 1 ? "  }" : "  },");
+      lines.push([
+        csvField(point.name),
+        csvField(point.type),
+        csvField(point.status),
+        csvField(point.lat.toFixed(6)),
+        csvField(point.lon.toFixed(6)),
+        csvField(point.approximate ? "true" : "false"),
+        csvField(point.last === null ? "" : String(point.last)),
+        csvField(periodsText(point.periods)),
+        csvField(String(point.deployments || 1)),
+        csvField(point.source_label),
+        csvField(point.source_url),
+        csvField(point.note)
+      ].join(","));
     }
 
-    lines.push("");
-    lines.push("];");
-    lines.push("");
-
-    return lines.join("\n");
+    /* A newline after the last row: the script writes one, and a diff
+       that ends "no newline at end of file" is a change. */
+    return lines.join("\n") + "\n";
   }
 
   copyButton.onclick = function () {
-    exportText.value = fileText();
+    exportText.value = csvText();
     exportText.style.display = "block";
     exportText.focus();
     exportText.select();
@@ -1675,9 +1770,9 @@ function startEditing() {
     }
 
     if (copied) {
-      exportNote.textContent = "Copied. Paste it over everything in points.js.";
+      exportNote.textContent = "Copied. Paste it over everything in data/cameras.csv, then run python3 tools/build_points.py.";
     } else {
-      exportNote.textContent = "Selected below — press Cmd-C, then paste over points.js.";
+      exportNote.textContent = "Selected below — press Cmd-C, paste over data/cameras.csv, then run python3 tools/build_points.py.";
     }
   };
 
@@ -1789,6 +1884,7 @@ function overlayCameras(rows) {
 
       point.last = typeof row.last_seen === "number" ? row.last_seen : point.last;
       point.deployments = deploymentsOf(row, point.deployments);
+      takeRecordFields(point, row);
       point.cameraId = row.id;
       delete bySeed[key];
     }
@@ -1813,7 +1909,7 @@ function overlayCameras(rows) {
     if (row.seed_key && !bySeed[row.seed_key]) {
       continue;   /* a seed row that found its entry */
     }
-    merged.push({
+    merged.push(takeRecordFields({
       id: nextId++,
       cameraId: row.id,
       name: row.name,
@@ -1823,13 +1919,41 @@ function overlayCameras(rows) {
       type: row.type,
       status: row.status,
       last: typeof row.last_seen === "number" ? row.last_seen : null,
-      deployments: deploymentsOf(row, 1)
-    });
+      deployments: deploymentsOf(row, 1),
+      periods: null,
+      source_label: null,
+      source_url: null,
+      approximate: false
+    }, row));
   }
 
   points = merged;
   refreshCameras();
   render();
+}
+
+/* The four newer record fields, from a database row onto a point -
+   but only when the row actually carries them. The columns arrived in
+   migrations 001 to 003, which are written and not yet applied, and
+   the fetch below does not ask for them yet either: PostgREST refuses
+   the whole query if one named column is missing, and the map would
+   rather draw the seed's values than nothing. So a row without the
+   columns leaves the point's own values standing, whether those came
+   from points.js or from the defaults above; a row with them wins,
+   the way the row wins on name, note and state. periods is the tell:
+   it is the first of the three migrations, so a row that has it has
+   been through all of them. */
+function takeRecordFields(point, row) {
+  if (row.periods === undefined) {
+    return point;
+  }
+
+  point.periods = row.periods && typeof row.periods === "object" ? row.periods : null;
+  point.source_label = typeof row.source_label === "string" ? row.source_label : null;
+  point.source_url = typeof row.source_url === "string" ? row.source_url : null;
+  point.approximate = row.approximate === true;
+
+  return point;
 }
 
 function readCachedCameras() {
@@ -1869,7 +1993,15 @@ function loadCamerasFromDatabase() {
   /* Only the columns the map needs, only visible rows, and a hard
      ceiling on how many. The ceiling is well above what one city
      will hold; it is there so a runaway table cannot ship megabytes
-     to every visitor. */
+     to every visitor.
+
+     periods, source_label, source_url and approximate are not asked
+     for yet, on purpose: they arrive with migrations 001 to 003, which
+     the maintainer has not run, and PostgREST refuses a whole query
+     for one column it does not know. Naming them here before the
+     columns exist would blank the overlay for every visitor. When the
+     popup comes to draw them, the select grows and takeRecordFields()
+     above already knows what to do with the answer. */
   sb.from("cameras")
     .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key")
     .eq("visible", true)
