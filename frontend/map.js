@@ -3110,7 +3110,26 @@ function cameraLinkSettled() {
 function applyHash() {
   var wanted = readHash();
 
-  if (wanted.view && inLondon(wanted.view.lat, wanted.view.lon)) {
+  /* A view outside London - #99/0/0, a link edited by hand, a link
+     made for another city's copy of this map - used to be ignored in
+     silence, and the address it asked for stayed in the bar as if it
+     had been honoured. The map cannot go there (maxBounds would hold
+     it at the edge anyway), so it says so, treats the link as having
+     asked for no view - a camera named in the same link is still
+     followed, and centred on, as if the link had named only it - and
+     writes the view as it stands over the address that was not, so
+     what is in the bar is once again what is on the map. The last
+     write is forgotten first: a hash edited by hand while the map
+     has not moved is the view writeHash() wrote last, and it would
+     otherwise see nothing to do and leave the bad address standing. */
+  if (wanted.view && !inLondon(wanted.view.lat, wanted.view.lon)) {
+    sayUnderMap("That link points outside London, which is all this map covers; showing the whole map.");
+    wanted.view = null;
+    lastWrittenHash = null;
+    writeHash();
+  }
+
+  if (wanted.view) {
     /* jumpTo, not moveMap(): on load there is nothing to fly from,
        and a change to the hash by hand is a request for a place, not
        a journey. */
