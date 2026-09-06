@@ -65,7 +65,7 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | Item | Wave | Agent | Status | Commit | Note |
 | --- | --- | --- | --- | --- | --- |
 | KEEP-3 | 0 | keep3 | in-flight | | `tools/check.js`, zero deps |
-| KEEP-1 | 0 | keep1 | in-flight | | `stamp.py` → checker; nav check must normalise hrefs and `current` |
+| KEEP-1 | 0 | keep1 | merged | 15599a0 | `stamp.py` → checker; nav check must normalise hrefs and `current` |
 | KEEP-2 | 0 | — | todo | | GitHub Actions; "green" only observable after a push the maintainer makes |
 | REACH-4 | 1 | chrome | todo | | root `404.html`, must carry the CSP and join stamp.py's page set |
 | REACH-3 | 1 | chrome | todo | | `robots.txt`, `sitemap.xml` at `https://forrest404.github.io/cammap/` |
@@ -130,8 +130,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | Status | Count |
 | --- | --- |
 | todo | 56 |
-| in-flight | 2 |
-| merged | 0 |
+| in-flight | 1 |
+| merged | 1 |
 | verified | 0 |
 | blocked | 0 |
 | dropped | 0 |

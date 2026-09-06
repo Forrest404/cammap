@@ -31,7 +31,17 @@ GitHub Pages caches for ten minutes. The stamp puts a content hash on the
 site's own `<script>` and `<link>` tags so a returning visitor never pairs new
 HTML with old JavaScript. Skip it and the first visit after a deploy can show a
 page whose buttons do nothing. If you add a file to `frontend/`, add it to
-`OWN` in `tools/stamp.py`.
+`OWN` in `tools/stamp.py` — the script now fails if a page loads one of ours
+that is not there.
+
+The same run then checks everything this repository writes out more than
+once, and fails naming the page, row or constraint: the CSP, nav and footer
+are the same on every page; `points.js` and `seed.sql` agree row for row and
+every `seed_key` matches its row; every camera is inside `LONDON_BOUNDS` and
+the three schema constraints carry the same numbers; every `vancam` is
+`legacy`; `CAMERA_TYPES` and the three `type` constraints hold the same list
+bar `nonfunccam`. `python3 tools/stamp.py --check` runs all of it and writes
+nothing; that is what CI runs, and a stale stamp fails it.
 
 ## Where things live
 
@@ -50,7 +60,8 @@ frontend/style.css  all of it
 data/points.js      the cameras, as published
 backend/            schema.sql and seed.sql
 lib/ fonts/         vendored, pinned, do not edit
-tools/stamp.py      run before every commit
+tools/stamp.py      run before every commit: stamps, then checks every
+                    copied thing still agrees (--check writes nothing)
 ```
 
 Links are relative to wherever the page sits, so `account.js` writes them
@@ -64,14 +75,17 @@ here, and the least visible.
 
 | Copied on all 7 pages | If you change it |
 | --- | --- |
-| `<nav class="bar">` | edit all 7, or the nav disagrees with itself |
-| `<footer class="foot">` | same |
+| `<nav class="bar">` | edit all 7 — `stamp.py` **fails** if they drift |
+| `<footer class="foot">` | same — `stamp.py` **fails** if they drift |
 | The `<meta>` Content-Security-Policy | same — `stamp.py` **fails** if they drift |
 | `<script>` tags for shared.js / account.js | same, plus add to `OWN` in `stamp.py` |
 
-`stamp.py` compares the seven policies on every run and exits non-zero naming
-the odd page out, so a CSP drift cannot survive a commit. The other three are
-on you.
+`stamp.py` compares the copies on every run and exits non-zero naming the odd
+page out, so none of these drifts can survive a commit. The nav and footer are
+compared with the per-page parts taken off first — the `../` on hrefs and
+which link is `class="current"` — so a missing link still fails while a page
+in a deeper folder does not. The `<script>` tags are covered too: a file of
+ours a page loads that is not in `OWN` fails the run.
 
 ## The Content-Security-Policy
 
@@ -182,7 +196,8 @@ There are no tests. There is no build. So it is checked by running it:
 
 ```
 python3 -m http.server 8000     # then open http://localhost:8000/
-python3 tools/stamp.py          # last, before committing
+python3 tools/stamp.py          # last, before committing: stamps and checks
+python3 tools/stamp.py --check  # the same checks, writing nothing (what CI runs)
 ```
 
 Worth looking at after any change to the map or the picker: the console is

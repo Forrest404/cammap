@@ -17,7 +17,7 @@
 
     index.html          the map. Stays at the root: it is what a web server
                         hands out for the site's own address.
-    CLAUDE.md           the house rules, for anyone (or anything) picking
+    .claude/CLAUDE.md   the house rules, for anyone (or anything) picking
                         the project up cold.
     supabase-config.js  the two public values you paste after making a
                         Supabase project.
