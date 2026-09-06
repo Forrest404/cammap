@@ -1658,6 +1658,7 @@ function setUpModeratePage() {
            the list, which rebuilds every row. */
         closeMove();
         closeEdit();
+        closeMerge();
 
         for (j = 0; j < tabs.length; j++) {
           tabs[j].className = tabs[j] === button ? "toggle on" : "toggle";
@@ -1694,6 +1695,7 @@ function setUpModeratePage() {
 
 var allCameras = [];
 var camerasLoaded = false;
+var camerasTabWired = false;
 var showHiddenCameras = false;
 
 /* The one camera whose position is open for correcting, and the map
@@ -1704,11 +1706,13 @@ var movingCamera = null;
 var movePicker = null;
 
 /* Likewise the one camera whose name, note, kind or state is open
-   for correcting. One panel of any kind at a time, across Move and
-   Edit both: opening either closes the other, because one thing
-   being changed is one thing to save wrong, and a panel left open
-   off screen is a panel a moderator forgets they opened. */
+   for correcting, and the one being merged into another. One panel
+   of any kind at a time, across Move, Edit and Merge: opening any
+   closes the others, because one thing being changed is one thing
+   to save wrong, and a panel left open off screen is a panel a
+   moderator forgets they opened. */
 var editingCamera = null;
+var mergingCamera = null;
 
 function setUpCamerasTab() {
   var search = document.getElementById("c-search");
@@ -1717,7 +1721,14 @@ function setUpCamerasTab() {
 
   fillTypeSelect(document.getElementById("c-type"), "fixedcam");
 
-  if (!camerasLoaded) {
+  /* Wired once, on the tab's own flag: the cameras may already be
+     loaded by the time the tab is first opened, because the queue
+     fetches them for its distances, and "loaded" used to be the
+     flag this leaned on - which left the search box, the hidden
+     toggle and the Add button doing nothing on a page that had
+     opened on the queue. */
+  if (!camerasTabWired) {
+    camerasTabWired = true;
     search.oninput = function () { renderCameras(); };
     hiddenToggle.onclick = function () {
       showHiddenCameras = !showHiddenCameras;
@@ -1801,6 +1812,7 @@ function renderCameras() {
      live WebGL context and a set of tile workers behind it. */
   closeMove();
   closeEdit();
+  closeMerge();
 
   list.innerHTML = "";
 
@@ -1911,8 +1923,27 @@ function cameraRow(c) {
     openEdit(c, row);
   };
 
+  /* Two rows that are one camera. Hiding one would lose its reports
+     to a hidden row; merging moves them to the row that stays, and
+     then hides this one with a note saying where it went. Only for
+     a camera on the map: the server refuses a hidden loser, and the
+     row says why in openMerge(). */
+  var merge = document.createElement("button");
+  merge.className = "quiet";
+  merge.textContent = "Merge into…";
+  merge.onclick = function () {
+    if (mergingCamera === c.id) {
+      closeMerge();
+      return;
+    }
+    openMerge(c, row);
+  };
+
   actions.appendChild(edit);
   actions.appendChild(move);
+  if (c.visible) {
+    actions.appendChild(merge);
+  }
   actions.appendChild(b);
   actions.appendChild(outcome);
   row.appendChild(head);
@@ -2010,6 +2041,7 @@ function openMove(c, row) {
 
   closeMove();
   closeEdit();
+  closeMerge();
   movingCamera = c.id;
 
   panel.className = "move-panel";
@@ -2235,6 +2267,7 @@ function openEdit(c, row) {
 
   closeMove();
   closeEdit();
+  closeMerge();
   editingCamera = c.id;
 
   panel.className = "edit-panel";
@@ -2374,6 +2407,248 @@ function openEdit(c, row) {
       note.textContent = "Saved.";
     }).catch(function () {
       save.disabled = false;
+      note.textContent = "That did not go through. Try again in a moment.";
+    });
+  };
+}
+
+/* ---------------- merging two cameras ----------------
+
+   approve_report clusters and merges incoming reports, so two people
+   reporting one van site make one camera. Two rows already on the
+   map - a seed entry and a reported one at the same spot, or two
+   reports approved a month apart at 150 m - had no way to become
+   one. A moderator could hide one, and lose its reports to a hidden
+   row nobody would look at again.
+
+   Merge repoints the loser's reports at the survivor, then hides the
+   loser with a note naming the survivor. Nothing is deleted: the
+   loser is still in the table, off the map, and the moderation_log
+   says where its reports went. moderate_merge_cameras does it in one
+   call, gated on the server like everything else here, and refuses
+   a loser or a survivor that is already off the map - the comment
+   on merge_cameras in schema.sql says why.
+
+   The panel opens under the row that will go. It asks for the
+   survivor by name, offering the nearest cameras first because the
+   nearest one is the likeliest duplicate, and before anything is
+   sent it says in one sentence which row survives, which is hidden,
+   and how many reports move - and waits for a press on a button
+   that says the same thing. A merge is the one action here that a
+   moderator cannot undo with a button (the loser can be put back on
+   the map, but its reports have moved), so the statement is the
+   confirmation, and the button is not pressed by accident. */
+
+var MERGE_MATCHES = 8;
+
+function closeMerge() {
+  var panel = document.getElementById("c-merge-panel");
+
+  if (panel) {
+    panel.parentNode.removeChild(panel);
+  }
+  mergingCamera = null;
+}
+
+/* How many reports point at a camera, for the statement. The queue
+   and the history hold reports, not the camera list, so it is one
+   small count request - a head request, like the backlog's - made
+   only when a panel opens. */
+function countReportsOn(cameraId, onDone) {
+  sb.from("reports")
+    .select("id", { count: "exact", head: true })
+    .eq("camera_id", cameraId)
+    .then(function (result) {
+      onDone(result.error ? null : result.count);
+    })
+    .catch(function () {
+      onDone(null);
+    });
+}
+
+function openMerge(c, row) {
+  var panel    = document.createElement("div");
+  var hint     = document.createElement("p");
+  var search   = document.createElement("input");
+  var results  = document.createElement("ul");
+  var chosen   = document.createElement("p");
+  var buttons  = document.createElement("div");
+  var go       = document.createElement("button");
+  var cancel   = document.createElement("button");
+  var note     = document.createElement("p");
+  var survivor = null;
+  var reportsOnLoser = null;
+
+  closeMove();
+  closeEdit();
+  closeMerge();
+  mergingCamera = c.id;
+
+  panel.className = "merge-panel";
+  panel.id = "c-merge-panel";
+
+  hint.className = "hint";
+  hint.textContent = "For two rows that are one camera. Pick the row that survives: this one " +
+    "is taken off the map and every report that pointed at it moves to the survivor. " +
+    "Nothing is deleted, and the log records where its reports went. " +
+    "The nearest cameras are offered first, because the nearest is the likeliest duplicate.";
+  panel.appendChild(hint);
+
+  search.type = "text";
+  search.id = "c-merge-search";
+  search.placeholder = "The camera that survives, by name";
+  search.setAttribute("aria-label", "The camera that survives, by name");
+  panel.appendChild(search);
+
+  results.className = "results";
+  results.id = "c-merge-results";
+  panel.appendChild(results);
+
+  chosen.className = "statement";
+  chosen.id = "c-merge-statement";
+  panel.appendChild(chosen);
+
+  buttons.className = "row";
+  go.id = "c-merge-go";
+  go.style.display = "none";
+  cancel.className = "quiet";
+  cancel.textContent = "Cancel";
+  buttons.appendChild(go);
+  buttons.appendChild(cancel);
+  panel.appendChild(buttons);
+
+  note.className = "note";
+  panel.appendChild(note);
+
+  row.appendChild(panel);
+  search.focus();
+
+  countReportsOn(c.id, function (n) {
+    reportsOnLoser = n;
+    if (survivor) {
+      state();
+    }
+  });
+
+  /* The candidates: every other camera on the map whose name has the
+     typed text in it, nearest first, MERGE_MATCHES of them. Hidden
+     cameras are left out because the server would refuse them as a
+     survivor, and this camera itself because a merge into itself is
+     nothing. */
+  function candidates() {
+    var q = search.value.trim().toLowerCase();
+    var found = [];
+    var i;
+    var other;
+
+    for (i = 0; i < allCameras.length; i++) {
+      other = allCameras[i];
+      if (!other.visible || other.id === c.id) {
+        continue;
+      }
+      if (q && other.name.toLowerCase().indexOf(q) === -1) {
+        continue;
+      }
+      found.push({
+        camera: other,
+        metres: metresBetween(Number(c.lat), Number(c.lon), Number(other.lat), Number(other.lon))
+      });
+    }
+    found.sort(function (a, b) { return a.metres - b.metres; });
+    return found.slice(0, MERGE_MATCHES);
+  }
+
+  function showCandidates() {
+    var list = candidates();
+    var i;
+
+    results.innerHTML = "";
+    for (i = 0; i < list.length; i++) {
+      results.appendChild(candidateRow(list[i]));
+    }
+  }
+
+  function candidateRow(cand) {
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+
+    b.className = "pick";
+    b.textContent = "#" + cand.camera.id + " " + cand.camera.name + " · " +
+      typeLabel(cand.camera.type) + " · " + cand.camera.status + " · " +
+      Math.round(cand.metres) + " m away";
+    b.onclick = function () {
+      survivor = cand;
+      state();
+    };
+    li.appendChild(b);
+    return li;
+  }
+
+  /* The sentence the moderator confirms. Which row goes, which
+     stays, and how many reports move - or "its reports", until the
+     count is back. */
+  function state() {
+    var n = reportsOnLoser;
+    var reports = n === null ? "its reports" : (n === 1 ? "its 1 report" : "its " + n + " reports");
+
+    chosen.textContent = "#" + c.id + " " + c.name + " (" + typeLabel(c.type) + ") will be taken off the map and " +
+      reports + " moved to #" + survivor.camera.id + " " + survivor.camera.name +
+      " (" + typeLabel(survivor.camera.type) + "), which survives as it is.";
+    go.textContent = "Merge #" + c.id + " into #" + survivor.camera.id;
+    go.style.display = "";
+    note.textContent = "";
+  }
+
+  search.oninput = showCandidates;
+  showCandidates();
+
+  cancel.onclick = function () {
+    closeMerge();
+  };
+
+  go.onclick = function () {
+    if (!survivor) {
+      return;
+    }
+    go.disabled = true;
+    note.textContent = "Merging…";
+
+    sb.rpc("moderate_merge_cameras", {
+      loser: c.id,
+      survivor: survivor.camera.id
+    }).then(function (result) {
+      var r = result.data || {};
+      var rowButtons;
+      var i;
+
+      if (result.error) {
+        go.disabled = false;
+        note.textContent = result.error.message || "That did not go through.";
+        return;
+      }
+      forgetCameraCache();
+      c.visible = false;
+
+      /* The row stays, at full strength so the result can be read,
+         with its own buttons switched off: it is a hidden camera now
+         and Edit, Move and Remove on it would be edits to a row that
+         is off the map. The next render draws it as hidden, or drops
+         it unless hidden cameras are shown. The survivor's row is
+         untouched, because nothing about it changed. */
+      row.querySelector(".coords").textContent = cameraMeta(c);
+      rowButtons = row.querySelector(".row").querySelectorAll("button");
+      for (i = 0; i < rowButtons.length; i++) {
+        rowButtons[i].disabled = true;
+      }
+      results.innerHTML = "";
+      go.style.display = "none";
+      chosen.textContent = "";
+      note.textContent = "Merged into #" + r.survivor + ". " +
+        r.moved + (r.moved === 1 ? " report" : " reports") + " moved" +
+        (r.kept ? ", " + r.kept + " kept with this row (the same person had already reported the survivor)" : "") +
+        ". This camera is now off the map.";
+    }).catch(function () {
+      go.disabled = false;
       note.textContent = "That did not go through. Try again in a moment.";
     });
   };

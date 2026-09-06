@@ -1853,21 +1853,43 @@ button.load-more {
   color: var(--text);
 }
 
-/* The panel Edit opens inside a camera's row: the same indent and
-   rule as Move's panel, for the same reason - it belongs to the row
-   above it and should read as part of it, not as a box of its own.
-   Its fields are the ordinary form fields; the two hints in it are
-   the ordinary hint. */
-.edit-panel {
+/* The panels Edit and Merge open inside a camera's row: the same
+   indent and rule as Move's panel, for the same reason - each
+   belongs to the row above it and should read as part of it, not as
+   a box of its own. Their fields are the ordinary form fields; the
+   hints in them are the ordinary hint. */
+.edit-panel,
+.merge-panel {
   margin: 10px 0 4px 0;
   padding-left: 12px;
   border-left: 2px solid var(--rule);
 }
 
-.edit-panel p.hint {
+.edit-panel p.hint,
+.merge-panel p.hint {
   margin: 0 0 10px 0;
   font-size: 13px;
   color: var(--dim);
+}
+
+/* Merge's candidates are the place search's result rows - a list
+   of full-width buttons under a text box - so they take that list's
+   rules and add none. The statement of what is about to happen is
+   in the body colour and size: it is the thing the moderator is
+   confirming, and it is not a hint. Empty until a survivor is
+   picked, so it takes no room then. */
+.merge-panel ul.results {
+  margin-bottom: 12px;
+}
+
+.merge-panel .statement {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.merge-panel .statement:empty {
+  margin: 0;
 }
 
 /* Deciding many at once. Every queue row is a tick box beside the
@@ -1946,6 +1968,18 @@ ul.queue li.pickable label.pick {
 ul.queue li.failed {
   border-left: 2px solid var(--accent);
   padding-left: 10px;
+}
+
+/* A camera's row now carries four buttons - Edit, Move, Merge into…,
+   Remove from map - and on a phone they do not fit one line. The
+   .row they sit in is a flex line that does not wrap, so they were
+   squeezed until their words broke inside them; wrapping between
+   buttons is what a row of buttons should do. Every button row on
+   the page's lists gets it, because the same is true of any of them
+   the moment a fifth button arrives. */
+ul.queue .row {
+  flex-wrap: wrap;
+  row-gap: 8px;
 }
 
 /* Which reports, in what order: three drop-downs on one line, each

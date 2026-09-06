@@ -625,6 +625,7 @@ from a non-moderator is a courtesy, never the lock.
     cameras        put one on the map by hand              moderate_add_camera
     cameras        correct where one is                    moderate_move_camera
     cameras        correct its name, note, kind or state   moderate_edit_camera
+    cameras        merge two rows that are one camera      moderate_merge_cameras
 
 **Move** is the newest of those and the one worth explaining. A pin in the
 wrong place is the commonest thing wrong with a camera that is otherwise right:
@@ -828,6 +829,43 @@ the reports, profiles and log policies all ask `is_moderator()`; the
 tab hiding itself is the courtesy. Until migration 004 is run the
 lower list says which migration to run, and the upper list is
 unaffected.
+
+**Merge** is for two rows that are one camera. `approve_report`
+clusters and merges *incoming* reports, so two people reporting one
+van site make one camera; two rows already on the map - a seed entry
+and a reported one at the same spot, two reports approved a month
+apart at 150 m - had no way to become one, and hiding one lost its
+reports to a hidden row nobody would look at again.
+`moderate_merge_cameras(loser, survivor)` (migration 006, schema
+version 2.8) repoints the loser's reports at the survivor, hides the
+loser through the existing `hide_camera` with a note naming the
+survivor, logs it, and returns which row survived and how many reports
+moved. Nothing is deleted: the loser is still in the table, off the
+map. It refuses the same id twice, a missing id, a loser that is
+already hidden (its reports belong to whatever took it off - a merge
+already done, a "removed" claim approved - and moving them now could
+put them under a camera they were never about; put it back first if
+it really is a duplicate) and a survivor that is hidden (two cameras
+lost for one). One report may stay behind: a state report by someone
+who has also reported the survivor's state, because
+`reports_one_status_per_camera_idx` allows one per person per camera
+and it is still their evidence about the loser; the result counts
+those as *kept*. `saved_cameras` holds no camera id by design, so
+nothing there is touched, and the survivor's own `deployments`,
+`periods` and source are left as the record gave them - a sum of two
+records of one site would be a count the source never gave. It takes
+the same two advisory locks `approve_report` does, so an approval
+racing it cannot point a fresh report at a camera that is about to
+go.
+
+The panel opens under the row that will go. It asks for the survivor
+by name, offering the nearest cameras first because the nearest is
+the likeliest duplicate, and before anything is sent it says in one
+sentence which row survives, which is hidden, and how many reports
+move, and waits for a press on a button that says the same. A merge
+is the one action here without an undo button - the loser can be put
+back on the map, but its reports have moved - so the statement is the
+confirmation.
 
 ### Housekeeping SQL
 
