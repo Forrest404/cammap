@@ -29,7 +29,10 @@
     data/               points.js, the camera list you edit by hand.
     backend/            schema.sql and seed.sql - the database.
     lib/ fonts/         vendored, pinned by version, not ours to edit.
-    tools/              stamp.py, run before every commit (see below).
+    tools/              stamp.py, run before every commit: it stamps the
+                        assets, then checks that every copy of what this
+                        repository writes out twice still agrees (see
+                        "Deploying a change" below).
 
 Links are written relative to wherever the page sits, so index.html reaches
 `pages/about.html` while a page in pages/ reaches `../index.html`. account.js
@@ -98,6 +101,43 @@ committing: it puts a version on the site's own script and stylesheet
 tags so a returning visitor's browser fetches them afresh instead of
 pairing new HTML with old JavaScript. Skip it and the first visit after
 a deploy can show a page whose buttons do nothing.
+
+The same run then checks the things this repository writes out more than
+once. There is no build step, so there are no partials and no generator:
+the shared parts of the site are copied onto every page, and the camera
+record is kept in two forms, all in step by hand. Each check below guards
+a copy that has drifted, or nearly drifted, before, and a failure names
+the page, the row or the constraint and exits non-zero:
+
+- the Content-Security-Policy is the same on every page;
+- the nav and the footer are the same on every page. They are compared
+  with the `../` and `pages/` prefixes taken off hrefs, `class="current"`
+  ignored, and whitespace collapsed - those legitimately differ by page -
+  so a link missing from one page still fails while a page in a deeper
+  folder does not;
+- every script and stylesheet a page loads from this repository is in the
+  `OWN` list the stamp covers, so nothing of ours is ever left unstamped;
+- `data/points.js` and `backend/seed.sql` hold the same cameras, in the
+  same order, field for field, and every `seed_key` is what its own row's
+  name, position and type say it should be;
+- every camera in both files is inside `LONDON_BOUNDS`, and the three
+  `check` constraints in `schema.sql` carry the same four numbers as it;
+- every `vancam` is `legacy`, in both files ("What active means", below);
+- every type in `CAMERA_TYPES` is in all three `check (type in ...)`
+  constraints, and nothing is in a constraint that is not a `CAMERA_TYPES`
+  type or `NONFUNCTIONAL_TYPE`.
+
+Every page is found rather than listed - whatever `.html` is at the root
+and everything under `pages/`, however deep - so a new page is checked from
+the moment it exists. The bounds and the types are read from `shared.js`
+and `schema.sql` on each run rather than copied into the script, so it is
+not one more copy to keep in step.
+
+`python3 tools/stamp.py --check` runs every check and writes nothing. A
+page whose stamps would change is then a failure naming the page, not a
+repair. That is the form for CI: on a checked-out tree a stale stamp means
+somebody committed without running the script, and the build should say so
+rather than quietly fix it.
 
 ### What active means
 
