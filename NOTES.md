@@ -161,6 +161,12 @@ JavaScript build differently. `seedKeyOf` now lives in `shared.js` so it can
 be checked and so the build script has one place to copy the format from.
 Run both scripts before every commit.
 
+### Sharing the site
+
+*(Written by the Wave 1 chrome agent: share cards, the favicon and
+manifest, robots and the sitemap, the 404 page, the licences, and what
+the donate line says.)*
+
 ### What active means
 
 Every one of the 163 LFR van sites carries `status: legacy`, so the map opens
@@ -199,6 +205,12 @@ the seed, so a reported van site stays whatever the moderator approved it as.
 To bring those into line too:
 
     update cameras set status = 'legacy' where type = 'vancam' and status = 'active';
+
+### The build script and the record
+
+*(Written by the Wave 1 generator agent: the source table, what
+`build_points.py` writes and how it is checked, and the shape of the
+per-period deployments, the source columns and the approximate flag.)*
 
 ### Roles
 
@@ -315,6 +327,11 @@ Judge changes to these by looking at the map, not by reading them.
 ### Satellite imagery
 
 The satellite view uses Esri's World Imagery from the open tile endpoint, with attribution, which is allowed for non-commercial use. It is not guaranteed. If it stops, the toggle stops showing imagery and nothing else breaks; the whole of it is one block at the top of `frontend/map.js`.
+
+### Keyboard focus and print
+
+*(Written by the Wave 1 stylesheet agent: the focus ring and what it was
+checked against, and what printing the map page gives you.)*
 
 ## Anonymity
 
