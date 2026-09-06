@@ -1617,6 +1617,64 @@ button.toggle.on:focus-visible {
   font-size: 11px;
 }
 
+/* ---------- the chooser, for a click that lands on two ----------
+
+   The popup a click opens when more than one camera sits under it:
+   "2 cameras here" and a button per camera, written the way a list
+   row is - swatch, name in the accent, the kind beneath in the dim -
+   so a person who has read the list reads this without learning
+   anything new. The buttons carry no border and no capitals for the
+   same reason the legend's keys do not: they are the things to
+   choose between, not a row of controls. */
+
+.maplibregl-popup-content ul.stack {
+  margin: 6px 0 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.maplibregl-popup-content ul.stack li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.maplibregl-popup-content button.pick-camera {
+  display: block;
+  width: 100%;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  line-height: 1.45;
+}
+
+.maplibregl-popup-content button.pick-camera:hover {
+  background: none;
+}
+
+.maplibregl-popup-content button.pick-camera .swatch {
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+
+.maplibregl-popup-content button.pick-camera .name {
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.maplibregl-popup-content button.pick-camera:hover .name {
+  color: var(--text);
+}
+
+/* The kind on its own line under the name, as the popup writes it. */
+.maplibregl-popup-content button.pick-camera .kind {
+  margin: 0;
+}
+
 /* Paper cannot move the map, copy a link or ask where you are. The
    search, its results, the note and Near me go; the popup was never
    on paper. The Nearest sort, if it is the order in force, prints as

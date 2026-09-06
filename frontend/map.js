@@ -134,8 +134,48 @@ var heatLayers = [];
 var TYPES = CAMERA_TYPES;
 
 /* Which dot wins when two share a spot. Croydon is both a fixed
-   install and a van hotspot, and the fixed one should be on top. */
+   install and a van hotspot, and the fixed one should be on top.
+
+   On top, not instead of: this is the tiebreak for which paints last,
+   never a filter. What tells you there are two is the count beside
+   the dot and the chooser a click opens - see "Stacked cameras". */
 var DRAW_ORDER = { fixedcam: 5, transportcam: 4, facewatchcam: 3, vancam: 2, privatecam: 1 };
+
+/* ---------------- stacked cameras ----------------
+
+   Two cameras on one corner used to draw as one dot, and DRAW_ORDER
+   chose which. The map then under-reported exactly where it mattered
+   most: North End, Croydon is a fixed install and, at the very same
+   coordinates, the van hotspot with the most deployments in the
+   record, and the map showed one red dot. Nothing is estimated here,
+   but a count of one where the record says two is a claim as well.
+
+   Two things fix it, and both are needed. A count beside any dot
+   that has others under it, at street zooms, so the map says "2"
+   where there are two. And a chooser on click: a click that lands on
+   more than one camera opens a small list of them - swatch, name,
+   kind - and the one chosen opens as usual, so each is reachable from
+   the map and not only from the list.
+
+   "Stacked" is within STACK_METRES of one another. Fifteen metres
+   is the width of a road: it takes the two Croydon pairs, which are
+   exact, and Coventry Street and Piccadilly Circus, eleven metres
+   apart, which draw as one dot at any zoom below eighteen, and it
+   leaves Tooting and Tooting Broadway, twenty-four metres apart,
+   which separate by zoom sixteen. Below that zoom two dots that
+   close are one dot whatever the count says, and the chooser is the
+   safety net there: it asks the map what is drawn within a few
+   pixels of the click, at whatever zoom the click was made.
+
+   No clustering library. The counting is a sorted sweep over the
+   shown points, a few hundred distance sums, done again whenever the
+   shown set changes. */
+var STACK = "cammap-stack";           /* the badge layer, and its source */
+var STACK_METRES = 15;
+
+/* How far the count sits from the dot, in ems of its own size: up
+   and to the right, clear of the dot at every zoom the badge shows. */
+var STACK_OFFSET = [0.55, -0.55];
 
 /* The colour a point glows with is the colour its dot is drawn with:
    a non-functional one in its own colour whatever its type, otherwise
@@ -441,7 +481,8 @@ function clearOurLayersAndSources() {
 
   for (i = 0; i < layers.length; i++) {
     id = layers[i].id;
-    if (id === DOT || id === SATELLITE || id.indexOf(HEAT) === 0 || id.indexOf(HERE) === 0) {
+    if (id === DOT || id === SATELLITE || id === STACK ||
+        id.indexOf(HEAT) === 0 || id.indexOf(HERE) === 0) {
       ours.push(id);
     }
   }
@@ -452,7 +493,8 @@ function clearOurLayersAndSources() {
 
   for (id in sources) {
     if (sources.hasOwnProperty(id) &&
-        (id === SOURCE || id === SATELLITE || id === HERE || id.indexOf(SOURCE + "-heat-") === 0)) {
+        (id === SOURCE || id === SATELLITE || id === HERE || id === STACK ||
+         id.indexOf(SOURCE + "-heat-") === 0)) {
       map.removeSource(id);
     }
   }
@@ -690,9 +732,49 @@ function addCameras(beneath) {
     }
   });
 
+  /* The count beside a stacked dot, over the dots. From zoom 13,
+     which is where the dots stop pooling into the glow and start to
+     be read one by one; wider than that the glow is the density map
+     and a "2" would be noise. The font is the one both OpenFreeMap
+     styles set their own labels in, from the same glyph server: a
+     symbol layer in a font the style does not serve draws nothing,
+     silently. Overlap is allowed both ways, because the whole point
+     is to draw where the map is crowded. */
+  map.addSource(STACK, { type: "geojson", data: collection(built.stacks) });
+
+  map.addLayer({
+    id: STACK,
+    type: "symbol",
+    source: STACK,
+    minzoom: 13,
+    layout: {
+      "text-field": ["to-string", ["get", "count"]],
+      "text-font": ["Noto Sans Regular"],
+      "text-size": 11,
+      "text-offset": STACK_OFFSET,
+      "text-anchor": "bottom-left",
+      "text-allow-overlap": true,
+      "text-ignore-placement": true
+    },
+    paint: stackPaint()
+  });
+
   applyLegacyFilter();
 
   bindCameraHandlers();
+}
+
+/* The count's colour, by view. It answers to the brightness rule
+   like everything drawn here: #7f7f7f is 127 against the rule's 134,
+   and 4.9:1 against the page black it sits on through its halo. On
+   the light map it is the dark ring colour the dots there wear, with
+   the map's own pale ground for a halo, as that style's labels do. */
+function stackPaint() {
+  return {
+    "text-color": isLight() ? "#3a3632" : "#7f7f7f",
+    "text-halo-color": isLight() ? "#f8f4f0" : "#0d0d0d",
+    "text-halo-width": 1.2
+  };
 }
 
 /* Bound once and only once. addCameras runs again after every style
@@ -709,8 +791,35 @@ function bindCameraHandlers() {
   }
   cameraHandlersBound = true;
 
+  /* A click on a dot asks what is drawn within a few pixels of it,
+     not only what was hit: two dots on one corner are one hit, and
+     the one underneath would otherwise never open from the map. One
+     camera opens as it always has; more than one opens the chooser.
+     The same feature can come back more than once from a query that
+     spans a tile boundary, so the ids are collected, not the hits. */
   map.on("click", DOT, function (event) {
-    openPopup(event.features[0].properties.id);
+    var box = [[event.point.x - 6, event.point.y - 6], [event.point.x + 6, event.point.y + 6]];
+    var hits = map.queryRenderedFeatures(box, { layers: [DOT] });
+    var seen = {};
+    var found = [];
+    var point;
+    var i;
+
+    for (i = 0; i < hits.length; i++) {
+      if (!seen[hits[i].properties.id]) {
+        seen[hits[i].properties.id] = true;
+        point = pointById(hits[i].properties.id);
+        if (point) {
+          found.push(point);
+        }
+      }
+    }
+
+    if (found.length > 1) {
+      openChooser(found, event.lngLat);
+    } else {
+      openPopup(event.features[0].properties.id);
+    }
   });
 
   map.on("mouseenter", DOT, function () {
@@ -1078,6 +1187,14 @@ function applyView() {
      elsewhere - see drawHere(), under "Near me". */
   applyHereView();
 
+  /* And the count beside a stacked dot changes colour with the
+     ground it sits on. */
+  if (map.getLayer(STACK)) {
+    paint = stackPaint();
+    map.setPaintProperty(STACK, "text-color", paint["text-color"]);
+    map.setPaintProperty(STACK, "text-halo-color", paint["text-halo-color"]);
+  }
+
   markView();
 }
 
@@ -1194,6 +1311,7 @@ function drawLegend() {
 function buildFeatures() {
   var all = [];
   var byColour = {};
+  var shown = [];
   var point;
   var feature;
   var colour;
@@ -1225,10 +1343,79 @@ function buildFeatures() {
         byColour[colour] = [];
       }
       byColour[colour].push(feature);
+      shown.push(point);
     }
   }
 
-  return { all: all, byColour: byColour };
+  return { all: all, byColour: byColour, stacks: stackFeatures(shown) };
+}
+
+/* One feature per place where two or more shown cameras sit within
+   STACK_METRES of one another, carrying the count, placed at their
+   mean position - which for the Croydon pairs is the point itself.
+
+   A sweep, not a grid and not a library: the points are sorted by
+   latitude, and each is compared only with those that follow it
+   within STACK_METRES of latitude, which is a handful. A point that
+   is already in a group is left in it; a chain of three that only
+   touch pairwise would need a merge this does not do, and the record
+   holds no such chain, so the simpler thing is the right thing until
+   it does. */
+function stackFeatures(shown) {
+  var order = shown.slice();
+  var group = [];
+  var groups = [];
+  var features = [];
+  var span = STACK_METRES / 111320;   /* metres of latitude, in degrees */
+  var i;
+  var j;
+  var g;
+  var lat;
+  var lon;
+
+  order.sort(function (a, b) {
+    return a.lat - b.lat;
+  });
+
+  for (i = 0; i < order.length; i++) {
+    group.push(-1);
+  }
+
+  for (i = 0; i < order.length; i++) {
+    if (group[i] === -1) {
+      group[i] = groups.length;
+      groups.push([order[i]]);
+    }
+    for (j = i + 1; j < order.length && order[j].lat - order[i].lat <= span; j++) {
+      if (group[j] === -1 &&
+          metresBetween(order[i].lat, order[i].lon, order[j].lat, order[j].lon) <= STACK_METRES) {
+        group[j] = group[i];
+        groups[group[i]].push(order[j]);
+      }
+    }
+  }
+
+  for (g = 0; g < groups.length; g++) {
+    if (groups[g].length < 2) {
+      continue;
+    }
+    lat = 0;
+    lon = 0;
+    for (i = 0; i < groups[g].length; i++) {
+      lat += groups[g][i].lat;
+      lon += groups[g][i].lon;
+    }
+    features.push({
+      type: "Feature",
+      properties: { count: groups[g].length },
+      geometry: {
+        type: "Point",
+        coordinates: lngLat(lat / groups[g].length, lon / groups[g].length)
+      }
+    });
+  }
+
+  return features;
 }
 
 function collection(features) {
@@ -1252,6 +1439,10 @@ function refreshCameras() {
 
   built = buildFeatures();
   source.setData(collection(built.all));
+
+  if (map.getSource(STACK)) {
+    map.getSource(STACK).setData(collection(built.stacks));
+  }
 
   /* The database overlay can bring in a kind of camera the seed had
      too few of to be worth a layer. Rather than leave those cameras
@@ -1326,6 +1517,100 @@ function closePopup() {
   }
   popup = null;
   popupId = null;
+}
+
+/* The chooser: what a click opens when it lands on more than one
+   camera. The same one popup, at the spot that was clicked, holding a
+   button per camera in the order the dots are painted - DRAW_ORDER,
+   the one on top first - each a swatch, the name and the kind, the
+   way the list writes a row. Choosing one opens its popup in the
+   ordinary way. popupId stays null while the chooser is up: it is
+   not a camera, so the address bar does not name one.
+
+   Reachable by keyboard: the buttons are buttons, the first takes
+   focus when the chooser opens, and Escape closes it and hands focus
+   back to the map. The keyboard's own way to any camera is still the
+   list, where a stacked pair is two rows. */
+function openChooser(list, at) {
+  var box = document.createElement("div");
+  var title = document.createElement("strong");
+  var rows = document.createElement("ul");
+  var sorted = list.slice();
+  var i;
+
+  closePopup();
+
+  sorted.sort(function (a, b) {
+    return (DRAW_ORDER[b.type] || 0) - (DRAW_ORDER[a.type] || 0);
+  });
+
+  title.textContent = sorted.length + " cameras here";
+  box.appendChild(title);
+
+  rows.className = "stack";
+  for (i = 0; i < sorted.length; i++) {
+    rows.appendChild(chooserRow(sorted[i]));
+  }
+  box.appendChild(rows);
+
+  box.onkeydown = function (event) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closePopup();
+      map.getCanvas().focus();
+    }
+  };
+
+  popup = new maplibregl.Popup({ offset: 10, closeButton: true })
+    .setLngLat(at)
+    .setDOMContent(box)
+    .addTo(map);
+
+  popupId = null;
+
+  (function (own) {
+    own.on("close", function () {
+      if (popup === own) {
+        popup = null;
+      }
+    });
+  })(popup);
+
+  rows.firstChild.firstChild.focus();
+}
+
+function chooserRow(point) {
+  var item = document.createElement("li");
+  var pick = document.createElement("button");
+  var swatch = document.createElement("span");
+  var name = document.createElement("span");
+  var kind = document.createElement("span");
+
+  pick.className = "pick-camera";
+  pick.type = "button";
+
+  swatch.className = point.status === "legacy" ? "swatch hollow" : "swatch";
+  if (point.status === "legacy") {
+    swatch.style.borderColor = colourOf(point.type);
+  } else {
+    swatch.style.background = point.status === "nonfunctional" ? NONFUNCTIONAL_COLOUR : colourOf(point.type);
+  }
+  pick.appendChild(swatch);
+
+  name.className = "name";
+  name.textContent = point.name;
+  pick.appendChild(name);
+
+  kind.className = "kind";
+  kind.textContent = labelOf(point);
+  pick.appendChild(kind);
+
+  pick.onclick = function () {
+    openPopup(point.id);
+  };
+
+  item.appendChild(pick);
+  return item;
 }
 
 /* "LFR van site · legacy · last seen 2024" and the like. */
