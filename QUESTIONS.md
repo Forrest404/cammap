@@ -6,6 +6,21 @@ it can be revisited. Answer by editing this file or by telling the orchestrator.
 
 ## Open
 
+### 10. Two entries in the record disagree with themselves
+Found by the build script's import. **High Road, Haringey**: the note says `2023-24`, the
+`last` field says `2025`. One of them is wrong and only the source can say which; the script
+preserved both as they were. Also the ledger's count of `2025` sites was 62 and the notes
+give 63 (Station Parade's note runs on past its period). Nothing was changed.
+
+### 11. Where a van site spans more than one Met record, the citation is the Met's records page
+34 van sites carry a period that spans two or three Met deployment records (`2023-2025`,
+`2020-2025`, `2020-24`). Their `source_label` is "Met Police LFR deployment records,
+<span>" and their `source_url` is the Met's page that publishes those records
+(`…/about-the-met/facial-recognition-technology/`), which is the most specific address
+that covers all of them. *Recommended default: keep it — the label is accurate and the
+page is the publisher's own index.* The honest alternative is `null` for the URL on those
+34 rows; it is one constant in `build_points.py`. Proceeding on the default.
+
 ### 9. The live database has not had `seed.sql` re-run since every van site went legacy
 Found on 2026-09-06 while checking Wave 0 in a browser against the live Supabase project:
 the map opens on **117 of 187** cameras, with **95 van sites `active`**. The published
@@ -56,6 +71,11 @@ dataset assembled from public records sits most comfortably under. CC BY-SA 4.0 
 alternative if you would rather the data be citable like a document than queried like a
 database. *Proceeding on MIT + ODbL in Wave 1; a `LICENSE` file and footer line will say so,
 and both are one edit to change.*
+**Reopened 2026-09-06** — the maintainer asked whether a licence is needed at all if the
+project is not open source. Answer given in the session: no licence is legally required
+(the default is all rights reserved), but the press page, the downloads and "permission to
+reuse" all depend on the *data* being licensed; the code licence is separable and can be
+dropped or made source-available. Awaiting the decision; the default stands until then.
 
 ### 4. Who runs this, for the About page (WORD-1)
 The brief wants About to say who runs the site and how it is funded. `NOTES.md` names two

@@ -32,7 +32,9 @@ site's own `<script>` and `<link>` tags so a returning visitor never pairs new
 HTML with old JavaScript. Skip it and the first visit after a deploy can show a
 page whose buttons do nothing. If you add a file to `frontend/`, add it to
 `OWN` in `tools/stamp.py` — the script now fails if a page loads one of ours
-that is not there.
+that is not there. If you changed `data/cameras.csv`, run
+`python3 tools/build_points.py` first; `stamp.py` fails if either output is
+not what the CSV produces.
 
 The same run then checks everything this repository writes out more than
 once, and fails naming the page, row or constraint: the CSP, nav and footer
@@ -70,8 +72,13 @@ frontend/picker.js  the pin-dropping map: the report form, and the
 frontend/account.js accounts, reports, moderation, leaderboard - runs
                     on every page, because the nav does
 frontend/style.css  all of it
-data/points.js      the cameras, as published
-backend/            schema.sql and seed.sql
+data/cameras.csv    the record: the one data file you edit
+data/points.js      written out from cameras.csv by tools/build_points.py,
+                    never by hand - the map's fallback when the database
+                    cannot be reached
+backend/            schema.sql; seed.sql (also written by the script);
+                    migrations/ (numbered, run by the maintainer, never
+                    by anything here)
 img/                favicon.svg and the rasters made from it, and
                     share.png, the card a pasted link turns into
 manifest.json       "Add to Home Screen"; robots.txt and sitemap.xml
@@ -85,6 +92,8 @@ tools/stamp.py      run before every commit: stamps, then checks every
                     copied thing still agrees (--check writes nothing)
 tools/check.js      run before every commit too: the record and the pure
                     functions, checked in bare Node with nothing installed
+tools/build_points.py  writes both data files from cameras.csv; --check
+                    compares, --import reads a points.js back into it
 .github/workflows/  check.yml: GitHub runs both scripts on every push and
                     pull request. Not served by Pages.
 ```
@@ -146,9 +155,11 @@ Things that look like they would work and do not:
   MapLibre advances camera flights on `requestAnimationFrame`, which a hidden
   tab does not run. `jumpTo` does work. This is an artifact of the harness, not
   a bug — check `document.hidden` before believing a map animation is broken.
-- **`?edit` writes nothing to the server.** It is a local drafting tool for
-  `points.js`; its export must keep writing every field, `deployments`
-  included, or publishing from it silently flattens the glow.
+- **`?edit` writes nothing to the server, and its export can no longer be
+  pasted over `points.js`.** That file is generated from `data/cameras.csv`;
+  a `points.js` the CSV did not produce fails `stamp.py`. Run
+  `python3 tools/build_points.py --import` on the export, or have `?edit`
+  export CSV rows instead (Wave 2's map agent decides which).
 - **The site's absolute address is written in more than one place.**
   `https://forrest404.github.io/cammap/` is in `sitemap.xml`, `robots.txt`,
   every page's `og:url`, `og:image` and canonical link, and the `<base>` in
@@ -198,15 +209,19 @@ Things that look like they would work and do not:
   and in the default `tidy()` gives an entry with no status. A van parks for a
   shift and drives away, so no van site claims to be active and the map opens
   on the 17 cameras fixed to something. The recency lives in `last` and
-  `deployments`, which are untouched. `build_points.py` is missing and used to
-  compute an active/legacy split from the newest Met year - if it turns up, it
-  has to be changed before it is run, or 97 sites go back to active. The long
-  version is "What active means" in `NOTES.md`.
-- **`data/points.js` and `backend/seed.sql`** hold the same cameras in two
-  forms and must agree. Both say they are written out by `build_points.py` —
-  **that script is not in this repository.** Until it turns up, both files are
-  edited by hand or through `index.html?edit`, and the `?edit` export must keep
-  writing every field, `deployments` included.
+  `deployments`, which are untouched. `tools/build_points.py` writes every van
+  site legacy and refuses to build a record that says otherwise; the original
+  script, which computed a split from the newest Met year, must not be brought
+  back. The long version is "What active means" in `NOTES.md`.
+- **`data/points.js` and `backend/seed.sql`** are both written by
+  `tools/build_points.py` from `data/cameras.csv` and never edited by hand.
+  `stamp.py` regenerates both on every run and fails if either differs. Edit
+  the CSV, run the script, commit all three.
+- **The period vocabulary.** A `periods` key is `YYYY`, `YYYY-YY` or
+  `YYYY-YYYY` — one regular expression in `build_points.py`, `check.js` and
+  the `cameras_periods_check` constraint. Deployments are counted by the
+  period the source gives, never by a year it does not; `deployments` is
+  always the sum.
 
 ## The rule the map's brightness answers to
 
@@ -219,6 +234,14 @@ The `LIFT` table in `frontend/shared.js` is where that is tuned, and the
 "Tuning the dark map" and "Tuning the glow" sections of `NOTES.md` explain what
 each number is for. Judge changes to any of it by looking at the map, not by
 reading the numbers.
+
+## Database changes
+
+Schema changes land as `backend/migrations/NNN_*.sql` plus the same block in
+`schema.sql`, so a fresh and an upgraded database end up identical. Nothing in
+the repository applies them; the maintainer runs them in the Supabase SQL
+editor, in order, then re-runs `seed.sql`. `BUILD-LOG.md` says which are
+unapplied.
 
 ## Anonymity is a feature, not a default
 

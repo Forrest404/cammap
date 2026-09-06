@@ -80,10 +80,10 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | WORD-5 | 1 | chrome | merged | a6c5ef4 | done on default: figure unknown, `TODO (WORD-5)` comment beside the footer sentence |
 | REACH-2 | 1 | chrome | merged | 81f018e | SVG, .ico, 180/192/512 PNG, manifest, theme-color |
 | REACH-1 | 1 | chrome | merged | da59a54 | per-page description, canonical, OG and Twitter; `img/share.png` from `tools/share-card.html` |
-| DATA-5 | 1 | generator | in-flight | | byte-identical regeneration is the gate; orchestrator verifies by hand |
-| DATA-3 | 1 | generator | in-flight | | *migration*; by source period, not calendar year — see ground truth |
-| DATA-1 (schema) | 1 | generator | in-flight | | *migration*; `source_url`, `source_label` nullable; UI is Wave 5 |
-| DATA-7 (schema) | 1 | generator | in-flight | | *migration*; `approximate` boolean derived once at generation, never at runtime |
+| DATA-5 | 1 | generator | merged | 695c661 | `tools/build_points.py` from `data/cameras.csv`; byte-identical verified by the orchestrator; `stamp.py` regenerates and compares on every run |
+| DATA-3 | 1 | generator | merged | 3bd11bb | *migration 001, unapplied*; `periods` jsonb by source period, `deployments` = sum; 172 rows with periods, 10 null |
+| DATA-1 (schema) | 1 | generator | merged | cbbb578 | *migration 002, unapplied*; `source_label`/`source_url` on all 182 rows, 11 distinct URLs (QUESTIONS 11 on the 34 spanning rows) |
+| DATA-7 (schema) | 1 | generator | merged | 21904e7 | *migration 003, unapplied*; `approximate` boolean, 43 rows true |
 | MAP-7 | 1 | stylesheet | merged | dca47c0 | one `:focus-visible` rule; ring moves inside pressed toggles; attribution bar 0.86→0.94 for contrast |
 | MAP-10 | 1 | stylesheet | merged | 83e23a5 | `@media print`: list on white with coordinates, legend and filter state kept |
 | MAP-3 | 2 | map | todo | | remove `edit-only`, add debounce and empty state |
@@ -137,8 +137,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | Status | Count |
 | --- | --- |
 | todo | 43 |
-| in-flight | 4 |
-| merged | 8 |
+| in-flight | 0 |
+| merged | 12 |
 | verified | 3 |
 | blocked | 0 |
 | dropped | 0 |
