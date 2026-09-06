@@ -659,9 +659,34 @@ SQL editor before the button works. It is safe to run again, as always.
 
 ### Moderating at scale
 
-*(Written by the Wave 2 moderation agent: pagination, the backlog count,
-editing and merging cameras, bulk decisions, sorting the queue, and the
-activity view.)*
+The moderation page was built for a queue of a dozen and will be used,
+if the site does what it is for, on a queue of hundreds. Every change
+in this section is judged by one measure: decisions per minute.
+Moderation is volunteer time, and it is the scarcest thing the project
+has.
+
+**Every list goes on past thirty.** For a long time the queue and the
+history each asked the database for thirty rows and stopped -
+`.limit(30)`, no `.range()` anywhere - so report thirty-one was not
+hidden or collapsed but simply never fetched, and nobody noticed
+because nobody had sent thirty-one reports. That is the failure that
+arrives exactly when the project succeeds. Every list in `account.js`
+that can grow is now a pager: `makePager()` fetches a page, appends
+the rows and offers **Load more** until a page comes back short;
+`loadPage()` is the request under it, `.range(offset, offset + 29)`
+on whatever query the list needs. Thirty is still the page, because a
+page that fits a screen is the one a moderator can act on without
+scrolling back up for the button. The two are separate so a list can
+fetch a page however it likes - straight from a table, or by id from
+a set it sorted itself (the queue, below) - and the button, the empty
+message and the "Loading…" note behave the same either way. The
+**Your reports** list that the account page is due to gain should be
+built on the same pager; the comment above it in `account.js` says
+how. The two `.limit(5000)` calls on the cameras table are not lists
+and are left alone: they are a ceiling on a fetch that is meant to
+bring everything, and the moderation page holds all the cameras in
+memory on purpose so that a search for "Croydon" does not cost a
+round trip per letter.
 
 ### Housekeeping SQL
 

@@ -1821,10 +1821,23 @@ button.toggle.on:focus-visible {
 }
 
 /* ------------------------------------------------------------------
-   MODERATION (Wave 2: the moderation agent writes this block)
+   MODERATION
 
-   Rules for the moderation page at scale: Load more, the backlog count
-   on the nav link, checkboxes and bulk actions, the sort and filter
-   row, the edit and merge panels, the activity view. If the agent needs
-   no rule here, this block is removed rather than left empty.
+   The moderation page at scale. Moderation is volunteer time and the
+   scarcest thing the project has, so everything here is judged by
+   decisions per minute: a list that goes on past thirty, a count of
+   what is waiting, a tick box on every row so twenty approvals are
+   one press, a way to sort the likely duplicates to the top, and a
+   log of who decided what. The rules are few because the queue's own
+   rules (ul.queue, .queue-head, .row, .note) already carry most of
+   it; what is here is what those did not cover.
    ------------------------------------------------------------------ */
+
+/* Load more sits under a list on its own line, in the list's own
+   left margin, so the eye that has just read the last row lands on
+   it. Hidden by an inline style until the first full page is in;
+   account.js's makePager() shows and hides it. */
+button.load-more {
+  display: block;
+  margin: 14px 0 0 0;
+}

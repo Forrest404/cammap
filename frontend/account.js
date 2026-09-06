@@ -1340,7 +1340,151 @@ function setUpStatusReport(cameraId) {
    a non-moderator is a courtesy, not the lock.
    ------------------------------------------------------------------ */
 
+/* ---------------- a page at a time ----------------
+
+   Every list on this page grows with the site, and for a long time
+   each of them asked for thirty rows and stopped. Report thirty-one
+   was simply unreachable from the interface - not hidden, not
+   collapsed, just never fetched - and nobody noticed because nobody
+   had sent thirty-one reports yet. It is the failure that arrives
+   precisely when the project succeeds, which is the worst time for
+   it.
+
+   So a list here is a pager: it fetches one page, appends the rows,
+   and offers "Load more" until a page comes back short. Thirty is
+   still the page, because a moderator reads a queue a screen at a
+   time and a page that fits a screen is the one they can act on
+   without scrolling back up to find the button they meant.
+
+   loadPage() is the request; makePager() is the list around it. The
+   two are separate so that a list can fetch its page however it
+   likes - straight from a table with .range(), or by id from a set
+   it sorted itself - and the button, the empty message and the
+   "Loading…" note behave the same either way.
+
+   Wave 4's "Your reports" list on the account page should be built
+   with makePager() too, with a fetch that does
+     loadPage(sb.from("reports").select(...).eq("user_id", currentUser.id)
+                .order("created_at", { ascending: false }), offset, onDone)
+   - the .eq() on user_id is the one thing that list must not leave
+   out (see the reports read policy in schema.sql for why). */
+
 var QUEUE_PAGE = 30;
+
+/* One page of a query. `query` is a supabase-js builder with its
+   filters and order already on it; this puts the window on the end
+   and runs it. Calls back with (error, rows, more): error is the
+   supabase error or null, rows is what came back, and more says
+   whether another page is worth asking for - true only when this
+   one came back full. A total that is an exact multiple of the page
+   size therefore costs one extra request that returns nothing, which
+   is cheaper than a count query on every page to avoid it. */
+function loadPage(query, offset, onDone) {
+  query.range(offset, offset + QUEUE_PAGE - 1)
+    .then(function (result) {
+      var rows;
+
+      if (result.error) {
+        onDone(result.error, [], false);
+        return;
+      }
+      rows = result.data || [];
+      onDone(null, rows, rows.length === QUEUE_PAGE);
+    })
+    .catch(function () {
+      onDone({ message: "Could not reach the server." }, [], false);
+    });
+}
+
+/* A list that loads a page at a time.
+
+     list    the <ul> rows are appended to
+     empty   the "nothing here" line, shown when the first page is empty
+     note    where "Loading…" and a failure go
+     more    the Load more button; hidden when the last page is in
+     fetch   function (offset, onDone) - asks for the rows from
+             `offset`; onDone(problem, rows, more) as loadPage gives it,
+             where problem may also be a plain string to show as it is
+     row     function (r) - builds the <li> for one row
+     failed  what to say when fetch fails and gives no string
+     onPage  optional; called after each page lands, with the rows
+
+   reset() empties the list and loads the first page; load() loads the
+   next. One load at a time - a second click on the button while the
+   first is still out would append the same page twice. */
+function makePager(opts) {
+  var offset = 0;
+  var loading = false;
+  var pager = {};
+
+  function show(el, on) {
+    if (el) {
+      el.style.display = on ? "" : "none";
+    }
+  }
+
+  function load() {
+    if (loading) {
+      return;
+    }
+    loading = true;
+    opts.note.textContent = "Loading…";
+    if (opts.more) {
+      opts.more.disabled = true;
+    }
+
+    opts.fetch(offset, function (problem, rows, more) {
+      var i;
+
+      loading = false;
+      if (opts.more) {
+        opts.more.disabled = false;
+      }
+
+      if (problem) {
+        opts.note.textContent = typeof problem === "string"
+          ? problem
+          : (opts.failed || "Could not load this list.");
+        show(opts.more, false);
+        return;
+      }
+
+      opts.note.textContent = "";
+      for (i = 0; i < rows.length; i++) {
+        opts.list.appendChild(opts.row(rows[i]));
+      }
+      offset += rows.length;
+      show(opts.empty, offset === 0);
+      show(opts.more, more);
+
+      if (opts.onPage) {
+        opts.onPage(rows, offset);
+      }
+    });
+  }
+
+  pager.reset = function () {
+    offset = 0;
+    opts.list.innerHTML = "";
+    show(opts.empty, false);
+    show(opts.more, false);
+    load();
+  };
+
+  pager.load = load;
+
+  /* How many rows are in the list, which is also the offset the next
+     page starts from. */
+  pager.loaded = function () {
+    return offset;
+  };
+
+  if (opts.more) {
+    opts.more.onclick = load;
+  }
+
+  return pager;
+}
 
 function setUpModeratePage() {
   var locked = document.getElementById("moderate-locked");
@@ -1859,38 +2003,28 @@ function addCameraByHand() {
    with a way to take it off the map or put it back. All four actions
    go through moderate_undo, gated on the server like the rest. */
 
+var historyPager = null;
+
 function loadHistory() {
-  var list  = document.getElementById("history-list");
-  var empty = document.getElementById("history-empty");
-  var note  = document.getElementById("history-note");
-
-  note.textContent = "Loading…";
-
-  sb.from("reports")
-    .select("id,kind,camera_id,type,status_claim,name,note,lat,lon,state,resolved_at,resolution_note,profiles!reports_user_id_fkey(username),cameras(id,name,visible,status)")
-    .in("state", ["approved", "rejected", "merged"])
-    .order("resolved_at", { ascending: false, nullsFirst: false })
-    .limit(QUEUE_PAGE)
-    .then(function (result) {
-      var i;
-
-      list.innerHTML = "";
-      note.textContent = "";
-
-      if (result.error) {
-        note.textContent = "Could not load the history.";
-        return;
+  if (!historyPager) {
+    historyPager = makePager({
+      list:   document.getElementById("history-list"),
+      empty:  document.getElementById("history-empty"),
+      note:   document.getElementById("history-note"),
+      more:   document.getElementById("history-more"),
+      failed: "Could not load the history.",
+      row:    historyRow,
+      fetch:  function (offset, onDone) {
+        loadPage(
+          sb.from("reports")
+            .select("id,kind,camera_id,type,status_claim,name,note,lat,lon,state,resolved_at,resolution_note,profiles!reports_user_id_fkey(username),cameras(id,name,visible,status)")
+            .in("state", ["approved", "rejected", "merged"])
+            .order("resolved_at", { ascending: false, nullsFirst: false }),
+          offset, onDone);
       }
-
-      empty.style.display = result.data.length === 0 ? "block" : "none";
-
-      for (i = 0; i < result.data.length; i++) {
-        list.appendChild(historyRow(result.data[i]));
-      }
-    })
-    .catch(function () {
-      note.textContent = "Could not load the history.";
     });
+  }
+  historyPager.reset();
 }
 
 function undo(target, action, noteText, onDone) {
@@ -2002,38 +2136,34 @@ function historyRow(r) {
   return row;
 }
 
+/* Everything a queue row shows. The proof rows and the reporter's
+   username ride along in the same request, so a page of thirty is
+   one round trip and not sixty-one. */
+var QUEUE_COLUMNS = "id,user_id,kind,camera_id,type,status_claim,name,note,lat,lon,created_at," +
+  "profiles!reports_user_id_fkey(username),report_proof(id,storage_path,mime)";
+
+var queuePager = null;
+
 function loadQueue() {
-  var list  = document.getElementById("queue-list");
-  var empty = document.getElementById("queue-empty");
-  var note  = document.getElementById("queue-note");
-
-  note.textContent = "Loading…";
-
-  sb.from("reports")
-    .select("id,user_id,kind,camera_id,type,status_claim,name,note,lat,lon,created_at,profiles!reports_user_id_fkey(username),report_proof(id,storage_path,mime)")
-    .eq("state", "pending")
-    .order("created_at", { ascending: false })
-    .limit(QUEUE_PAGE)
-    .then(function (result) {
-      var i;
-
-      list.innerHTML = "";
-      note.textContent = "";
-
-      if (result.error) {
-        note.textContent = "Could not load the queue.";
-        return;
+  if (!queuePager) {
+    queuePager = makePager({
+      list:   document.getElementById("queue-list"),
+      empty:  document.getElementById("queue-empty"),
+      note:   document.getElementById("queue-note"),
+      more:   document.getElementById("queue-more"),
+      failed: "Could not load the queue.",
+      row:    queueRow,
+      fetch:  function (offset, onDone) {
+        loadPage(
+          sb.from("reports")
+            .select(QUEUE_COLUMNS)
+            .eq("state", "pending")
+            .order("created_at", { ascending: false }),
+          offset, onDone);
       }
-
-      empty.style.display = result.data.length === 0 ? "block" : "none";
-
-      for (i = 0; i < result.data.length; i++) {
-        list.appendChild(queueRow(result.data[i]));
-      }
-    })
-    .catch(function () {
-      note.textContent = "Could not load the queue.";
     });
+  }
+  queuePager.reset();
 }
 
 /* typeLabel() is in frontend/shared.js, so the queue names a kind of

@@ -134,6 +134,10 @@
         <p class="note" id="queue-note"></p>
         <ul class="queue" id="queue-list"></ul>
         <p class="empty" id="queue-empty" style="display:none">Nothing waiting.</p>
+        <!-- Thirty at a time. The button is hidden until a page comes
+             back full, and hidden again once one comes back short:
+             account.js's makePager() is what shows it. -->
+        <button id="queue-more" class="quiet load-more" style="display:none">Load more</button>
       </div>
 
       <!-- Every camera on the map, and a way to put one there by hand. -->
@@ -199,6 +203,7 @@
         <p class="note" id="history-note"></p>
         <ul class="queue" id="history-list"></ul>
         <p class="empty" id="history-empty" style="display:none">Nothing decided yet.</p>
+        <button id="history-more" class="quiet load-more" style="display:none">Load more</button>
       </div>
 
     </div>
