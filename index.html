@@ -215,11 +215,26 @@
            The search narrows this list only, not the map: dots
            vanishing letter by letter is a poor way to read a map. The
            kinds of camera are switched on and off in the legend under
-           the map instead, and those do narrow both. -->
-      <div class="box" id="cameras-box">
+           the map instead, and those do narrow both.
+
+           To a screen reader this box is the map. The dots are drawn
+           into a canvas nothing can read, and this list is the same
+           cameras in words - so the box is a named region whose name
+           says so, from the heading and the hidden sentence after it,
+           and a reader who lands on the map's canvas is sent here by
+           the canvas's own label (map.js names it). The status line
+           after the count is where the count is read out when the
+           list is narrowed: a live region, hidden from the eye because
+           the count beside the heading already says it, written by
+           map.js only when a visitor changes a filter and never on
+           load. It has to be in the page from the start - a live
+           region that appears with its first sentence is not heard. -->
+      <div class="box" id="cameras-box" role="region" aria-labelledby="cameras-heading cameras-equivalent">
         <div class="list-head">
-          <h3>Cameras</h3>
+          <h3 id="cameras-heading">Cameras</h3>
+          <span class="sr-only" id="cameras-equivalent">The map in words. Every camera the map is showing is a row here, and a row shows its camera on the map.</span>
           <span class="count" id="points-count"></span>
+          <span class="sr-only" id="list-status" role="status" aria-live="polite" aria-atomic="true"></span>
         </div>
         <input type="search" id="points-search" class="find"
                placeholder="Find a camera" autocomplete="off" spellcheck="false"

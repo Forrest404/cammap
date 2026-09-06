@@ -356,6 +356,39 @@ map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-le
    passing our own as well printed it twice. */
 map.addControl(new maplibregl.AttributionControl({ compact: false }));
 
+/* ---------------- what the canvas says it is ----------------
+
+   The dots are drawn into a canvas, and a canvas has nothing in it
+   that assistive technology can read: the cameras exist for a screen
+   reader only as the list beside the map. MapLibre names the canvas
+   "Map", a region, and puts it in the tab order so the arrow keys pan
+   and + and - zoom. It is left in the tab order, on purpose: those
+   keys work, a sighted person steering by keyboard uses them, and
+   hiding a focusable thing from assistive technology (aria-hidden on
+   something Tab still reaches) is the one arrangement every checker
+   flags, because a reader then lands on a thing it has been told
+   does not exist.
+
+   So instead the canvas says what it is and where the words are.
+   role="application" is the honest role for a widget that takes the
+   arrow keys for itself - it tells a screen reader to pass the keys
+   through rather than read the page with them - and the role
+   description "map" is what is said in its place. The label sends
+   the reader to the list by the heading it can find with one key.
+   Set once; the canvas outlives every style swap. */
+function nameTheCanvas() {
+  var canvas = map.getCanvas();
+
+  canvas.setAttribute("role", "application");
+  canvas.setAttribute("aria-roledescription", "map");
+  canvas.setAttribute("aria-label",
+    "Map of London with the recorded facial recognition cameras drawn on it. " +
+    "The same cameras are listed in words under the heading Cameras, after the map. " +
+    "Arrow keys pan; plus and minus zoom.");
+}
+
+nameTheCanvas();
+
 /* ---------------- moving the map ----------------
 
    Every deliberate move the page makes - a list row, a search result,
@@ -1170,11 +1203,13 @@ function applyLegacyFilter() {
 }
 
 /* Anything that changes which cameras count ends here: the dot filter,
-   the glow sources and the list are all brought back into step. */
+   the glow sources and the list are all brought back into step - and
+   the new count is read out, see "what a screen reader is told". */
 function applyFilters() {
   applyLegacyFilter();
   refreshCameras();
   render();
+  announceCount();
 }
 
 function setLegacy(on) {
@@ -1910,6 +1945,8 @@ function render() {
 
   pointsEmpty.style.display = rows.length === 0 ? "block" : "none";
 
+  listedCount = rows.length;
+
   if (pointsCount) {
     pointsCount.textContent = rows.length === points.length
       ? String(points.length) + " cameras"
@@ -1919,6 +1956,75 @@ function render() {
   if (recordLine) {
     recordLine.textContent = recordLineText();
   }
+}
+
+/* ---------------- what a screen reader is told ----------------
+
+   The count beside the heading changes silently: it is a span, and a
+   screen reader that is somewhere else on the page hears nothing when
+   it does. So when the list is narrowed the count is read out through
+   #list-status, a live region in the list's head that is hidden from
+   the eye - the visible count already says it there - and written
+   here and nowhere else.
+
+   Written from the two places a visitor narrows the list - a filter
+   (the legend, Legacy, a solo) and the search box - and deliberately
+   not from render(), which also runs on load and again when the
+   database answers: a count read out before anyone has touched
+   anything is noise over the page's own title. Held back a little,
+   so that typing "croy" is one sentence and not four, and read out
+   only when the sentence has changed. Then cleared, so that a reader
+   browsing the head later finds the count once, beside the heading,
+   and not twice; a live region's clearing is not announced.
+
+   announceThenCount() is for a filter that has something to say
+   before the number - "Showing only LFR van sites" - and is what the
+   legend's solo uses; anything that changes the list and wants a
+   word first should go through it too. */
+var listStatus = document.getElementById("list-status");
+var listedCount = 0;
+
+var ANNOUNCE_AFTER = 600;   /* milliseconds of quiet before it is read */
+var ANNOUNCE_CLEAR = 4000;  /* how long it stays, for a reader who asks again */
+var announceTimer = null;
+var clearTimer = null;
+var lastAnnounced = "";
+var announcePrefix = "";
+
+function countSentence() {
+  return listedCount === points.length
+    ? String(points.length) + " cameras shown"
+    : String(listedCount) + " of " + String(points.length) + " cameras shown";
+}
+
+function announceCount() {
+  if (!listStatus) {
+    return;
+  }
+
+  window.clearTimeout(announceTimer);
+  announceTimer = window.setTimeout(function () {
+    var text = (announcePrefix ? announcePrefix + ". " : "") + countSentence();
+
+    announcePrefix = "";
+    announceTimer = null;
+
+    if (text === lastAnnounced) {
+      return;
+    }
+    lastAnnounced = text;
+
+    listStatus.textContent = text;
+    window.clearTimeout(clearTimer);
+    clearTimer = window.setTimeout(function () {
+      listStatus.textContent = "";
+    }, ANNOUNCE_CLEAR);
+  }, ANNOUNCE_AFTER);
+}
+
+function announceThenCount(prefix) {
+  announcePrefix = prefix || "";
+  announceCount();
 }
 
 /* "182 cameras · Met records to 2025, BTP to 2026 · last checked
@@ -1970,6 +2076,21 @@ function rowFor(point) {
   name.className = "name";
   name.textContent = point.name;
   go.appendChild(name);
+
+  /* The kind and the state, in words, for a screen reader. The swatch
+     carries them as its title, which a pointer sees as a tooltip and
+     paper reads back with attr() - but a title on a span with no text
+     in it reaches no one else: the row's spoken name was the camera's
+     name, its note and its coordinates, and nothing said it was a van
+     site or that it is legacy. Hidden from the eye, since the swatch
+     already says it there; after the name, so a reader skimming the
+     list by first words still hears the name first. The middle dots
+     the label uses are commas here, because a synthetic voice reads
+     "·" as "middle dot" or not at all. */
+  var spoken = document.createElement("span");
+  spoken.className = "sr-only";
+  spoken.textContent = ", " + labelOf(point).replace(/ · /g, ", ") + ".";
+  go.appendChild(spoken);
 
   if (point.note) {
     var memo = document.createElement("span");
@@ -3431,6 +3552,7 @@ if (pointsSearch) {
   pointsSearch.oninput = function () {
     searchTerm = pointsSearch.value.trim().toLowerCase();
     render();
+    announceCount();   /* held back until the typing pauses */
   };
 }
 
