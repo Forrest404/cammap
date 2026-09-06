@@ -62,6 +62,8 @@ backend/            schema.sql and seed.sql
 lib/ fonts/         vendored, pinned, do not edit
 tools/stamp.py      run before every commit: stamps, then checks every
                     copied thing still agrees (--check writes nothing)
+tools/check.js      run before every commit too: the record and the pure
+                    functions, checked in bare Node with nothing installed
 ```
 
 Links are relative to wherever the page sits, so `account.js` writes them
@@ -198,7 +200,15 @@ There are no tests. There is no build. So it is checked by running it:
 python3 -m http.server 8000     # then open http://localhost:8000/
 python3 tools/stamp.py          # last, before committing: stamps and checks
 python3 tools/stamp.py --check  # the same checks, writing nothing (what CI runs)
+node tools/check.js             # the checks that need no browser
 ```
+
+`node tools/check.js` is the other half. It loads `points.js` and `shared.js`
+in bare Node and checks the things a browser will not tell you about: the type
+table, the paint expression, the London box, every seed key against
+`seed.sql`, and every entry of the record. It names the case, and the camera,
+when it fails. Run both before every commit; if you add a field to the record,
+add it to `FIELDS` in `check.js` at the same time you add it to `seed.sql`.
 
 Worth looking at after any change to the map or the picker: the console is
 clean (a CSP violation shows up there and nowhere else), the camera dots

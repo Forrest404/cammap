@@ -29,9 +29,11 @@
     data/               points.js, the camera list you edit by hand.
     backend/            schema.sql and seed.sql - the database.
     lib/ fonts/         vendored, pinned by version, not ours to edit.
-    tools/              stamp.py, run before every commit: it stamps the
-                        assets, then checks that every copy of what this
-                        repository writes out twice still agrees (see
+    tools/              stamp.py and check.js, both run before every
+                        commit: the first stamps the assets, then checks
+                        that every copy of what this repository writes out
+                        twice still agrees; the second checks the record
+                        and the pure functions in bare Node (see
                         "Deploying a change" below).
 
 Links are written relative to wherever the page sits, so index.html reaches
@@ -138,6 +140,13 @@ page whose stamps would change is then a failure naming the page, not a
 repair. That is the form for CI: on a checked-out tree a stale stamp means
 somebody committed without running the script, and the build should say so
 rather than quietly fix it.
+
+`node tools/check.js` is the nearest thing to tests. It needs Node and
+nothing else, and it exits non-zero naming what broke - a van site claiming
+to be active, a colour that is not a colour, a seed key the SQL and the
+JavaScript build differently. `seedKeyOf` now lives in `shared.js` so it can
+be checked and so the build script has one place to copy the format from.
+Run both scripts before every commit.
 
 ### What active means
 
