@@ -6,6 +6,14 @@ it can be revisited. Answer by editing this file or by telling the orchestrator.
 
 ## Open
 
+*(none at present)*
+
+## Answered
+
+**All eight below: defaults accepted by the maintainer, 2026-09-06**, at the Wave 0 gate.
+Each item proceeds on its recommended default. Kept in full so the reasoning is still here
+when one of them is revisited.
+
 ### 1. Video proof keeps its metadata (REP-5)
 The report form accepts MP4/WebM and sends them untouched; the hint tells the reporter to
 "check what yours contains". On a site whose promise is anonymity, and where the person
@@ -72,7 +80,3 @@ does not carry; East Dulwich paused). **Two questions:** may DATA-1 take its `so
 values for the sites the two lists agree on? And is refreshing the record from it (adding the
 tenth station, the casinos) something you want, as a separate data task outside the 58 items?
 *Proceeding on: yes to the first, for agreed sites only; no to the second without a word from you.*
-
-## Answered
-
-*(moved here with the answer and the date)*
