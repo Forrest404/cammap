@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- ------------------------------------------------------------------
+     cammap - the share card, drawn by the site itself
+
+     This page exists to be photographed. It draws the map at exactly
+     1200 by 630 - the size a link preview wants - with the glow on and
+     the count in the corner, and a screenshot of it is img/share.png,
+     the picture every page names in its og:image tag. The card is
+     committed rather than made on request because the site is static
+     files and has nothing to make it with; so whenever the record
+     changes, the card is made again by hand, this way:
+
+       1. python3 -m http.server 8000, from the repository root, and
+          open http://localhost:8000/tools/share-card.html.
+       2. Press Legacy, under the card. The van sites are behind the
+          toggle on the map page for a reason - "What active means" in
+          NOTES.md - but the card is a picture of the whole record, and
+          without them there is no glow to speak of.
+       3. In the DevTools console, paste
+
+              map.jumpTo({ center: [-0.12, 51.47], zoom: 10 })
+
+          The map opens where the map page opens, on central London
+          at zoom 11, and that view cuts Croydon off the bottom - the
+          record's hottest spot, twenty-two deployments and both fixed
+          cameras. Zoom 10 is the widest the map allows and takes in
+          the whole width of London; the centre is a little south and
+          west of LONDON_CENTRE so that Croydon and Romford are both on
+          the card and Croydon's glow clears the caption. (Without a
+          console: the map's own zoom-out, hidden here, is one press,
+          and then drag until the same is true. The console line is
+          exact; a hand is close enough.)
+       4. Wait for the tiles, then in DevTools pick the .card element
+          and "Capture node screenshot", with the device toolbar's
+          pixel ratio set to 1 so the file is 1200 by 630 and not
+          double. Save it as img/share.png.
+       5. Look at it small before committing it. It is judged as a
+          thumbnail in somebody's feed, not at full size.
+
+     NOTES.md ("Sharing the site") has the same steps and the headless
+     command that was used the first time.
+
+     It loads what index.html loads - the record, shared.js and map.js
+     - and deliberately NOT supabase-config.js or account.js. With no
+     project configured, map.js draws the published record and never
+     asks the database. That is the point: the card is the record as
+     committed, not whatever the live table holds on the day, which
+     may be in a state the record is not (it was, once, at 117 of 187).
+
+     Nothing on this page is scripted inline, because the policy below
+     is the site's own and forbids it, and no script file was added for
+     it: the count is written into #points-count by map.js's render(),
+     which fills any element by that id, and the toggle is map.js's
+     own Legacy button. The page is not one of the seven stamp.py
+     checks, so the policy is copied here for the harness to run under
+     and is not held to the others by anything but hand - if it drifts,
+     what breaks is this page, in a browser, in front of somebody.
+
+     The brightness rule holds here as on the map: the base map is
+     drawn through the same tidyBaseStyle() and stays dimmer than the
+     dimmest dot, and the caption's box is the page black at nearly
+     full strength so the words sit on the map rather than in it.
+     ------------------------------------------------------------------ -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
+  img-src 'self' data: blob: https://server.arcgisonline.com
+          https://tiles.openfreemap.org https://*.openfreemap.org
+          https://*.supabase.co;
+  media-src 'self' blob: https://*.supabase.co;
+  worker-src blob:;
+  child-src blob:;
+  connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
+              https://tiles.openfreemap.org https://*.openfreemap.org
+              https://server.arcgisonline.com
+              https://nominatim.openstreetmap.org;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'none';
+  frame-ancestors 'none'">
+<title>Share card &mdash; cammap</title>
+<meta name="robots" content="noindex">
+
+<link rel="stylesheet" href="../lib/maplibre-gl.css">
+<script src="../lib/maplibre-gl.js"></script>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../frontend/style.css">
+
+<style>
+  /* The card is a fixed box at the top-left of the page, whatever the
+     window is, so a node screenshot of it is always the same size. The
+     page's own padding and the scanlines behind it are taken off: the
+     map fills the box edge to edge. */
+  body { padding: 0; }
+  body::before { content: none; }
+
+  .card {
+    position: relative;
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* style.css sizes #map for the map page; here it fills the card,
+     with no border, because the picture's edge is the card's edge. */
+  .card #map {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    border: none;
+  }
+
+  /* The zoom buttons are for a person, not a picture. The attribution
+     stays: the tiles are OpenStreetMap data and it is theirs to ask. */
+  .card .maplibregl-ctrl-top-left { display: none; }
+
+  /* The caption: a box in the corner, the page black at nearly full
+     strength with the site's rule round it, so the words sit ON the
+     map rather than in it. No gradient, no rounding, no shadow - the
+     same rules as every other box on the site. */
+  .caption {
+    position: absolute;
+    left: 40px;
+    bottom: 40px;
+    max-width: 450px;
+    padding: 18px 24px 20px 24px;
+    border: 1px solid var(--rule);
+    background: rgba(13, 13, 13, 0.92);
+    line-height: 1.45;
+  }
+
+  .caption .brand {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+
+  /* map.js writes "182 cameras" into this as it renders the list. It
+     is the one thing on the card that has to read at thumbnail size,
+     so it is the one thing set large. */
+  .caption .count {
+    margin: 4px 0 6px 0;
+    font-size: 42px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    line-height: 1.1;
+    color: var(--accent);
+  }
+
+  .caption .what {
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  .caption .where {
+    margin-top: 8px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--dim);
+  }
+
+  /* The list map.js renders, and its toggle, live under the card. The
+     list is what render() fills before it writes the count, so it has
+     to exist; it is kept for the maintainer to glance at, not hidden. */
+  .under {
+    max-width: 1200px;
+    padding: 16px 40px 40px 40px;
+  }
+
+  .under ul.points {
+    max-height: 240px;
+    overflow-y: auto;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div id="map"></div>
+  <div class="caption">
+    <div class="brand">cammap</div>
+    <div class="count" id="points-count"></div>
+    <div class="what">
+      Live facial recognition in London, from published records.
+      Nothing here is estimated.
+    </div>
+    <div class="where">forrest404.github.io/cammap</div>
+  </div>
+</div>
+
+<div class="under">
+  <div class="map-toggles">
+    <button id="legacy-toggle" class="toggle" aria-pressed="false"
+            title="Show the LFR van sites too - the card wants the whole record">Legacy</button>
+  </div>
+  <p class="hint" style="margin-top:12px">
+    Press Legacy so the whole record is on the card, wait for the
+    tiles, then capture the card above at 1200 by 630 and save it as
+    img/share.png. The count in the corner is written by map.js from
+    the record; it reads "17 of 182" until Legacy is on. The comment
+    at the top of this file has the long version.
+  </p>
+  <ul class="points" id="points-list"></ul>
+  <p class="empty" id="points-empty"></p>
+</div>
+
+<!-- The record, then what draws it. supabase-config.js and account.js
+     are left out on purpose - see the header. -->
+<script src="../data/points.js"></script>
+<script src="../frontend/shared.js"></script>
+<script src="../frontend/map.js"></script>
+</body>
+</html>

@@ -163,9 +163,164 @@ Run both scripts before every commit.
 
 ### Sharing the site
 
-*(Written by the Wave 1 chrome agent: share cards, the favicon and
-manifest, robots and the sitemap, the 404 page, the licences, and what
-the donate line says.)*
+Everything that decides what the site looks like from outside a
+browser tab - in a link preview, a search result, on a home screen, in
+a crawler's list - and the two files that say how it may be reused.
+None of it touches the map, the record or the database; all of it is
+static files and the `<head>` of every page.
+
+**The site's address is written in nine places.** The site lives at
+`https://forrest404.github.io/cammap/` - GitHub Pages, branch `main`,
+no custom domain - and because a link preview, a sitemap and a manifest
+all need an absolute address, it is written out rather than worked out.
+If it ever moves to a domain of its own, every one of these changes in
+the same commit:
+
+    robots.txt              the Sitemap line
+    sitemap.xml             every <loc>
+    every page's <head>     <link rel="canonical">, og:url, og:image,
+                            twitter:image (seven pages, absolute)
+    404.html                <base href="/cammap/"> - the path only;
+                            at the root of a domain it becomes "/"
+    manifest.json           nothing: start_url and scope are "./" and
+                            resolve against wherever the manifest is
+    LICENSE                 the attribution line for the data
+    tools/share-card.html   the address in the caption, and so
+                            img/share.png, which needs making again
+
+**Share cards (REACH-1).** Every page carries a `<meta name="description">`,
+a canonical link, and the Open Graph and Twitter tags that turn a pasted
+link into a card: `og:title`, `og:description`, `og:url`, `og:image`
+with its width and height and an `alt`, and `twitter:card` set to
+`summary_large_image`. Each page's title and description are its own
+and say what that page is - the map, the account, the report form -
+because one description across seven pages is the failure mode. None
+of them names the count: a number in a `<meta>` goes stale without a
+sound, and the count belongs to the map page, which computes it.
+
+All seven show the same picture, `img/share.png`, 1200 by 630, which
+is the map itself photographed and committed, because a static site
+has nothing to draw one with on request. `tools/share-card.html` is
+the page that gets photographed: it loads the record, `shared.js` and
+`map.js` exactly as `index.html` does, and deliberately not
+`supabase-config.js`, so the card is the published record and never
+the live table (which has been seen at 117 of 187 while the record
+said 17 of 182). Nothing on it is scripted inline - it runs under the
+site's own policy - so the count in the corner is written by
+`map.js`'s `render()` into an element it already knows the id of, and
+the glow is turned on with `map.js`'s own Legacy button. The header of
+that file has the full recipe; the short form is: serve the repository,
+open the page, press Legacy, paste
+`map.jumpTo({ center: [-0.12, 51.47], zoom: 10 })` into the console,
+wait for the tiles, and capture the `.card` element at pixel ratio 1.
+Zoom 10 rather than the map page's 11 because at 11 Croydon - the
+record's hottest spot - is off the bottom; the centre is a little south
+and west of `LONDON_CENTRE` so that Croydon and Romford are both on the
+card and Croydon's glow clears the caption. The first card was made
+the same way headless, driving the system Chrome over the DevTools
+protocol with the same three lines as the expression to run before the
+shot; any such harness will do. Judge the result at thumbnail size - it
+is seen in a feed at 400 pixels wide, not at 1200 - and make it again
+whenever the count changes. The platforms cache a card by its URL, so
+after a change their own debuggers (Facebook's sharing debugger,
+LinkedIn's post inspector) are how to make them fetch it afresh.
+
+**The favicon and the manifest (REACH-2).** `img/favicon.svg` is the
+source: a filled dot inside a hollow ring, the accent on the page
+black - the map's own vocabulary, a solid dot for a fixed camera and a
+ring for a van site. The rasters beside it are drawn from the same
+geometry with Pillow, which is on the machine the site is maintained
+from and is not a dependency of the site: three discs at 24.5, 17.5
+and 8 sixty-fourths of the width, drawn at eight times the size and
+brought down with Lanczos, for 180 (`apple-touch-icon.png`, iOS), 192
+and 512 (`icon-192.png`, `icon-512.png`, the manifest). `favicon.ico`
+carries 16, 32 and 48 for Safari and anything older, each drawn at its
+own size rather than shrunk from one, so the 16 is a ring and not a
+smudge; Pillow's ICO writer drops any size larger than the image it is
+handed, so the 48 has to be the base and the others appended.
+
+`manifest.json` cannot carry a comment, so its reasoning is here. It
+names the site, opens it `standalone` - a window without browser
+chrome, which is what "Add to Home Screen" wants to produce - and
+paints the splash and the frame the page's own `#0d0d0d`. `start_url`
+and `scope` are `./`, which resolve against the manifest's own address
+and so mean the site root without writing it. The 512 is listed twice,
+once as `any` and once as `maskable`: Android crops a maskable icon to
+a circle and keeps only the inner 80%, and the ring's outer edge sits
+at 38% of the width, so the same file serves. `theme-color` on every
+page colours the browser's own frame around the page to match, and
+`apple-mobile-web-app-title` is the name iOS puts under the icon,
+which would otherwise be the page's `<title>`. All of it is linked from
+every head with `img/` at the root and `../img/` under `pages/`; the
+404 page's `<base>` makes the root form right there too. A linked icon
+also stops the browser probing for `/favicon.ico` at the origin root,
+which is not ours on `github.io` and was a 404 in every console.
+
+**robots.txt and sitemap.xml (REACH-3).** `robots.txt` allows
+everything and names the sitemap. `sitemap.xml` is hand-written - six
+addresses do not need a generator - and each carries the date of the
+page's last commit, which is what a crawler uses to decide whether to
+come back. When a page changes, update its `lastmod` with
+
+    git log -1 --format=%cs -- pages/about.html
+
+(the command cannot be written in the sitemap's own comment: an XML
+comment may not contain two hyphens in a row). The moderation page is
+the one page not meant to turn up in a search, and it is kept out with
+`<meta name="robots" content="noindex">` in its own head rather than a
+`Disallow` here. The two are not interchangeable: a crawler forbidden
+to fetch a page never reads the `noindex` inside it and can still list
+the address from links elsewhere, so a `Disallow` keeps a page in
+search results rather than out of them. The sitemap leaves it out for
+the same reason - a page that is listed and refuses indexing is a
+contradiction Search Console reports as an error. The 404 page is
+`noindex` too, though Pages serves it with a 404 status and that alone
+would do.
+
+**The 404 page (REACH-4).** GitHub Pages serves a root `404.html` for
+any address it cannot find, so one page covers every rotted link. It
+is one of `stamp.py`'s pages the moment it exists, so it carries the
+same CSP, nav and footer as the rest and is checked with them. Two
+things about it are unlike the others, both because it is served at
+every missing path rather than one: a `<base href="/cammap/">` makes
+every relative URL on it resolve from the site root whatever was asked
+for (the CSP's `base-uri 'self'` allows it; it is the one place the
+Pages path is written into a page); and `account.js` is not loaded,
+because it decides where it is by looking for `/pages/` in the URL,
+which on this page is wrong half the time, and under the `<base>` a
+wrong guess is a broken account link. The nav keeps its three static
+links. A local `python3 -m http.server` serves its own error page for
+a missing path, so to check this one, open `/404.html` directly - and
+serve the repository as `/cammap/` under something (a symlink in a
+temporary directory does it) if the `<base>` is to resolve locally.
+
+**The licences (REACH-7).** `LICENSE` at the root, in two parts: the
+code is MIT and the record - `data/points.js`, `backend/seed.sql`, and
+any download of the same cameras in another format - is under the Open
+Database License 1.0, with the attribution line to use. ODbL over
+CC BY-SA because the record is a database, queried and joined, rather
+than a document read and quoted; it is what OpenStreetMap chose for the
+same reason, and the base tiles are already under it. The copyright
+holder is "cammap contributors", because the site puts no names on
+itself and its licence is not the place to start. The footer on every
+page says "Code MIT · data ODbL 1.0" with a link to each; the MIT link
+goes to the repository's copy on GitHub rather than to `/LICENSE`,
+because Pages serves a file with no extension as an untyped download
+in most browsers. `lib/` and `fonts/` are vendored under their own
+licences and are not ours to license.
+
+**The donate line (WORD-5).** The footer says donations pay for the
+hosting and names no figure. It should: a precise small number is far
+more persuasive than an unspecified appeal, and it fits a site that
+says exactly what it knows everywhere else. The figure was not
+available when this was written, and on a site whose argument is that
+nothing on it is estimated, a hosting cost that was is worse than
+none. So the sentence stands as it was, and beside it on all eight
+pages is a `TODO (WORD-5)` comment - seen by whoever edits the footer,
+never by a visitor - with the exact sentence to type once the number
+is known (QUESTIONS.md, item 2). Eight copies because the footer is
+written out per page and `stamp.py` holds them to be the same; when
+the number goes in, it goes in everywhere at once.
 
 ### What active means
 
