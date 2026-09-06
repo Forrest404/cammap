@@ -155,11 +155,10 @@ Things that look like they would work and do not:
   MapLibre advances camera flights on `requestAnimationFrame`, which a hidden
   tab does not run. `jumpTo` does work. This is an artifact of the harness, not
   a bug — check `document.hidden` before believing a map animation is broken.
-- **`?edit` writes nothing to the server, and its export can no longer be
-  pasted over `points.js`.** That file is generated from `data/cameras.csv`;
-  a `points.js` the CSV did not produce fails `stamp.py`. Run
-  `python3 tools/build_points.py --import` on the export, or have `?edit`
-  export CSV rows instead (Wave 2's map agent decides which).
+- **`?edit` writes nothing to the server, and it exports CSV rows, not a
+  `points.js`.** `points.js` is generated from `data/cameras.csv`; a
+  `points.js` the CSV did not produce fails `stamp.py`. Paste the export over
+  `data/cameras.csv`, run `python3 tools/build_points.py`, commit all three.
 - **The site's absolute address is written in more than one place.**
   `https://forrest404.github.io/cammap/` is in `sitemap.xml`, `robots.txt`,
   every page's `og:url`, `og:image` and canonical link, and the `<base>` in
@@ -177,6 +176,14 @@ Things that look like they would work and do not:
 - **The print view reads control state off the DOM** (`.toggle.on`,
   `:placeholder-shown`). Keep visible state on the elements, not only in JS
   memory, or paper stops reflecting the filter.
+- **`jumpTo` ignores `offset`, silently.** A cut that must land a point
+  off-centre is `easeTo` with `duration: 0`; `showCameraLink()` in `map.js`
+  is the example. `moveMap()` is the one `flyTo`; route movement through it.
+- **A symbol layer in a font the style does not serve draws nothing.** Both
+  OpenFreeMap styles carry `Noto Sans Regular`; the stack badge uses it.
+- **`edit_camera` leaves `seed_key` alone,** so a re-seed overwrites an
+  edited seed camera's name, note and status. Correct `data/cameras.csv` as
+  well, or the edit is undone by the next seed.
 
 ## Things that must not drift apart
 
@@ -222,6 +229,15 @@ Things that look like they would work and do not:
   the `cameras_periods_check` constraint. Deployments are counted by the
   period the source gives, never by a year it does not; `deployments` is
   always the sum.
+- **`RECORD_SOURCES` in `shared.js` dates the record.** The count line under
+  the map is computed; the dates are typed. Change them with the CSV, and
+  remake `img/share.png` when the count moves.
+- **`metresBetween()` in `account.js` and `metres_between` in `schema.sql`**
+  are twins — same formula, same radius. Change one, change the other.
+- **Every moderating action on a camera writes `moderation_log`** through its
+  `actor`; a new `moderate_` function must too. Bulk actions call the
+  per-report function once per row — there is deliberately no server
+  function that takes a list.
 
 ## The rule the map's brightness answers to
 

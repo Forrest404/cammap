@@ -86,11 +86,11 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | DATA-7 (schema) | 1 | generator | verified | 21904e7 | *migration 003, unapplied*; `approximate` boolean, 43 rows true |
 | MAP-7 | 1 | stylesheet | verified | dca47c0 | one `:focus-visible` rule; ring moves inside pressed toggles; attribution bar 0.86→0.94 for contrast |
 | MAP-10 | 1 | stylesheet | verified | 83e23a5 | `@media print`: list on white with coordinates, legend and filter state kept |
-| MAP-3 | 2 | map | in-flight | | remove `edit-only`, add debounce and empty state |
-| MAP-1 | 2 | map | in-flight | | `#zoom/lat/lon`, `#camera=<id>`, keep `#lat,lon` |
-| MAP-2 | 2 | map | in-flight | | Near me, pressed never automatic |
-| MAP-5 | 2 | map | in-flight | | stacked dots; Croydon pair is the test |
-| REACH-5 | 2 | map | in-flight | | moved from Wave 1/3: the count line belongs with `render()` |
+| MAP-3 | 2 | map | merged | 4b8d64c | search box for everyone, under the map; no search-as-you-type (Nominatim policy), empty state, bounded to London |
+| MAP-1 | 2 | map | merged | 5b9b2cd | `#zoom/lat/lon`, `&camera=<db id | seed key>`, `#lat,lon` kept; throttled `replaceState`; Copy link with three fallbacks |
+| MAP-2 | 2 | map | merged | 94a563d | Near me, pressed only; ring brightness 89; three failure paths in words; Nearest sort with metres |
+| MAP-5 | 2 | map | merged | 33a914a | chooser on click for stacked dots plus a count badge at z16; Croydon pair reachable by mouse and keyboard |
+| REACH-5 | 2 | map | merged | 5435bad | `RECORD_SOURCES` in shared.js; count computed ("182 in the record, 5 more from reports") |
 | MOD-1 | 2 | moderation | merged | d864979 | `loadPage()`/`makePager()`; queue, history, activity paged; Wave 4's list reuses it |
 | MOD-7 | 2 | moderation | merged | e9e374a | head count on the nav link and the oldest report's age at the top of the queue |
 | MOD-2 | 2 | moderation | merged | c3e4a33 | *migrations 004 + 005, unapplied*; `moderate_edit_camera`; `seed_key` untouched; server refuses vancam+active; new `moderation_log` table |
@@ -137,8 +137,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | Status | Count |
 | --- | --- |
 | todo | 31 |
-| in-flight | 5 |
-| merged | 7 |
+| in-flight | 0 |
+| merged | 12 |
 | verified | 15 |
 | blocked | 0 |
 | dropped | 0 |
