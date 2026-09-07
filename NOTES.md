@@ -169,8 +169,36 @@ Run both scripts before every commit.
 
 ### The words
 
-*(Written by the Wave 4 words agent: what About draws from these notes,
-the rights page and its citations, post anchors and dates, and the feed.)*
+The repository explains itself at length and the site, for a long
+time, in about four hundred words. This section is about the pages
+that carry the argument to a visitor: the posts and how they are
+pointed at, the feed, what About says and where each sentence of it
+comes from, and the rights page with its citations. None of it runs
+any JavaScript of its own; every page here reads in full with
+scripts off, which for prose is the only honest test.
+
+**Posts can be pointed at (WORD-3).** A post used to be an `<article>`
+with a heading and a date in words, and nothing outside the page could
+name it. Now each carries an `id` on the article, a `<time datetime>`
+around the date, and a small "permalink" link in its heading. The id
+is `post-`, the date as `YYYY-MM-DD`, a hyphen, and the title lowered
+with every run of non-alphanumerics made one hyphen -
+`post-2026-08-28-london-ai-face-recognition` - so that the address of
+a post can be written by hand from its date and title, and two posts
+with one title on two days still differ. It must never change once a
+post is out: the feed entry points at it, and so does anyone who
+copied the link. The `<time>` is there because a screen reader, a
+crawler and the feed read the attribute and a person reads the words,
+and the two need not agree in form ("28th August, 2026" against
+`2026-08-28`). The permalink is in the heading because an anchor
+nobody can see is an anchor nobody uses; right-click, copy link, is
+the whole affordance, and the focus ring covers it. There is no fixed
+header on the site, so a link lands the article at the top of the
+window with `scroll-margin-top` keeping it off the edge; with one
+post the page is shorter than a phone screen plus that offset, so the
+browser scrolls as far as it can and stops, which is the browser
+being right and not the anchor being wrong. The template comment in
+`pages/blog.html` carries the rule so the next post copies the shape.
 
 ### Sharing the site
 
