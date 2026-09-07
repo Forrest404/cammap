@@ -602,7 +602,22 @@ function signUp(username, password, onDone, retried) {
 /* What this page forgets when a session ends, whichever way it ended:
    the nav's Log out, "sign out everywhere" on the account page, or
    the account being deleted. The server side of each differs; what
-   the page does afterwards does not. */
+   the page does afterwards does not.
+
+   That now includes the two sessionStorage keys the report form
+   writes: the draft - the pin, the kind, the name and the note of a
+   report not yet sent - and the receipt, the number of the last one
+   sent. They are in sessionStorage so that a reload keeps them: a
+   reload is the same person, and a phone reloads a tab it put in
+   the background without asking. A Log out is not the same person.
+   It is what someone presses before handing a machine back, and the
+   privacy pass found the draft still waiting on the report page
+   after it (L8). The draft is the person's; the machine may not be.
+   So both keys go here, with the session, whichever door it left
+   by - and not in signOut() alone, because sign out everywhere and
+   deletion end the session too and would otherwise leave them. What
+   is typed into the form on screen stays there, as before, for the
+   person who is still looking at it. */
 function forgetSession() {
   var message = document.getElementById("account-message");
 
@@ -610,6 +625,8 @@ function forgetSession() {
   currentRole = "user";
   currentXp = 0;
   savedCameras = [];
+  forgetDraft();
+  forgetReceipt();
   renderNav();
 
   /* A sentence left from an earlier sign-out would otherwise be read
@@ -741,8 +758,11 @@ function changePassword(current, next, onDone) {
    schema.sql, version 2.10): the profile, every report, the proof
    rows and files, the XP and the saved list go; a camera that a
    report of theirs put on the map stays, with the date it was
-   approved and nothing about them. What a stranger learns by calling
-   it repeatedly: nothing.
+   approved and with the name and note the report gave it - those
+   became the camera's own when it was approved, and the delete box
+   and the form both say so. The account that sent the report is not
+   on the camera row. What a stranger learns by calling it
+   repeatedly: nothing.
 
    Afterwards the browser still holds a token for an account that
    does not exist, so it signs out locally - whatever the server says
@@ -818,7 +838,8 @@ function setUpDeleteAccount() {
       input.value = "";
       note.textContent = "";
       sayOnSignedOut("The account " + name + " is deleted, and with it its reports, " +
-        "XP and saved cameras. Cameras it put on the map are still there.");
+        "XP and saved cameras. Cameras it put on the map are still there, with the " +
+        "name and note the reports gave them.");
     });
   };
 }
@@ -2512,9 +2533,10 @@ var UPLOAD_FAILED = "The file could not be uploaded.";
    is this visit's, and a number left on a shared machine would tell
    the next person which report was sent from it. Storage may be
    refused, and then the receipt is shown once and not again, which
-   is what the page did before there was one. The key belongs in
-   STORAGE in shared.js beside the others; the orchestrator moves
-   it.
+   is what the page did before there was one. The key is
+   STORAGE.reportReceipt in shared.js, beside every other key the
+   site writes, and is read from there; REPORT_RECEIPT_KEY below is
+   that value under this file's name for it.
 
    Copying is the Copy-link pattern from map.js: the clipboard API
    where the page has it (it is refused on a page opened off the disk
@@ -2539,6 +2561,16 @@ function readReceipt() {
     return raw ? JSON.parse(raw) : null;
   } catch (err) {
     return null;
+  }
+}
+
+/* Called from forgetSession(): the number of the last report sent is
+   the person's, and ends with their session, whichever way it ends. */
+function forgetReceipt() {
+  try {
+    window.sessionStorage.removeItem(REPORT_RECEIPT_KEY);
+  } catch (err) {
+    /* nothing to forget */
   }
 }
 
@@ -2768,9 +2800,11 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
    wrapped; refused, the in-memory path is all there is, and it is
    enough.
 
-   The key is written here rather than in STORAGE in shared.js, which
-   is where it belongs beside the others; this wave does not edit
-   that file, and the orchestrator moves it. */
+   The key is STORAGE.reportDraft in shared.js, beside every other
+   key the site writes, and is read from there; REPORT_DRAFT_KEY is
+   that value under this file's name for it. (It began as a constant
+   here, because the wave that added it did not edit shared.js, and
+   was moved at the merge.) */
 var REPORT_DRAFT_KEY = STORAGE.reportDraft;
 
 var pendingSend = null;   /* what Send would have done, waiting for an account */
@@ -2928,14 +2962,18 @@ function xpLine(key) {
    picker's move event, settled for half a second so that a drag
    across the map is one question and not sixty - the form asks
    pending_near(lat, lon) whether a new-camera report is already
-   waiting within the auto-approve radius of that spot, and how many
-   days ago the newest was sent. The answer is those two fields and
-   nothing else: schema.sql (version 2.11) says what a stranger
-   learns from it and why the count is withheld. A plain select on
-   reports could not answer this and must not: the read policy shows
-   a person their own rows and a moderator everyone's, which is what
-   keeps who-reported-what from anyone else, and the function is the
-   one narrow window through it.
+   waiting in the 0.001-degree cell that spot falls in, or one of
+   the eight cells around it, and how many days ago the newest was
+   sent. The answer is those two fields and nothing else, and it is
+   the same for every point in a cell: schema.sql (version 2.13)
+   says why it is a cell and not a circle - a circle's edge can be
+   walked back to the report's exact position, and was - and what a
+   stranger learns from it and why the count is withheld. "This
+   corner" under the pin is the honest size of the answer. A plain
+   select on reports could not answer this and must not: the read
+   policy shows a person their own rows and a moderator everyone's,
+   which is what keeps who-reported-what from anyone else, and the
+   function is the one narrow window through it.
 
    What the sentence does with the answer: it says a report is
    waiting, and invites this one, because the auto-approve threshold
@@ -3041,21 +3079,34 @@ function makeDuplicateCheck(line) {
   };
 }
 
-/* A position in the address: report.html?lat=51.5&lon=-0.1, which is
-   what "Report a camera here" on the map page links to. Six decimals
-   is what the map writes; anything that parses and is in London is
-   taken, anything else is ignored and the form opens as usual. */
-function startAtFromQuery() {
-  var mLat = /[?&]lat=(-?\d+(?:\.\d+)?)/.exec(window.location.search);
-  var mLon = /[?&]lon=(-?\d+(?:\.\d+)?)/.exec(window.location.search);
+/* A position in the address: report.html#51.507590/-0.127800 -
+   latitude, one slash, longitude, six decimals each and nothing
+   else - which is what "Report a camera here" on the map page links
+   to. Six decimals is what the map writes; anything that parses and
+   is in London is taken, anything else is ignored and the form opens
+   as usual.
+
+   In the fragment, not the query, since the privacy fix round (L4).
+   The link used to be report.html?lat=&lon=, and a query string
+   travels in the request itself: to the host, and on as the Referer
+   to anything the page then loads from elsewhere. A fragment never
+   leaves the browser; it is read here and nowhere else. The query
+   form is not read any more - a link in the old shape opens the form
+   empty, which is what an unrecognised address has always done - so
+   there is one shape, and the one the map writes. It cannot collide
+   with the #report-<n> the receipt links to on the account page:
+   that has letters in it, and this is two signed numbers with a
+   slash between. */
+function startAtFromHash() {
+  var m = /^#(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/.exec(window.location.hash);
   var lat;
   var lon;
 
-  if (!mLat || !mLon) {
+  if (!m) {
     return null;
   }
-  lat = parseFloat(mLat[1]);
-  lon = parseFloat(mLon[1]);
+  lat = parseFloat(m[1]);
+  lon = parseFloat(m[2]);
   if (isNaN(lat) || isNaN(lon) || !inLondon(lat, lon)) {
     return null;
   }
@@ -3139,7 +3190,7 @@ function setUpReportPage() {
     if (cameraId) {
       setUpStatusReport(cameraId);
     } else {
-      setUpNewReport(startAtFromQuery());
+      setUpNewReport(startAtFromHash());
     }
   });
 
@@ -3148,11 +3199,50 @@ function setUpReportPage() {
   }
 }
 
+/* ---------------- reading cameras without being a moderator ----------------
+
+   Since schema version 2.14 (migration 012) a browser that is not a
+   moderator's reads visible cameras through the view cameras_public,
+   not the table. The table also carries approved_by, approved_at,
+   created_at and updated_at, and until 2.14 every browser could read
+   them: the privacy pass grouped the map by moderator uuid with
+   timestamps to the microsecond, and set a camera's approved_at
+   beside the daily leaderboard to tie a username to a place and a
+   moment. The view has the fourteen public columns and only visible
+   rows - so it needs no "visible" filter, and has no such column to
+   filter on - and anon's select on the table is withdrawn. A
+   moderator's browser keeps a column-level grant on the table, which
+   is why every read of cameras further down names its columns and
+   none says "*": PostgREST refuses a star select when any column is
+   denied.
+
+   The fallback. Until the maintainer runs 012 the live database has
+   no such view, and PostgREST answers 404 for a relation it does not
+   know - 42P01 from PostgreSQL, or PGRST205 from its own schema
+   cache. Then the table is read as it was before, with the same
+   columns and the old "visible" filter; on a database that has the
+   view the second query is never made. It is Wave 2's pattern for a
+   column a migration had not yet added. Remove publicCameraQuery's
+   table branch, and the retry at each caller, once BUILD-LOG.md says
+   012 has been run. */
+function viewMissing(result) {
+  var code = result && result.error && result.error.code;
+
+  return code === "42P01" || code === "PGRST205" || (result && result.status === 404);
+}
+
+function publicCameraQuery(columns, throughTable) {
+  if (throughTable) {
+    return sb.from("cameras").select(columns).eq("visible", true);
+  }
+  return sb.from("cameras_public").select(columns);
+}
+
 /* The cameras already on the map, for drawing behind the picker's
    pin. map.js keeps the same rows under this key for five minutes
    after it fetches them, so someone who came here from the map is
    answered out of their own browser. The key and the shape are map.js's;
-   this only ever reads it, and falls back to asking the table. A
+   this only ever reads it, and falls back to asking the view. A
    failure here loses the context dots and nothing else, so it is
    quiet about it. */
 var CONTEXT_TTL = 5 * 60 * 1000;
@@ -3169,25 +3259,29 @@ function contextCameras(onDone) {
       return;
     }
   } catch (err) {
-    /* nothing usable in storage - ask the table instead */
+    /* nothing usable in storage - ask the view instead */
   }
 
   if (!configured || !sb) {
     return;
   }
 
-  sb.from("cameras")
-    .select("lat,lon,type,status")
-    .eq("visible", true)
-    .limit(5000)
-    .then(function (result) {
-      if (!result.error && Array.isArray(result.data)) {
-        onDone(result.data);
-      }
-    })
-    .catch(function () {
-      /* no context dots this time; the pin still works */
-    });
+  function fetch(throughTable) {
+    publicCameraQuery("lat,lon,type,status", throughTable)
+      .limit(5000)
+      .then(function (result) {
+        if (!result.error && Array.isArray(result.data)) {
+          onDone(result.data);
+        } else if (!throughTable && viewMissing(result)) {
+          fetch(true);
+        }
+      })
+      .catch(function () {
+        /* no context dots this time; the pin still works */
+      });
+  }
+
+  fetch(false);
 }
 
 function setUpNewReport(startAt) {
@@ -3298,7 +3392,7 @@ function setUpNewReport(startAt) {
      can see whether theirs is one of them before sending it in. The
      map page leaves the same rows in storage for a few minutes, so
      arriving here from the map usually costs nothing; otherwise this
-     is one small read of a table anyone may read. */
+     is one small read of the public view anyone may read. */
   if (picker) {
     contextCameras(function (rows) {
       picker.cameras(rows);
@@ -3474,32 +3568,43 @@ function setUpStatusReport(cameraId) {
   }
 
   /* The name, so the person can see they are on the right one - and
-     its position, which the report has to carry too. */
+     its position, which the report has to carry too. Through the
+     public view, with the table as the fallback (publicCameraQuery,
+     above): a status report is only ever about a camera on the map,
+     which is exactly what the view holds. */
   var camera = null;
 
-  sb.from("cameras").select("name,type,status,lat,lon").eq("id", cameraId).single()
-    .then(function (result) {
-      if (!result.error) {
-        camera = result.data;
-      }
-      nameEl.textContent = camera ? camera.name : "camera #" + cameraId;
+  function fetchCamera(throughTable) {
+    publicCameraQuery("name,type,status,lat,lon", throughTable).eq("id", cameraId).single()
+      .then(function (result) {
+        if (result.error && !throughTable && viewMissing(result)) {
+          fetchCamera(true);
+          return;
+        }
+        if (!result.error) {
+          camera = result.data;
+        }
+        nameEl.textContent = camera ? camera.name : "camera #" + cameraId;
 
-      /* Read-only: there is nothing to place here, only something to
-         recognise. Saying "it is gone" about the wrong camera takes
-         one off the map that is still there, so it is worth a look
-         before you say it. */
-      if (camera && typeof makePicker === "function") {
-        makePicker({
-          container: "status-map",
-          lat: Number(camera.lat),
-          lon: Number(camera.lon),
-          draggable: false
-        });
-      }
-    })
-    .catch(function () {
-      nameEl.textContent = "camera #" + cameraId;
-    });
+        /* Read-only: there is nothing to place here, only something to
+           recognise. Saying "it is gone" about the wrong camera takes
+           one off the map that is still there, so it is worth a look
+           before you say it. */
+        if (camera && typeof makePicker === "function") {
+          makePicker({
+            container: "status-map",
+            lat: Number(camera.lat),
+            lon: Number(camera.lon),
+            draggable: false
+          });
+        }
+      })
+      .catch(function () {
+        nameEl.textContent = "camera #" + cameraId;
+      });
+  }
+
+  fetchCamera(false);
 
   /* The same picker and attacher as the new-camera form. */
   var attacher = null;
@@ -3882,7 +3987,15 @@ function setUpCamerasTab() {
    is filled.
 
    A moderator's select on cameras returns hidden ones too, by the
-   read policy. Ordered by name so the list reads like the map's.
+   read policy - which is why this reads the table and not the
+   public view, cameras_public, that the rest of the site reads. The
+   columns are named, here and in every other read of cameras on
+   this page, and must stay named: since schema version 2.14 the
+   signed-in role holds a column-level grant on the table that
+   leaves out approved_by, approved_at, created_at and updated_at
+   (none of which this page shows), and PostgREST refuses a star
+   select when any column is denied. Ordered by name so the list
+   reads like the map's.
    The 5000 is a ceiling, not a page: the list is meant to bring
    everything, and 182 cameras plus whatever is reported will not
    reach it for a long time - and if it ever does, the search box

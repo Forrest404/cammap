@@ -878,8 +878,9 @@ cannot survive a reload - a blob is not something storage holds at
 that size, and a file input cannot be refilled by script - so the
 line says the photo needs choosing again. Storage may be refused
 outright; every touch of it is wrapped, and refused, the in-memory
-path is all there is and it is enough. The key is a constant in
-`account.js` until it is moved beside the others in `STORAGE`.
+path is all there is and it is enough. The key is
+`STORAGE.reportDraft` in `shared.js`, beside the others, and
+`account.js` reads it from there.
 
 The lock did not move. The reports insert policy needs
 `auth.uid() = user_id`, so nothing on the page could ever send a
@@ -894,7 +895,9 @@ its state"; a gap on the map offered nothing, and a gap is exactly
 where a camera the map does not have would be. A right-click on the
 map, or a long press on a phone, now opens a small popup at that
 spot with one row, *Report a camera here*, which opens the report
-form with the pin already placed - `report.html?lat=&lon=`, six
+form with the pin already placed - `report.html#<lat>/<lon>` since
+the privacy fix round (it was `?lat=&lon=`, and a query string
+travels in the request where a fragment stays in the browser), six
 decimals, the precision the map writes everywhere else. The
 right-click is MapLibre's own `contextmenu` map event: the library
 already keeps the browser's menu off the canvas (its mouse handlers
@@ -927,14 +930,16 @@ reporter learned neither until Send, after the typing and the
 photograph. Now, as the pin lands - the picker's move event,
 settled for half a second so a drag across the map is one question
 and not sixty - the form asks `pending_near(lat, lon)` (migration
-009, schema version 2.11) whether a new-camera report is waiting
-within the radius and how many days ago the newest was sent, and
-says so under the map: "Someone reported this corner two days ago
-and it is waiting to be checked. Adding yours helps it through: 3
-people reporting the same kind of camera here puts it on the map
-without a moderator." The threshold is quoted from `settings`,
-which is public, rather than written as "enough". The sentence sits
-in a live region so a screen reader hears it arrive.
+009, schema version 2.11; the body replaced by migration 011,
+version 2.13) whether a new-camera report is waiting in the 0.001°
+cell that spot falls in or one of the eight cells around it, and
+how many days ago the newest was sent, and says so under the map:
+"Someone reported this corner two days ago and it is waiting to be
+checked. Adding yours helps it through: 3 people reporting the same
+kind of camera here puts it on the map without a moderator." The
+threshold is quoted from `settings`, which is public, rather than
+written as "enough". The sentence sits in a live region so a screen
+reader hears it arrive.
 
 Why a function: the reports read policy shows a person their own
 rows and a moderator everyone's, and that is right - it is what
@@ -942,20 +947,48 @@ keeps who-reported-what from anyone else. A plain select from the
 form could therefore never see another person's pending report,
 which is exactly the one the question is about; the function is a
 `security definer` window through the policy that answers two
-fields. What a stranger learns by calling it repeatedly: whether a
-new-camera report is waiting within about a hundred metres of any
-point in London, and how many days ago the newest was sent. Not
-who, not how many, not its kind, note or exact position. That is
-the same thing the map would show at that spot once the report is
-approved, minus the position, and it says nothing about any
-account - which is why it is acceptable, and why it is granted to
-`anon` as well, since the signed-out visitor is filling the form
-now. What is withheld and why: the count, because the sentence has
-no use for it and a count is a finer instrument than a flag -
-watched over time it would say when each report arrived, one by
-one; and the exact time, rounded to whole days for the same reason.
-Coordinates in, two fields out, no identity anywhere: that is the
-line CLAUDE.md draws for every call the browser may make. The kind
+fields.
+
+Why a cell and not a circle. The first form (version 2.11) answered
+whether a report was within the auto-approve radius of the point -
+a sharp edge exactly 100 m from the report - and its comment said
+"not its exact position". The adversarial privacy pass after Wave 4
+showed that was wrong: bisecting the edge, fourteen halvings in each
+of four directions, 112 anonymous calls in five milliseconds,
+recovered a pending report's coordinates to six decimals on a
+throwaway database. Any answer that changes at a distance measured
+from the report's own position gives that position away, given
+enough calls. So the point is snapped to the cell `reports.cell_lat`
+and `cell_lon` already sit on, and every point in a cell gets the
+same answer: the only edge left to find is a cell edge, and the
+finest thing the whole grid of answers gives away is which cell a
+report is in - one block of about 111 m by 69 m, which is what
+"someone reported this corner" means anyway. Re-run against the new
+body, the same bisection stops at the cell: the box it recovers is
+the whole cell, and a report anywhere in it gives the same box. The
+block is three cells by three rather than one because a report a
+metre over the cell line is still "this corner", and it is fixed
+rather than derived from the radius, so raising the radius in the
+dashboard cannot widen what the call gives away.
+
+What a stranger learns by calling it repeatedly, honestly: that a
+new-camera report is waiting somewhere in a block of about 330 m by
+210 m around any point in London, and how many days ago the newest
+was sent. Not where in the cell, not who, not how many, not its
+kind or note. Walked over all of London, the answers give the set
+of cells with a pending report in them and the day each arrived -
+what the map will show once those reports are approved, coarsened
+to the cell - and they name no account, which is why it is
+acceptable, and why it is granted to `anon` as well, since the
+signed-out visitor is filling the form now. What is withheld and
+why: the count, because the sentence has no use for it and a count
+is a finer instrument than a flag - watched over time it would say
+when each report arrived, one by one; and the exact time, rounded
+to whole days for the same reason. `days_ago` is a clock all the
+same, at a day's resolution, and that is accepted because it is
+what the sentence says. Coordinates in, two fields out, no identity
+anywhere: that is the line CLAUDE.md draws for every call the
+browser may make. The kind
 is not taken either - a per-kind probe would be finer for nothing
 the sentence needs - so the sentence says "the same kind of camera"
 and leaves the kind to the person. The column is `found`, not
@@ -1111,11 +1144,14 @@ the fake's `xp_rules` value for that key and that the fetch is the
 same `loadXpRules()` the form uses.
 
 *Where the keys live.* Two `sessionStorage` keys were added this
-wave, `cammap.report-draft` and `cammap.report-receipt`, as
-constants in `account.js` rather than in `STORAGE` in `shared.js`,
-which is where they belong beside the others; the wave did not edit
-that file. Moving them is two lines in `shared.js` and two
-references in `account.js`.
+wave, `cammap.report-draft` and `cammap.report-receipt`. They live
+in `STORAGE` in `shared.js`, beside the `localStorage` keys, as
+`reportDraft` and `reportReceipt` - the rule being that every key
+the site writes is in that one table - and `account.js` reads them
+from there as `REPORT_DRAFT_KEY` and `REPORT_RECEIPT_KEY`. The wave
+that added them did not edit `shared.js`, so they began as constants
+in `account.js` and were moved at the merge; the comments that said
+so were corrected in the privacy fix round.
 
 ### Moderating at scale
 
@@ -2003,9 +2039,25 @@ and will print with the list once it exists.
 
 ## Anonymity
 
-What the site keeps about a person: a username of two random words, a password hash, the reports they sent, their XP, and one setting - whether they appear on the leaderboard, which is true unless they turn it off. No email, no name, no IP address in any of our tables. All of it can be deleted from the account page, in one call, by the person it is about; what cannot be taken back is a camera their report put on the map, and the page says so before it asks.
+What the site keeps about a person: a username of two random words, a password hash, the reports they sent, their XP, and one setting - whether they appear on the leaderboard, which is true unless they turn it off. No email, no name, no IP address in any of our tables. All of it can be deleted from the account page, in one call, by the person it is about; what cannot be taken back is a camera their report put on the map, with the name and note the report gave it, and the account page says so before it asks - as does the report form, under the two fields, before Send.
 
 Three honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. A photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Video is not accepted at all, because the same data cannot be stripped from a video in the browser, and the page says why. And when an account is deleted, its proof files are made unreachable by deleting their rows in the storage table; whether Supabase clears the bytes behind them from the bucket's store at once is theirs to promise, not ours.
+
+Seven more, found by an adversarial pass over the whole site after Wave 4 (BUILD-LOG.md, "Privacy pass") and stated here rather than closed, because each is either not closable from this repository, a decision that is not the programme's to take, or - the view, the session and the draft - closed as far as it can be and worth saying where the line now is.
+
+*Sign-up answers whether a username exists.* Supabase's sign-up endpoint returns `user_already_exists` for a name that is taken, and the trigger `handle_new_user` independently raises "is taken"; a stranger with a guess signs up, reads the answer, and deletes the throwaway with `delete_my_account()`. That is `username_available()` under another name - the question that function was dropped for - gated only by the dashboard's per-IP sign-up rate limit, and about 18,800 names cover both word lists. Closing it means the server drawing the username rather than the browser, which changes the recovery card and how the hidden login address is formed; that is the maintainer's decision, QUESTIONS.md item 13, and until it is taken this is stated, not closed.
+
+*The search box talks to another service.* What is typed into the box under the map goes to OpenStreetMap's Nominatim, with the site's address as the referrer, and the search is everyone's, not `?edit`'s. A place name is a place name; a home postcode typed there is a request to a service that is not this one. "The map as a tool" says how lightly it is called and why there is no search-as-you-type.
+
+*A report's number is a running count.* The receipt shows the database's own id, which every report the site has ever received advances by one: it says how many came before yours, and two receipts a day apart say how many came between.
+
+*Approved words stay on the map.* The name and the note of an approved report are the camera's for good, as above; deleting the account takes back the report, not the words.
+
+*What anyone may read of a camera is the view.* Since schema version 2.14 the fourteen columns of `cameras_public` are the whole of what a browser, or anyone with the anon key, can select about a camera: not who approved it, not when, not when the row last changed. Before that the table itself was readable and carried all four, which is what let a moderator's uuid and working hours be grouped out of the map and a camera's appearance be set beside the daily leaderboard (L3 and L6). A column added to the table is not public until it is added to the view.
+
+*The session sits in the browser until Log out.* While signed in, supabase-js keeps the session's tokens in `localStorage`, and closing the tab does not end it. On a shared machine, press Log out: it ends the session here, and since the privacy fix round takes the report draft and the last receipt with it (L8). Sign out everywhere, on the account page, is for the machine you no longer have.
+
+*After Near me the address bar shows where you are.* The map writes its view to the fragment of the address as it moves, so after Near me the address bar carries the spot the phone gave, until the map is moved on or the address is cleared. A copy of the address bar is a copy of that.
 
 ### Changing, leaving and recovering an account
 
@@ -2172,7 +2224,19 @@ the moderator. The reports themselves go rather than staying with the
 person detached, because they are the little the site holds about a
 person - what they reported, where, when, with what photograph - and
 taking that back is the point of leaving; what is lost with them is the
-note and the picture, which were the person's. The username is released
+picture, which was the person's. The name and the note are not lost:
+`approve_report` copies a report's "Where is it?" and "Anything worth
+adding" onto the camera row as its name and note the moment it is
+approved, and nothing copies them back, so a person's own sentence
+stays on the map after they have left. The delete box used to say the
+camera kept "nothing about you"; the privacy pass caught it, and now
+the box says "with the name and note you gave it" and the report form
+says under the two fields what they become. Whether deletion should
+blank those words is QUESTIONS.md item 15; the decision taken is to
+keep them, like a letter printed in a newspaper, and say so plainly.
+The camera keeps no trace of the account that reported it - the
+report row carried the user id, and it is gone - but it keeps the
+words, whatever the person put in them. The username is released
 with the profile row, so the two words may one day be drawn again for
 someone else; nothing would connect them, and a leaderboard row up to
 five minutes old names an account that no longer exists. Afterwards the
