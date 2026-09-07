@@ -1628,9 +1628,31 @@ reports nothing changed in any of the three files - that round trip is
 the check that the export writes what the script reads. The four newer
 fields travel with a point from `tidy()` onward, and `overlayCameras()`
 takes them from a database row only when the row has the columns
-(`takeRecordFields()`); the fetch does not name them until the
-migrations are applied, because PostgREST refuses a whole query for one
-column it does not know.
+(`takeRecordFields()`). The view the map reads names them; the table it
+falls back to does not, because PostgREST refuses a whole query for one
+column it does not know - see "The map's read" just below.
+
+**The map's read (L3, L6).** The map reads `cameras_public`, a view,
+and not the `cameras` table - `loadCamerasFromDatabase()` in `map.js`.
+The table carries `approved_by`, `approved_at` and `updated_at`, and
+until migration 012 anyone could select them: a moderator's uuid
+against every camera they approved, and the hour, which beside the
+daily leaderboard is a username against a time. The view carries the
+fourteen columns the map may read and only visible rows, and the
+select names all fourteen so that a column added to the view is a
+deliberate addition to the map as well. The live database has none of
+the migrations applied, so the view is not there yet; PostgREST says
+so with a 404 and code `42P01` or `PGRST205` (the live one says
+`PGRST205`), and on that answer alone the map asks the table for the
+ten columns it always had (`viewMissing()`). The fallback goes once 012
+has been applied and the view seen to answer - and must go then,
+because the same migration revokes the table from the anonymous role
+and the fallback would only fail slower. The cache in `STORAGE.cameras`
+holds rows from whichever query answered; the names are the same, and
+`takeRecordFields()` is the only place the difference is felt. The
+report form's context dots read the same cache and, without it, ask
+the table for four columns in `contextCameras()` in `account.js` -
+that read moves to the view with the same migration.
 
 **How it was checked.** Headless Chrome over the DevTools protocol with
 real mouse and keyboard events, at 1400 and 390 wide, on all three

@@ -3088,11 +3088,23 @@ render();
 
    points.js is drawn first and at once, so the map is never blank
    waiting on a network. Then, if there is a Supabase project behind
-   the site, the cameras table is fetched and laid over it: a row
-   that came from the seed replaces its seed entry (so a camera the
+   the site, the cameras are fetched and laid over it: a row that
+   came from the seed replaces its seed entry (so a camera the
    moderators have since marked non-functional shows as such), and a
    row that came from a report is added. If the fetch fails for any
    reason the seed simply stands.
+
+   Fetched from a view, cameras_public, and not from the table. The
+   table carries approved_by, approved_at and updated_at, and anyone
+   could select them: a moderator's uuid against every camera they
+   approved, and the hour they did it, which beside the leaderboard
+   is a name against a time (the privacy pass's L3 and L6). The view
+   carries only what the map may read - the columns named below and
+   nothing else - and only visible rows, and the table is revoked
+   from the anonymous role by the same migration. The view is the
+   map's read; the table is the moderators'. A column the map comes
+   to need is added to the view, on purpose, and never by widening
+   what the table lets out.
 
    The result is kept in the browser for a few minutes. A busy day is
    many people opening the map, not many changes to it, so most of
@@ -3226,15 +3238,18 @@ function overlayCameras(rows) {
 
 /* The four newer record fields, from a database row onto a point -
    but only when the row actually carries them. The columns arrived in
-   migrations 001 to 003, which are written and not yet applied, and
-   the fetch below does not ask for them yet either: PostgREST refuses
-   the whole query if one named column is missing, and the map would
-   rather draw the seed's values than nothing. So a row without the
-   columns leaves the point's own values standing, whether those came
-   from points.js or from the defaults above; a row with them wins,
-   the way the row wins on name, note and state. periods is the tell:
-   it is the first of the three migrations, so a row that has it has
-   been through all of them. */
+   migrations 001 to 003, and the view the map reads names them; the
+   table it falls back to, on a database with no migrations applied,
+   does not, because PostgREST refuses the whole query if one named
+   column is missing, and the map would rather draw the seed's values
+   than nothing. So a row without the columns leaves the point's own
+   values standing, whether those came from points.js or from the
+   defaults above; a row with them wins, the way the row wins on
+   name, note and state. periods is the tell: it is the first of the
+   three migrations, so a row that has it has been through all of
+   them. The cache holds rows from whichever query answered, and
+   either shape overlays: the names are the same, and this is the
+   only place the difference is felt. */
 function takeRecordFields(point, row) {
   if (row.periods === undefined) {
     return point;
@@ -3285,34 +3300,80 @@ function loadCamerasFromDatabase() {
     return;
   }
 
-  /* Only the columns the map needs, only visible rows, and a hard
-     ceiling on how many. The ceiling is well above what one city
-     will hold; it is there so a runaway table cannot ship megabytes
-     to every visitor.
+  /* The view first. It has exactly the columns the map may read -
+     the fourteen named here, and the select names them all so that
+     a column added to the view is a deliberate addition here too -
+     and only visible rows, so it needs no filter of its own (it has
+     no `visible` column to filter on). A hard ceiling on how many,
+     well above what one city will hold, so a runaway table cannot
+     ship megabytes to every visitor.
 
-     periods, source_label, source_url and approximate are not asked
-     for yet, on purpose: they arrive with migrations 001 to 003, which
-     the maintainer has not run, and PostgREST refuses a whole query
-     for one column it does not know. Naming them here before the
-     columns exist would blank the overlay for every visitor. When the
-     popup comes to draw them, the select grows and takeRecordFields()
-     above already knows what to do with the answer. */
-  sb.from("cameras")
-    .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key")
-    .eq("visible", true)
+     Then, if the view is not there, the table. The live database has
+     none of the migrations applied, so until migration 012 is run
+     the view does not exist and PostgREST answers 404 - code 42P01
+     from older versions, PGRST205 from newer ones, "could not find
+     the table in the schema cache". That one answer, and only that
+     one, sends the map to the table for the ten columns it has
+     always had: the four newer record fields are left out there,
+     because PostgREST refuses a whole query for one column it does
+     not know, and takeRecordFields() above leaves the seed's values
+     standing for a row without them. Any other error is the seed
+     standing, as it always was.
+
+     When the fallback can go: once migration 012 has been applied
+     and the view seen to answer. It should go then, not merely may:
+     the same migration revokes the table from the anonymous role,
+     so a fallback to it would only fail slower, and the branch would
+     be a second query to keep honest for nothing. */
+  function settle(result) {
+    if (result.error || !Array.isArray(result.data)) {
+      /* The seed stands, and so a camera link by database id has
+         no answer here; say so rather than wait for one. */
+      cameraLinkSettled();
+      return;
+    }
+    cacheCameras(result.data);
+    overlayCameras(result.data);
+  }
+
+  function fromTheTable() {
+    sb.from("cameras")
+      .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key")
+      .eq("visible", true)
+      .limit(5000)
+      .then(settle, function () {
+        cameraLinkSettled();
+      });
+  }
+
+  sb.from("cameras_public")
+    .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key," +
+            "periods,source_label,source_url,approximate")
     .limit(5000)
     .then(function (result) {
-      if (result.error || !Array.isArray(result.data)) {
-        /* The seed stands, and so a camera link by database id has
-           no answer here; say so rather than wait for one. */
-        cameraLinkSettled();
+      if (result.error && viewMissing(result)) {
+        fromTheTable();
         return;
       }
-      cacheCameras(result.data);
-      overlayCameras(result.data);
+      settle(result);
     }, function () {
       cameraLinkSettled();
     });
+}
+
+/* Whether a failed read says the view is not there - as against any
+   other failure, which is the seed standing. PostgREST's code for a
+   relation it cannot find was Postgres's own 42P01, and is PGRST205
+   since version 12; both come with a 404, and supabase-js passes the
+   status through, so the status is the third tell for a version that
+   words it some other way. Nothing else is taken as "missing": a
+   permission refused, say, is 42501 with a 403, and falling back on
+   that would turn a misconfigured view into a silent read of the
+   table it was made to replace. */
+function viewMissing(result) {
+  var code = result.error && result.error.code;
+
+  return code === "42P01" || code === "PGRST205" || result.status === 404;
 }
 
 /* ------------------------------------------------------------------
