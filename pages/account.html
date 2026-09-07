@@ -339,6 +339,36 @@
         <p class="note" id="everywhere-note"></p>
       </div>
 
+      <!-- Leaving. The statement of what goes and what stays comes
+           before the confirmation, which is the username typed out:
+           the button is disabled until it matches. One call on the
+           server, delete_my_account(), which acts on the caller and
+           nobody else. -->
+      <div class="box" id="delete-box">
+        <h3>Delete this account</h3>
+        <p class="hint">
+          <strong>What goes:</strong> the account and its password, your
+          XP, your saved cameras, and every report you sent, with any
+          photo attached to it.
+        </p>
+        <p class="hint">
+          <strong>What stays:</strong> a camera that is on the map because
+          of a report of yours stays on the map. It is part of the record
+          now, and deleting an account does not un-see a camera. It keeps
+          the date it was approved and nothing about you.
+        </p>
+        <p class="hint">
+          The username is released. The same two words may one day be
+          drawn for someone else, and nothing will connect them to this
+          account. There is no undo: a deleted account cannot be
+          recovered, because nothing about it is kept.
+        </p>
+        <label for="delete-confirm">Type your username, <code class="username-inline" id="delete-who"></code>, to confirm</label>
+        <input type="text" id="delete-confirm" autocomplete="off" autocapitalize="none" spellcheck="false">
+        <button id="delete-button" disabled>Delete this account</button>
+        <p class="note" id="delete-note"></p>
+      </div>
+
     </div>
 
     <!-- Shown if the site has no Supabase project set up behind it. -->

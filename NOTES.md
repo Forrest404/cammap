@@ -1272,9 +1272,9 @@ and will print with the list once it exists.
 
 ## Anonymity
 
-What the site keeps about a person: a username of two random words, a password hash, the reports they sent, and their XP. No email, no name, no IP address in any of our tables.
+What the site keeps about a person: a username of two random words, a password hash, the reports they sent, their XP, and one setting - whether they appear on the leaderboard, which is true unless they turn it off. No email, no name, no IP address in any of our tables. All of it can be deleted from the account page, in one call, by the person it is about; what cannot be taken back is a camera their report put on the map, and the page says so before it asks.
 
-Two honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. And a photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Videos are sent as they are, and the page says so.
+Three honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. A photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Videos are sent as they are, and the page says so. And when an account is deleted, its proof files are made unreachable by deleting their rows in the storage table; whether Supabase clears the bytes behind them from the bucket's store at once is theirs to promise, not ours.
 
 ### Changing, leaving and recovering an account
 
@@ -1415,6 +1415,44 @@ to the class, not the page, so Ctrl-P on the account page prints prose
 like every other page and the Wave 1 print view of the map is not
 touched. Checked with `Page.printToPDF` at A4: one page, the card and
 nothing else. Nothing about the card is sent anywhere.
+
+**Deleting the account.** There was no way out but abandonment. A site
+built on collecting nothing should let a person take back the little it
+holds, and be honest about what it cannot take back. The box on the
+account page says both before it asks for anything, and then asks for
+the username typed out; the button is disabled until it matches. One
+call, `delete_my_account()` (migration 008, schema version 2.10): a
+`security definer` function that takes nothing, answers nothing, and
+deletes the `auth.users` row of the account whose token made the call -
+the caller and nobody else. The rest is the cascade the tables already
+declared: the profile, every report the person sent, the proof rows on
+them, the XP awards and the saved list. The proof *files* go by their
+own route, because `storage.objects` references nothing of ours: the
+function deletes the rows under the caller's own prefix, which is what
+makes a file unreachable through the storage API. What stays, and why:
+a camera that is on the map because of that person's report stays on
+the map - it is part of the record now, and deleting a person does not
+un-see a camera - with `source = 'report'`, `approved_at`, `approved_by`
+if a moderator did it, and its `moderation_log` rows, which is what an
+audit of it needs; three columns that point at a person
+(`cameras.approved_by`, `reports.resolved_by`, `moderation_log.actor`)
+are set null rather than cascading, so a moderator's decisions outlive
+the moderator. The reports themselves go rather than staying with the
+person detached, because they are the little the site holds about a
+person - what they reported, where, when, with what photograph - and
+taking that back is the point of leaving; what is lost with them is the
+note and the picture, which were the person's. The username is released
+with the profile row, so the two words may one day be drawn again for
+someone else; nothing would connect them, and a leaderboard row up to
+five minutes old names an account that no longer exists. Afterwards the
+browser still holds a token for an account that does not exist, so the
+page signs out locally whatever the server says to that, and says one
+sentence. What a stranger learns by calling it repeatedly: nothing.
+Proved on a throwaway cluster: the caller's `auth.users` row, profile,
+reports, proof rows and storage objects, XP and saved cameras gone; the
+count of cameras unchanged and their camera still visible; a plain
+`delete from auth.users` or `update profiles` by a client role refused;
+anon refused; the released username drawn again by a new account.
 
 ## Forrest404
 

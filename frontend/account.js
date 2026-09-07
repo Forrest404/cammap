@@ -715,6 +715,101 @@ function changePassword(current, next, onDone) {
     });
 }
 
+/* ---------------- deleting the account ----------------
+
+   There was no way out but abandonment. A site built on collecting
+   nothing should let a person take back the little it holds, and be
+   honest about what it cannot take back - which the box on the
+   account page says in full before it asks for anything.
+
+   One call, delete_my_account(), which takes nothing, answers
+   nothing, and deletes the account whose token made the call: the
+   caller and nobody else. The cascade is the tables' own (see
+   schema.sql, version 2.10): the profile, every report, the proof
+   rows and files, the XP and the saved list go; a camera that a
+   report of theirs put on the map stays, with the date it was
+   approved and nothing about them. What a stranger learns by calling
+   it repeatedly: nothing.
+
+   Afterwards the browser still holds a token for an account that
+   does not exist, so it signs out locally - whatever the server says
+   to that, since the account it would be signing out of is gone -
+   and the page says one sentence. */
+function deleteAccount(onDone) {
+  sb.rpc("delete_my_account").then(function (result) {
+    if (result.error) {
+      onDone(result.error.code === "42883"
+        ? "Deleting is not in the database yet: run backend/migrations/008_delete_account.sql in the SQL editor."
+        : (result.error.message || "That did not go through."));
+      return null;
+    }
+
+    function gone() {
+      forgetSession();
+      onDone(null);
+    }
+
+    return sb.auth.signOut().then(gone, gone);
+  }).catch(function () {
+    onDone("Could not reach the server. Check your connection and try again.");
+  });
+}
+
+/* The "Delete this account" box. The typed confirmation is the
+   person's own username, compared the way sign-in compares it -
+   trimmed, lower-cased - and the button is disabled until it
+   matches, so it cannot be pressed by accident and cannot be pressed
+   for the wrong account. */
+function setUpDeleteAccount() {
+  var input  = document.getElementById("delete-confirm");
+  var button = document.getElementById("delete-button");
+  var note   = document.getElementById("delete-note");
+
+  if (!input || !button) {
+    return;
+  }
+
+  function matches() {
+    return !!currentUser && input.value.trim().toLowerCase() === usernameOf(currentUser);
+  }
+
+  input.oninput = function () {
+    button.disabled = !matches();
+    note.textContent = "";
+  };
+
+  button.onclick = function () {
+    var name = usernameOf(currentUser);
+
+    if (!matches()) {
+      button.disabled = true;
+      return;
+    }
+
+    button.disabled = true;
+    input.disabled = true;
+    note.textContent = "Deleting…";
+
+    deleteAccount(function (problem) {
+      input.disabled = false;
+
+      if (problem) {
+        button.disabled = !matches();
+        note.textContent = problem;
+        return;
+      }
+
+      /* forgetSession() has shown the signed-out half; leave the
+         box ready for whoever signs in next, and say what happened
+         where the person is now looking. */
+      input.value = "";
+      note.textContent = "";
+      sayOnSignedOut("The account " + name + " is deleted, and with it its reports, " +
+        "XP and saved cameras. Cameras it put on the map are still there.");
+    });
+  };
+}
+
 /* One sentence for the signed-out half of the account page, after
    something has ended the session from that page: the person is
    looking at the sign-in form again and should be told why. It takes
@@ -1356,6 +1451,18 @@ function showAccountPage() {
     if (everywhereWho) {
       everywhereWho.textContent = usernameOf(currentUser);
     }
+    /* Likewise the delete box names the account to be typed, and
+       starts empty and disabled for every new sign-in. */
+    var deleteWho = document.getElementById("delete-who");
+    var deleteConfirm = document.getElementById("delete-confirm");
+    var deleteButton = document.getElementById("delete-button");
+    if (deleteWho) {
+      deleteWho.textContent = usernameOf(currentUser);
+    }
+    if (deleteConfirm && deleteButton) {
+      deleteConfirm.value = "";
+      deleteButton.disabled = true;
+    }
     loadLeaderboardSwitch();
   }
 
@@ -1639,6 +1746,7 @@ function setUpAccountPage() {
   showAccountPage();
   setUpChangePassword();
   setUpEverywhere();
+  setUpDeleteAccount();
 
   if (!signupBtn || !signinBtn) {
     return;
