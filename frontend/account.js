@@ -777,6 +777,87 @@ function showSavedList() {
   }
 
   empty.style.display = savedCameras.length === 0 ? "block" : "none";
+
+  /* The state lines need the map's cameras, which arrive after the
+     list is first drawn; the list is drawn again when they do, and
+     never asked for twice. */
+  if (savedCameras.length && !liveCameras && !liveCamerasAsked && configured) {
+    liveCamerasAsked = true;
+    contextCameras(function (rows) {
+      liveCameras = rows;
+      showSavedList();
+    });
+  }
+}
+
+/* ---------------- what a saved camera has since become ----------------
+
+   A saved camera is a copy - name, kind, position - taken the moment
+   the star was pressed, and the table deliberately holds no camera
+   id. That is the right call: an id would be a row saying "this
+   person is interested in this camera", and the list is meant to be
+   the one thing on the site that says nothing about anyone. But a
+   copy is a snapshot, and the map moves on: a camera is marked
+   non-functional, a shop pauses, a moderator takes a pin off the
+   map, and the saved list went on showing what was true the day it
+   was saved.
+
+   So each row is matched, here in the browser, against the cameras
+   the browser already holds for the map - the same rows the map
+   page keeps in storage for five minutes, or the same whole-table
+   read of visible cameras that the report form's picker makes - by
+   kind and position, and the row says what the match says. The
+   database gains nothing: no id, no join, and no query that carries
+   a saved position to the server, because the fetch is the map's
+   own and asks for everything.
+
+   Kind as well as position, for the reason samePlace() gives: North
+   End in Croydon is on the map twice at one set of coordinates, as
+   the fixed install and as the van site, and a shop and a van site
+   are not each other's state. Not the name: a moderator may have
+   corrected a typo, and a rename is not a removal.
+
+   What the line can honestly say. "Since marked non-functional" and
+   "no longer in use" come off the row's status. A van site is legacy
+   by definition (NOTES.md, "What active means"), so legacy says
+   nothing for one. A camera not found at that position and kind is
+   "no longer on the map at this spot" - which is what is known, and
+   deliberately not "removed": a moderator's Move takes a pin to a
+   corrected position, and from here that is the same as a pin taken
+   off. Guessing which would be estimating. The row still links to the
+   map at the saved position, where a person can look. */
+
+var liveCameras = null;        /* the map's visible cameras, once fetched */
+var liveCamerasAsked = false;  /* so the fetch is made at most once a visit */
+
+function savedState(saved) {
+  var wantType = saved.camera_type || "vancam";
+  var lat = Number(saved.lat).toFixed(6);
+  var lon = Number(saved.lon).toFixed(6);
+  var i;
+  var c;
+
+  if (!liveCameras) {
+    return "";
+  }
+
+  for (i = 0; i < liveCameras.length; i++) {
+    c = liveCameras[i];
+    if (c.type !== wantType ||
+        Number(c.lat).toFixed(6) !== lat ||
+        Number(c.lon).toFixed(6) !== lon) {
+      continue;
+    }
+    if (c.status === "nonfunctional" && c.type !== NONFUNCTIONAL_TYPE) {
+      return "Since marked non-functional.";
+    }
+    if (c.status === "legacy" && c.type !== "vancam") {
+      return "Since marked no longer in use.";
+    }
+    return "";
+  }
+
+  return "No longer on the map at this spot.";
 }
 
 function savedRow(saved) {
@@ -805,6 +886,16 @@ function savedRow(saved) {
   coords.textContent = typeLabel(saved.camera_type) + " · " +
     Number(saved.lat).toFixed(4) + ", " + Number(saved.lon).toFixed(4);
   go.appendChild(coords);
+
+  /* What the map says about it now, if that is anything; inside the
+     link, so a screen reader hears it with the name it is about. */
+  var state = savedState(saved);
+  if (state) {
+    var line = document.createElement("span");
+    line.className = "state";
+    line.textContent = state;
+    go.appendChild(line);
+  }
 
   row.appendChild(go);
 

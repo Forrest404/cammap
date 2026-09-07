@@ -1354,6 +1354,26 @@ until the migration is run that refusal would otherwise cost a
 moderator their Moderate link; the box catches it and names the
 migration instead.
 
+**What a saved camera knows.** A saved camera is a copy - name, kind,
+position - taken when the star was pressed, and `saved_cameras` holds
+no camera id, deliberately: an id would be a row saying "this person is
+interested in this camera", on the one list that is meant to say
+nothing about anyone. The copy is kept. What changed is that the list
+on the account page now says what the map says about each row today:
+"Since marked non-functional", "Since marked no longer in use", or "No
+longer on the map at this spot". The matching is done in the browser,
+by kind and position, against the cameras the browser already holds
+for the map - the rows the map page keeps in storage for five minutes,
+or the same whole-table read of visible cameras the report form's
+picker makes - so the database gains no id, no join and no query that
+carries a saved position to it. Kind as well as position because North
+End in Croydon is on the map twice at one set of coordinates; not the
+name, because a corrected typo is not a removal. The third line is
+worded for what is known and no more: a pin a moderator has moved and
+a pin taken off the map look the same from here, and saying "removed"
+would be a guess. The row still links to the map at the saved position.
+Where the cameras cannot be fetched, the lines are simply absent.
+
 ## Forrest404
 
 - Leaderboard

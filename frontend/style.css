@@ -2267,3 +2267,18 @@ label.tick input[type="checkbox"] {
   flex: 0 0 auto;
   margin-top: 4px;
 }
+
+/* What the map now says about a saved camera - "Since marked
+   non-functional." - on its own line under the coordinates, in the
+   accent because it is news, at the coordinates' size because it is
+   a note on the row and not the row. Absent when there is nothing to
+   say, so a list of cameras that are as they were looks as it did. */
+a.saved-goto .state {
+  display: block;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+a.saved-goto:hover .state {
+  color: var(--text);
+}
