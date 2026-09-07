@@ -878,8 +878,9 @@ cannot survive a reload - a blob is not something storage holds at
 that size, and a file input cannot be refilled by script - so the
 line says the photo needs choosing again. Storage may be refused
 outright; every touch of it is wrapped, and refused, the in-memory
-path is all there is and it is enough. The key is a constant in
-`account.js` until it is moved beside the others in `STORAGE`.
+path is all there is and it is enough. The key is
+`STORAGE.reportDraft` in `shared.js`, beside the others, and
+`account.js` reads it from there.
 
 The lock did not move. The reports insert policy needs
 `auth.uid() = user_id`, so nothing on the page could ever send a
@@ -1143,11 +1144,14 @@ the fake's `xp_rules` value for that key and that the fetch is the
 same `loadXpRules()` the form uses.
 
 *Where the keys live.* Two `sessionStorage` keys were added this
-wave, `cammap.report-draft` and `cammap.report-receipt`, as
-constants in `account.js` rather than in `STORAGE` in `shared.js`,
-which is where they belong beside the others; the wave did not edit
-that file. Moving them is two lines in `shared.js` and two
-references in `account.js`.
+wave, `cammap.report-draft` and `cammap.report-receipt`. They live
+in `STORAGE` in `shared.js`, beside the `localStorage` keys, as
+`reportDraft` and `reportReceipt` - the rule being that every key
+the site writes is in that one table - and `account.js` reads them
+from there as `REPORT_DRAFT_KEY` and `REPORT_RECEIPT_KEY`. The wave
+that added them did not edit `shared.js`, so they began as constants
+in `account.js` and were moved at the merge; the comments that said
+so were corrected in the privacy fix round.
 
 ### Moderating at scale
 

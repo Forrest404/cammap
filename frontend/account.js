@@ -2533,9 +2533,10 @@ var UPLOAD_FAILED = "The file could not be uploaded.";
    is this visit's, and a number left on a shared machine would tell
    the next person which report was sent from it. Storage may be
    refused, and then the receipt is shown once and not again, which
-   is what the page did before there was one. The key belongs in
-   STORAGE in shared.js beside the others; the orchestrator moves
-   it.
+   is what the page did before there was one. The key is
+   STORAGE.reportReceipt in shared.js, beside every other key the
+   site writes, and is read from there; REPORT_RECEIPT_KEY below is
+   that value under this file's name for it.
 
    Copying is the Copy-link pattern from map.js: the clipboard API
    where the page has it (it is refused on a page opened off the disk
@@ -2799,9 +2800,11 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
    wrapped; refused, the in-memory path is all there is, and it is
    enough.
 
-   The key is written here rather than in STORAGE in shared.js, which
-   is where it belongs beside the others; this wave does not edit
-   that file, and the orchestrator moves it. */
+   The key is STORAGE.reportDraft in shared.js, beside every other
+   key the site writes, and is read from there; REPORT_DRAFT_KEY is
+   that value under this file's name for it. (It began as a constant
+   here, because the wave that added it did not edit shared.js, and
+   was moved at the merge.) */
 var REPORT_DRAFT_KEY = STORAGE.reportDraft;
 
 var pendingSend = null;   /* what Send would have done, waiting for an account */
