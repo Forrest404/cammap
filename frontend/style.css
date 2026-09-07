@@ -2056,6 +2056,36 @@ ul.queue li.spotlit:focus {
   margin: 0;
 }
 
+/* ---------- what a report is worth ----------
+
+   The XP table on the leaderboard page is a table.board like the
+   boards above it, two columns: words, then a number. The board's
+   own rules right-align and dim its first column, which there is a
+   rank; here it is a sentence, so it goes back to the left in the
+   text colour and is allowed to wrap on a phone. */
+table.board.xp td:first-child {
+  text-align: left;
+  color: var(--text);
+  white-space: normal;
+}
+
+table.board.xp td:nth-child(2) {
+  text-align: right;
+  color: var(--dim);
+}
+
+/* The heading over it sits under the boards' empty line or the last
+   row's rule, and wants a breath of room; so does the line saying
+   where to leave the list, which follows "Nobody yet." or the table
+   with nothing between. */
+#xp-title {
+  margin-top: 28px;
+}
+
+#leave-hint {
+  margin-top: 14px;
+}
+
 /* ------------------------------------------------------------------
    THE WORDS (Wave 4: the words agent writes this block)
 

@@ -114,6 +114,39 @@
       </table>
     </div>
     <p class="empty" id="board-empty" style="display:none">Nobody yet.</p>
+
+    <!-- The leaderboard opt-out lives on the account page; a person
+         looking at this list should be told where, in the words the
+         account page uses. -->
+    <p class="hint" id="leave-hint">
+      You can leave this list from your account page &mdash; <em>On the
+      leaderboard</em>, under <em>Signed in</em>. The points still count.
+    </p>
+
+    <!-- What a report is worth, from the xp_rules table, which anyone
+         may read. The form says the worth of the one report being
+         written; nothing said that a transport camera is worth ten
+         van sites, which is what tells a contributor where the gaps
+         are. account.js fills the rows from the table and never from
+         a number typed here, so a change in the dashboard shows the
+         next time the page loads. -->
+    <h3 id="xp-title">What a report is worth</h3>
+    <p class="hint">
+      Points are given when a report is confirmed &mdash; by a
+      moderator, or by enough other people reporting the same thing.
+      The rarer the kind of camera, the more it is worth; a report
+      that a camera is not working is worth as much as finding one,
+      because it changes what the map says.
+    </p>
+    <div class="table-box">
+      <table class="board xp" aria-labelledby="xp-title">
+        <thead>
+          <tr><th>A confirmed report of</th><th>XP</th></tr>
+        </thead>
+        <tbody id="xp-body"></tbody>
+      </table>
+    </div>
+    <p class="note" id="xp-note"></p>
   </div>
 </main>
 

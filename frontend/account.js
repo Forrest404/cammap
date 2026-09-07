@@ -5938,6 +5938,116 @@ function setUpLeaderboardPage() {
 
   tabs[0].className = "toggle on";
   loadBoard(tabs[0].getAttribute("data-view"));
+  showXpTable();
+}
+
+/* ---------------- what a report is worth ----------------
+
+   The form says what the one report being written is worth, and
+   nothing said that a transport camera is worth fifty and a van site
+   five - which is the thing that tells a contributor where the gaps
+   in the record are. xp_rules is readable by anyone (schema.sql,
+   "xp_rules: read"), so the leaderboard page publishes it: every
+   rule's key as words, and its XP, read off the table on every load
+   and never typed here, so a change made in the dashboard is what
+   the page says the next time it is opened.
+
+   The keys are the schema's: new_<type> for a camera of that kind,
+   status_<claim> for a state report, first_report_bonus once. The
+   kinds are named through typeLabel() like every other label on the
+   site, so a kind renamed in CAMERA_TYPES is renamed here; a key
+   this file does not know is shown as it is rather than dropped,
+   because a rule in the table is a rule. Rows come out in the order
+   the legend uses for the kinds, then the state reports, then the
+   bonus, whatever order the table returns. */
+function xpRuleWords(key) {
+  var m = /^new_(.+)$/.exec(key);
+
+  if (m) {
+    return "A camera the map did not have: " + typeLabel(m[1]);
+  }
+  if (key === "status_nonfunctional") {
+    return "A camera on the map that is not working";
+  }
+  if (key === "status_removed") {
+    return "A camera on the map that has gone";
+  }
+  if (key === "status_active") {
+    return "A camera on the map that is back in use";
+  }
+  if (key === "first_report_bonus") {
+    return "Your first confirmed report, once - a bonus";
+  }
+  return key;
+}
+
+/* Where a key sits: kinds in CAMERA_TYPES order, then the state
+   claims, then the bonus, then anything else. */
+function xpRuleOrder(key) {
+  var m = /^new_(.+)$/.exec(key);
+  var i;
+
+  if (m) {
+    for (i = 0; i < CAMERA_TYPES.length; i++) {
+      if (CAMERA_TYPES[i].type === m[1]) {
+        return i;
+      }
+    }
+    return CAMERA_TYPES.length;
+  }
+  if (/^status_/.test(key)) {
+    return 100 + ["status_nonfunctional", "status_removed", "status_active"].indexOf(key);
+  }
+  if (key === "first_report_bonus") {
+    return 200;
+  }
+  return 300;
+}
+
+function showXpTable() {
+  var body = document.getElementById("xp-body");
+  var note = document.getElementById("xp-note");
+
+  if (!body) {
+    return;
+  }
+  if (!configured) {
+    note.textContent = "The table is not available on this copy of the site.";
+    return;
+  }
+
+  note.textContent = "Loading…";
+
+  loadXpRules(function () {
+    var keys = [];
+    var key;
+    var i;
+    var tr;
+    var td;
+
+    for (key in xpRules) {
+      if (Object.prototype.hasOwnProperty.call(xpRules, key)) {
+        keys.push(key);
+      }
+    }
+    keys.sort(function (a, b) {
+      return xpRuleOrder(a) - xpRuleOrder(b);
+    });
+
+    body.innerHTML = "";
+    for (i = 0; i < keys.length; i++) {
+      tr = document.createElement("tr");
+      td = document.createElement("td");
+      td.textContent = xpRuleWords(keys[i]);
+      tr.appendChild(td);
+      td = document.createElement("td");
+      td.textContent = xpRules[keys[i]];
+      tr.appendChild(td);
+      body.appendChild(tr);
+    }
+
+    note.textContent = keys.length ? "" : "Could not load the table.";
+  });
 }
 
 function loadBoard(view) {

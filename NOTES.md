@@ -931,6 +931,31 @@ on a page opened off the disk and on plain http. The own-duplicate
 refusal now ends "It is listed under Your reports on your account
 page", since there is such a list.
 
+**What a report is worth.** The form said what the one report being
+written was worth, and nothing said that a transport camera is
+worth fifty and a van site five - which is the thing that tells a
+contributor where the gaps in the record are. `xp_rules` is readable
+by anyone, so the leaderboard page now publishes it under the
+boards: each rule's key as words and its XP, read off the table on
+every load and never typed into the page, so a change made in the
+dashboard is what the page says next time. The kinds are named
+through `typeLabel()` like every other label on the site; the two
+state claims and the first-report bonus have sentences of their
+own; a key the page does not know is shown as it is, because a rule
+in the table is a rule. The page also says, in the account page's
+words, where to leave the list - Wave 3's sentence, "You can leave
+this list from your account page - On the leaderboard, under Signed
+in." Checked with the fake client that every number in the table is
+the fake's `xp_rules` value for that key and that the fetch is the
+same `loadXpRules()` the form uses.
+
+*Where the keys live.* Two `sessionStorage` keys were added this
+wave, `cammap.report-draft` and `cammap.report-receipt`, as
+constants in `account.js` rather than in `STORAGE` in `shared.js`,
+which is where they belong beside the others; the wave did not edit
+that file. Moving them is two lines in `shared.js` and two
+references in `account.js`.
+
 ### Moderating at scale
 
 The moderation page was built for a queue of a dozen and will be used,
