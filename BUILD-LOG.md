@@ -108,18 +108,18 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | ACCT-6 | 3 | accounts | verified | f364f1f | matched by kind and position against the map's own whole-table read; no `camera_id` |
 | ACCT-3 | 3 | accounts | verified | 9112dcb | client-side passphrase (47 bits, `crypto.getRandomValues`), one card, prints alone via `body.printing-card`, required tick |
 | ACCT-2 | 3 | accounts | verified | 39416f2 | *migration 008, unapplied*; `delete_my_account()` deletes the caller from `auth.users` (cascade) and their proof objects; cameras from approved reports stay |
-| REP-1 | 4 | reporting | merged | 3cda953 | form for everyone; draft held in memory and sessionStorage; account asked at Send, in place, with the recovery card |
-| REP-6 | 4 | reporting | merged | c6c540c | right-click on the canvas only, 600 ms long-press on touch; `report.html?lat=&lon=` places the pin |
-| REP-2 | 4 | reporting | merged | f2158c2 | *migration 009, unapplied*; `pending_near(lat, lon)` → `(found, days_ago)`, granted to anon; count and identity withheld |
-| REP-4 | 4 | reporting | merged | 5f4cfd7 | up to three, stripped at choose time, sent one by one; partial failure retried without re-choosing |
-| REP-5 | 4 | reporting | merged | 22708c6 | *migration 010, unapplied*; video refused in the form, the `mime` check and the bucket; NOT VALID if old rows exist |
-| REP-3 | 4 | reporting | merged | 906b96c | Your reports, paged with `makePager()`; `#report-<id>` lights a row |
-| REP-8 | 4 | reporting | merged | 542c42d | receipt with the id, copyable, kept in sessionStorage for the sitting |
-| REP-7 | 4 | reporting | merged | 7b59a3e | `xp_rules` rendered on the leaderboard in words; never a typed number |
-| WORD-3 | 4 | words | merged | 2a78770 | `id` per post, `<time datetime>`, a permalink; the rule in the template comment |
-| WORD-4 | 4 | words | merged | 475e9f2 | Atom `feed.xml` with tag-URI ids, linked from all nine heads; W3C validation after a push |
-| WORD-1 | 4 | words | merged | 09c02d5 | About in five sections drawn from NOTES and the record; no count typed; no names |
-| WORD-2 | 4 | words | merged | 45d30c5 | `pages/rights.html`: 54 citations, two claims marked Not confirmed; Rights link in all nine navs; sitemap gains it |
+| REP-1 | 4 | reporting | verified | 3cda953 | form for everyone; draft held in memory and sessionStorage; account asked at Send, in place, with the recovery card |
+| REP-6 | 4 | reporting | verified | c6c540c | right-click on the canvas only, 600 ms long-press on touch; `report.html?lat=&lon=` places the pin |
+| REP-2 | 4 | reporting | verified | f2158c2 | *migration 009, unapplied*; `pending_near(lat, lon)` → `(found, days_ago)`, granted to anon; count and identity withheld |
+| REP-4 | 4 | reporting | verified | 5f4cfd7 | up to three, stripped at choose time, sent one by one; partial failure retried without re-choosing |
+| REP-5 | 4 | reporting | verified | 22708c6 | *migration 010, unapplied*; video refused in the form, the `mime` check and the bucket; NOT VALID if old rows exist |
+| REP-3 | 4 | reporting | verified | 906b96c | Your reports, paged with `makePager()`; `#report-<id>` lights a row |
+| REP-8 | 4 | reporting | verified | 542c42d | receipt with the id, copyable, kept in sessionStorage for the sitting |
+| REP-7 | 4 | reporting | verified | 7b59a3e | `xp_rules` rendered on the leaderboard in words; never a typed number |
+| WORD-3 | 4 | words | verified | 2a78770 | `id` per post, `<time datetime>`, a permalink; the rule in the template comment |
+| WORD-4 | 4 | words | verified | 475e9f2 | Atom `feed.xml` with tag-URI ids, linked from all nine heads; W3C validation after a push |
+| WORD-1 | 4 | words | verified | 09c02d5 | About in five sections drawn from NOTES and the record; no count typed; no names |
+| WORD-2 | 4 | words | verified | 45d30c5 | `pages/rights.html`: 54 citations, two claims marked Not confirmed; Rights link in all nine navs; sitemap gains it |
 | DATA-1 (UI) | 5 | record | todo | | popup source line; null says nothing |
 | DATA-7 (UI) | 5 | record | todo | | approximate drawn differently, legend entry, brightness rule |
 | DATA-8 | 5 | record | todo | | published-record notice on failure/timeout |
@@ -138,8 +138,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | --- | --- |
 | todo | 9 |
 | in-flight | 0 |
-| merged | 12 |
-| verified | 37 |
+| merged | 0 |
+| verified | 49 |
 | blocked | 0 |
 | dropped | 0 |
 
@@ -262,3 +262,24 @@ things for later waves: `pending_near()` carries a fourth copy of the London box
 guard, not a lock) that `stamp.py`'s bounds check does not read — the Wave 6 city agent
 folds it into KEEP-6; and the nav now shows "Report a camera" to a signed-out visitor
 (`renderNav()`), a one-line revert if unwanted.
+
+**Wave 4 summary (verified 2026-09-07).** Landed: the report form open to everyone with
+the draft carried through an in-place sign-up; report-from-the-map by right-click or a
+600 ms long-press; a duplicate notice through `pending_near` (migration 009); up to three
+photos stripped at choose time with a recoverable partial failure; video refused in the
+form, the check and the bucket (migration 010, `NOT VALID` where old rows exist); a paged
+Your reports list; a copyable receipt; the XP table in words. And the words: post anchors
+with `<time>`, an Atom feed from nine heads, About in five sections from the notes, and
+`pages/rights.html` with 54 citations to 35 documents and two claims marked Not confirmed.
+Migrations 009–010 **unapplied**. Changed shape: fragment/comment placement of the feed
+link; `(found, days_ago)`; the nav shows Report a camera signed out. Blocked: nothing.
+Verification: all twelve met; three databases (fresh, upgraded with a video row, upgraded
+without) and the dump diff identical; every rights-page citation fetched (33 × 200, two
+sites refuse scripts); the three shared heads confirmed as the reporting head plus the
+feed link and its comment. One defect, the orchestrator's: comments in `account.js` and
+NOTES still say the report keys await a move into `STORAGE` that had already happened —
+routed to the privacy-server fix agent, which owns those files now. Observation: About
+says LFR "comes in four forms" while the legend has five kinds (the one `privatecam` is a
+closed private estate) — routed to the Wave 5 record agent, one sentence in `about.html`.
+**The privacy pass then ran** (table above) and its fix round is in flight; Wave 5 waits
+for it. Totals after Wave 4: 49 verified, 9 to go.
