@@ -1043,11 +1043,17 @@ function savedState(saved) {
         Number(c.lon).toFixed(6) !== lon) {
       continue;
     }
+    /* "The map now shows", not "since marked": from here it cannot
+       be known whether the shop was already paused, or the camera
+       already broken, on the day the star was pressed - the saved
+       row is a copy of name, kind and position, and deliberately
+       not of state. What is known is what the map says today, so
+       that is what the line says. */
     if (c.status === "nonfunctional" && c.type !== NONFUNCTIONAL_TYPE) {
-      return "Since marked non-functional.";
+      return "The map now shows this as non-functional.";
     }
     if (c.status === "legacy" && c.type !== "vancam") {
-      return "Since marked no longer in use.";
+      return "The map now shows this as no longer in use.";
     }
     return "";
   }
@@ -1480,7 +1486,197 @@ function showAccountPage() {
   }
 
   showSavedList();
+  showMyReports();
 }
+
+/* ---------------- your reports ----------------
+
+   A report used to vanish into a queue. The account page listed
+   saved cameras and an XP number and never what a person had sent or
+   what became of it - though the reports read policy has admitted a
+   person's own rows all along, and the columns a decision writes
+   (state, resolved_at, resolution_note) were there for anyone to
+   read. People who send evidence somewhere want to know it arrived
+   and what was done with it; this is the cheapest retention work the
+   site had available, and the other half of the loop the report form
+   opens.
+
+   The list is a pager, like every list here that can grow (see
+   makePager, which says why), newest first, with the .eq on user_id
+   the reports policy comment asks for: the moderator half of that
+   policy has no column in it, so without the filter a moderator's
+   own page would read the whole table, and with it every visit is
+   one probe of reports_user_created_idx. Each row is the report as it
+   stands - what it was about, when it was sent, its state, the
+   moderator's note when one was left - and a link to the map for one
+   that is on it. The camera a state report is about comes along by
+   its name; a camera since taken off the map comes back null under
+   the cameras read policy, and the row says "camera #id" then, which
+   is what is known.
+
+   #report-<id> in the address is how the receipt on the report page
+   points here: the row with that id is lit and scrolled to once it
+   has loaded, and the pages are loaded on until it is found or the
+   list runs out - the receipt is for the newest report, which is on
+   the first page, but a link kept for a week may not be. */
+
+var myReportsPager = null;
+var MY_REPORTS_COLUMNS = "id,kind,type,status_claim,name,camera_id,lat,lon,state," +
+  "created_at,resolved_at,resolution_note,cameras(id,name)";
+
+/* How far the search for a #report-<id> row will page before giving
+   up: ten pages is three hundred reports, which no one person has
+   sent yet, and a link to one older than that says so. */
+var REVEAL_PAGES = 10;
+
+function showMyReports() {
+  var box = document.getElementById("reports-box");
+
+  if (!box) {
+    return;
+  }
+  box.style.display = currentUser ? "block" : "none";
+  if (!currentUser) {
+    return;
+  }
+
+  if (!myReportsPager) {
+    myReportsPager = makePager({
+      list:   document.getElementById("reports-list"),
+      empty:  document.getElementById("reports-empty"),
+      note:   document.getElementById("reports-note"),
+      more:   document.getElementById("reports-more"),
+      failed: "Could not load your reports.",
+      row:    myReportRow,
+      fetch:  function (offset, onDone) {
+        loadPage(
+          sb.from("reports")
+            .select(MY_REPORTS_COLUMNS)
+            .eq("user_id", currentUser.id)
+            .order("created_at", { ascending: false }),
+          offset, onDone);
+      },
+      onPage: revealWantedReport
+    });
+  }
+  myReportsPager.reset();
+}
+
+/* The state, in the words the person it is addressed to would use.
+   The queue's stateLabel() speaks to a moderator; this speaks to the
+   reporter, and says what each state means for the camera. */
+function myStateWords(state) {
+  return {
+    pending:  "Waiting to be checked",
+    approved: "Accepted - on the map",
+    rejected: "Not accepted",
+    merged:   "Merged - it was a camera already on the map"
+  }[state] || state;
+}
+
+function dateWords(iso) {
+  var d = new Date(iso);
+
+  return isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+}
+
+function myReportRow(r) {
+  var row = document.createElement("li");
+  var head = document.createElement("div");
+  var body = document.createElement("div");
+  var what = document.createElement("strong");
+  var meta = document.createElement("span");
+  var cam = r.cameras;
+
+  row.id = "report-" + r.id;
+  row.setAttribute("tabindex", "-1");
+  head.className = "queue-head";
+  body.className = "queue-body";
+
+  what.textContent = r.kind === "new"
+    ? "New camera: " + typeLabel(r.type) + " — " + (r.name || "")
+    : "State: " + (cam ? cam.name : "camera #" + r.camera_id) + " is " + claimLabel(r.status_claim);
+  head.appendChild(what);
+
+  meta.className = "coords";
+  meta.textContent = "#" + r.id + " · sent " + dateWords(r.created_at) + " · " + myStateWords(r.state) +
+    (r.state !== "pending" && r.resolved_at ? ", " + dateWords(r.resolved_at) : "");
+  head.appendChild(meta);
+
+  /* The moderator's note, when there is one: it is the one thing on
+     this page written to the person by a person, and the reason a
+     rejection is not a closed door. */
+  if (r.resolution_note) {
+    var note = document.createElement("span");
+    note.className = "coords mod-note";
+    note.textContent = "Moderator's note: “" + r.resolution_note + "”";
+    head.appendChild(note);
+  }
+
+  /* A link to the map for a report that is on it. A pending or
+     rejected report has nothing on the map to link to, and a merged
+     one is on it as the camera it merged into, at that camera's
+     position rather than the report's; the report's own coordinates
+     are what is known here, so the link is offered for the accepted
+     ones only. */
+  if (r.state === "approved" || r.state === "merged") {
+    body.appendChild(mapLink(r.lat, r.lon));
+    row.appendChild(head);
+    row.appendChild(body);
+  } else {
+    row.appendChild(head);
+  }
+
+  return row;
+}
+
+/* The row a #report-<id> link asks for, once it is on the page:
+   lit, scrolled to, and given focus so a screen reader lands on it.
+   Called after every page lands; loads the next page while the row
+   is not yet there and there are pages to load, up to REVEAL_PAGES.
+   The address is left as it is, so a reload finds the row again. */
+var revealTries = 0;
+
+function wantedReportId() {
+  var m = /^#report-(\d+)$/.exec(window.location.hash);
+
+  return m ? m[1] : null;
+}
+
+function revealWantedReport() {
+  var id = wantedReportId();
+  var row;
+  var more = document.getElementById("reports-more");
+  var note = document.getElementById("reports-note");
+
+  if (!id || !myReportsPager) {
+    return;
+  }
+  row = document.getElementById("report-" + id);
+  if (row) {
+    row.className = "spotlit";
+    if (row.scrollIntoView) {
+      row.scrollIntoView({ block: "center" });
+    }
+    row.focus({ preventScroll: true });
+    return;
+  }
+  if (more && more.style.display !== "none" && revealTries < REVEAL_PAGES) {
+    revealTries++;
+    myReportsPager.load();
+    return;
+  }
+  if (note) {
+    note.textContent = "Report #" + id + " is not in this list: it may be older than the pages loaded, or not yours.";
+  }
+}
+
+window.addEventListener("hashchange", function () {
+  revealTries = 0;
+  if (PAGE === "account.html") {
+    revealWantedReport();
+  }
+});
 
 /* ---------------- the leaderboard switch ----------------
 

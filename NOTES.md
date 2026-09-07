@@ -877,6 +877,38 @@ decides. The moderation queue's "video →" link stays for exactly
 those rows. What the Anonymity section above used to say about
 video is gone with it.
 
+**Your reports.** The other end of the loop. A report went into a
+queue and nothing was ever heard of it again: the account page
+listed saved cameras and an XP number and never what a person had
+sent or what became of it, though the reports read policy admitted
+a person's own rows all along and the columns a decision writes -
+`state`, `resolved_at`, `resolution_note` - were there to be read.
+People who send evidence somewhere want to know it arrived and what
+was done with it, and this was the cheapest retention work the site
+had. The account page now has *Your reports* under *Saved cameras*:
+a pager, like every list that can grow (Wave 2's `makePager()`, for
+the reason in "Moderating at scale"), newest first, thirty a page
+with *Load more*, and the `.eq` on `user_id` the policy's comment
+asks for - without it a moderator's own page would read the whole
+table. Each row is the report as it stands: what it was about (the
+kind and the name, or the camera and the claim), the day it was
+sent, its state in the reporter's words - waiting to be checked,
+accepted and on the map, not accepted, merged into a camera already
+there - the day it was decided, the moderator's note when one was
+left, and a link to the map for an accepted one. A state report
+about a camera since taken off the map says "camera #id", because
+the cameras read policy returns nothing for a hidden row and that
+number is what is known. `#report-<id>` in the address - the
+receipt's link - lights that row, scrolls to it and gives it focus,
+loading pages on until it is found or ten pages are in; a link to
+one older than that says so rather than loading for ever. While in
+`savedState()`: the saved-camera lines "Since marked non-functional"
+and "Since marked no longer in use" now read "The map now shows this
+as …", because from the browser it cannot be known whether the shop
+was already paused on the day the star was pressed - the saved row
+is a copy of name, kind and position, deliberately not of state -
+and the line should say only what is known.
+
 ### Moderating at scale
 
 The moderation page was built for a queue of a dozen and will be used,

@@ -266,6 +266,33 @@
         </p>
       </div>
 
+      <!-- What you reported, and what became of it. Filled by
+           account.js from the reports table, a page at a time, your
+           own rows only: the read policy would show a moderator
+           everyone's, and the .eq on user_id keeps this list yours
+           and cheap. Each row is the report as it stands - waiting,
+           on the map, not accepted, or merged into a camera already
+           there - with the moderator's note when one was left. The
+           receipt on the report page links here as #report-<id>,
+           and that row is found, lit and scrolled to. -->
+      <div class="box" id="reports-box" style="display:none">
+        <h3>Your reports</h3>
+        <p class="hint">
+          Every report you have sent, newest first, and what became of
+          it. A report waits until a moderator looks or enough other
+          people report the same thing; one that is accepted is on the
+          map; one that is not says why, if the moderator said. Nothing
+          here is visible to anyone but you and the moderators.
+        </p>
+        <ul class="queue" id="reports-list"></ul>
+        <p class="empty" id="reports-empty" style="display:none">
+          Nothing sent yet. <a href="report.html">Report a camera</a> when
+          you see one the map does not have.
+        </p>
+        <p class="note" id="reports-note"></p>
+        <button id="reports-more" class="quiet" style="display:none">Load more</button>
+      </div>
+
       <!-- The leaderboard is public to anyone. The switch is a real
            checkbox in a real label; the server enforces it in the
            view definitions, so the page only reports and asks. -->

@@ -1977,6 +1977,41 @@ ul.proof-list .proof-name {
   row-gap: 8px;
 }
 
+/* ---------- Your reports ----------
+
+   The list on the account page is a ul.queue like the moderation
+   lists, and takes their rules: the strong line, the dim meta line,
+   the body. Two things of its own. The moderator's note is set off
+   from the meta line above it, in the text colour rather than the
+   dim, because it is the one thing on the page written to the person
+   by a person and should read as words rather than as data. And the
+   row a receipt links to (#report-<id>) is lit with a rule in the
+   accent at its left, the way a panel opened in a row is set off
+   under MODERATION, so it can be found in a list of thirty; a row
+   takes focus by script when it is lit, and the outline that would
+   draw on a focused list item is taken off in favour of the rule. */
+ul.queue .mod-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+}
+
+ul.queue li.spotlit {
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
+}
+
+ul.queue li.spotlit:focus {
+  outline: none;
+}
+
+/* A box on the account page holds itself to 42ch; the list of
+   reports is the moderation queue's width, and reads badly folded
+   into a column of that measure. */
+#reports-box {
+  max-width: 68ch;
+}
+
 /* ------------------------------------------------------------------
    THE WORDS (Wave 4: the words agent writes this block)
 
