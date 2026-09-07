@@ -2282,3 +2282,175 @@ a.saved-goto .state {
 a.saved-goto:hover .state {
   color: var(--text);
 }
+
+/* ---------- the recovery card ----------
+
+   A label with a button at its right - Password ... Make me one - on
+   one line. The label keeps its block capitals; the button is the
+   small quiet kind, because it is an offer beside a field and not
+   the form's action. */
+.pw-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pw-head label {
+  flex: 1 1 auto;
+}
+
+button.small {
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+/* The card itself: bordered in the text colour rather than the rule
+   grey, and doubled, so it reads as a thing apart from the panels
+   around it - the one thing on the page meant to leave it. */
+.recovery {
+  margin: 14px 0 12px 0;
+}
+
+.recovery .card {
+  padding: 14px 16px;
+  border: 3px double var(--text);
+}
+
+.recovery .card p {
+  margin: 0;
+}
+
+.recovery .card-title {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.recovery .card-line {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+}
+
+/* Each value on a line of its own under its label, so a passphrase
+   is read whole and not broken beside the word "password" - on
+   screen where it is checked against the field, and on paper where
+   a break at a hyphen would leave the reader guessing. */
+.recovery .card-label {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.recovery .card-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+/* An empty value keeps the line's height, so the card does not grow
+   when the first character of a password is typed. */
+.recovery .card-value:empty::before {
+  content: "\00a0";
+}
+
+.recovery .card-text {
+  margin: 10px 0 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+.recovery .card-site {
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+/* Masked on screen until Show: the card is read over a shoulder more
+   easily than a field. The print rules below always show the plain
+   one; a masked card on paper is no card. */
+.recovery.masked .card-pw-plain {
+  display: none;
+}
+
+.recovery:not(.masked) .card-pw-masked {
+  display: none;
+}
+
+.recovery .card-actions {
+  margin: 10px 0 12px 0;
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* The box the card comes back in after sign-up: the first thing on
+   the signed-in half, and it takes focus after a password change so
+   a keyboard user is brought to it. No ring: it is not a control. */
+#recovery-after:focus {
+  outline: none;
+}
+
+/* ---------- the card on paper ----------
+
+   Only while "Print this card" has put printing-card on <body>. The
+   rest of the page is kept out of the way with visibility rather
+   than display, because the card is a descendant of the sheet and
+   display: none on an ancestor takes the card with it; the sheet is
+   then given no height so the hidden page does not run to a second
+   sheet of paper, and the card is taken out of the flow and put at
+   the top. It is absolutely positioned against the page - nothing
+   between it and <body> is positioned - so the sheet's overflow
+   does not clip it. Scoped to the class: Ctrl-P on the account page
+   prints the page as prose like every other page, and the PAPER
+   rules for the map page are not touched. The palette has already
+   flipped to black on white in the PAPER block, so the card's
+   colours follow.
+
+   One side of paper: the card is 100mm wide and a few lines tall.
+   Each value goes on a line of its own under its label, at a size
+   the longest passphrase the generator makes (42 characters) fits
+   in, so a password is never broken across two lines where a reader
+   would have to guess whether the break was a hyphen. Checked with
+   Page.printToPDF at A4 - one page, the card and nothing else. */
+@media print {
+  body.printing-card .sheet {
+    visibility: hidden;
+    height: 0;
+    overflow: hidden;
+  }
+
+  body.printing-card .recovery .card {
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100mm;
+    max-width: 100%;
+    padding: 6mm 7mm;
+    border: 3pt double var(--text);   /* a double needs three device pixels to be one */
+    break-inside: avoid;
+  }
+
+  body.printing-card .recovery .card * {
+    visibility: visible;
+  }
+
+  body.printing-card .recovery .card .card-value {
+    font-size: 11pt;
+    color: var(--text);
+  }
+
+  body.printing-card .recovery .card .card-pw-plain {
+    display: block;
+  }
+
+  body.printing-card .recovery .card .card-pw-masked {
+    display: none;
+  }
+}

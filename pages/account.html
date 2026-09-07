@@ -123,25 +123,72 @@
 
       <div class="account-forms">
 
-        <div class="box">
+        <div class="box" id="signup-box">
           <h3>Make an account</h3>
 
-          <p class="hint">Your username. Save it somewhere: it is the
-            only way back in, and there is nothing to send a reminder to.</p>
+          <p class="hint">Your username. It is the only way back in, and
+            there is nothing to send a reminder to &mdash; so the card
+            below is for keeping.</p>
 
           <div class="username-row">
             <code id="new-username" class="username-big">&hellip;</code>
             <button id="reroll-button" class="quiet" title="Pick a different one">Another</button>
           </div>
 
-          <label for="new-password">Password</label>
+          <!-- "Make me one" writes a passphrase into both fields, made
+               here in the browser from the same word lists the username
+               comes from; account.js says how random it is. -->
+          <div class="pw-head">
+            <label for="new-password">Password</label>
+            <button id="passphrase-button" class="quiet small" type="button">Make me one</button>
+          </div>
           <input type="password" id="new-password" autocomplete="new-password">
           <label for="new-password-again">Password again</label>
           <input type="password" id="new-password-again" autocomplete="new-password">
           <p class="hint">At least 10 characters, with a capital, a number
-            and a symbol.</p>
+            and a symbol. Or press <em>Make me one</em>: five random words
+            and a number, easier to keep than it looks and harder to guess
+            than most passwords.</p>
 
-          <button id="signup-button">Make the account</button>
+          <!-- The recovery card. One element, moved by account.js into
+               the signed-in half once the account exists, because the
+               password is never shown again after that. Nothing on it
+               leaves the browser. Print this card prints it alone, on
+               one side of paper, through body.printing-card and the
+               ACCOUNTS print rules in style.css. -->
+          <div class="recovery masked" id="recovery">
+            <div class="card" id="recovery-card" role="group" aria-labelledby="card-title">
+              <p class="card-title" id="card-title">cammap &middot; recovery card</p>
+              <p class="card-line">
+                <span class="card-label">Username</span>
+                <code class="card-value" id="card-username"></code>
+              </p>
+              <p class="card-line">
+                <span class="card-label">Password</span>
+                <code class="card-value card-pw-plain" id="card-password"></code>
+                <code class="card-value card-pw-masked" id="card-password-masked" aria-hidden="true"></code>
+              </p>
+              <p class="card-text">
+                This is the only way back into the account. There is no
+                email on it, so nothing can be sent and nothing can be
+                reset. Keep this somewhere safe, and destroy it when you
+                no longer need it.
+              </p>
+              <p class="card-text card-site" id="card-site"></p>
+            </div>
+            <div class="row card-actions">
+              <button id="print-card-button" class="quiet" type="button" disabled>Print this card</button>
+              <button id="show-password-button" class="quiet" type="button" aria-pressed="false">Show</button>
+            </div>
+            <label class="tick" for="saved-tick">
+              <input type="checkbox" id="saved-tick">
+              <span>I have saved my username and password somewhere
+                &mdash; this card printed, written down, or in a password
+                manager.</span>
+            </label>
+          </div>
+
+          <button id="signup-button" disabled>Make the account</button>
           <p class="note" id="signup-note"></p>
         </div>
 
@@ -172,6 +219,16 @@
     <div id="account-signedin" style="display:none">
 
       <h2>Signed in</h2>
+
+      <!-- The card again, straight after sign-up or a password change,
+           in case it was not kept a moment ago: after this the
+           password is never shown. account.js moves #recovery in
+           here and ticking the box puts it away. -->
+      <div class="box" id="recovery-after" style="display:none">
+        <h3>Your recovery card</h3>
+        <p class="hint" id="recovery-after-hint"></p>
+        <div id="recovery-after-home"></div>
+      </div>
 
       <p>
         You are <code id="account-username" class="username-big"></code>
@@ -240,7 +297,10 @@
         </p>
         <label for="pw-current">Current password</label>
         <input type="password" id="pw-current" autocomplete="current-password">
-        <label for="pw-new">New password</label>
+        <div class="pw-head">
+          <label for="pw-new">New password</label>
+          <button id="pw-passphrase-button" class="quiet small" type="button">Make me one</button>
+        </div>
         <input type="password" id="pw-new" autocomplete="new-password">
         <label for="pw-new-again">New password again</label>
         <input type="password" id="pw-new-again" autocomplete="new-password">

@@ -1374,6 +1374,48 @@ a pin taken off the map look the same from here, and saying "removed"
 would be a guess. The row still links to the map at the saved position.
 Where the cameras cannot be fetched, the lines are simply absent.
 
+**The recovery card.** Sign-up showed the username and warned, in a
+hint, that it was the only way back in and nothing could be reset.
+True, and not enough: lockout is the predictable cost of an account
+with no email, and a cost that is predictable should be designed for,
+not disclosed. Two things were built, both entirely in the browser.
+*Make me one* fills both password fields with a passphrase - five
+words from the two lists the username is drawn from, the first
+capitalised, hyphens between, a number on the end,
+`Copper-heron-tidal-marsh-glen-42` - which passes the dashboard's rule
+and can be read off a card and typed. How random it is: the lists
+together hold 274 distinct words, so five draws are 40.5 bits and the
+number adds 6.6, about 47 bits, all from `crypto.getRandomValues`
+through a draw that discards the uneven top of the 32-bit range so no
+word is favoured; without that source nothing is made and the person
+is told to choose their own, because `Math.random` is not a source for
+a password. The person may keep it or type over it. Then *the card*: a
+box in the sign-up form showing the username and the password as it
+stands, masked until *Show* is pressed because a card is read over a
+shoulder more easily than a field, with the site's address worked out
+from the page's own location rather than typed (so it is not one more
+copy of the address to keep in step), a *Print this card* button, and a
+real checkbox, "I have saved my username and password somewhere",
+without which *Make the account* stays disabled. Print is offered only
+for a password the server would accept and both fields agree on. The
+same card is shown once more straight after sign-up, and after a
+password change, at the top of the signed-in half with the same tick,
+because after that the password is never shown again; the tick puts it
+away and the password is forgotten with it, and so does a session
+ending with the card still out, so a password is never left on the
+screen of a machine someone has walked away from. It is one element,
+`#recovery`, moved between its two homes. Printing puts
+`printing-card` on `<body>` around `window.print()` and takes it off on
+`afterprint`; while it is there the ACCOUNTS print rules in `style.css`
+hide the sheet with `visibility` (the card is inside it, so `display`
+would take the card too), give the sheet no height so the hidden page
+does not run to a second sheet, and place the card alone at the top,
+90mm wide, password plain - a masked card on paper is no card. Scoped
+to the class, not the page, so Ctrl-P on the account page prints prose
+like every other page and the Wave 1 print view of the map is not
+touched. Checked with `Page.printToPDF` at A4: one page, the card and
+nothing else. Nothing about the card is sent anywhere.
+
 ## Forrest404
 
 - Leaderboard

@@ -116,6 +116,93 @@ function passwordProblem(pw) {
   return "";
 }
 
+/* ---------------- a passphrase, made here ----------------
+
+   Lockout is the predictable cost of the anonymity choice: with no
+   email there is no reset, so the password is the whole of the way
+   back in, and a password a person makes up on the spot is either
+   weak or forgotten. So the sign-up form offers to make one: five
+   words from the same two lists the username is drawn from, the
+   first capitalised, hyphens between, and a number on the end -
+   "Copper-heron-tidal-marsh-glen-42". That passes the dashboard's
+   rule (a capital, lower case, a digit, and the hyphens are the
+   symbols) and it is the kind of thing a person can read off a card
+   and type.
+
+   How random it is, so nobody has to take it on trust. The two lists
+   together hold 274 distinct words (one, birch, is in both, and is
+   counted once), so five draws are 5 x log2(274) = 40.5 bits, and the
+   number, 0 to 99, adds log2(100) = 6.6: about 47 bits in all, every
+   one of them from crypto.getRandomValues. Which word is capitalised
+   is fixed and adds nothing. For scale, a ten-character password of
+   the shape the rule asks for, chosen by a person, is usually
+   reckoned at 30 bits or fewer. A guess against the sign-in form is
+   rate-limited by Supabase; 47 bits is well beyond an offline
+   attack's patience for a hash bcrypt made, which is what Supabase
+   stores.
+
+   randomBelow() takes a 32-bit value and throws away the top of the
+   range that does not divide evenly, so no word is more likely than
+   another - pickFrom() uses a plain modulo, which for a username is
+   fine and for a password is a bias worth the three extra lines.
+   Without crypto.getRandomValues nothing is made: Math.random is not
+   a source for a password, and the person is told to choose their
+   own rather than handed a weak one that looks strong. */
+var PASSPHRASE_WORDS = 5;
+
+function randomBelow(n) {
+  var buf = new Uint32Array(1);
+  var limit = Math.floor(4294967296 / n) * n;
+
+  do {
+    window.crypto.getRandomValues(buf);
+  } while (buf[0] >= limit);
+
+  return buf[0] % n;
+}
+
+/* The two lists as one, each word once. Built on first use. */
+var passphraseWords = null;
+
+function passphraseList() {
+  var seen = {};
+  var all = WORDS_A.concat(WORDS_B);
+  var i;
+
+  if (passphraseWords) {
+    return passphraseWords;
+  }
+  passphraseWords = [];
+  for (i = 0; i < all.length; i++) {
+    if (!seen[all[i]]) {
+      seen[all[i]] = true;
+      passphraseWords.push(all[i]);
+    }
+  }
+  return passphraseWords;
+}
+
+/* A passphrase, or null where the browser has no safe randomness. */
+function makePassphrase() {
+  var words;
+  var picked = [];
+  var i;
+
+  if (!(window.crypto && window.crypto.getRandomValues)) {
+    return null;
+  }
+
+  words = passphraseList();
+  for (i = 0; i < PASSPHRASE_WORDS; i++) {
+    picked.push(words[randomBelow(words.length)]);
+  }
+  picked[0] = picked[0].charAt(0).toUpperCase() + picked[0].slice(1);
+
+  return picked.join("-") + "-" + randomBelow(100);
+}
+
+var NO_PASSPHRASE = "This browser cannot make a safe one; choose a password of your own.";
+
 var sb = null;            /* the Supabase client, once created */
 var configured = false;   /* true once sb exists and looks usable */
 var currentUser = null;   /* the signed-in user, or null */
@@ -1008,6 +1095,226 @@ function redrawSaved() {
 }
 
 /* ------------------------------------------------------------------
+   The recovery card
+
+   Sign-up used to show the username and warn, in a hint, that it was
+   the only way back in and nothing could be reset. True, and not
+   enough: lockout is the predictable cost of an account with no
+   email, and a cost that is predictable should be designed for, not
+   disclosed. So the sign-up box carries a card - the username and
+   the password, as typed or as made - with a button that prints it
+   alone on one side of paper, and a tick, "I have saved my username
+   and password somewhere", without which the account is not made.
+   The card is a thing to hold before the account exists, because
+   after sign-up the password is never shown again.
+
+   It is shown once more straight after sign-up, and after a password
+   change, in a box at the top of the signed-in half with the same
+   tick, in case it was not kept a moment ago; the tick puts it away
+   and the password is forgotten with it. It is one element, #recovery,
+   moved between the two homes, so there is one card to keep right.
+   Nothing on it leaves the browser: the values are read off the form
+   and written into the page, and the site's own address on it is
+   worked out from the page's location rather than typed, so it is
+   not one more copy of the address to keep in step.
+
+   On screen the password on the card is masked until Show is
+   pressed, as the fields are, because a card is read over a shoulder
+   more easily than a field. On paper it is always plain - a masked
+   card is no card - which the ACCOUNTS print rules see to.
+
+   Printing: "Print this card" puts printing-card on <body> and calls
+   window.print(); the print rules hide everything else while the
+   class is there, and afterprint takes it off. Scoped to the class
+   rather than to the page, so Ctrl-P on the account page still
+   prints the page as prose, as every other page does, and the Wave 1
+   print view of the map is untouched.
+   ------------------------------------------------------------------ */
+
+var CARD_MASK = "••••••••••••";
+
+/* Where the card is and what its tick means: "signup" - in the
+   sign-up box, the tick gates Make the account; "after" - in the
+   signed-in half, the tick puts it away. */
+var cardMode = "signup";
+
+function fillCard(username, password) {
+  var user = document.getElementById("card-username");
+  var plain = document.getElementById("card-password");
+  var masked = document.getElementById("card-password-masked");
+  var site = document.getElementById("card-site");
+
+  if (!user || !plain || !masked) {
+    return;
+  }
+  user.textContent = username || "";
+  plain.textContent = password || "";
+  masked.textContent = password ? CARD_MASK : "";
+  if (site) {
+    site.textContent = siteAddress();
+  }
+}
+
+/* The map's address, from where this page is: "https://.../cammap/"
+   on Pages, the server's own address when served locally. Not typed,
+   so a move of the site does not leave a wrong address on a card. */
+function siteAddress() {
+  var a = document.createElement("a");
+
+  a.href = pageHref("index.html");
+  return a.href.replace(/index\.html$/, "");
+}
+
+/* Masked or plain, on the card and - while it is in the sign-up box -
+   in the two password fields, which say the same thing. */
+function setCardMasked(on) {
+  var wrap = document.getElementById("recovery");
+  var show = document.getElementById("show-password-button");
+  var newPw = document.getElementById("new-password");
+  var newPw2 = document.getElementById("new-password-again");
+
+  if (!wrap) {
+    return;
+  }
+  wrap.className = on ? "recovery masked" : "recovery";
+  if (show) {
+    show.textContent = on ? "Show" : "Hide";
+    show.setAttribute("aria-pressed", on ? "false" : "true");
+  }
+  if (cardMode === "signup" && newPw && newPw2) {
+    newPw.type = on ? "password" : "text";
+    newPw2.type = on ? "password" : "text";
+  }
+}
+
+function cardMasked() {
+  var wrap = document.getElementById("recovery");
+  return !wrap || wrap.className.indexOf("masked") !== -1;
+}
+
+/* The card in the sign-up box follows the form: the username shown,
+   the password as it stands. Print is offered only for a password
+   the server would accept and that both fields agree on, because a
+   printed card with a password the account will not have is worse
+   than none. */
+function refreshSignupCard() {
+  var shown = document.getElementById("new-username");
+  var newPw = document.getElementById("new-password");
+  var newPw2 = document.getElementById("new-password-again");
+  var print = document.getElementById("print-card-button");
+  var usable;
+
+  if (cardMode !== "signup" || !shown || !newPw || !newPw2) {
+    return;
+  }
+  fillCard(shown.textContent, newPw.value);
+  usable = passwordProblem(newPw.value) === "" && newPw.value === newPw2.value;
+  if (print) {
+    print.disabled = !usable;
+  }
+}
+
+/* The card into the signed-in half, filled with the account as it
+   now is. Called after sign-up and after a password change, with a
+   sentence for each. */
+function offerCard(username, password, hint) {
+  var wrap = document.getElementById("recovery");
+  var box = document.getElementById("recovery-after");
+  var home = document.getElementById("recovery-after-home");
+  var line = document.getElementById("recovery-after-hint");
+  var tick = document.getElementById("saved-tick");
+  var print = document.getElementById("print-card-button");
+
+  if (!wrap || !box || !home) {
+    return;
+  }
+  cardMode = "after";
+  home.appendChild(wrap);
+  fillCard(username, password);
+  setCardMasked(cardMasked());
+  if (tick) {
+    tick.checked = false;
+  }
+  if (print) {
+    print.disabled = false;
+  }
+  if (line) {
+    line.textContent = hint;
+  }
+  box.style.display = "block";
+}
+
+/* Back to the sign-up box, emptied. The password is forgotten here:
+   this runs when the tick is made in the signed-in half, and when a
+   session ends with the card still out, so a password is never left
+   on the screen of a machine someone has walked away from. */
+function putCardAway() {
+  var wrap = document.getElementById("recovery");
+  var box = document.getElementById("recovery-after");
+  var signupBtn = document.getElementById("signup-button");
+  var tick = document.getElementById("saved-tick");
+
+  if (!wrap || !signupBtn) {
+    return;
+  }
+  cardMode = "signup";
+  signupBtn.parentNode.insertBefore(wrap, signupBtn);
+  fillCard("", "");
+  if (tick) {
+    tick.checked = false;
+  }
+  signupBtn.disabled = true;
+  setCardMasked(true);
+  if (box) {
+    box.style.display = "none";
+  }
+  refreshSignupCard();
+}
+
+function printCard() {
+  if (document.body.className.indexOf("printing-card") === -1) {
+    document.body.className += " printing-card";
+  }
+  window.print();
+}
+
+/* Wired once, whichever home the card is in: the buttons and the
+   tick travel with it. */
+function setUpRecoveryCard() {
+  var tick = document.getElementById("saved-tick");
+  var print = document.getElementById("print-card-button");
+  var show = document.getElementById("show-password-button");
+  var signupBtn = document.getElementById("signup-button");
+
+  if (!tick || !print || !show || !signupBtn) {
+    return;
+  }
+
+  tick.onchange = function () {
+    if (cardMode === "signup") {
+      signupBtn.disabled = !tick.checked;
+      return;
+    }
+    if (tick.checked) {
+      putCardAway();
+    }
+  };
+
+  show.onclick = function () {
+    setCardMasked(!cardMasked());
+  };
+
+  print.onclick = printCard;
+
+  window.addEventListener("afterprint", function () {
+    document.body.className = document.body.className.replace(/\s*\bprinting-card\b/, "");
+  });
+
+  fillCard("", "");
+  setCardMasked(true);
+}
+
+/* ------------------------------------------------------------------
    The account page
    ------------------------------------------------------------------ */
 
@@ -1029,6 +1336,13 @@ function showAccountPage() {
 
   outMsg.style.display = currentUser ? "none" : "block";
   inMsg.style.display  = currentUser ? "block" : "none";
+
+  /* A session that ended with the recovery card still out - a sign
+     out, everywhere or here - must not leave a password on the
+     screen. */
+  if (!currentUser && cardMode === "after") {
+    putCardAway();
+  }
 
   if (currentUser && who) {
     who.textContent = usernameOf(currentUser);
@@ -1148,9 +1462,30 @@ function setUpChangePassword() {
   var again   = document.getElementById("pw-new-again");
   var button  = document.getElementById("pw-button");
   var note    = document.getElementById("pw-note");
+  var passphrase = document.getElementById("pw-passphrase-button");
 
   if (!current || !next || !again || !button) {
     return;
+  }
+
+  /* The same passphrase the sign-up form offers, into both new
+     fields, shown so it can be read. There is no Hide here: the
+     fields are emptied once the change goes through. */
+  if (passphrase) {
+    passphrase.onclick = function () {
+      var made = makePassphrase();
+
+      note.textContent = "";
+      if (!made) {
+        note.textContent = NO_PASSPHRASE;
+        return;
+      }
+      next.value = made;
+      again.value = made;
+      next.type = "text";
+      again.type = "text";
+      next.focus();
+    };
   }
 
   button.onclick = function () {
@@ -1187,6 +1522,8 @@ function setUpChangePassword() {
     note.textContent = "Checking the current password…";
 
     changePassword(current.value, next.value, function (error) {
+      var changed = next.value;
+
       button.disabled = false;
 
       if (error) {
@@ -1198,7 +1535,21 @@ function setUpChangePassword() {
       current.value = "";
       next.value = "";
       again.value = "";
+      next.type = "password";
+      again.type = "password";
       note.textContent = "Password changed.";
+
+      /* The old card is wrong now. Offer the new one, at the top of
+         the page, with the same tick to put it away. */
+      offerCard(usernameOf(currentUser), changed,
+        "The password is changed, and this is the only time the new one is shown. " +
+        "A card printed before now is out of date.");
+      window.scrollTo(0, 0);
+      var box = document.getElementById("recovery-after");
+      if (box) {
+        box.setAttribute("tabindex", "-1");
+        box.focus();
+      }
     });
   };
 
@@ -1280,7 +1631,11 @@ function setUpAccountPage() {
   var signinBtn  = document.getElementById("signin-button");
   var signinNote = document.getElementById("signin-note");
 
+  var passphrase = document.getElementById("passphrase-button");
+  var tick       = document.getElementById("saved-tick");
+
   setUpLeaderboardSwitch();
+  setUpRecoveryCard();
   showAccountPage();
   setUpChangePassword();
   setUpEverywhere();
@@ -1292,17 +1647,49 @@ function setUpAccountPage() {
   /* -------- making an account -------- */
 
   shown.textContent = generateUsername();
+  refreshSignupCard();
 
   reroll.onclick = function () {
     shown.textContent = generateUsername();
     signupNote.textContent = "";
+    refreshSignupCard();
   };
+
+  /* Both fields at once, and shown rather than masked while it is
+     being read: a passphrase the person cannot see is one they
+     cannot copy down. They may keep it or type over it. */
+  passphrase.onclick = function () {
+    var made = makePassphrase();
+
+    signupNote.textContent = "";
+    if (!made) {
+      signupNote.textContent = NO_PASSPHRASE;
+      return;
+    }
+    newPw.value = made;
+    newPw2.value = made;
+    setCardMasked(false);
+    refreshSignupCard();
+    newPw.focus();
+  };
+
+  newPw.oninput = refreshSignupCard;
+  newPw2.oninput = refreshSignupCard;
 
   signupBtn.onclick = function () {
     var username = shown.textContent;
-    var problem = passwordProblem(newPw.value);
+    var password = newPw.value;
+    var problem = passwordProblem(password);
 
     signupNote.textContent = "";
+
+    /* The button is disabled until the tick is made; this is for a
+       press that reached it another way. */
+    if (!tick.checked) {
+      signupNote.textContent = "Tick the box once you have saved your username and password.";
+      tick.focus();
+      return;
+    }
 
     if (problem) {
       signupNote.textContent = problem;
@@ -1310,7 +1697,7 @@ function setUpAccountPage() {
       return;
     }
 
-    if (newPw.value !== newPw2.value) {
+    if (password !== newPw2.value) {
       signupNote.textContent = "The two passwords do not match.";
       newPw2.focus();
       return;
@@ -1320,7 +1707,7 @@ function setUpAccountPage() {
     reroll.disabled = true;
     signupNote.textContent = "Making the account…";
 
-    signUp(username, newPw.value, function (error, finalName) {
+    signUp(username, password, function (error, finalName) {
       signupBtn.disabled = false;
       reroll.disabled = false;
 
@@ -1330,11 +1717,17 @@ function setUpAccountPage() {
       }
 
       /* If the shown name was taken and a fresh one used instead,
-         the person must see the one they actually got. */
+         the person must see the one they actually got - on the card,
+         which is where it now matters. The fields are emptied, and
+         the card carries the password until the tick puts it away. */
       shown.textContent = finalName;
       newPw.value = "";
       newPw2.value = "";
       signupNote.textContent = "";
+      offerCard(finalName, password,
+        "The account is made. This is the last time the password is shown: " +
+        "it cannot be reset, and after this page it is never shown again. " +
+        "If you did not keep the card a moment ago, keep it now.");
       showAccountPage();
     });
   };
