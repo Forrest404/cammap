@@ -1015,9 +1015,9 @@ function tidy(list) {
       /* The four fields the record grew after the eight above, carried
          through as they are so that nothing between the file and the
          page loses them: the ?edit export writes them back out, and
-         the popup will read them once it draws provenance. None of
-         them is drawn yet. A draft saved before the fields existed, or
-         a hand-typed entry, has none, and gets the same defaults the
+         the popup cites the source (sourceRow()). approximate is not
+         drawn yet. A draft saved before the fields existed, or a
+         hand-typed entry, has none, and gets the same defaults the
          build script gives a blank cell - null, null, null, false -
          never a plausible value.
 
@@ -1927,6 +1927,12 @@ function popupFor(point) {
     box.appendChild(document.createTextNode(point.note));
   }
 
+  /* Where the entry comes from, when the record says. Absent
+     otherwise - see sourceRow(). */
+  if (point.source_label) {
+    box.appendChild(sourceRow(point));
+  }
+
   box.appendChild(document.createElement("br"));
   var coords = document.createElement("span");
   coords.textContent = point.lat.toFixed(4) + ", " + point.lon.toFixed(4);
@@ -1980,6 +1986,66 @@ function popupFor(point) {
   }
 
   return box;
+}
+
+/* ---------------- where an entry comes from ----------------
+
+   "Source: Met Police LFR deployment record, 2025", under the note,
+   with the label linked to the document where the record has one.
+   This is the line that turns a dot from a claim into a citation: a
+   visitor who doubts a van site can open the Met's own PDF and find
+   the row. The label is source_label as the record gives it and the
+   link is source_url, both carried from data/cameras.csv through
+   points.js (tidy()) or, once the database has answered through the
+   view, from the row (takeRecordFields()).
+
+   Where the record has no source the row is not drawn. Not "Source:
+   unknown", not "official records" - nothing. A vague line would be
+   worse than none on a map whose argument is that nothing on it is
+   estimated; a null in the record is the record saying it does not
+   know, and the popup says the same by saying nothing. Today every
+   row of the published record carries a label, so the absent case is
+   a camera that came from a report (the database's row has no
+   source_label) or a hand-typed entry in ?edit, and those say
+   nothing, correctly. A label with no URL - none in the record
+   today, but the CSV allows it - is shown as text: the record names
+   the document without saying where it is.
+
+   The link opens in a new tab, as the footer's Donate link does: a
+   PDF from the Met in the map's own tab would take the visitor away
+   from the popup they were reading, and the back button would land
+   them on a map that has forgotten it. rel="noopener noreferrer" for
+   the reason every external link here carries it. Plain text and a
+   plain link, in the popup's tab order after the close button and
+   before Copy link, because that is where it sits on the screen.
+
+   The list row does not repeat it. Its spoken text says the kind and
+   the state after the name (rowFor()), and the note it reads next
+   already names the record in prose for every Met and BTP entry -
+   "Met Police LFR van - 3 deployments 2023-2025" - so a citation on
+   every row would read the same words twice to a screen reader
+   skimming a hundred and eighty rows. The popup is where the link
+   is, and a row's button opens the popup. */
+function sourceRow(point) {
+  var row = document.createElement("span");
+  var link;
+
+  row.className = "kind source";
+  row.appendChild(document.createTextNode("Source: "));
+
+  if (point.source_url) {
+    link = document.createElement("a");
+    link.href = point.source_url;
+    link.textContent = point.source_label;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.title = "The record this entry rests on, in a new tab";
+    row.appendChild(link);
+  } else {
+    row.appendChild(document.createTextNode(point.source_label));
+  }
+
+  return row;
 }
 
 /* The address a link to this page starts with: what is in the bar,

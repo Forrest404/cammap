@@ -2184,11 +2184,32 @@ article.post {
 /* ------------------------------------------------------------------
    THE RECORD (Wave 5: the record agent writes this block)
 
-   Rules for the popup's source line, the approximate marker's legend
-   entry, the published-record notice, the download line in the footer,
-   the period scrubber, and the press and API pages. If the agent needs
-   no rule here, this block is removed rather than left empty.
+   What makes the record legible on the page: the popup's source line,
+   the approximate marker's legend entry, the published-record notice,
+   the download line in the footer, the period scrubber, and the press
+   and data pages. Each rule says why it is here; the reasoning that
+   did not fit is under "Provenance and the record on the page" in
+   NOTES.md.
    ------------------------------------------------------------------ */
+
+/* ---------- the source line in the popup ----------
+
+   "Source: Met Police LFR deployment record, 2025", under the note.
+   It wears the popup's dim caption voice (.kind) because it is a
+   citation and not a call to action - the accent in the popup is for
+   Copy link and Report its state, the things a visitor does - and its
+   link is styled as the rights page styles a citation (.prose a.cite):
+   underlined, dim, the text colour on hover. --dim is 5.6:1 on the
+   page, so the link is a link to the eye and reads at the ratio the
+   header promises. It is a link, so the KEYBOARD FOCUS ring covers it
+   like any other. */
+.maplibregl-popup-content .source a {
+  color: var(--dim);
+}
+
+.maplibregl-popup-content .source a:hover {
+  color: var(--text);
+}
 
 /* ------------------------------------------------------------------
    PAPER
