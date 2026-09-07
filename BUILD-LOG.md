@@ -102,12 +102,12 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | MAP-9 | 3 | map-a11y | merged | b846003 | canvas kept focusable as `role=application` with a label naming the list (aria-hidden on a focusable element is a violation); list region labelled; hidden `role=status` count |
 | MAP-6 | 3 | map-a11y | merged | d72884d | an `[only]` button per legend key; solo derived from the hidden set; Legacy switched on for an all-legacy kind, and back |
 | WORD-6 | 3 | map-a11y | merged | c846abb | `<details open>` under the legend; `STORAGE.explained`; open every visit where storage is refused |
-| ACCT-5 | 3 | accounts | in-flight | | sign out everywhere |
-| ACCT-1 | 3 | accounts | in-flight | | change password, current password required |
-| ACCT-4 | 3 | accounts | in-flight | | *migration*; leaderboards are materialized views, so the opt-out is enforced in their definition, not RLS — see QUESTIONS |
-| ACCT-6 | 3 | accounts | in-flight | | match on position client-side |
-| ACCT-3 | 3 | accounts | in-flight | | printable recovery card |
-| ACCT-2 | 3 | accounts | in-flight | | *migration*; delete account |
+| ACCT-5 | 3 | accounts | merged | d267d2b | `signOut({scope:"global"})` behind an in-page confirmation; bounded by JWT expiry |
+| ACCT-1 | 3 | accounts | merged | 7937f93 | re-authenticate with the current password, then `updateUser` |
+| ACCT-4 | 3 | accounts | merged | a741f86 | *migration 007, unapplied*; `show_on_leaderboard` in the three view definitions (RLS does not reach a materialized view); `set_leaderboard_visibility()` acts on the caller only |
+| ACCT-6 | 3 | accounts | merged | f364f1f | matched by kind and position against the map's own whole-table read; no `camera_id` |
+| ACCT-3 | 3 | accounts | merged | 9112dcb | client-side passphrase (47 bits, `crypto.getRandomValues`), one card, prints alone via `body.printing-card`, required tick |
+| ACCT-2 | 3 | accounts | merged | 39416f2 | *migration 008, unapplied*; `delete_my_account()` deletes the caller from `auth.users` (cascade) and their proof objects; cameras from approved reports stay |
 | REP-1 | 4 | reporting | todo | | form for everyone, account at submit |
 | REP-6 | 4 | reporting | todo | | long-press / right-click on the map → report with pin |
 | REP-2 | 4 | reporting | todo | | *migration* likely; cell check without leaking who |
@@ -137,8 +137,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | Status | Count |
 | --- | --- |
 | todo | 21 |
-| in-flight | 6 |
-| merged | 4 |
+| in-flight | 0 |
+| merged | 10 |
 | verified | 27 |
 | blocked | 0 |
 | dropped | 0 |

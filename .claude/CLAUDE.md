@@ -184,6 +184,23 @@ Things that look like they would work and do not:
 - **`edit_camera` leaves `seed_key` alone,** so a re-seed overwrites an
   edited seed camera's name, note and status. Correct `data/cameras.csv` as
   well, or the edit is undone by the next seed.
+- **A live region must be in the tree before its first sentence.**
+  `display: none` while empty means the first message is never read;
+  `.map-note:empty` keeps it at height 0 for that reason.
+- **`aria-hidden` on anything Tab reaches is a violation.** The map canvas
+  is `role="application"` with a label that points at the list; do not
+  hide it.
+- **The count beside the list head is the share card's.** Announce through
+  `announceCount()` / `announceThenCount()` in `map.js`, never by rewriting
+  `#points-count`.
+- **`drawLegend()` rebuilds the legend.** Anything that rebuilds a focused
+  control must hand focus back, or a keyboard user is dropped on the body.
+- **PostgREST refuses a whole select for one column it does not know.**
+  Fetch a column a migration adds on its own until the migration is run;
+  `loadLeaderboardSwitch()` in `account.js` is the example. Putting it beside
+  `role` would cost a moderator their Moderate link.
+- **`body.printing-card` prints the recovery card alone.** Set only around
+  the account page's Print button; never on another page.
 
 ## Things that must not drift apart
 
@@ -238,6 +255,9 @@ Things that look like they would work and do not:
   `actor`; a new `moderate_` function must too. Bulk actions call the
   per-report function once per row — there is deliberately no server
   function that takes a list.
+- **The leaderboard opt-out lives in the three materialized view
+  definitions** (`and p.show_on_leaderboard`), not in RLS, which does not
+  reach a materialized view. A new leaderboard view must carry it.
 
 ## The rule the map's brightness answers to
 
@@ -270,6 +290,11 @@ that reason.
 
 Every moderating action is gated on the server. A page hiding itself from a
 non-moderator is a courtesy, never the lock.
+
+Every account call the browser can make acts on the caller and answers
+nothing: `set_leaderboard_visibility`, `delete_my_account`. A new one that
+takes a username or an email as input is a decision for the maintainer, not
+something to add.
 
 ## Checking your work
 
