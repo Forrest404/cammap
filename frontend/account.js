@@ -2928,14 +2928,18 @@ function xpLine(key) {
    picker's move event, settled for half a second so that a drag
    across the map is one question and not sixty - the form asks
    pending_near(lat, lon) whether a new-camera report is already
-   waiting within the auto-approve radius of that spot, and how many
-   days ago the newest was sent. The answer is those two fields and
-   nothing else: schema.sql (version 2.11) says what a stranger
-   learns from it and why the count is withheld. A plain select on
-   reports could not answer this and must not: the read policy shows
-   a person their own rows and a moderator everyone's, which is what
-   keeps who-reported-what from anyone else, and the function is the
-   one narrow window through it.
+   waiting in the 0.001-degree cell that spot falls in, or one of
+   the eight cells around it, and how many days ago the newest was
+   sent. The answer is those two fields and nothing else, and it is
+   the same for every point in a cell: schema.sql (version 2.13)
+   says why it is a cell and not a circle - a circle's edge can be
+   walked back to the report's exact position, and was - and what a
+   stranger learns from it and why the count is withheld. "This
+   corner" under the pin is the honest size of the answer. A plain
+   select on reports could not answer this and must not: the read
+   policy shows a person their own rows and a moderator everyone's,
+   which is what keeps who-reported-what from anyone else, and the
+   function is the one narrow window through it.
 
    What the sentence does with the answer: it says a report is
    waiting, and invites this one, because the auto-approve threshold

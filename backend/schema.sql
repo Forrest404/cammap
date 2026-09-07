@@ -1077,12 +1077,13 @@ $$;
 revoke all on function public.cluster_of_report(bigint) from public, anon, authenticated;
 grant execute on function public.cluster_of_report(bigint) to service_role;
 
--- version 2.11: is a report already waiting here? The one question
--- the report form may ask before Send, so a person placing a pin
--- hears "someone reported this corner two days ago" while they are
--- still placing it rather than "refused" after they have typed
--- everything and attached a photograph. Migration 009 is the same
--- statements; if you change one, change the other.
+-- version 2.11 added this; version 2.13 changed what it answers.
+-- Is a report already waiting here? The one question the report
+-- form may ask before Send, so a person placing a pin hears "someone
+-- reported this corner two days ago" while they are still placing it
+-- rather than "refused" after they have typed everything and
+-- attached a photograph. Migration 011 is the same statements (009
+-- was the first form); if you change one, change the other.
 --
 -- Why a function and not a select: the reports read policy shows a
 -- person their own rows and a moderator everyone's, and that is
@@ -1093,25 +1094,65 @@ grant execute on function public.cluster_of_report(bigint) to service_role;
 -- security definer, that reads across the policy and hands back two
 -- fields.
 --
+-- What it answers, and at what resolution. The caller's point is
+-- snapped to the 0.001 degree cell - round(lat, 3), round(lon, 3),
+-- the grid reports.cell_lat and cell_lon already sit on - and the
+-- answer is whether a pending new-camera report is in that cell or
+-- one of the eight around it, and how many days ago the newest of
+-- those was sent. Nothing in the body compares the caller's exact
+-- position with a report's exact position.
+--
+-- Why not a circle. The first form tested metres_between(caller,
+-- report) <= the auto-approve radius: a sharp edge exactly 100 m
+-- from the report, which a stranger can walk. Its comment said "not
+-- its exact position"; that was wrong. An adversarial pass after
+-- Wave 4 bisected the edge - fourteen halvings in each of four
+-- directions, 112 anonymous calls, five milliseconds - and recovered
+-- a pending report's coordinates to six decimals on a throwaway
+-- database. Any answer that changes at a distance measured from the
+-- report's own position gives that position away, given enough
+-- calls; the circle was the leak. A cell is not measured from the
+-- report: every point in a cell gets the same answer, so the only
+-- edge left to find is a cell edge, and the finest thing the whole
+-- grid of answers gives away is which cell a report is in - one
+-- block of about 111 m by 69 m, which is what "someone reported this
+-- corner" means anyway. The same bisection, run against this body,
+-- stops at cell resolution: the box it recovers is the whole cell,
+-- and a report anywhere in that cell gives the same box.
+--
 -- The anonymity test - what does a stranger learn by calling this
--- repeatedly? Whether a new-camera report is waiting within the
--- auto-approve radius of any point in London, and how many days ago
--- the newest was sent. Not who sent it, not how many people, not its
--- kind, note or exact position. "A report is waiting near here" is
--- the same thing the map would show at that spot once the report is
--- approved, minus the position, and it says nothing about any
--- account; that is why it is acceptable, and why the function is
--- granted to anon as well - the signed-out visitor is filling the
--- form now. What is withheld and why: the count of reports, because
--- the sentence has no use for it and a count is a finer instrument
--- than a flag - watched over time it would say when each report
--- arrived, one by one; and the exact time, rounded to whole days for
--- the same reason. Coordinates in, two fields out, no identity
--- anywhere: that is the line, and it is the one CLAUDE.md draws for
--- every call the browser may make. It is rate-limited by its own
--- cheapness - one probe of reports_pending_cell_idx, the same grid
--- walk cluster_of_report makes - and returns for a point outside
--- London without looking.
+-- repeatedly? That a new-camera report is waiting somewhere in a
+-- three-by-three block of cells around the point - about 330 m by
+-- 210 m - and how many days ago the newest of those was sent. Not
+-- where in the cell, not who sent it, not how many people, not its
+-- kind or note. Walked over all of London, the answers give the set
+-- of cells with a pending report in them and the day each arrived,
+-- which is what the map will show once those reports are approved,
+-- coarsened to the cell, and it names no account; that is why it is
+-- acceptable, and why the function is granted to anon as well - the
+-- signed-out visitor is filling the form now. What is withheld and
+-- why: the count of reports, because the sentence has no use for it
+-- and a count is a finer instrument than a flag - watched over time
+-- it would say when each report arrived, one by one; and the exact
+-- time, rounded to whole days for the same reason. days_ago is a
+-- clock all the same, at a day's resolution, and that is accepted
+-- because it is what the sentence under the pin says. Coordinates
+-- in, two fields out, no identity anywhere: that is the line, and it
+-- is the one CLAUDE.md draws for every call the browser may make.
+--
+-- Three by three rather than one, because a report a metre over the
+-- cell line is still "this corner" and the auto-approve radius
+-- reaches into the neighbouring cells. The block is fixed, not
+-- derived from the radius the way the first form's search window
+-- was, so the resolution of the answer never follows a setting:
+-- raising the radius in the dashboard must not widen what this
+-- gives away. It is rate-limited by its own cheapness - one probe of
+-- reports_pending_cell_idx, nine cells wide.
+--
+-- The London bounds are written out here as well as in the check
+-- constraints; a point outside them is answered without looking.
+-- KEEP-6 (the second city) folds every copy of those four numbers
+-- into one place; until then this is one of the copies.
 --
 -- The column is `found`, not `exists`: exists is a keyword, and a
 -- column that has to be quoted everywhere it is read is a trap laid
@@ -1123,24 +1164,18 @@ stable
 security definer
 set search_path = public, pg_temp
 as $$
-  with s as (
-    select auto_approve_radius_m::double precision as radius,
-           ceil(auto_approve_radius_m / 111.32)::integer as nlat,
-           ceil(auto_approve_radius_m / (111.32 * cos(radians(pending_near.lat))))::integer as nlon
-      from public.settings where id = 1),
-  here as (
+  with here as (
     select round(pending_near.lat::numeric, 3) as clat,
            round(pending_near.lon::numeric, 3) as clon),
   newest as (
     select max(r.created_at) as at
-      from public.reports r, s, here
+      from public.reports r, here
      where pending_near.lat between 51.28 and 51.70
        and pending_near.lon between -0.51 and 0.33
        and r.kind = 'new'
        and r.state = 'pending'
-       and r.cell_lat between here.clat - s.nlat * 0.001 and here.clat + s.nlat * 0.001
-       and r.cell_lon between here.clon - s.nlon * 0.001 and here.clon + s.nlon * 0.001
-       and public.metres_between(pending_near.lat, pending_near.lon, r.lat, r.lon) <= s.radius)
+       and r.cell_lat between here.clat - 0.001 and here.clat + 0.001
+       and r.cell_lon between here.clon - 0.001 and here.clon + 0.001)
   select at is not null,
          case when at is null then null
               else floor(extract(epoch from (now() - at)) / 86400)::integer end

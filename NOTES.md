@@ -927,14 +927,16 @@ reporter learned neither until Send, after the typing and the
 photograph. Now, as the pin lands - the picker's move event,
 settled for half a second so a drag across the map is one question
 and not sixty - the form asks `pending_near(lat, lon)` (migration
-009, schema version 2.11) whether a new-camera report is waiting
-within the radius and how many days ago the newest was sent, and
-says so under the map: "Someone reported this corner two days ago
-and it is waiting to be checked. Adding yours helps it through: 3
-people reporting the same kind of camera here puts it on the map
-without a moderator." The threshold is quoted from `settings`,
-which is public, rather than written as "enough". The sentence sits
-in a live region so a screen reader hears it arrive.
+009, schema version 2.11; the body replaced by migration 011,
+version 2.13) whether a new-camera report is waiting in the 0.001°
+cell that spot falls in or one of the eight cells around it, and
+how many days ago the newest was sent, and says so under the map:
+"Someone reported this corner two days ago and it is waiting to be
+checked. Adding yours helps it through: 3 people reporting the same
+kind of camera here puts it on the map without a moderator." The
+threshold is quoted from `settings`, which is public, rather than
+written as "enough". The sentence sits in a live region so a screen
+reader hears it arrive.
 
 Why a function: the reports read policy shows a person their own
 rows and a moderator everyone's, and that is right - it is what
@@ -942,20 +944,48 @@ keeps who-reported-what from anyone else. A plain select from the
 form could therefore never see another person's pending report,
 which is exactly the one the question is about; the function is a
 `security definer` window through the policy that answers two
-fields. What a stranger learns by calling it repeatedly: whether a
-new-camera report is waiting within about a hundred metres of any
-point in London, and how many days ago the newest was sent. Not
-who, not how many, not its kind, note or exact position. That is
-the same thing the map would show at that spot once the report is
-approved, minus the position, and it says nothing about any
-account - which is why it is acceptable, and why it is granted to
-`anon` as well, since the signed-out visitor is filling the form
-now. What is withheld and why: the count, because the sentence has
-no use for it and a count is a finer instrument than a flag -
-watched over time it would say when each report arrived, one by
-one; and the exact time, rounded to whole days for the same reason.
-Coordinates in, two fields out, no identity anywhere: that is the
-line CLAUDE.md draws for every call the browser may make. The kind
+fields.
+
+Why a cell and not a circle. The first form (version 2.11) answered
+whether a report was within the auto-approve radius of the point -
+a sharp edge exactly 100 m from the report - and its comment said
+"not its exact position". The adversarial privacy pass after Wave 4
+showed that was wrong: bisecting the edge, fourteen halvings in each
+of four directions, 112 anonymous calls in five milliseconds,
+recovered a pending report's coordinates to six decimals on a
+throwaway database. Any answer that changes at a distance measured
+from the report's own position gives that position away, given
+enough calls. So the point is snapped to the cell `reports.cell_lat`
+and `cell_lon` already sit on, and every point in a cell gets the
+same answer: the only edge left to find is a cell edge, and the
+finest thing the whole grid of answers gives away is which cell a
+report is in - one block of about 111 m by 69 m, which is what
+"someone reported this corner" means anyway. Re-run against the new
+body, the same bisection stops at the cell: the box it recovers is
+the whole cell, and a report anywhere in it gives the same box. The
+block is three cells by three rather than one because a report a
+metre over the cell line is still "this corner", and it is fixed
+rather than derived from the radius, so raising the radius in the
+dashboard cannot widen what the call gives away.
+
+What a stranger learns by calling it repeatedly, honestly: that a
+new-camera report is waiting somewhere in a block of about 330 m by
+210 m around any point in London, and how many days ago the newest
+was sent. Not where in the cell, not who, not how many, not its
+kind or note. Walked over all of London, the answers give the set
+of cells with a pending report in them and the day each arrived -
+what the map will show once those reports are approved, coarsened
+to the cell - and they name no account, which is why it is
+acceptable, and why it is granted to `anon` as well, since the
+signed-out visitor is filling the form now. What is withheld and
+why: the count, because the sentence has no use for it and a count
+is a finer instrument than a flag - watched over time it would say
+when each report arrived, one by one; and the exact time, rounded
+to whole days for the same reason. `days_ago` is a clock all the
+same, at a day's resolution, and that is accepted because it is
+what the sentence says. Coordinates in, two fields out, no identity
+anywhere: that is the line CLAUDE.md draws for every call the
+browser may make. The kind
 is not taken either - a per-kind probe would be finer for nothing
 the sentence needs - so the sentence says "the same kind of camera"
 and leaves the kind to the person. The column is `found`, not
