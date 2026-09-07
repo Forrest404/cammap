@@ -98,28 +98,28 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | MOD-5 | 2 | moderation | verified | 9a77bc4 | whole pending set fetched light, distance to nearest camera computed client-side, paged by id |
 | MOD-6 | 2 | moderation | verified | 9f17ab8 | Activity tab: decisions with resolver, and camera actions from `moderation_log` |
 | MOD-3 | 2 | moderation | verified | e8b24e2 | *migration 006, unapplied*; `moderate_merge_cameras` returns `{survivor, loser, moved, kept}`; nothing deleted |
-| MAP-8 | 3 | map-a11y | merged | 8c337b9 | `moveMap()` cuts with `easeTo({duration:0})` under reduced motion (jumpTo drops the offset); re-read on change |
-| MAP-9 | 3 | map-a11y | merged | b846003 | canvas kept focusable as `role=application` with a label naming the list (aria-hidden on a focusable element is a violation); list region labelled; hidden `role=status` count |
-| MAP-6 | 3 | map-a11y | merged | d72884d | an `[only]` button per legend key; solo derived from the hidden set; Legacy switched on for an all-legacy kind, and back |
-| WORD-6 | 3 | map-a11y | merged | c846abb | `<details open>` under the legend; `STORAGE.explained`; open every visit where storage is refused |
-| ACCT-5 | 3 | accounts | merged | d267d2b | `signOut({scope:"global"})` behind an in-page confirmation; bounded by JWT expiry |
-| ACCT-1 | 3 | accounts | merged | 7937f93 | re-authenticate with the current password, then `updateUser` |
-| ACCT-4 | 3 | accounts | merged | a741f86 | *migration 007, unapplied*; `show_on_leaderboard` in the three view definitions (RLS does not reach a materialized view); `set_leaderboard_visibility()` acts on the caller only |
-| ACCT-6 | 3 | accounts | merged | f364f1f | matched by kind and position against the map's own whole-table read; no `camera_id` |
-| ACCT-3 | 3 | accounts | merged | 9112dcb | client-side passphrase (47 bits, `crypto.getRandomValues`), one card, prints alone via `body.printing-card`, required tick |
-| ACCT-2 | 3 | accounts | merged | 39416f2 | *migration 008, unapplied*; `delete_my_account()` deletes the caller from `auth.users` (cascade) and their proof objects; cameras from approved reports stay |
-| REP-1 | 4 | reporting | todo | | form for everyone, account at submit |
-| REP-6 | 4 | reporting | todo | | long-press / right-click on the map → report with pin |
-| REP-2 | 4 | reporting | todo | | *migration* likely; cell check without leaking who |
-| REP-4 | 4 | reporting | todo | | up to three photos |
-| REP-5 | 4 | reporting | todo | | decision recorded in NOTES; QUESTIONS default is refuse video |
-| REP-3 | 4 | reporting | todo | | Your reports, paginated |
-| REP-8 | 4 | reporting | todo | | receipt id |
-| REP-7 | 4 | reporting | todo | | publish `xp_rules` on leaderboard |
-| WORD-3 | 4 | words | todo | | post ids, `<time datetime>` |
-| WORD-4 | 4 | words | todo | | `feed.xml`, head link on every page |
-| WORD-1 | 4 | words | todo | | About from NOTES.md; "who runs this" is a QUESTIONS item |
-| WORD-2 | 4 | words | todo | | `pages/rights.html`, every claim cited, nav link on every page |
+| MAP-8 | 3 | map-a11y | verified | 8c337b9 | `moveMap()` cuts with `easeTo({duration:0})` under reduced motion (jumpTo drops the offset); re-read on change |
+| MAP-9 | 3 | map-a11y | verified | b846003 | canvas kept focusable as `role=application` with a label naming the list (aria-hidden on a focusable element is a violation); list region labelled; hidden `role=status` count |
+| MAP-6 | 3 | map-a11y | verified | d72884d | an `[only]` button per legend key; solo derived from the hidden set; Legacy switched on for an all-legacy kind, and back |
+| WORD-6 | 3 | map-a11y | verified | c846abb | `<details open>` under the legend; `STORAGE.explained`; open every visit where storage is refused |
+| ACCT-5 | 3 | accounts | verified | d267d2b | `signOut({scope:"global"})` behind an in-page confirmation; bounded by JWT expiry |
+| ACCT-1 | 3 | accounts | verified | 7937f93 | re-authenticate with the current password, then `updateUser` |
+| ACCT-4 | 3 | accounts | verified | a741f86 | *migration 007, unapplied*; `show_on_leaderboard` in the three view definitions (RLS does not reach a materialized view); `set_leaderboard_visibility()` acts on the caller only |
+| ACCT-6 | 3 | accounts | verified | f364f1f | matched by kind and position against the map's own whole-table read; no `camera_id` |
+| ACCT-3 | 3 | accounts | verified | 9112dcb | client-side passphrase (47 bits, `crypto.getRandomValues`), one card, prints alone via `body.printing-card`, required tick |
+| ACCT-2 | 3 | accounts | verified | 39416f2 | *migration 008, unapplied*; `delete_my_account()` deletes the caller from `auth.users` (cascade) and their proof objects; cameras from approved reports stay |
+| REP-1 | 4 | reporting | in-flight | | form for everyone, account at submit |
+| REP-6 | 4 | reporting | in-flight | | long-press / right-click on the map → report with pin |
+| REP-2 | 4 | reporting | in-flight | | *migration* likely; cell check without leaking who |
+| REP-4 | 4 | reporting | in-flight | | up to three photos |
+| REP-5 | 4 | reporting | in-flight | | decision recorded in NOTES; QUESTIONS default is refuse video |
+| REP-3 | 4 | reporting | in-flight | | Your reports, paginated |
+| REP-8 | 4 | reporting | in-flight | | receipt id |
+| REP-7 | 4 | reporting | in-flight | | publish `xp_rules` on leaderboard |
+| WORD-3 | 4 | words | in-flight | | post ids, `<time datetime>` |
+| WORD-4 | 4 | words | in-flight | | `feed.xml`, head link on every page |
+| WORD-1 | 4 | words | in-flight | | About from NOTES.md; "who runs this" is a QUESTIONS item |
+| WORD-2 | 4 | words | in-flight | | `pages/rights.html`, every claim cited, nav link on every page |
 | DATA-1 (UI) | 5 | record | todo | | popup source line; null says nothing |
 | DATA-7 (UI) | 5 | record | todo | | approximate drawn differently, legend entry, brightness rule |
 | DATA-8 | 5 | record | todo | | published-record notice on failure/timeout |
@@ -136,10 +136,10 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 
 | Status | Count |
 | --- | --- |
-| todo | 21 |
-| in-flight | 0 |
-| merged | 10 |
-| verified | 27 |
+| todo | 9 |
+| in-flight | 12 |
+| merged | 0 |
+| verified | 37 |
 | blocked | 0 |
 | dropped | 0 |
 
@@ -207,3 +207,21 @@ reporting agent, which owns schema.sql then); an out-of-London hash is ignored s
 four times (→ Wave 5 record agent, DATA-8); the dark base map's label anti-aliasing has
 isolated pixels up to 150, pre-existing and untouched. Totals after Wave 2: 27 verified,
 31 to go.
+
+**Wave 3 summary (verified 2026-09-07).** Landed: reduced motion through the one movement
+helper (a cut is `easeTo({duration:0})` so the popup offset survives); the camera list named
+to a screen reader as the map's text equivalent with a live count, the canvas kept focusable
+as `role=application`; an `[only]` control per legend key with the solo state announced;
+"How to read this map" under the legend, open on first visit only; the out-of-London hash
+now says so. On the account page: sign out everywhere, change password by re-authenticating,
+the leaderboard opt-out in the three view definitions (migration 007), saved-camera state
+matched client-side by kind and position, a printable recovery card with a 47-bit passphrase
+made in the browser, and account deletion (migration 008; cameras from approved reports
+stay). Migrations 007–008 **unapplied**. Changed shape: canvas not `aria-hidden`; solo as a
+button; opt-out in views not RLS; reports cascade away on deletion. Blocked: nothing.
+Verification: all ten met — AX tree dumped, reduced motion re-read on change, both new
+functions refuse anon and act on the caller only, deletion counted before and after, old
+schema plus 007–008 dumped identical to fresh. Observations carried forward: the saved-camera
+line "Since marked no longer in use" cannot know the shop was already legacy when starred
+(→ Wave 4 reporting agent, account.js); a stray leading space in `printCard()`'s className.
+Totals after Wave 3: 37 verified, 21 to go.
