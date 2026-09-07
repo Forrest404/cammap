@@ -6,6 +6,15 @@ it can be revisited. Answer by editing this file or by telling the orchestrator.
 
 ## Open
 
+### 17. The press page needs a contact address, and the site has none
+REACH-6 asks for "one contact address" on the press page. The site deliberately keeps no
+email for its users; the project itself has none published either — only the Ko-fi link and
+the GitHub repository. **Default, proceeding now:** the press page names the repository's
+issues page (`https://github.com/Forrest404/cammap/issues`) as the way to reach the project,
+with a marked `TODO (REACH-6)` comment beside it for an email address if you want one. A
+press contact that is a public issue tracker is honest about what the project is; a mailbox
+is your call, and its cost is that it exists.
+
 ### 13. Sign-up is `username_available()` under another name (pre-existing)
 The adversarial privacy pass (2026-09-07) found that Supabase's own sign-up endpoint answers
 "does this username exist": a taken name returns `user_already_exists`, and the site's
