@@ -602,7 +602,22 @@ function signUp(username, password, onDone, retried) {
 /* What this page forgets when a session ends, whichever way it ended:
    the nav's Log out, "sign out everywhere" on the account page, or
    the account being deleted. The server side of each differs; what
-   the page does afterwards does not. */
+   the page does afterwards does not.
+
+   That now includes the two sessionStorage keys the report form
+   writes: the draft - the pin, the kind, the name and the note of a
+   report not yet sent - and the receipt, the number of the last one
+   sent. They are in sessionStorage so that a reload keeps them: a
+   reload is the same person, and a phone reloads a tab it put in
+   the background without asking. A Log out is not the same person.
+   It is what someone presses before handing a machine back, and the
+   privacy pass found the draft still waiting on the report page
+   after it (L8). The draft is the person's; the machine may not be.
+   So both keys go here, with the session, whichever door it left
+   by - and not in signOut() alone, because sign out everywhere and
+   deletion end the session too and would otherwise leave them. What
+   is typed into the form on screen stays there, as before, for the
+   person who is still looking at it. */
 function forgetSession() {
   var message = document.getElementById("account-message");
 
@@ -610,6 +625,8 @@ function forgetSession() {
   currentRole = "user";
   currentXp = 0;
   savedCameras = [];
+  forgetDraft();
+  forgetReceipt();
   renderNav();
 
   /* A sentence left from an earlier sign-out would otherwise be read
@@ -2543,6 +2560,16 @@ function readReceipt() {
     return raw ? JSON.parse(raw) : null;
   } catch (err) {
     return null;
+  }
+}
+
+/* Called from forgetSession(): the number of the last report sent is
+   the person's, and ends with their session, whichever way it ends. */
+function forgetReceipt() {
+  try {
+    window.sessionStorage.removeItem(REPORT_RECEIPT_KEY);
+  } catch (err) {
+    /* nothing to forget */
   }
 }
 
