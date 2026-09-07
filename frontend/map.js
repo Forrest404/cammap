@@ -2101,8 +2101,15 @@ function copyLinkRow(point) {
    not have would be. So a right-click on the map, or a long press on
    a phone, opens a small popup at that spot with one row, "Report a
    camera here", which opens the report form with the pin already
-   placed there - report.html?lat=&lon=, to six decimals, which is
-   the precision the map writes everywhere else.
+   placed there - report.html#<lat>/<lon>, to six decimals, which is
+   the precision the map writes everywhere else. In the fragment and
+   never the query string: a query string is part of the page
+   request, so it goes to the host, into the server's log, and into
+   the Referer of every stylesheet, script and font the page then
+   loads from the same origin - and the spot a person right-clicked
+   is very often where they are standing. A fragment is never sent
+   anywhere by the browser. The privacy pass watched the query form
+   arrive in the Referer of nine same-origin requests; that is L4.
 
    Right-click. MapLibre already keeps the browser's own menu off the
    canvas: its mouse handlers call preventDefault on contextmenu there
@@ -2139,9 +2146,18 @@ var lastOffer = { at: 0, x: 0, y: 0 };
 
 /* map.js only runs on the map, which is the page at the root, so the
    report page is one folder down from here - as the popup's "Report
-   its state" link already assumes. */
+   its state" link already assumes.
+
+   The fragment is exactly  #<lat>/<lon>  - latitude first, a slash
+   between, six decimals each, no zoom, nothing else - which is what
+   the report page's reader in account.js parses, so the two must be
+   changed together. It cannot be mistaken for the report page's
+   other fragment, #report-<n>, and it is the map's own lat/lon order.
+   The old form - the pair as query parameters - is not written
+   anywhere, on purpose, and must not come back: see the heading
+   above. */
 function reportHereHref(lngLat) {
-  return "pages/report.html?lat=" + lngLat.lat.toFixed(6) + "&lon=" + lngLat.lng.toFixed(6);
+  return "pages/report.html#" + lngLat.lat.toFixed(6) + "/" + lngLat.lng.toFixed(6);
 }
 
 function offerReportAt(lngLat, point) {
