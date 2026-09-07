@@ -238,6 +238,33 @@ One more place the site's address is written: the list under
 `<link href>`, every entry's `<link>`, the author's `<uri>` and the
 `<icon>`; the tag URIs are deliberately not addresses and stay.
 
+**About (WORD-1).** One sentence inside an editing marker became five
+short sections, and none of it was composed fresh: each is a public
+reading of something already written here, and the marker comment in
+`pages/about.html` says so, so that a change to the source reaches the
+page. What LFR is comes from the survey's definition and the post on
+the Thoughts page (the "barcode" sentence is the maintainer's). Where
+every camera comes from is the header of `data/points.js` and "Where
+each camera comes from" above: the Met's records, the BTP register,
+named press for the shops, the source label and link every camera now
+carries, and null shown as nothing. What the map does not claim is
+"What active means" (a van parks for a shift and drives away; every
+van site legacy), the dropped prediction under TODO (Most used as the
+honest answer), "What is not known" (the approximate pins), and the
+survey's two findings that make the map incomplete by construction:
+the Met records no coordinates, and a shop's whole disclosure is the
+sign on its door. Who runs it is QUESTIONS.md item 4 - volunteers,
+donations, no organisation, no names - and "Anonymity" for what an
+account is; the hosting figure is still unknown (item 2), so the page
+says "donations pay for the hosting" and no number. The licence line
+is `LICENSE`. Two rules hold throughout: nothing is claimed that the
+record does not support, and no count is typed - "every camera on the
+map", never a figure - because a number in prose goes stale without a
+sound and the line under the map computes its own. The editing
+markers stay: with a page of prose they still say which lines are the
+furniture, and they cost nothing. The three description metas were
+sharpened to what the page now is.
+
 ### Sharing the site
 
 Everything that decides what the site looks like from outside a
