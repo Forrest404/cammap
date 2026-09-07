@@ -3152,11 +3152,50 @@ function setUpReportPage() {
   }
 }
 
+/* ---------------- reading cameras without being a moderator ----------------
+
+   Since schema version 2.14 (migration 012) a browser that is not a
+   moderator's reads visible cameras through the view cameras_public,
+   not the table. The table also carries approved_by, approved_at,
+   created_at and updated_at, and until 2.14 every browser could read
+   them: the privacy pass grouped the map by moderator uuid with
+   timestamps to the microsecond, and set a camera's approved_at
+   beside the daily leaderboard to tie a username to a place and a
+   moment. The view has the fourteen public columns and only visible
+   rows - so it needs no "visible" filter, and has no such column to
+   filter on - and anon's select on the table is withdrawn. A
+   moderator's browser keeps a column-level grant on the table, which
+   is why every read of cameras further down names its columns and
+   none says "*": PostgREST refuses a star select when any column is
+   denied.
+
+   The fallback. Until the maintainer runs 012 the live database has
+   no such view, and PostgREST answers 404 for a relation it does not
+   know - 42P01 from PostgreSQL, or PGRST205 from its own schema
+   cache. Then the table is read as it was before, with the same
+   columns and the old "visible" filter; on a database that has the
+   view the second query is never made. It is Wave 2's pattern for a
+   column a migration had not yet added. Remove publicCameraQuery's
+   table branch, and the retry at each caller, once BUILD-LOG.md says
+   012 has been run. */
+function viewMissing(result) {
+  var code = result && result.error && result.error.code;
+
+  return code === "42P01" || code === "PGRST205" || (result && result.status === 404);
+}
+
+function publicCameraQuery(columns, throughTable) {
+  if (throughTable) {
+    return sb.from("cameras").select(columns).eq("visible", true);
+  }
+  return sb.from("cameras_public").select(columns);
+}
+
 /* The cameras already on the map, for drawing behind the picker's
    pin. map.js keeps the same rows under this key for five minutes
    after it fetches them, so someone who came here from the map is
    answered out of their own browser. The key and the shape are map.js's;
-   this only ever reads it, and falls back to asking the table. A
+   this only ever reads it, and falls back to asking the view. A
    failure here loses the context dots and nothing else, so it is
    quiet about it. */
 var CONTEXT_TTL = 5 * 60 * 1000;
@@ -3173,25 +3212,29 @@ function contextCameras(onDone) {
       return;
     }
   } catch (err) {
-    /* nothing usable in storage - ask the table instead */
+    /* nothing usable in storage - ask the view instead */
   }
 
   if (!configured || !sb) {
     return;
   }
 
-  sb.from("cameras")
-    .select("lat,lon,type,status")
-    .eq("visible", true)
-    .limit(5000)
-    .then(function (result) {
-      if (!result.error && Array.isArray(result.data)) {
-        onDone(result.data);
-      }
-    })
-    .catch(function () {
-      /* no context dots this time; the pin still works */
-    });
+  function fetch(throughTable) {
+    publicCameraQuery("lat,lon,type,status", throughTable)
+      .limit(5000)
+      .then(function (result) {
+        if (!result.error && Array.isArray(result.data)) {
+          onDone(result.data);
+        } else if (!throughTable && viewMissing(result)) {
+          fetch(true);
+        }
+      })
+      .catch(function () {
+        /* no context dots this time; the pin still works */
+      });
+  }
+
+  fetch(false);
 }
 
 function setUpNewReport(startAt) {
@@ -3302,7 +3345,7 @@ function setUpNewReport(startAt) {
      can see whether theirs is one of them before sending it in. The
      map page leaves the same rows in storage for a few minutes, so
      arriving here from the map usually costs nothing; otherwise this
-     is one small read of a table anyone may read. */
+     is one small read of the public view anyone may read. */
   if (picker) {
     contextCameras(function (rows) {
       picker.cameras(rows);
@@ -3478,32 +3521,43 @@ function setUpStatusReport(cameraId) {
   }
 
   /* The name, so the person can see they are on the right one - and
-     its position, which the report has to carry too. */
+     its position, which the report has to carry too. Through the
+     public view, with the table as the fallback (publicCameraQuery,
+     above): a status report is only ever about a camera on the map,
+     which is exactly what the view holds. */
   var camera = null;
 
-  sb.from("cameras").select("name,type,status,lat,lon").eq("id", cameraId).single()
-    .then(function (result) {
-      if (!result.error) {
-        camera = result.data;
-      }
-      nameEl.textContent = camera ? camera.name : "camera #" + cameraId;
+  function fetchCamera(throughTable) {
+    publicCameraQuery("name,type,status,lat,lon", throughTable).eq("id", cameraId).single()
+      .then(function (result) {
+        if (result.error && !throughTable && viewMissing(result)) {
+          fetchCamera(true);
+          return;
+        }
+        if (!result.error) {
+          camera = result.data;
+        }
+        nameEl.textContent = camera ? camera.name : "camera #" + cameraId;
 
-      /* Read-only: there is nothing to place here, only something to
-         recognise. Saying "it is gone" about the wrong camera takes
-         one off the map that is still there, so it is worth a look
-         before you say it. */
-      if (camera && typeof makePicker === "function") {
-        makePicker({
-          container: "status-map",
-          lat: Number(camera.lat),
-          lon: Number(camera.lon),
-          draggable: false
-        });
-      }
-    })
-    .catch(function () {
-      nameEl.textContent = "camera #" + cameraId;
-    });
+        /* Read-only: there is nothing to place here, only something to
+           recognise. Saying "it is gone" about the wrong camera takes
+           one off the map that is still there, so it is worth a look
+           before you say it. */
+        if (camera && typeof makePicker === "function") {
+          makePicker({
+            container: "status-map",
+            lat: Number(camera.lat),
+            lon: Number(camera.lon),
+            draggable: false
+          });
+        }
+      })
+      .catch(function () {
+        nameEl.textContent = "camera #" + cameraId;
+      });
+  }
+
+  fetchCamera(false);
 
   /* The same picker and attacher as the new-camera form. */
   var attacher = null;
@@ -3886,7 +3940,15 @@ function setUpCamerasTab() {
    is filled.
 
    A moderator's select on cameras returns hidden ones too, by the
-   read policy. Ordered by name so the list reads like the map's.
+   read policy - which is why this reads the table and not the
+   public view, cameras_public, that the rest of the site reads. The
+   columns are named, here and in every other read of cameras on
+   this page, and must stay named: since schema version 2.14 the
+   signed-in role holds a column-level grant on the table that
+   leaves out approved_by, approved_at, created_at and updated_at
+   (none of which this page shows), and PostgREST refuses a star
+   select when any column is denied. Ordered by name so the list
+   reads like the map's.
    The 5000 is a ceiling, not a page: the list is meant to bring
    everything, and 182 cameras plus whatever is reported will not
    reach it for a long time - and if it ever does, the search box
