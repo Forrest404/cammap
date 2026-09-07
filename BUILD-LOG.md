@@ -143,6 +143,32 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | blocked | 0 |
 | dropped | 0 |
 
+## Privacy pass (2026-09-07, after Wave 4, at `321b409`)
+
+An agent whose only brief was to find what leaks, over everything since `8bfad60`. Eight
+findings, ranked; the fix round below runs before Wave 5. Findings marked *pre-existing*
+were in `8bfad60`; the programme is fixing the ones it can and putting the rest to the
+maintainer.
+
+| # | Finding | Origin | Action |
+| --- | --- | --- | --- |
+| L1 | `pending_near` answers on a sharp 100 m circle; 112 anon calls recover a pending report's position to six decimals, contradicting its own comment | programme (REP-2) | **fix**: answer per 0.001° cell (migration 011) |
+| L2 | Sign-up is `username_available()` under another name: `user_already_exists` and the trigger's "is taken" | pre-existing | QUESTIONS 13; NOTES states it |
+| L3 | Daily board × `cameras.approved_at` links a username to a camera and a time | pre-existing structure | **fix** the column exposure (012); cadence and default → QUESTIONS 14 |
+| L4 | `report.html?lat=&lon=` puts a person's position in the page request and same-origin `Referer`; no referrer policy | programme (REP-6) | **fix**: fragment instead of query; `<meta name="referrer">` on nine heads |
+| L5 | Deletion keeps the reporter's words as the camera's name and note; the delete box said otherwise | programme copy; copy-on-approve pre-existing | **fix** the copy on the form, the box and NOTES; blanking → QUESTIONS 15 |
+| L6 | `cameras.approved_by`/`approved_at`/`updated_at` readable by anon: moderator uuids and working hours | pre-existing | **fix**: a public view for the map and the API (012) |
+| L7 | Near me writes the person's position to the hash; a Copy link from a dot-click popup carries it | programme (MAP-1/2) | **fix**: no hash writes while a fix is held; links centre on the camera |
+| L8 | The signed-out report draft in `sessionStorage` survives Log out | programme (REP-1) | **fix**: clear it on Log out |
+
+Found clean: every RLS policy as anon and as a plain user; every `moderate_*` gate; both
+account functions; the deletion cascade; proof paths and EXIF stripping; no cookies, beacons
+or sockets; the feed, cards, licence, About, rights page and the record name no private
+person. Honest limits to state in NOTES (the fix round adds them): sign-up answers the
+existence question at the auth rate limit; the search box sends its text to Nominatim; the
+report number is a running count; approved words stay on the map; the session sits in local
+storage until Log out; Near me shows in the address bar until cleared.
+
 ## Wave log
 
 *(one entry per wave: what landed, what changed shape, what is blocked, ledger totals)*

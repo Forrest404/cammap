@@ -6,6 +6,47 @@ it can be revisited. Answer by editing this file or by telling the orchestrator.
 
 ## Open
 
+### 13. Sign-up is `username_available()` under another name (pre-existing)
+The adversarial privacy pass (2026-09-07) found that Supabase's own sign-up endpoint answers
+"does this username exist": a taken name returns `user_already_exists`, and the site's
+trigger `handle_new_user` independently raises "username x is taken". An attacker signs up
+with a guess, reads the answer, and deletes the throwaway account with `delete_my_account()`.
+About 18,800 names cover both word lists; only the dashboard's per-IP sign-up limit slows it.
+This is the question `username_available()` was dropped for, and it was answerable before the
+programme began. **Options:** (a) accept it and say so in NOTES.md "Anonymity" — the sentence
+is being added now; (b) have the server draw the username (a Supabase "before user created"
+hook, or the trigger ignoring client metadata), which closes the oracle but means the recovery
+card can only show the username *after* sign-up, and changes how the hidden login address is
+formed — which NOTES.md says must never change for existing accounts. **Recommended default:
+(a), stated honestly, until you decide whether (b)'s cost is worth it.** Nothing in this
+repository can close it alone.
+
+### 14. The leaderboard's refresh cadence and default (pre-existing structure)
+Polling the daily board and the map every five minutes links "a username gained 15 XP" to "a
+camera appeared" in the same window. The programme is removing `approved_at`, `approved_by`,
+`created_at` and `updated_at` from public reach (migration 012), which blunts it; the residue
+is inherent to a public board beside a public map. **Two knobs are yours:** refresh the daily
+and weekly boards once a day rather than every five minutes (`refresh_leaderboards()`'s
+schedule), and/or default `show_on_leaderboard` to off so listing is a choice. The brief
+chose default-on. *Proceeding on: five-minute refresh kept, default-on kept, until you say.*
+
+### 15. Deleting an account leaves the reporter's own words on the map
+When a report is approved, the "Where is it?" and "Anything worth adding" fields become the
+camera's public name and note. `delete_my_account()` removes the reports but the camera keeps
+those words. The delete box said "nothing about you" stays; that was untrue and is being
+corrected, and the form will say under both fields what they become. **The decision:** should
+deletion also blank the `note` (and `name`?) on cameras whose only approved report was the
+caller's? Doing so takes detail out of the record; not doing so keeps a person's sentence on
+the map after they have left. *Recommended default: keep the words and say so plainly — the
+approved report is part of the record, like a letter printed in a newspaper.* Proceeding on
+that; one migration if you want the other.
+
+### 16. Two things in `NOTES.md` itself
+`NOTES.md` is public in the repository. It carries a Google search URL with session tokens
+(`sxsrf`, `mstk`) that are your own browser's artefacts and can simply go, and a second
+person's handle (`Laki2128`) under a working-notes heading — item 4 decided About names
+nobody. The programme has not touched either; both are yours to remove or keep.
+
 ### 12. Two claims on the rights page are marked "Not confirmed"
 `pages/rights.html` states two things it could not source to a document and marks them
 on the page. (a) Whether the Biometrics and Surveillance Camera Commissioner post currently
