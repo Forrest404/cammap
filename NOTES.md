@@ -265,6 +265,74 @@ markers stay: with a page of prose they still say which lines are the
 furniture, and they cost nothing. The three description metas were
 sharpened to what the page now is.
 
+**Know your rights (WORD-2).** `pages/rights.html`: what to do when a
+van is in front of you, which is the moment someone is most likely to
+be reading this site on a phone. Six short sections, the most urgent
+first, a contents list at the top so "if you are stopped" is one
+press away, and a notice above everything saying that it is not legal
+advice, that it is what the public documents say with a link to each,
+and the date it was checked - typed once, in prose, inside a `<time>`,
+because a page like this is a document and a reader should see when it
+was last true. The rule for every sentence: a legal claim carries a
+link to the document it comes from, in brackets after the claim,
+styled small and dim (`a.cite`) so a paragraph reads as a paragraph;
+and a claim that could not be traced to a document is either not on
+the page or is marked in the page as "Not confirmed" with what would
+confirm it (`p.unconfirmed`, the accent rule down the left, the same
+mark as the notice). The comment at the top of the page lists, section
+by section, which document each claim rests on.
+
+Where the citations came from, and how they were checked. The survey
+in `london-lfr-cameras/results/` named the statutes, the cases and
+the guidance with dates and its own uncertainty flags; each document
+was then fetched and read on the day. The Met's and BTP's web pages
+refuse scripted requests (403), so they were read through the survey,
+and wherever the page can it cites their PDFs instead - the Met's
+Overt LFR Policy, its 2025 annual report and 2025 deployment record,
+and BTP's register download directly and were read in full. The
+policy is the backbone of the first two sections: signage outside the
+zone and officers who answer questions (§10), the leaflet, the
+deletion of non-matches (§3), the 24-hour watchlist and the 31-day
+alert data (§9), and the sentences worth quoting exactly - an alert
+"on its own … should not be taken as providing sufficient grounds by
+itself for arrest, search or detention", and failing to identify
+yourself "does not constitute a criminal offence" (§7). The statutes
+were read on legislation.gov.uk, not from memory: s60AA of the
+Criminal Justice and Public Order Act 1994 and s157 of the Crime and
+Policing Act 2026 (in force 29 June 2026) are the only two powers
+found that can require a face uncovered, and both need an
+authorisation for the place and time; PACE s61(6A)-(6B) for
+fingerprints away from a station; DPA 2018 ss 45 and 54 for a subject
+access request to the police (Part 3 - not UK GDPR article 15, which
+is the shop's regime) and UK GDPR arts 12 and 15 for a shop. The
+Facewatch section rests on Facewatch's own privacy notice, read in the
+Wayback Machine's capture of 13 July 2026 because facewatch.co.uk
+refuses scripts, and on the ICO's closure letter of 28 March 2023,
+which lists the eight breaches and says "regulatory action is not
+required"; the "repeat offenders or more serious offences" condition
+is redacted in that letter and is cited to Big Brother Watch's
+account, as the survey cites it.
+
+What was left out for want of a source, deliberately: any statement
+that you need not answer police questions (true in general law but
+not in a document the page could link), any Met web address for
+making a request (403 to scripts and one candidate 404 in the
+archive; the policy's LFR@met.police.uk is given instead), and
+BTP's own commitments beyond what TfL's press release and Biometric
+Update report. Two things are marked "Not confirmed" on the page:
+whether the Biometrics and Surveillance Camera Commissioner's post
+has a holder (gov.uk names nobody; the survey says vacant in one unit
+and filled in another), and whether an appeal in Thompson and Carlo
+has been lodged. The page says what would settle each.
+
+The nav gained **Rights** after Thoughts on every page, `class="current"`
+on the rights page only, and `stamp.py` holds all nine navs to the
+same after normalising; the sitemap gained the page and moved the
+`lastmod` of About and Thoughts to the day they changed, as its own
+comment asks. Every link on the page was fetched on the day and its
+status recorded in the wave's report: the police sites' pages answer
+403 to a script and open in a browser, and their PDFs answer 200.
+
 ### Sharing the site
 
 Everything that decides what the site looks like from outside a
