@@ -184,15 +184,21 @@
                with a way to take it out again. account.js builds the
                list; the input is emptied after each choice so the
                originals are never held, only the re-saved copies. -->
+          <!-- Photos only. A video carries its location and the device
+               that made it, and nothing in a browser can strip that
+               without a library the CSP will not load; a photo is
+               re-saved here first, which does. NOTES.md, "The reporting
+               loop", has the decision. -->
           <label for="s-proof">Photos, if you have any &mdash; up to three</label>
-          <input type="file" id="s-proof" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
+          <input type="file" id="s-proof" multiple accept="image/jpeg,image/png,image/webp">
           <ul class="proof-list" id="s-proof-list" aria-label="Photos to send"></ul>
           <p class="note" id="s-proof-note" role="status"></p>
           <p class="hint">
             Photos are re-saved in your browser before upload, which
-            removes location and camera details from the file. Videos are
-            sent as they are, so check what yours contains. Proof is seen
-            by moderators only. 20 MB each at most.
+            removes location and camera details from the file. Video is
+            not accepted, because that cannot be done to a video here
+            and a video carries the same details. Proof is seen by
+            moderators only. 20 MB each at most.
           </p>
 
           <!-- What was filled in before a reload, if anything: the
@@ -372,10 +378,10 @@
           <textarea id="s-status-note" placeholder="optional"></textarea>
 
           <label for="s-status-proof">Photos, if you have any &mdash; up to three</label>
-          <input type="file" id="s-status-proof" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
+          <input type="file" id="s-status-proof" multiple accept="image/jpeg,image/png,image/webp">
           <ul class="proof-list" id="s-status-proof-list" aria-label="Photos to send"></ul>
           <p class="note" id="s-status-proof-note" role="status"></p>
-          <p class="hint">Moderators only. Photos have their location data removed first. 20 MB each at most.</p>
+          <p class="hint">Moderators only. Photos have their location data removed first; video is not accepted. 20 MB each at most.</p>
 
           <p class="note" id="status-draft-note" role="status"></p>
 

@@ -674,19 +674,21 @@ grant select, insert on public.reports to authenticated;
 
 -- ---------------- report_proof ----------------
 
--- One row per photo or video attached to a report. The file itself
--- sits in the private "proof" storage bucket (set up further down) at
+-- One row per photo attached to a report. The file itself sits in
+-- the private "proof" storage bucket (set up further down) at
 -- storage_path, which must be <user id>/<report id>/<file name>. A
 -- moderator sees the file through a signed URL the client asks for;
--- nobody else can reach it.
+-- nobody else can reach it. Photos only since version 2.12 (the
+-- block just below the grants says why); the constraint is named so
+-- that block can replace it on an older table.
 create table if not exists public.report_proof (
   id           bigint generated always as identity primary key,
   report_id    bigint not null references public.reports(id) on delete cascade,
   user_id      uuid not null references public.profiles(id) on delete cascade,
   storage_path text not null unique,
   mime         text not null
-                 check (mime in ('image/jpeg', 'image/png', 'image/webp',
-                                 'video/mp4', 'video/webm')),
+                 constraint report_proof_mime_check
+                 check (mime in ('image/jpeg', 'image/png', 'image/webp')),
   bytes        bigint not null check (bytes > 0 and bytes <= 20971520),   -- 20 MB, same as the bucket
   created_at   timestamptz not null default now()
 );
@@ -720,6 +722,48 @@ create policy "report_proof: delete own pending"
 
 revoke all on public.report_proof from anon, authenticated;
 grant select, insert, delete on public.report_proof to authenticated;
+
+-- version 2.12: video is refused. The form used to take MP4 and WebM
+-- and send them as they were, with a hint asking the person to check
+-- what theirs contained - on a site whose promise is anonymity, and
+-- to the one person who can least afford to leak a position: someone
+-- standing in front of a van, filming it. A video carries the same
+-- things a photo does - a GPS track, the device, the time - in a
+-- container the browser cannot rebuild the way it re-saves a photo
+-- through a canvas, and stripping it in plain JavaScript would take a
+-- library the Content-Security-Policy will not load. A warning would
+-- have made the promise the person's to keep for us. So the form
+-- refuses video at the moment of choosing, and this narrows the two
+-- places the server decides: the check on report_proof.mime here,
+-- and the bucket's allowed_mime_types, below, in the insert that
+-- creates it. Migration 010 is the same statements; if you change
+-- one, change the other. QUESTIONS.md item 1 records the decision.
+--
+-- Nothing is deleted. A video row that already exists stays, with
+-- its file: taking a person's evidence away because the rule changed
+-- is not this schema's to do. The new check is therefore added NOT
+-- VALID - checked on every new row, not on old ones - and validated
+-- only if no video row exists, so that on a database with none the
+-- constraint ends up exactly as a fresh database's does. On one that
+-- has some, the notice below says so, and the constraint stays not
+-- valid until the maintainer decides what to do with those rows and
+-- runs "alter table public.report_proof validate constraint
+-- report_proof_mime_check" by hand.
+alter table public.report_proof drop constraint if exists report_proof_mime_check;
+alter table public.report_proof add constraint report_proof_mime_check
+  check (mime in ('image/jpeg', 'image/png', 'image/webp')) not valid;
+
+do $$
+declare
+  videos integer;
+begin
+  select count(*) into videos from public.report_proof where mime like 'video/%';
+  if videos = 0 then
+    alter table public.report_proof validate constraint report_proof_mime_check;
+  else
+    raise notice 'report_proof has % video row(s) from before version 2.12. They are kept; report_proof_mime_check stays NOT VALID (new rows are still checked) until you decide about them and run: alter table public.report_proof validate constraint report_proof_mime_check', videos;
+  end if;
+end $$;
 
 -- ---------------- xp_events ----------------
 
@@ -2209,10 +2253,14 @@ grant execute on function public.delete_my_account() to authenticated, service_r
 -- report is pending; never overwrite. The size and type limits are
 -- enforced by the bucket itself before a byte is stored. The insert
 -- below is what creates the bucket - it appears in the dashboard on
--- its own, and re-running keeps the limits as written here.
+-- its own, and re-running keeps the limits as written here. Photos
+-- only since version 2.12 (see report_proof above for why): the
+-- on-conflict update is what narrows the list on a bucket that
+-- already exists, and the dashboard shows the same list under
+-- Storage -> proof -> settings, where it should read the same.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('proof', 'proof', false, 20971520,
-        array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
+        array['image/jpeg', 'image/png', 'image/webp'])
 on conflict (id) do update
   set public             = excluded.public,
       file_size_limit    = excluded.file_size_limit,

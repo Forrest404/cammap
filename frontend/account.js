@@ -1927,9 +1927,26 @@ function setUpAccountForms(hooks) {
    A photo is drawn onto a canvas and read back out as a fresh JPEG.
    That throws away everything in the original file that was not the
    picture: the GPS position, the phone model, the time - all of the
-   metadata a camera writes in. It also caps the size. A video cannot
-   be rebuilt in the browser like that, so it is sent as it is and the
-   page says so. */
+   metadata a camera writes in. It also caps the size.
+
+   Video is refused. It used to be sent as it was, with a hint asking
+   the person to "check what yours contains" - on a site whose whole
+   promise is anonymity, to the one person who can least afford to
+   leak a position: someone standing in front of a van, filming it.
+   A video file carries the same things a photo does (a GPS track,
+   the device, the time) in a container this page cannot rebuild:
+   there is no canvas for a video, and stripping an MP4's metadata in
+   plain JavaScript would take a library the Content-Security-Policy
+   will not load. A warning would have made the promise the person's
+   to keep for us. So the file is refused at the moment of choosing,
+   with the reason, and the bucket and the report_proof check refuse
+   it on the server as well (schema.sql, version 2.12). NOTES.md,
+   "The reporting loop", has the decision; QUESTIONS.md item 1 has
+   the maintainer's yes. */
+
+var VIDEO_REFUSED = "Video is not accepted: a video file carries its location and the device that " +
+  "made it, and this site cannot strip that in your browser. A photo is re-saved here first, " +
+  "which removes it.";
 
 var PROOF_MAX_BYTES = 20 * 1024 * 1024;
 var PROOF_MAX_EDGE = 1600;
@@ -1975,18 +1992,21 @@ function prepareProof(file, onDone) {
   }
 
   /* Only the kinds the storage bucket will accept; anything else is
-     refused here with a reason rather than by the upload without one. */
+     refused here with a reason rather than by the upload without one.
+     A video gets the reason in full, because the person chose it in
+     good faith and deserves to know why it is the one thing the form
+     will not take. */
   if (file.type === "image/jpeg" || file.type === "image/png" || file.type === "image/webp") {
     stripImage(file, onDone);
     return;
   }
 
-  if (file.type === "video/mp4" || file.type === "video/webm") {
-    onDone(null, file, file.type, file.type === "video/mp4" ? "mp4" : "webm");
+  if (/^video\//.test(file.type) || /\.(mp4|webm|mov|m4v|avi|3gp)$/i.test(file.name || "")) {
+    onDone(VIDEO_REFUSED);
     return;
   }
 
-  onDone("Only JPEG, PNG, WebP, MP4 or WebM files can be sent.");
+  onDone("Only JPEG, PNG or WebP photos can be sent.");
 }
 
 function randomName() {

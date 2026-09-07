@@ -846,6 +846,37 @@ one proof row and a retry sent only the second; the re-saved JPEG
 read back byte by byte carried no `Exif` segment, no make and no
 model where the original had all three.
 
+**Why video is refused.** The form took MP4 and WebM and sent them
+as they were, with a hint asking the person to "check what yours
+contains". On a site whose whole promise is anonymity that was a
+promise handed to the reporter to keep for us, and handed to the
+one person who can least afford to leak a position: someone
+standing in front of a van, filming it. A video file carries what a
+photo does - a GPS track, the device that made it, the time - in a
+container the browser cannot rebuild the way it re-saves a photo
+through a canvas; there is no canvas for a video, and stripping an
+MP4's atoms in plain JavaScript would take a library the
+Content-Security-Policy will not load. The two honest choices were
+to refuse video or to warn far more loudly at the moment of
+choosing the file; the maintainer took the first (QUESTIONS.md,
+item 1), and this is it. A video is refused the moment it is
+chosen, by type or by extension, with the reason in full - "a video
+file carries its location and the device that made it, and this
+site cannot strip that in your browser; a photo is re-saved here
+first, which removes it" - and the `accept` on both file pickers
+names the three photo types. The server refuses it too, whatever a
+form does: migration 010 (schema version 2.12) narrows the check on
+`report_proof.mime` and the proof bucket's `allowed_mime_types` to
+the three types. Nothing is deleted: a video row that exists stays,
+with its file, because taking a person's evidence away when the
+rule changed is not the schema's to do; the check is added `not
+valid` and validated only where no video row exists, so a clean
+database ends up identical to a fresh one and one with old video
+rows keeps them, still refusing new ones, until the maintainer
+decides. The moderation queue's "video →" link stays for exactly
+those rows. What the Anonymity section above used to say about
+video is gone with it.
+
 ### Moderating at scale
 
 The moderation page was built for a queue of a dozen and will be used,
@@ -1684,7 +1715,7 @@ and will print with the list once it exists.
 
 What the site keeps about a person: a username of two random words, a password hash, the reports they sent, their XP, and one setting - whether they appear on the leaderboard, which is true unless they turn it off. No email, no name, no IP address in any of our tables. All of it can be deleted from the account page, in one call, by the person it is about; what cannot be taken back is a camera their report put on the map, and the page says so before it asks.
 
-Three honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. A photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Videos are sent as they are, and the page says so. And when an account is deleted, its proof files are made unreachable by deleting their rows in the storage table; whether Supabase clears the bytes behind them from the bucket's store at once is theirs to promise, not ours.
+Three honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. A photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Video is not accepted at all, because the same data cannot be stripped from a video in the browser, and the page says why. And when an account is deleted, its proof files are made unreachable by deleting their rows in the storage table; whether Supabase clears the bytes behind them from the bucket's store at once is theirs to promise, not ours.
 
 ### Changing, leaving and recovering an account
 
