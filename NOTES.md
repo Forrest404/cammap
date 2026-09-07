@@ -1995,6 +1995,22 @@ What the site keeps about a person: a username of two random words, a password h
 
 Three honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. A photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Video is not accepted at all, because the same data cannot be stripped from a video in the browser, and the page says why. And when an account is deleted, its proof files are made unreachable by deleting their rows in the storage table; whether Supabase clears the bytes behind them from the bucket's store at once is theirs to promise, not ours.
 
+Seven more, found by an adversarial pass over the whole site after Wave 4 (BUILD-LOG.md, "Privacy pass") and stated here rather than closed, because each is either not closable from this repository, a decision that is not the programme's to take, or - the view, the session and the draft - closed as far as it can be and worth saying where the line now is.
+
+*Sign-up answers whether a username exists.* Supabase's sign-up endpoint returns `user_already_exists` for a name that is taken, and the trigger `handle_new_user` independently raises "is taken"; a stranger with a guess signs up, reads the answer, and deletes the throwaway with `delete_my_account()`. That is `username_available()` under another name - the question that function was dropped for - gated only by the dashboard's per-IP sign-up rate limit, and about 18,800 names cover both word lists. Closing it means the server drawing the username rather than the browser, which changes the recovery card and how the hidden login address is formed; that is the maintainer's decision, QUESTIONS.md item 13, and until it is taken this is stated, not closed.
+
+*The search box talks to another service.* What is typed into the box under the map goes to OpenStreetMap's Nominatim, with the site's address as the referrer, and the search is everyone's, not `?edit`'s. A place name is a place name; a home postcode typed there is a request to a service that is not this one. "The map as a tool" says how lightly it is called and why there is no search-as-you-type.
+
+*A report's number is a running count.* The receipt shows the database's own id, which every report the site has ever received advances by one: it says how many came before yours, and two receipts a day apart say how many came between.
+
+*Approved words stay on the map.* The name and the note of an approved report are the camera's for good, as above; deleting the account takes back the report, not the words.
+
+*What anyone may read of a camera is the view.* Since schema version 2.14 the fourteen columns of `cameras_public` are the whole of what a browser, or anyone with the anon key, can select about a camera: not who approved it, not when, not when the row last changed. Before that the table itself was readable and carried all four, which is what let a moderator's uuid and working hours be grouped out of the map and a camera's appearance be set beside the daily leaderboard (L3 and L6). A column added to the table is not public until it is added to the view.
+
+*The session sits in the browser until Log out.* While signed in, supabase-js keeps the session's tokens in `localStorage`, and closing the tab does not end it. On a shared machine, press Log out: it ends the session here, and since the privacy fix round takes the report draft and the last receipt with it (L8). Sign out everywhere, on the account page, is for the machine you no longer have.
+
+*After Near me the address bar shows where you are.* The map writes its view to the fragment of the address as it moves, so after Near me the address bar carries the spot the phone gave, until the map is moved on or the address is cleared. A copy of the address bar is a copy of that.
+
 ### Changing, leaving and recovering an account
 
 The generated username, the absent email and the refusal to build
