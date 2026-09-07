@@ -2089,6 +2089,167 @@ function copyLinkRow(point) {
 }
 
 /* ------------------------------------------------------------------
+   Reporting from the map
+
+   The popup on a camera offers "Report its state"; a gap on the map
+   offered nothing, and a gap is exactly where a camera the map does
+   not have would be. So a right-click on the map, or a long press on
+   a phone, opens a small popup at that spot with one row, "Report a
+   camera here", which opens the report form with the pin already
+   placed there - report.html?lat=&lon=, to six decimals, which is
+   the precision the map writes everywhere else.
+
+   Right-click. MapLibre already keeps the browser's own menu off the
+   canvas: its mouse handlers call preventDefault on contextmenu there
+   so that a right-drag can rotate the map, and it fires its own
+   "contextmenu" map event on mouseup, and only if the mouse did not
+   drag in between. So the map event is the thing to listen to. It
+   comes with the spot under the pointer, it never fires for a
+   right-drag, and it is the canvas's alone - nothing here touches
+   contextmenu anywhere else on the page, so the browser's menu on a
+   link or a paragraph is what it always was. The preventDefault
+   below is on that same canvas event, belt and braces.
+
+   Long press. iOS Safari fires no contextmenu for a touch, so a
+   press is timed here: one finger down that stays within a few
+   pixels for LONG_PRESS_MS is a press; one that drifts further is a
+   pan, and the timer is cancelled, so a long press that turns into a
+   drag is a pan and nothing else - MapLibre's own drag is not
+   interfered with at all. Android Chrome does fire contextmenu on a
+   long press, a little before this timer, and the map event above
+   handles it; offerReportAt() declines to open a second popup for
+   the same spot within a second, so the two paths cannot both fire
+   for one press. After a press, the touchend is preventDefault-ed so
+   the browser does not make a click out of it: a popup closes on a
+   map click by default, and the one just opened would close under
+   the finger that opened it.
+   ------------------------------------------------------------------ */
+
+var LONG_PRESS_MS = 600;
+var LONG_PRESS_SLOP = 8;   /* pixels a finger may drift and still be pressing */
+
+/* The last spot offered, so one press is one popup whichever way it
+   arrived (see "Long press" above). */
+var lastOffer = { at: 0, x: 0, y: 0 };
+
+/* map.js only runs on the map, which is the page at the root, so the
+   report page is one folder down from here - as the popup's "Report
+   its state" link already assumes. */
+function reportHereHref(lngLat) {
+  return "pages/report.html?lat=" + lngLat.lat.toFixed(6) + "&lon=" + lngLat.lng.toFixed(6);
+}
+
+function offerReportAt(lngLat, point) {
+  var box = document.createElement("div");
+  var title = document.createElement("strong");
+  var coords = document.createElement("span");
+  var row = document.createElement("a");
+  var now = Date.now();
+
+  if (now - lastOffer.at < 1000 &&
+      Math.abs(point.x - lastOffer.x) < 20 && Math.abs(point.y - lastOffer.y) < 20) {
+    return;
+  }
+  lastOffer = { at: now, x: point.x, y: point.y };
+
+  closePopup();
+
+  title.textContent = "Seen a camera here?";
+  box.appendChild(title);
+
+  box.appendChild(document.createElement("br"));
+  coords.className = "kind";
+  coords.textContent = lngLat.lat.toFixed(4) + ", " + lngLat.lng.toFixed(4);
+  box.appendChild(coords);
+
+  box.appendChild(document.createElement("br"));
+  row.className = "report-link";
+  row.href = reportHereHref(lngLat);
+  row.textContent = "Report a camera here →";
+  box.appendChild(row);
+
+  popup = new maplibregl.Popup({ offset: 10, closeButton: true })
+    .setLngLat(lngLat)
+    .setDOMContent(box)
+    .addTo(map);
+
+  /* Not a camera, so the address bar does not name one. */
+  popupId = null;
+
+  (function (own) {
+    own.on("close", function () {
+      if (popup === own) {
+        popup = null;
+      }
+    });
+  })(popup);
+}
+
+function bindReportGesture() {
+  var holder = map.getContainer();
+  var timer = null;
+  var press = null;   /* where the finger went down, while it is down */
+
+  function cancelPress() {
+    if (timer) {
+      window.clearTimeout(timer);
+      timer = null;
+    }
+    press = null;
+  }
+
+  map.on("contextmenu", function (event) {
+    if (event.originalEvent && event.originalEvent.preventDefault) {
+      event.originalEvent.preventDefault();
+    }
+    cancelPress();
+    offerReportAt(event.lngLat, event.point);
+  });
+
+  /* Plain third arguments rather than an options object: this is
+     written for old browsers too, and one that predates the object
+     form would read it as "capture". Nothing in touchstart or
+     touchmove calls preventDefault, so nothing is lost by their not
+     being marked passive. */
+  holder.addEventListener("touchstart", function (event) {
+    if (event.touches.length !== 1) {
+      cancelPress();
+      return;
+    }
+    press = { x: event.touches[0].clientX, y: event.touches[0].clientY, done: false };
+    timer = window.setTimeout(function () {
+      var rect = holder.getBoundingClientRect();
+      var point = { x: press.x - rect.left, y: press.y - rect.top };
+
+      timer = null;
+      press.done = true;
+      offerReportAt(map.unproject([point.x, point.y]), point);
+    }, LONG_PRESS_MS);
+  }, false);
+
+  holder.addEventListener("touchmove", function (event) {
+    if (!press || press.done || !event.touches.length) {
+      return;
+    }
+    if (Math.abs(event.touches[0].clientX - press.x) > LONG_PRESS_SLOP ||
+        Math.abs(event.touches[0].clientY - press.y) > LONG_PRESS_SLOP) {
+      cancelPress();
+    }
+  }, false);
+
+  holder.addEventListener("touchend", function (event) {
+    if (press && press.done && event.cancelable) {
+      event.preventDefault();
+    }
+    cancelPress();
+  }, false);
+
+  holder.addEventListener("touchcancel", cancelPress, false);
+}
+
+bindReportGesture();
+
+/* ------------------------------------------------------------------
    The list of points
 
    Everybody gets the list and can click a row to be taken there. Only

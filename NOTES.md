@@ -827,10 +827,295 @@ SQL editor before the button works. It is safe to run again, as always.
 
 ### The reporting loop
 
-*(Written by the Wave 4 reporting agent: the form for everyone and what
-sign-up carries through, the duplicate check and what it does not say,
-three photos, why video is refused, Your reports, the receipt, reporting
-from the map, and the XP table on the leaderboard.)*
+The picker with its crosshair, the context dots and the upload that
+strips a photograph were all well judged. What surrounded them was
+not: a wall in front and a void behind. In front, an account was
+required before a person could so much as look at the form. Behind,
+a report went into a queue and nothing was ever heard of it again -
+no number, no list, no word of what a moderator decided. This section
+is the two ends of that loop closed, and the reasoning at each step.
+
+**The form is everyone's; the account is asked for at the end.** The
+report page used to show one sentence to anyone signed out - "You
+need an account to send a report in" - and hide the map, the
+crosshair and the photo picker behind it. That order lost the people
+the form exists for. Most people who have just seen a van will never
+make an account first: they do not yet know what is being asked, or
+that it is only two words and a password, and by the time the account
+page had explained it they had gone. So the whole form is shown to
+anyone, signed in or not, and the account is asked for at the one
+moment it is needed: when *Send for review* is pressed. The account
+page's own two boxes - *Make an account*, with the generated
+username, the passphrase button, the recovery card and its tick; and
+*Sign back in* - are written out on the report page with the same
+ids, under the form, and `setUpAccountForms()` in `account.js` wires
+them once for both pages, with a hook for what each page does next.
+On the account page that is "show the signed-in half". On the report
+page it is "send the report that was waiting". The card is offered
+after sign-up exactly as it is there, in a box under the form, and
+it prints alone by the same `body.printing-card` rules - checked on
+the report page with `Page.printToPDF` - because the rules were
+written against `.sheet` and `#recovery`, not against the account
+page. The nav offers *Report a camera* signed out as well now, for
+the same reason the form does.
+
+What Send does when nobody is signed in: it validates the form as it
+would for a send, prepares the photograph as it would for a send,
+reads every value off the form once, and keeps the function that
+would have sent them in `pendingSend`. Then it shows the two boxes
+and moves focus to them. The moment an account exists - made or
+signed into - `accountArrived()` calls that function, and the report
+goes exactly as it stood, with nothing retyped. That path is whole
+on its own; nothing about it depends on storage. The draft is also
+written to `sessionStorage` - the pin, the kind, the name and the
+note - so that a reload in the middle of signing up (a phone that
+reloads a tab it put in the background, a mis-tap on the address
+bar) does not lose them; on the next load the form is filled back in
+and a line says so. Session storage rather than local, because a
+draft is for this visit and a report half-written on a shared
+machine should not greet the next person to open the page. A photo
+cannot survive a reload - a blob is not something storage holds at
+that size, and a file input cannot be refilled by script - so the
+line says the photo needs choosing again. Storage may be refused
+outright; every touch of it is wrapped, and refused, the in-memory
+path is all there is and it is enough. The key is a constant in
+`account.js` until it is moved beside the others in `STORAGE`.
+
+The lock did not move. The reports insert policy needs
+`auth.uid() = user_id`, so nothing on the page could ever send a
+report from nobody however the form was arranged; hiding the form
+was only a courtesy withheld, and showing it is the courtesy given.
+Signing out on the report page no longer sends the person to the
+map: the form is theirs whether or not they are signed in, and what
+is in it stays.
+
+**Reporting from the map.** The popup on a camera offered "Report
+its state"; a gap on the map offered nothing, and a gap is exactly
+where a camera the map does not have would be. A right-click on the
+map, or a long press on a phone, now opens a small popup at that
+spot with one row, *Report a camera here*, which opens the report
+form with the pin already placed - `report.html?lat=&lon=`, six
+decimals, the precision the map writes everywhere else. The
+right-click is MapLibre's own `contextmenu` map event: the library
+already keeps the browser's menu off the canvas (its mouse handlers
+call `preventDefault` there so a right-drag can rotate the map) and
+fires the map event on mouseup only if the mouse did not drag in
+between, so a right-drag is a rotate and never a report, and
+nothing on the page touches `contextmenu` anywhere but the canvas -
+the browser's menu on a link or a paragraph is what it always was.
+The long press is timed in `map.js`, because iOS Safari fires no
+`contextmenu` for a touch: one finger down for 600 ms within eight
+pixels is a press, and a finger that drifts further is a pan, so a
+press that turns into a drag is a pan and nothing else. Android
+Chrome fires `contextmenu` for a long press on its own account, a
+little before the timer; `offerReportAt()` will not open a second
+popup for the same spot within a second, so one press is one popup
+whichever way it arrived. After a press the `touchend` is
+`preventDefault`-ed so the browser does not make a click of it,
+because a MapLibre popup closes on a map click and the one just
+opened would close under the finger that opened it. Checked over
+the DevTools protocol: a right-click on the canvas opens the popup
+and its `defaultPrevented` is true; a synthetic right-click on a nav
+link is not prevented; a 600 ms touch with no movement opens the
+popup; a touch that moves 30 px and lifts opens nothing.
+
+**The duplicate check, and what it does not say.** The database
+refuses a person's second pending new-camera report in the same
+0.0001° cell, and a camera approves itself once enough *different*
+people have reported it within the auto-approve radius; the
+reporter learned neither until Send, after the typing and the
+photograph. Now, as the pin lands - the picker's move event,
+settled for half a second so a drag across the map is one question
+and not sixty - the form asks `pending_near(lat, lon)` (migration
+009, schema version 2.11) whether a new-camera report is waiting
+within the radius and how many days ago the newest was sent, and
+says so under the map: "Someone reported this corner two days ago
+and it is waiting to be checked. Adding yours helps it through: 3
+people reporting the same kind of camera here puts it on the map
+without a moderator." The threshold is quoted from `settings`,
+which is public, rather than written as "enough". The sentence sits
+in a live region so a screen reader hears it arrive.
+
+Why a function: the reports read policy shows a person their own
+rows and a moderator everyone's, and that is right - it is what
+keeps who-reported-what from anyone else. A plain select from the
+form could therefore never see another person's pending report,
+which is exactly the one the question is about; the function is a
+`security definer` window through the policy that answers two
+fields. What a stranger learns by calling it repeatedly: whether a
+new-camera report is waiting within about a hundred metres of any
+point in London, and how many days ago the newest was sent. Not
+who, not how many, not its kind, note or exact position. That is
+the same thing the map would show at that spot once the report is
+approved, minus the position, and it says nothing about any
+account - which is why it is acceptable, and why it is granted to
+`anon` as well, since the signed-out visitor is filling the form
+now. What is withheld and why: the count, because the sentence has
+no use for it and a count is a finer instrument than a flag -
+watched over time it would say when each report arrived, one by
+one; and the exact time, rounded to whole days for the same reason.
+Coordinates in, two fields out, no identity anywhere: that is the
+line CLAUDE.md draws for every call the browser may make. The kind
+is not taken either - a per-kind probe would be finer for nothing
+the sentence needs - so the sentence says "the same kind of camera"
+and leaves the kind to the person. The column is `found`, not
+`exists`, because `exists` is a keyword that would need quoting
+wherever it is read. Where the migration has not been run, or the
+network is gone, the line stays empty, which is what the page
+showed before there was a line.
+
+The refusal that still happens - a person's own earlier pending
+report in the same cell - is reworded from "You have already
+reported this one" to "You already have a report waiting at this
+spot", and told apart from the one-state-report-per-camera refusal
+by the index named in the error. Proved on a throwaway PostgreSQL:
+anon and a signed-in user get `(true, 2)` beside another person's
+two-day-old report and `(false, null)` elsewhere and outside London;
+anon's plain select on reports is refused; a user's second pending
+report in a cell raises on `reports_one_new_per_cell_idx` while
+another person's at the same spot is accepted.
+
+**Three photos.** One file per report was the rule, and a moderator
+deciding whether a pole on a street corner is a camera often needs
+two pictures: a close one that shows the thing and a wide one that
+shows where it is. `report_proof` was always a separate table with
+a `report_id`, so the schema expected more; the form now takes up
+to three, on both the new-camera and the state form. Each is
+prepared the moment it is chosen - re-saved through the canvas,
+which is what strips the position and the device out of it - and
+shown as a thumbnail with a real remove button that names the
+photo it removes. Chosen time rather than Send time, for three
+reasons: the person sees what they are about to send; a file that
+cannot be sent is refused beside the picker rather than after
+everything else; and what the form holds is the re-saved copy and
+never the original - the file input is emptied after each choice,
+so the bytes with the location in them are not sitting in the form.
+The 20 MB cap is per file, because it is the bucket's per-object
+limit and the `report_proof.bytes` check is per row, and the hint
+says "each"; it is checked on the original, before re-saving,
+because a phone photo that large is not a photo but a mistake.
+Sending is one file at a time, in order, each its own upload and
+its own `report_proof` row. If the second of three fails, the
+report is in and the first is attached, and neither is undone: the
+report is the person's own and still pending, so the insert policy
+admits the rest whenever they are sent, and the form offers *Try
+the photos again* for exactly the ones that did not go, without
+choosing them again. A partial failure is a report with fewer
+pictures than meant, said plainly - never a report lost. Checked
+with the fake client: a forced failure on the second upload left
+one proof row and a retry sent only the second; the re-saved JPEG
+read back byte by byte carried no `Exif` segment, no make and no
+model where the original had all three.
+
+**Why video is refused.** The form took MP4 and WebM and sent them
+as they were, with a hint asking the person to "check what yours
+contains". On a site whose whole promise is anonymity that was a
+promise handed to the reporter to keep for us, and handed to the
+one person who can least afford to leak a position: someone
+standing in front of a van, filming it. A video file carries what a
+photo does - a GPS track, the device that made it, the time - in a
+container the browser cannot rebuild the way it re-saves a photo
+through a canvas; there is no canvas for a video, and stripping an
+MP4's atoms in plain JavaScript would take a library the
+Content-Security-Policy will not load. The two honest choices were
+to refuse video or to warn far more loudly at the moment of
+choosing the file; the maintainer took the first (QUESTIONS.md,
+item 1), and this is it. A video is refused the moment it is
+chosen, by type or by extension, with the reason in full - "a video
+file carries its location and the device that made it, and this
+site cannot strip that in your browser; a photo is re-saved here
+first, which removes it" - and the `accept` on both file pickers
+names the three photo types. The server refuses it too, whatever a
+form does: migration 010 (schema version 2.12) narrows the check on
+`report_proof.mime` and the proof bucket's `allowed_mime_types` to
+the three types. Nothing is deleted: a video row that exists stays,
+with its file, because taking a person's evidence away when the
+rule changed is not the schema's to do; the check is added `not
+valid` and validated only where no video row exists, so a clean
+database ends up identical to a fresh one and one with old video
+rows keeps them, still refusing new ones, until the maintainer
+decides. The moderation queue's "video →" link stays for exactly
+those rows. What the Anonymity section above used to say about
+video is gone with it.
+
+**Your reports.** The other end of the loop. A report went into a
+queue and nothing was ever heard of it again: the account page
+listed saved cameras and an XP number and never what a person had
+sent or what became of it, though the reports read policy admitted
+a person's own rows all along and the columns a decision writes -
+`state`, `resolved_at`, `resolution_note` - were there to be read.
+People who send evidence somewhere want to know it arrived and what
+was done with it, and this was the cheapest retention work the site
+had. The account page now has *Your reports* under *Saved cameras*:
+a pager, like every list that can grow (Wave 2's `makePager()`, for
+the reason in "Moderating at scale"), newest first, thirty a page
+with *Load more*, and the `.eq` on `user_id` the policy's comment
+asks for - without it a moderator's own page would read the whole
+table. Each row is the report as it stands: what it was about (the
+kind and the name, or the camera and the claim), the day it was
+sent, its state in the reporter's words - waiting to be checked,
+accepted and on the map, not accepted, merged into a camera already
+there - the day it was decided, the moderator's note when one was
+left, and a link to the map for an accepted one. A state report
+about a camera since taken off the map says "camera #id", because
+the cameras read policy returns nothing for a hidden row and that
+number is what is known. `#report-<id>` in the address - the
+receipt's link - lights that row, scrolls to it and gives it focus,
+loading pages on until it is found or ten pages are in; a link to
+one older than that says so rather than loading for ever. While in
+`savedState()`: the saved-camera lines "Since marked non-functional"
+and "Since marked no longer in use" now read "The map now shows this
+as …", because from the browser it cannot be known whether the shop
+was already paused on the day the star was pressed - the saved row
+is a copy of name, kind and position, deliberately not of state -
+and the line should say only what is known.
+
+**The receipt.** "Sent for review. Thank you." and the form
+clearing was all a person got for a report: no number, no link,
+nothing to come back with. Now, the moment the insert returns, the
+form shows the report's number - the database's own id, so it is
+known at once and survives anything - in a box that copies it, with
+a link to `account.html#report-<id>`, which *Your reports* finds and
+lights. The receipt is shown before the photos are attached and
+whatever happens to them, because nothing that happens to a photo
+changes the number. The last number sent is kept in
+`sessionStorage` (`cammap.report-receipt`, a constant in
+`account.js` until it joins `STORAGE`), so a reload of the report
+page shows "Your last report this session is #1234" rather than a
+blank form; session storage for the draft's reason, that a number
+left on a shared machine would tell the next person which report
+was sent from it; refused, the receipt is shown once. Copying is
+`map.js`'s Copy-link pattern - the clipboard API, then `execCommand`
+on the selected box, then the box left selected with a sentence
+saying which key finishes it - because the clipboard API is refused
+on a page opened off the disk and on plain http. The own-duplicate
+refusal now ends "It is listed under Your reports on your account
+page", since there is such a list.
+
+**What a report is worth.** The form said what the one report being
+written was worth, and nothing said that a transport camera is
+worth fifty and a van site five - which is the thing that tells a
+contributor where the gaps in the record are. `xp_rules` is readable
+by anyone, so the leaderboard page now publishes it under the
+boards: each rule's key as words and its XP, read off the table on
+every load and never typed into the page, so a change made in the
+dashboard is what the page says next time. The kinds are named
+through `typeLabel()` like every other label on the site; the two
+state claims and the first-report bonus have sentences of their
+own; a key the page does not know is shown as it is, because a rule
+in the table is a rule. The page also says, in the account page's
+words, where to leave the list - Wave 3's sentence, "You can leave
+this list from your account page - On the leaderboard, under Signed
+in." Checked with the fake client that every number in the table is
+the fake's `xp_rules` value for that key and that the fetch is the
+same `loadXpRules()` the form uses.
+
+*Where the keys live.* Two `sessionStorage` keys were added this
+wave, `cammap.report-draft` and `cammap.report-receipt`, as
+constants in `account.js` rather than in `STORAGE` in `shared.js`,
+which is where they belong beside the others; the wave did not edit
+that file. Moving them is two lines in `shared.js` and two
+references in `account.js`.
 
 ### Moderating at scale
 
@@ -1670,7 +1955,7 @@ and will print with the list once it exists.
 
 What the site keeps about a person: a username of two random words, a password hash, the reports they sent, their XP, and one setting - whether they appear on the leaderboard, which is true unless they turn it off. No email, no name, no IP address in any of our tables. All of it can be deleted from the account page, in one call, by the person it is about; what cannot be taken back is a camera their report put on the map, and the page says so before it asks.
 
-Three honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. A photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Videos are sent as they are, and the page says so. And when an account is deleted, its proof files are made unreachable by deleting their rows in the storage table; whether Supabase clears the bytes behind them from the bucket's store at once is theirs to promise, not ours.
+Three honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. A photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Video is not accepted at all, because the same data cannot be stripped from a video in the browser, and the page says why. And when an account is deleted, its proof files are made unreachable by deleting their rows in the storage table; whether Supabase clears the bytes behind them from the bucket's store at once is theirs to promise, not ours.
 
 ### Changing, leaving and recovering an account
 

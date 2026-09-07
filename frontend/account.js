@@ -323,14 +323,20 @@ function renderNav() {
   navAccount.appendChild(navSeparator());
   navAccount.appendChild(navLink(pageHref("leaderboard.html"), "Leaderboard", PAGE === "leaderboard.html"));
 
+  /* The report form is everyone's too, since the account is asked
+     for at the moment of sending and not before (see "The report
+     page", below). The link used to appear only once someone was
+     signed in, which meant the people the form is for - someone who
+     has just seen a van and has no account - never saw the way to
+     it. */
+  navAccount.appendChild(navSeparator());
+  navAccount.appendChild(navLink(pageHref("report.html"), "Report a camera", PAGE === "report.html"));
+
   if (!currentUser) {
     navAccount.appendChild(navSeparator());
     navAccount.appendChild(navLink(pageHref("account.html"), "Account", PAGE === "account.html"));
     return;
   }
-
-  navAccount.appendChild(navSeparator());
-  navAccount.appendChild(navLink(pageHref("report.html"), "Report a camera", PAGE === "report.html"));
 
   if (isModerator()) {
     navAccount.appendChild(navSeparator());
@@ -612,16 +618,23 @@ function forgetSession() {
     message.textContent = "";
   }
 
-  /* The report page is no use signed out, and neither is the signed
-     in half of the account page, so leave for the map. Everywhere
-     else can stay where it is and just redraw. */
-  if (PAGE === "report.html" || PAGE === "moderate.html") {
+  /* The moderation page is no use signed out, so leave it for the
+     map. The report page used to go the same way and no longer does:
+     the form is everyone's now, and a person who signs out while
+     filling it in keeps what they have filled in. Everywhere else
+     can stay where it is and just redraw. */
+  if (PAGE === "moderate.html") {
     window.location.href = pageHref("index.html");
     return;
   }
 
   if (PAGE === "account.html") {
     showAccountPage();
+    return;
+  }
+
+  if (PAGE === "report.html") {
+    reportSignedOut();
     return;
   }
 
@@ -1030,11 +1043,17 @@ function savedState(saved) {
         Number(c.lon).toFixed(6) !== lon) {
       continue;
     }
+    /* "The map now shows", not "since marked": from here it cannot
+       be known whether the shop was already paused, or the camera
+       already broken, on the day the star was pressed - the saved
+       row is a copy of name, kind and position, and deliberately
+       not of state. What is known is what the map says today, so
+       that is what the line says. */
     if (c.status === "nonfunctional" && c.type !== NONFUNCTIONAL_TYPE) {
-      return "Since marked non-functional.";
+      return "The map now shows this as non-functional.";
     }
     if (c.status === "legacy" && c.type !== "vancam") {
-      return "Since marked no longer in use.";
+      return "The map now shows this as no longer in use.";
     }
     return "";
   }
@@ -1467,7 +1486,197 @@ function showAccountPage() {
   }
 
   showSavedList();
+  showMyReports();
 }
+
+/* ---------------- your reports ----------------
+
+   A report used to vanish into a queue. The account page listed
+   saved cameras and an XP number and never what a person had sent or
+   what became of it - though the reports read policy has admitted a
+   person's own rows all along, and the columns a decision writes
+   (state, resolved_at, resolution_note) were there for anyone to
+   read. People who send evidence somewhere want to know it arrived
+   and what was done with it; this is the cheapest retention work the
+   site had available, and the other half of the loop the report form
+   opens.
+
+   The list is a pager, like every list here that can grow (see
+   makePager, which says why), newest first, with the .eq on user_id
+   the reports policy comment asks for: the moderator half of that
+   policy has no column in it, so without the filter a moderator's
+   own page would read the whole table, and with it every visit is
+   one probe of reports_user_created_idx. Each row is the report as it
+   stands - what it was about, when it was sent, its state, the
+   moderator's note when one was left - and a link to the map for one
+   that is on it. The camera a state report is about comes along by
+   its name; a camera since taken off the map comes back null under
+   the cameras read policy, and the row says "camera #id" then, which
+   is what is known.
+
+   #report-<id> in the address is how the receipt on the report page
+   points here: the row with that id is lit and scrolled to once it
+   has loaded, and the pages are loaded on until it is found or the
+   list runs out - the receipt is for the newest report, which is on
+   the first page, but a link kept for a week may not be. */
+
+var myReportsPager = null;
+var MY_REPORTS_COLUMNS = "id,kind,type,status_claim,name,camera_id,lat,lon,state," +
+  "created_at,resolved_at,resolution_note,cameras(id,name)";
+
+/* How far the search for a #report-<id> row will page before giving
+   up: ten pages is three hundred reports, which no one person has
+   sent yet, and a link to one older than that says so. */
+var REVEAL_PAGES = 10;
+
+function showMyReports() {
+  var box = document.getElementById("reports-box");
+
+  if (!box) {
+    return;
+  }
+  box.style.display = currentUser ? "block" : "none";
+  if (!currentUser) {
+    return;
+  }
+
+  if (!myReportsPager) {
+    myReportsPager = makePager({
+      list:   document.getElementById("reports-list"),
+      empty:  document.getElementById("reports-empty"),
+      note:   document.getElementById("reports-note"),
+      more:   document.getElementById("reports-more"),
+      failed: "Could not load your reports.",
+      row:    myReportRow,
+      fetch:  function (offset, onDone) {
+        loadPage(
+          sb.from("reports")
+            .select(MY_REPORTS_COLUMNS)
+            .eq("user_id", currentUser.id)
+            .order("created_at", { ascending: false }),
+          offset, onDone);
+      },
+      onPage: revealWantedReport
+    });
+  }
+  myReportsPager.reset();
+}
+
+/* The state, in the words the person it is addressed to would use.
+   The queue's stateLabel() speaks to a moderator; this speaks to the
+   reporter, and says what each state means for the camera. */
+function myStateWords(state) {
+  return {
+    pending:  "Waiting to be checked",
+    approved: "Accepted - on the map",
+    rejected: "Not accepted",
+    merged:   "Merged - it was a camera already on the map"
+  }[state] || state;
+}
+
+function dateWords(iso) {
+  var d = new Date(iso);
+
+  return isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+}
+
+function myReportRow(r) {
+  var row = document.createElement("li");
+  var head = document.createElement("div");
+  var body = document.createElement("div");
+  var what = document.createElement("strong");
+  var meta = document.createElement("span");
+  var cam = r.cameras;
+
+  row.id = "report-" + r.id;
+  row.setAttribute("tabindex", "-1");
+  head.className = "queue-head";
+  body.className = "queue-body";
+
+  what.textContent = r.kind === "new"
+    ? "New camera: " + typeLabel(r.type) + " — " + (r.name || "")
+    : "State: " + (cam ? cam.name : "camera #" + r.camera_id) + " is " + claimLabel(r.status_claim);
+  head.appendChild(what);
+
+  meta.className = "coords";
+  meta.textContent = "#" + r.id + " · sent " + dateWords(r.created_at) + " · " + myStateWords(r.state) +
+    (r.state !== "pending" && r.resolved_at ? ", " + dateWords(r.resolved_at) : "");
+  head.appendChild(meta);
+
+  /* The moderator's note, when there is one: it is the one thing on
+     this page written to the person by a person, and the reason a
+     rejection is not a closed door. */
+  if (r.resolution_note) {
+    var note = document.createElement("span");
+    note.className = "coords mod-note";
+    note.textContent = "Moderator's note: “" + r.resolution_note + "”";
+    head.appendChild(note);
+  }
+
+  /* A link to the map for a report that is on it. A pending or
+     rejected report has nothing on the map to link to, and a merged
+     one is on it as the camera it merged into, at that camera's
+     position rather than the report's; the report's own coordinates
+     are what is known here, so the link is offered for the accepted
+     ones only. */
+  if (r.state === "approved" || r.state === "merged") {
+    body.appendChild(mapLink(r.lat, r.lon));
+    row.appendChild(head);
+    row.appendChild(body);
+  } else {
+    row.appendChild(head);
+  }
+
+  return row;
+}
+
+/* The row a #report-<id> link asks for, once it is on the page:
+   lit, scrolled to, and given focus so a screen reader lands on it.
+   Called after every page lands; loads the next page while the row
+   is not yet there and there are pages to load, up to REVEAL_PAGES.
+   The address is left as it is, so a reload finds the row again. */
+var revealTries = 0;
+
+function wantedReportId() {
+  var m = /^#report-(\d+)$/.exec(window.location.hash);
+
+  return m ? m[1] : null;
+}
+
+function revealWantedReport() {
+  var id = wantedReportId();
+  var row;
+  var more = document.getElementById("reports-more");
+  var note = document.getElementById("reports-note");
+
+  if (!id || !myReportsPager) {
+    return;
+  }
+  row = document.getElementById("report-" + id);
+  if (row) {
+    row.className = "spotlit";
+    if (row.scrollIntoView) {
+      row.scrollIntoView({ block: "center" });
+    }
+    row.focus({ preventScroll: true });
+    return;
+  }
+  if (more && more.style.display !== "none" && revealTries < REVEAL_PAGES) {
+    revealTries++;
+    myReportsPager.load();
+    return;
+  }
+  if (note) {
+    note.textContent = "Report #" + id + " is not in this list: it may be older than the pages loaded, or not yours.";
+  }
+}
+
+window.addEventListener("hashchange", function () {
+  revealTries = 0;
+  if (PAGE === "account.html") {
+    revealWantedReport();
+  }
+});
 
 /* ---------------- the leaderboard switch ----------------
 
@@ -1726,6 +1935,46 @@ function setUpEverywhere() {
 }
 
 function setUpAccountPage() {
+  setUpLeaderboardSwitch();
+  setUpRecoveryCard();
+  showAccountPage();
+  setUpChangePassword();
+  setUpEverywhere();
+  setUpDeleteAccount();
+
+  setUpAccountForms({
+    signedUp: function (finalName, password) {
+      offerCard(finalName, password,
+        "The account is made. This is the last time the password is shown: " +
+        "it cannot be reset, and after this page it is never shown again. " +
+        "If you did not keep the card a moment ago, keep it now.");
+      showAccountPage();
+    },
+    signedIn: function () {
+      showAccountPage();
+    }
+  });
+}
+
+/* ---------------- the two boxes: make an account, sign back in ----------------
+
+   Wired once here for both pages that carry them. They were the
+   account page's alone until the report form opened to everyone and
+   needed the same two boxes at the moment of sending - the same
+   generated username, the same passphrase button, the same card and
+   the same tick - and two copies of this wiring would be two places
+   for the sign-up rule to drift apart. The markup is written out on
+   each page with the same ids, the way the nav is, so this finds it
+   wherever it is.
+
+   `hooks.signedUp(finalName, password)` is called once an account is
+   made, with the name actually claimed (the shown one may have been
+   taken in the moment between being shown and being sent) and the
+   password, which is the caller's to put on the card and then
+   forget; `hooks.signedIn()` after a sign-in. Neither page does the
+   same thing next, which is the whole of the difference between
+   them. */
+function setUpAccountForms(hooks) {
   var shown      = document.getElementById("new-username");
   var reroll     = document.getElementById("reroll-button");
   var newPw      = document.getElementById("new-password");
@@ -1740,13 +1989,6 @@ function setUpAccountPage() {
 
   var passphrase = document.getElementById("passphrase-button");
   var tick       = document.getElementById("saved-tick");
-
-  setUpLeaderboardSwitch();
-  setUpRecoveryCard();
-  showAccountPage();
-  setUpChangePassword();
-  setUpEverywhere();
-  setUpDeleteAccount();
 
   if (!signupBtn || !signinBtn) {
     return;
@@ -1832,11 +2074,7 @@ function setUpAccountPage() {
       newPw.value = "";
       newPw2.value = "";
       signupNote.textContent = "";
-      offerCard(finalName, password,
-        "The account is made. This is the last time the password is shown: " +
-        "it cannot be reset, and after this page it is never shown again. " +
-        "If you did not keep the card a moment ago, keep it now.");
-      showAccountPage();
+      hooks.signedUp(finalName, password);
     });
   };
 
@@ -1864,7 +2102,7 @@ function setUpAccountPage() {
       inName.value = "";
       inPw.value = "";
       signinNote.textContent = "";
-      showAccountPage();
+      hooks.signedIn();
     });
   };
 
@@ -1885,9 +2123,26 @@ function setUpAccountPage() {
    A photo is drawn onto a canvas and read back out as a fresh JPEG.
    That throws away everything in the original file that was not the
    picture: the GPS position, the phone model, the time - all of the
-   metadata a camera writes in. It also caps the size. A video cannot
-   be rebuilt in the browser like that, so it is sent as it is and the
-   page says so. */
+   metadata a camera writes in. It also caps the size.
+
+   Video is refused. It used to be sent as it was, with a hint asking
+   the person to "check what yours contains" - on a site whose whole
+   promise is anonymity, to the one person who can least afford to
+   leak a position: someone standing in front of a van, filming it.
+   A video file carries the same things a photo does (a GPS track,
+   the device, the time) in a container this page cannot rebuild:
+   there is no canvas for a video, and stripping an MP4's metadata in
+   plain JavaScript would take a library the Content-Security-Policy
+   will not load. A warning would have made the promise the person's
+   to keep for us. So the file is refused at the moment of choosing,
+   with the reason, and the bucket and the report_proof check refuse
+   it on the server as well (schema.sql, version 2.12). NOTES.md,
+   "The reporting loop", has the decision; QUESTIONS.md item 1 has
+   the maintainer's yes. */
+
+var VIDEO_REFUSED = "Video is not accepted: a video file carries its location and the device that " +
+  "made it, and this site cannot strip that in your browser. A photo is re-saved here first, " +
+  "which removes it.";
 
 var PROOF_MAX_BYTES = 20 * 1024 * 1024;
 var PROOF_MAX_EDGE = 1600;
@@ -1933,18 +2188,21 @@ function prepareProof(file, onDone) {
   }
 
   /* Only the kinds the storage bucket will accept; anything else is
-     refused here with a reason rather than by the upload without one. */
+     refused here with a reason rather than by the upload without one.
+     A video gets the reason in full, because the person chose it in
+     good faith and deserves to know why it is the one thing the form
+     will not take. */
   if (file.type === "image/jpeg" || file.type === "image/png" || file.type === "image/webp") {
     stripImage(file, onDone);
     return;
   }
 
-  if (file.type === "video/mp4" || file.type === "video/webm") {
-    onDone(null, file, file.type, file.type === "video/mp4" ? "mp4" : "webm");
+  if (/^video\//.test(file.type) || /\.(mp4|webm|mov|m4v|avi|3gp)$/i.test(file.name || "")) {
+    onDone(VIDEO_REFUSED);
     return;
   }
 
-  onDone("Only JPEG, PNG, WebP, MP4 or WebM files can be sent.");
+  onDone("Only JPEG, PNG or WebP photos can be sent.");
 }
 
 function randomName() {
@@ -1958,6 +2216,481 @@ function randomName() {
   return n[0].toString(16) + n[1].toString(16);
 }
 
+/* ---------------- up to three photos ----------------
+
+   One file per report was the rule, and a moderator deciding whether
+   a pole on a street corner is a camera often needs two pictures: a
+   close one that shows the thing, and a wide one that shows where it
+   is. report_proof was always a separate table with a report_id, so
+   the schema expected more than one; this is the form catching up.
+
+   Each photo is prepared the moment it is chosen - re-saved through
+   the canvas, which is what strips the position and the device out
+   of it - and shown as a thumbnail with a way to take it out. Chosen
+   rather than sent time, for three reasons: a person can see what
+   they are about to send, and that it is the right three; a file
+   that cannot be sent (too big, not a photo) is refused beside the
+   picker and not after Send; and what is held is the re-saved copy,
+   never the original - the file input is emptied after each choice,
+   so the bytes with the location in them are not sitting in the form
+   waiting to be sent by mistake. The originals' names are kept for
+   the list, and go nowhere.
+
+   The 20 MB cap is per file, because it is the bucket's per-object
+   limit and the check on report_proof.bytes is per row; the hint
+   says "each". It is checked on the original, before re-saving - a
+   file over the cap is refused rather than shrunk, because a phone
+   photo that large is not a photo but a mistake, and the re-saved
+   copy is far smaller anyway.
+
+   Sending is one file at a time, in order, each its own upload and
+   its own report_proof row. If the second of three fails the report
+   is in and the first is attached, and neither is undone: the report
+   is the person's own and still pending, so report_proof's insert
+   policy admits the rest whenever they are sent, and the form offers
+   "Try the photos again" for exactly the ones that did not go,
+   without choosing them again. A partial failure is therefore a
+   report with fewer pictures than meant, said plainly, and never a
+   report lost. */
+
+var PROOF_MAX_FILES = 3;
+
+/* The picker: the file input, the <ul> the thumbnails go in, the
+   line refusals and progress are written to, and a function called
+   whenever the set changes. items() is what Send uploads; each item
+   is {blob, mime, ext, name, url, sent}. */
+function makeProofPicker(input, list, line, onChange) {
+  var items = [];
+  var preparing = 0;
+
+  function changed() {
+    if (onChange) {
+      onChange();
+    }
+  }
+
+  function say(text) {
+    if (line) {
+      line.textContent = text;
+    }
+  }
+
+  function bytesWords(n) {
+    return n >= 1024 * 1024 ? (n / (1024 * 1024)).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+  }
+
+  function redraw() {
+    var i;
+
+    if (!list) {
+      return;
+    }
+    list.innerHTML = "";
+    for (i = 0; i < items.length; i++) {
+      list.appendChild(thumb(items[i], i));
+    }
+  }
+
+  function thumb(item, index) {
+    var li = document.createElement("li");
+    var img = document.createElement("img");
+    var name = document.createElement("span");
+    var drop = document.createElement("button");
+    var label = "Photo " + (index + 1) + " of " + items.length + ", " + item.name;
+
+    img.src = item.url;
+    img.alt = label;
+    li.appendChild(img);
+
+    name.className = "proof-name";
+    name.textContent = item.name + " · " + bytesWords(item.blob.size) +
+      (item.sent ? " · sent" : "");
+    li.appendChild(name);
+
+    /* A real button, with the photo named in its label, so a screen
+       reader hears which one it removes and not three times "×". */
+    drop.type = "button";
+    drop.className = "remove";
+    drop.textContent = "×";
+    drop.title = "Remove this photo";
+    drop.setAttribute("aria-label", "Remove " + label);
+    drop.onclick = function () {
+      remove(item);
+    };
+    li.appendChild(drop);
+
+    return li;
+  }
+
+  function remove(item) {
+    var kept = [];
+    var i;
+
+    for (i = 0; i < items.length; i++) {
+      if (items[i] !== item) {
+        kept.push(items[i]);
+      }
+    }
+    items = kept;
+    URL.revokeObjectURL(item.url);
+    say("");
+    redraw();
+    changed();
+  }
+
+  /* The chosen files, one after another: prepareProof() is
+     asynchronous, and preparing three at once would be three
+     canvases the size of a phone photo at the same moment. Refusals
+     are collected and said together at the end. */
+  function add(files) {
+    var queue = [];
+    var refused = [];
+    var i;
+
+    for (i = 0; i < files.length; i++) {
+      queue.push(files[i]);
+    }
+
+    function next() {
+      var file = queue.shift();
+
+      if (!file) {
+        preparing--;
+        say(refused.length ? refused.join(" ") : "");
+        redraw();
+        changed();
+        return;
+      }
+      if (items.length >= PROOF_MAX_FILES) {
+        refused.push("Three at most: " + file.name + " was left out.");
+        next();
+        return;
+      }
+      prepareProof(file, function (problem, blob, mime, ext) {
+        if (problem) {
+          refused.push(file.name + ": " + problem.charAt(0).toLowerCase() + problem.slice(1));
+        } else if (blob) {
+          items.push({
+            blob: blob, mime: mime, ext: ext, name: file.name,
+            url: URL.createObjectURL(blob), sent: false
+          });
+        }
+        next();
+      });
+    }
+
+    preparing++;
+    say("Preparing…");
+    next();
+  }
+
+  if (input) {
+    input.onchange = function () {
+      if (input.files && input.files.length) {
+        add(input.files);
+      }
+      /* The originals are not kept: what is held is the re-saved
+         copy in items. Emptying the input also lets the same file
+         be chosen again after it was removed. */
+      input.value = "";
+    };
+  }
+
+  return {
+    items: function () {
+      return items;
+    },
+    busy: function () {
+      return preparing > 0;
+    },
+    /* How many are still to go, after a send that did not finish. */
+    unsent: function () {
+      var n = 0;
+      var i;
+
+      for (i = 0; i < items.length; i++) {
+        if (!items[i].sent) {
+          n++;
+        }
+      }
+      return n;
+    },
+    redraw: redraw,
+    clear: function () {
+      var i;
+
+      for (i = 0; i < items.length; i++) {
+        URL.revokeObjectURL(items[i].url);
+      }
+      items = [];
+      say("");
+      redraw();
+    }
+  };
+}
+
+/* Every item not yet sent, in order, one upload and one row each.
+   Stops at the first failure. Calls back with (problem, sent, total):
+   problem null when everything went, otherwise the upload's own
+   sentence, with `sent` how many are attached now and `total` how
+   many there are. An item that went is marked, so a second call
+   sends only the rest. */
+function uploadProofs(reportId, items, onDone) {
+  var i = 0;
+
+  function count() {
+    var n = 0;
+    var k;
+
+    for (k = 0; k < items.length; k++) {
+      if (items[k].sent) {
+        n++;
+      }
+    }
+    return n;
+  }
+
+  function next() {
+    var item;
+
+    while (i < items.length && items[i].sent) {
+      i++;
+    }
+    if (i >= items.length) {
+      onDone(null, count(), items.length);
+      return;
+    }
+    item = items[i];
+    uploadProof(reportId, item.blob, item.mime, item.ext, function (problem) {
+      if (problem) {
+        onDone(problem, count(), items.length);
+        return;
+      }
+      item.sent = true;
+      i++;
+      next();
+    });
+  }
+
+  next();
+}
+
+/* "Sent for review", with the photos accounted for: all of them, or
+   how many, and which did not go. The receipt for the report itself
+   is the caller's to add. */
+function sentWords(problem, sent, total) {
+  var ordinals = ["first", "second", "third"];
+  var why = problem === UPLOAD_FAILED ? "" : " (" + problem.charAt(0).toLowerCase() + problem.slice(1, -1) + ")";
+
+  if (!problem) {
+    return "";
+  }
+  return (sent ? sent + " of " + total + " photos attached; the " : "The ") +
+    (ordinals[sent] || "next") + " could not be uploaded" + why + ". " +
+    "Try the photos again: the report is in, and the rest can still be attached.";
+}
+
+/* uploadProof()'s plain refusal, named so sentWords() can tell it
+   from the rarer "uploaded but not recorded" and not say it twice. */
+var UPLOAD_FAILED = "The file could not be uploaded.";
+
+/* ---------------- the receipt ----------------
+
+   "Sent for review. Thank you." and the form clearing was all a
+   person got for a report: no number, no link, nothing to come back
+   with. People who send evidence somewhere want a receipt. The
+   report's number is the database's own id, handed back by the
+   insert, so it is known the moment the report is in and survives
+   anything; the receipt shows it in a box that copies, and links to
+   it under Your reports on the account page - #report-<id>, which
+   that list finds and lights - where what becomes of it is listed.
+
+   The last number sent is also kept in sessionStorage, so a reload
+   of this page - a phone that reloaded a tab, a person who came back
+   to check - shows the receipt again rather than a blank form as if
+   nothing had happened. Session storage, for the draft's reason: it
+   is this visit's, and a number left on a shared machine would tell
+   the next person which report was sent from it. Storage may be
+   refused, and then the receipt is shown once and not again, which
+   is what the page did before there was one. The key belongs in
+   STORAGE in shared.js beside the others; the orchestrator moves
+   it.
+
+   Copying is the Copy-link pattern from map.js: the clipboard API
+   where the page has it (it is refused on a page opened off the disk
+   and on plain http), execCommand on the selected box where it does
+   not, and where both fail the box is left selected so one keystroke
+   finishes the job. */
+var REPORT_RECEIPT_KEY = "cammap.report-receipt";
+
+function keepReceipt(id) {
+  try {
+    window.sessionStorage.setItem(REPORT_RECEIPT_KEY, JSON.stringify({ id: id, at: Date.now() }));
+  } catch (err) {
+    /* storage refused; the receipt is shown once, now */
+  }
+}
+
+function readReceipt() {
+  var raw;
+
+  try {
+    raw = window.sessionStorage.getItem(REPORT_RECEIPT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+/* Shows the receipt for a report id. `again` is true when it is
+   being shown after a reload rather than just after a send, and the
+   sentence says so. */
+function showReceipt(id, again) {
+  var box = document.getElementById("receipt");
+  var text = document.getElementById("receipt-text");
+  var field = document.getElementById("receipt-box");
+  var link = document.getElementById("receipt-link");
+  var said = document.getElementById("receipt-said");
+
+  if (!box || !text || !field || !link) {
+    return;
+  }
+  text.textContent = (again ? "Your last report this session is " : "Sent for review. Thank you. Your report is ") +
+    "#" + id + ".";
+  field.value = "#" + id;
+  link.href = pageHref("account.html") + "#report-" + id;
+  if (said) {
+    said.textContent = "";
+  }
+  box.style.display = "block";
+}
+
+function setUpReceipt() {
+  var copy = document.getElementById("receipt-copy");
+  var field = document.getElementById("receipt-box");
+  var said = document.getElementById("receipt-said");
+  var last = readReceipt();
+  var resetTimer = null;
+
+  if (!copy || !field) {
+    return;
+  }
+
+  function say(what) {
+    said.textContent = what;
+    window.clearTimeout(resetTimer);
+    resetTimer = window.setTimeout(function () {
+      said.textContent = "";
+    }, 4000);
+  }
+
+  function byCommand() {
+    var copied = false;
+
+    field.focus();
+    field.select();
+    try {
+      copied = document.execCommand("copy");
+    } catch (err) {
+      copied = false;
+    }
+    say(copied ? "Copied." : "Selected - press Ctrl-C, or Cmd-C on a Mac, to copy.");
+  }
+
+  copy.onclick = function () {
+    if (window.navigator.clipboard && window.navigator.clipboard.writeText) {
+      window.navigator.clipboard.writeText(field.value).then(function () {
+        say("Copied.");
+      }, byCommand);
+      return;
+    }
+    byCommand();
+  };
+
+  if (last && last.id) {
+    showReceipt(last.id, true);
+  }
+}
+
+/* What both forms do once a report is in: show the receipt, attach
+   the photos and say how that went, and hold the report's id while
+   any are still to go. `ui` is the parts that differ between the two
+   forms - the note, the Send button, the Try-again button and the
+   picker. Send is disabled while photos are outstanding, because a
+   second press would be a second report; it comes back when they
+   have gone, or when the person takes the unsent ones out, which
+   settles the report as sent with what it has. */
+function makeAttacher(ui) {
+  var attachTo = null;   /* the report whose photos are still to go */
+
+  function showRetry(on) {
+    if (ui.retry) {
+      ui.retry.style.display = on ? "" : "none";
+    }
+  }
+
+  function settle(reportId, problem, sent, total) {
+    if (problem) {
+      attachTo = reportId;
+      ui.proofs.redraw();
+      showRetry(true);
+      ui.button.disabled = true;
+      ui.note.textContent = sentWords(problem, sent, total);
+      return;
+    }
+    attachTo = null;
+    showRetry(false);
+    ui.button.disabled = false;
+    ui.proofs.clear();
+    ui.note.textContent = total ? "Sent, with " + total + (total === 1 ? " photo." : " photos.") : "";
+  }
+
+  if (ui.retry) {
+    ui.retry.onclick = function () {
+      if (attachTo === null || !currentUser) {
+        return;
+      }
+      ui.retry.disabled = true;
+      ui.note.textContent = "Sending the photos…";
+      uploadProofs(attachTo, ui.proofs.items(), function (problem, sent, total) {
+        ui.retry.disabled = false;
+        settle(attachTo, problem, sent, total);
+      });
+    };
+  }
+
+  return {
+    /* The report is in: the receipt first, since the number is known
+       and nothing that happens to the photos changes it; then the
+       photos, if there are any. */
+    start: function (reportId) {
+      var items = ui.proofs.items();
+
+      keepReceipt(reportId);
+      showReceipt(reportId, false);
+
+      if (items.length) {
+        ui.note.textContent = "Attaching the photos…";
+        uploadProofs(reportId, items, function (problem, sent, total) {
+          settle(reportId, problem, sent, total);
+        });
+      } else {
+        settle(reportId, null, 0, 0);
+      }
+    },
+    /* The picker changed: if the ones that would not go have been
+       taken out, there is nothing left to try. */
+    changed: function () {
+      if (attachTo !== null && ui.proofs.unsent() === 0) {
+        settle(attachTo, null, 0, 0);
+      }
+    },
+    waiting: function () {
+      return attachTo !== null;
+    }
+  };
+}
+
 /* Uploads under the user's own prefix - which is the only place the
    storage policy lets them write - then records the file against the
    report. */
@@ -1967,7 +2700,7 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
   sb.storage.from("proof").upload(path, blob, { contentType: mime, upsert: false })
     .then(function (result) {
       if (result.error) {
-        onDone("The file could not be uploaded.");
+        onDone(UPLOAD_FAILED);
         return;
       }
       return sb.from("report_proof").insert({
@@ -1981,7 +2714,7 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
       });
     })
     .catch(function () {
-      onDone("The file could not be uploaded.");
+      onDone(UPLOAD_FAILED);
     });
 }
 
@@ -1990,7 +2723,141 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
    Two forms on one page. ?camera=<id> in the address means "report
    the state of this camera", otherwise it is "report a camera the map
    does not have". Both go into the reports table; the database
-   decides whether enough people agree for it to count on its own. */
+   decides whether enough people agree for it to count on its own.
+
+   For everyone, signed in or not. The page used to put a wall in
+   front of the form: signed out it showed one sentence and a link to
+   the account page, and hid the map, the crosshair and the photo
+   picker behind it. That order lost the people the form is for. Most
+   people who have just seen a van will never make an account first -
+   they do not yet know what is being asked, or that it is only two
+   words and a password - and by the time the account page had
+   explained it they had left. So the whole form is shown to anyone,
+   and the account is asked for at the one moment it is needed, when
+   Send is pressed, in the account page's own two boxes brought onto
+   this page under the form. What was filled in stays filled in; the
+   report goes the instant an account exists, with nothing retyped.
+
+   The lock did not move. The reports insert policy needs
+   auth.uid() = user_id, so nothing here could send a report from
+   nobody however the page were arranged; showing the form was only
+   ever a courtesy withheld. */
+
+/* ---------------- the draft, and the account asked for at the end ----------------
+
+   Where the draft lives, and why in two places.
+
+   In memory first. When Send is pressed by someone signed out, the
+   values are read off the form as they would be for a send, the
+   photo is prepared as it would be for a send, and the function that
+   would have sent them is kept in pendingSend - to be called the
+   moment an account exists. So the report goes exactly as it stood,
+   and the person types nothing twice. This path is whole on its own;
+   nothing below depends on storage.
+
+   And in sessionStorage as well: the pin, the kind, the name and the
+   note, so that a reload in the middle of signing up - a phone that
+   reloads a tab it put in the background, a mis-tap on the address
+   bar - does not lose them. Session storage rather than local,
+   because a draft is for this visit: a report half-written on a
+   shared machine should not greet the next person to open the page.
+   A photo cannot survive a reload - a blob is not something storage
+   holds at that size, and a file input cannot be refilled by script -
+   so the line that puts a draft back says the photo needs choosing
+   again. Storage may be refused outright, and every touch of it is
+   wrapped; refused, the in-memory path is all there is, and it is
+   enough.
+
+   The key is written here rather than in STORAGE in shared.js, which
+   is where it belongs beside the others; this wave does not edit
+   that file, and the orchestrator moves it. */
+var REPORT_DRAFT_KEY = "cammap.report-draft";
+
+var pendingSend = null;   /* what Send would have done, waiting for an account */
+
+function keepDraft(draft) {
+  try {
+    window.sessionStorage.setItem(REPORT_DRAFT_KEY, JSON.stringify(draft));
+  } catch (err) {
+    /* storage refused; the draft is still held in memory */
+  }
+}
+
+function readDraft() {
+  var raw;
+
+  try {
+    raw = window.sessionStorage.getItem(REPORT_DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function forgetDraft() {
+  try {
+    window.sessionStorage.removeItem(REPORT_DRAFT_KEY);
+  } catch (err) {
+    /* nothing to forget */
+  }
+}
+
+/* Send was pressed by someone signed out: hold what it would have
+   done and show the two account boxes under the form. Focus goes to
+   the block so a keyboard or screen-reader user lands on the question
+   rather than on a form that appears not to have answered. The
+   block's top is scrolled into view first and the focus asked not to
+   scroll: on a phone the block is taller than the screen, and a bare
+   focus() lands the view partway down it, with the heading that says
+   what has happened above the top edge. Older browsers ignore the
+   option and scroll as they always did, which is the same place near
+   enough. */
+function askForAccount(send) {
+  var block = document.getElementById("report-account");
+
+  pendingSend = send;
+  if (!block) {
+    return;
+  }
+  block.style.display = "block";
+  if (block.scrollIntoView) {
+    block.scrollIntoView(true);
+  }
+  block.focus({ preventScroll: true });
+}
+
+/* An account arrived - made or signed into, in the boxes on this
+   page - so the held send goes now. The boxes are put away first:
+   they were there for one reason and it is answered. */
+function accountArrived() {
+  var block = document.getElementById("report-account");
+  var go = pendingSend;
+
+  pendingSend = null;
+  if (block) {
+    block.style.display = "none";
+  }
+  if (go) {
+    go();
+  }
+}
+
+/* The session ended on this page - Log out in the nav. The form
+   keeps what is in it; a send that was waiting for an account is
+   forgotten, since the account it was waiting for has gone; and the
+   recovery card, if it is still out, is put away so a password is
+   not left on the screen. */
+function reportSignedOut() {
+  var block = document.getElementById("report-account");
+
+  pendingSend = null;
+  if (cardMode === "after") {
+    putCardAway();
+  }
+  if (block) {
+    block.style.display = "none";
+  }
+}
 
 /* The London box is inLondon() in frontend/shared.js, shared with the
    map so the two cannot come to disagree about where London ends.
@@ -2003,7 +2870,19 @@ function reportProblem(error) {
   if (code === "23514") {
     return "That is outside London. This map covers Greater London only.";
   }
+  /* Two unique indexes can refuse a report, and they mean different
+     things to the person: one pending new-camera report per person
+     per corner, and one state report per person per camera, ever.
+     The index is named in the message, so each gets its own
+     sentence rather than the one that used to cover both. */
   if (code === "23505") {
+    if (/reports_one_new_per_cell_idx/.test(msg)) {
+      return "You already have a report waiting at this spot. One pending report per person per corner; " +
+        "once it is decided you can send another. It is listed under Your reports on your account page.";
+    }
+    if (/reports_one_status_per_camera_idx/.test(msg)) {
+      return "You have already reported this camera's state: one report per person per camera.";
+    }
     return "You have already reported this one.";
   }
   if (/rate/i.test(msg) || code === "P0001" && /rate/i.test(msg)) {
@@ -2040,37 +2919,227 @@ function xpLine(key) {
     : "";
 }
 
+/* ---------------- a report already waiting here? ----------------
+
+   The database refuses a person's second pending report in the same
+   cell, and a camera approves itself once enough different people
+   have reported it; neither told the reporter anything until Send,
+   after the typing and the photograph. So as the pin lands - the
+   picker's move event, settled for half a second so that a drag
+   across the map is one question and not sixty - the form asks
+   pending_near(lat, lon) whether a new-camera report is already
+   waiting within the auto-approve radius of that spot, and how many
+   days ago the newest was sent. The answer is those two fields and
+   nothing else: schema.sql (version 2.11) says what a stranger
+   learns from it and why the count is withheld. A plain select on
+   reports could not answer this and must not: the read policy shows
+   a person their own rows and a moderator everyone's, which is what
+   keeps who-reported-what from anyone else, and the function is the
+   one narrow window through it.
+
+   What the sentence does with the answer: it says a report is
+   waiting, and invites this one, because the auto-approve threshold
+   is what turns strangers agreeing into a camera on the map without
+   a moderator - and the threshold is public (settings: read), so it
+   is quoted rather than left as "enough". The kind is the catch: the
+   function does not take one, on purpose (asking per kind would be a
+   finer probe for nothing the sentence needs), so the sentence says
+   "the same kind of camera" and leaves the kind to the person. A
+   refused call - the migration not yet run, the network gone - shows
+   nothing, which is what the page showed before there was a
+   sentence; a courtesy that cannot be given is not an error. */
+var DUP_CHECK_DELAY = 500;
+
+/* settings.auto_approve_users, fetched once for the sentence; null
+   until it is known, and the sentence says "enough people" then. */
+var autoApproveUsers = null;
+
+function loadThreshold() {
+  sb.from("settings").select("auto_approve_users").eq("id", 1).single()
+    .then(function (result) {
+      if (!result.error && result.data && typeof result.data.auto_approve_users === "number") {
+        autoApproveUsers = result.data.auto_approve_users;
+      }
+    })
+    .catch(function () {
+      /* the sentence goes on saying "enough people" */
+    });
+}
+
+function daysAgoWords(days) {
+  if (days === 0) {
+    return "today";
+  }
+  if (days === 1) {
+    return "yesterday";
+  }
+  return days + " days ago";
+}
+
+function duplicateSentence(daysAgo) {
+  var people = autoApproveUsers === null ? "enough people" : autoApproveUsers + " people";
+
+  return "Someone reported this corner " + daysAgoWords(daysAgo) + " and it is waiting to be checked. " +
+    "Adding yours helps it through: " + people + " reporting the same kind of camera here " +
+    "puts it on the map without a moderator.";
+}
+
+/* The check, with its debounce and its live line. at(lat, lon) is
+   called on every move; only the position that stands after
+   DUP_CHECK_DELAY of quiet is asked about, and an answer to an
+   earlier question that arrives after a later one was asked is
+   dropped, so the line never describes a spot the pin has left. */
+function makeDuplicateCheck(line) {
+  var timer = null;
+  var asked = 0;
+
+  function say(text) {
+    if (line) {
+      line.textContent = text;
+    }
+  }
+
+  function ask(lat, lon) {
+    var mine = ++asked;
+
+    sb.rpc("pending_near", { lat: lat, lon: lon }).then(function (result) {
+      var row = result.data && result.data[0];
+
+      if (mine !== asked) {
+        return;
+      }
+      if (result.error || !row || !row.found) {
+        say("");
+        return;
+      }
+      say(duplicateSentence(typeof row.days_ago === "number" ? row.days_ago : 0));
+    }).catch(function () {
+      if (mine === asked) {
+        say("");
+      }
+    });
+  }
+
+  return {
+    at: function (lat, lon) {
+      window.clearTimeout(timer);
+      if (typeof lat !== "number" || typeof lon !== "number" ||
+          isNaN(lat) || isNaN(lon) || !inLondon(lat, lon)) {
+        asked++;
+        say("");
+        return;
+      }
+      timer = window.setTimeout(function () {
+        ask(lat, lon);
+      }, DUP_CHECK_DELAY);
+    },
+    clear: function () {
+      window.clearTimeout(timer);
+      asked++;
+      say("");
+    }
+  };
+}
+
+/* A position in the address: report.html?lat=51.5&lon=-0.1, which is
+   what "Report a camera here" on the map page links to. Six decimals
+   is what the map writes; anything that parses and is in London is
+   taken, anything else is ignored and the form opens as usual. */
+function startAtFromQuery() {
+  var mLat = /[?&]lat=(-?\d+(?:\.\d+)?)/.exec(window.location.search);
+  var mLon = /[?&]lon=(-?\d+(?:\.\d+)?)/.exec(window.location.search);
+  var lat;
+  var lon;
+
+  if (!mLat || !mLon) {
+    return null;
+  }
+  lat = parseFloat(mLat[1]);
+  lon = parseFloat(mLon[1]);
+  if (isNaN(lat) || isNaN(lon) || !inLondon(lat, lon)) {
+    return null;
+  }
+  return { lat: lat, lon: lon };
+}
+
 function setUpReportPage() {
-  var form   = document.getElementById("report-form");
-  var locked = document.getElementById("report-locked");
-  var newBox = document.getElementById("report-new");
-  var stBox  = document.getElementById("report-status");
-  var title  = document.getElementById("report-title");
+  var form        = document.getElementById("report-form");
+  var unavailable = document.getElementById("report-unavailable");
+  var newBox      = document.getElementById("report-new");
+  var stBox       = document.getElementById("report-status");
+  var title       = document.getElementById("report-title");
+  var account     = document.getElementById("report-account");
+  var cardBox     = document.getElementById("recovery-after");
+  var receipt     = document.getElementById("receipt");
+  var main;
 
   var cameraId = (function () {
     var m = /[?&]camera=(\d+)/.exec(window.location.search);
     return m ? Number(m[1]) : null;
   })();
 
-  if (!form || !locked) {
+  if (!form) {
     return;
   }
 
-  form.style.display   = currentUser ? "block" : "none";
-  locked.style.display = currentUser ? "none" : "block";
-
-  if (!currentUser) {
+  /* No Supabase behind this copy of the site: the form would take a
+     report with nowhere to send it, so it stays hidden and the line
+     above says why. */
+  if (!configured) {
+    if (unavailable) {
+      unavailable.style.display = "block";
+    }
     return;
   }
 
+  form.style.display   = "block";
   newBox.style.display = cameraId ? "none" : "block";
   stBox.style.display  = cameraId ? "block" : "none";
+
+  /* The account boxes, the card box and the receipt are written
+     once, in the new-camera form's column; a state report is the
+     other form, so they are moved under that one instead. Under the
+     form, not above it: they answer a Send that was just pressed,
+     and that is where the person is looking. The receipt goes into
+     the form's own box, after its note, where the sentence it
+     follows on from is. */
+  if (cameraId && account && cardBox) {
+    main = stBox.querySelector(".report-main");
+    if (main) {
+      if (receipt && document.getElementById("submit-status-note")) {
+        document.getElementById("submit-status-note").parentNode.appendChild(receipt);
+      }
+      main.appendChild(cardBox);
+      main.appendChild(account);
+    }
+  }
+
+  setUpReceipt();
+
+  /* The account page's own two boxes, wired the same way. After a
+     sign-up the recovery card is offered as it is there, and then
+     the held report goes; after a sign-in it just goes. */
+  setUpRecoveryCard();
+  setUpAccountForms({
+    signedUp: function (finalName, password) {
+      offerCard(finalName, password,
+        "The account is made" + (pendingSend ? " and your report is being sent" : "") +
+        ". This is the last time the password is shown: it cannot be reset, and after " +
+        "this page it is never shown again. Keep the card now, then tick the box.");
+      if (cardBox) {
+        cardBox.setAttribute("tabindex", "-1");
+        cardBox.focus();
+      }
+      accountArrived();
+    },
+    signedIn: accountArrived
+  });
 
   loadXpRules(function () {
     if (cameraId) {
       setUpStatusReport(cameraId);
     } else {
-      setUpNewReport();
+      setUpNewReport(startAtFromQuery());
     }
   });
 
@@ -2121,7 +3190,7 @@ function contextCameras(onDone) {
     });
 }
 
-function setUpNewReport() {
+function setUpNewReport(startAt) {
   var typeSel   = document.getElementById("s-type");
   var xpNote    = document.getElementById("s-xp");
   var latIn     = document.getElementById("s-lat");
@@ -2133,8 +3202,13 @@ function setUpNewReport() {
   var proofIn   = document.getElementById("s-proof");
   var button    = document.getElementById("submit-button");
   var note      = document.getElementById("submit-note");
+  var draftNote = document.getElementById("draft-note");
+  var draft     = readDraft();
+  var opening   = null;   /* where the pin starts, if anywhere */
+  var dup       = makeDuplicateCheck(document.getElementById("pick-dup"));
 
   fillTypeSelect(typeSel, "fixedcam");
+  loadThreshold();
 
   function showXp() {
     xpNote.textContent = xpLine("new_" + typeSel.value);
@@ -2142,19 +3216,50 @@ function setUpNewReport() {
   typeSel.onchange = showXp;
   showXp();
 
+  /* What was in the form before a reload, put back. Only a draft of
+     this form: one left by a state report is that form's. The line
+     says so, and says the photo needs choosing again, which is the
+     one thing storage could not keep. */
+  if (draft && draft.kind === "new") {
+    if (typeOf(draft.type)) {
+      typeSel.value = draft.type;
+      showXp();
+    }
+    if (typeof draft.lat === "number" && typeof draft.lon === "number") {
+      opening = { lat: draft.lat, lon: draft.lon };
+    }
+    nameIn.value = draft.name || "";
+    noteIn.value = draft.note || "";
+    draftNote.textContent = "What you filled in before is back in the form" +
+      (draft.photos ? ", except the photo, which needs choosing again" : "") + ".";
+  }
+
+  /* A position in the address - "Report a camera here" on the map -
+     is where the person just pointed, and wins over a remembered
+     pin. */
+  if (startAt) {
+    opening = startAt;
+  }
+  if (opening) {
+    latIn.value = opening.lat.toFixed(6);
+    lonIn.value = opening.lon.toFixed(6);
+    dup.at(opening.lat, opening.lon);
+  }
+
   /* ---------------- the map and the two boxes ----------------
 
      Both say the same thing, and either may be used. Dragging the pin
      writes the numbers; typing numbers moves the pin. The guard below
      stops the two from talking each other in circles - without it,
      writing the boxes from a drag fires the input handler, which
-     moves the pin, which fires drag again. */
+     moves the pin, which fires drag again. Either way the pin moves,
+     the duplicate check is told where it is now. */
   var syncing = false;
 
   var picker = typeof makePicker === "function" ? makePicker({
     container: "pick-map",
-    lat: null,
-    lon: null,
+    lat: opening ? opening.lat : null,
+    lon: opening ? opening.lon : null,
     draggable: true,
     onMove: function (lat, lon) {
       syncing = true;
@@ -2162,6 +3267,7 @@ function setUpNewReport() {
       lonIn.value = lon.toFixed(6);
       syncing = false;
       note.textContent = "";
+      dup.at(lat, lon);
     }
   }) : null;
 
@@ -2171,6 +3277,9 @@ function setUpNewReport() {
 
     if (picker && !syncing && !isNaN(lat) && !isNaN(lon)) {
       picker.setPoint(lat, lon, fly);
+    }
+    if (!syncing) {
+      dup.at(lat, lon);
     }
   }
 
@@ -2218,11 +3327,33 @@ function setUpNewReport() {
     }, { enableHighAccuracy: true, timeout: 10000 });
   };
 
+  /* The photos: prepared as they are chosen, held as re-saved
+     copies, attached after the report is in. The picker tells the
+     attacher when the set changes, and the attacher is made after
+     the picker because it needs it; the guard on the hook is for
+     the moment in between. */
+  var attacher = null;
+  var proofs = makeProofPicker(proofIn,
+    document.getElementById("s-proof-list"),
+    document.getElementById("s-proof-note"),
+    function () {
+      if (attacher) {
+        attacher.changed();
+      }
+    });
+
+  attacher = makeAttacher({
+    note: note,
+    button: button,
+    retry: document.getElementById("proof-retry"),
+    proofs: proofs
+  });
+
   button.onclick = function () {
     var lat  = parseFloat(latIn.value);
     var lon  = parseFloat(lonIn.value);
     var name = nameIn.value.trim();
-    var file = proofIn.files && proofIn.files[0];
+    var report;
 
     note.textContent = "";
 
@@ -2241,27 +3372,41 @@ function setUpNewReport() {
       latIn.focus();
       return;
     }
+    if (proofs.busy()) {
+      note.textContent = "The photos are still being prepared - a moment, then press again.";
+      return;
+    }
+    if (attacher.waiting()) {
+      note.textContent = "The last report's photos are still to go: try them again, or take them out.";
+      return;
+    }
 
-    button.disabled = true;
-    note.textContent = file ? "Preparing the file…" : "Sending…";
+    /* Read off the form now, once, whether it goes this moment or
+       after an account is made: the send is the same either way,
+       and it must carry what was filled in when Send was pressed.
+       The photos are read at the moment of sending instead, so one
+       taken out while the account boxes were open is not sent. */
+    report = {
+      kind: "new",
+      type: typeSel.value,
+      name: name,
+      note: noteIn.value.trim(),
+      lat: lat,
+      lon: lon
+    };
 
-    prepareProof(file, function (problem, blob, mime, ext) {
-      if (problem) {
-        button.disabled = false;
-        note.textContent = problem;
-        return;
-      }
-
+    function send() {
+      button.disabled = true;
       note.textContent = "Sending…";
 
       sb.from("reports").insert({
         user_id: currentUser.id,
-        kind: "new",
-        type: typeSel.value,
-        name: name,
-        note: noteIn.value.trim(),
-        lat: lat,
-        lon: lon
+        kind: report.kind,
+        type: report.type,
+        name: report.name,
+        note: report.note,
+        lat: report.lat,
+        lon: report.lon
       }).select("id").single().then(function (result) {
         if (result.error) {
           button.disabled = false;
@@ -2269,39 +3414,64 @@ function setUpNewReport() {
           return;
         }
 
-        function finish(uploadProblem) {
-          button.disabled = false;
-          latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
-          proofIn.value = ""; locNote.textContent = "";
-          note.textContent = uploadProblem
-            ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)
-            : "Sent for review. Thank you.";
-        }
+        /* The report is in, whatever happens to the photos next:
+           the form is cleared of it and the draft forgotten. */
+        latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
+        locNote.textContent = ""; draftNote.textContent = "";
+        dup.clear();
+        forgetDraft();
 
-        if (blob) {
-          uploadProof(result.data.id, blob, mime, ext, finish);
-        } else {
-          finish(null);
-        }
+        attacher.start(result.data.id);
       }).catch(recover(button, note));
+    }
+
+    if (currentUser) {
+      send();
+      return;
+    }
+
+    /* Nobody is signed in. Keep what was typed - here, and in
+       storage against a reload - and ask for the account under
+       the form. The button comes back so a person who decides
+       against an account is not left with a dead form. */
+    keepDraft({
+      kind: "new", type: report.type, lat: report.lat, lon: report.lon,
+      name: report.name, note: report.note, photos: proofs.items().length
     });
+    note.textContent = "Almost there: an account is needed to send it. Make one below, or sign in, " +
+      "and the report goes as it stands.";
+    askForAccount(send);
   };
 }
 
 function setUpStatusReport(cameraId) {
-  var nameEl   = document.getElementById("status-camera-name");
-  var claimSel = document.getElementById("s-claim");
-  var xpNote   = document.getElementById("s-claim-xp");
-  var noteIn   = document.getElementById("s-status-note");
-  var proofIn  = document.getElementById("s-status-proof");
-  var button   = document.getElementById("submit-status-button");
-  var note     = document.getElementById("submit-status-note");
+  var nameEl    = document.getElementById("status-camera-name");
+  var claimSel  = document.getElementById("s-claim");
+  var xpNote    = document.getElementById("s-claim-xp");
+  var noteIn    = document.getElementById("s-status-note");
+  var proofIn   = document.getElementById("s-status-proof");
+  var button    = document.getElementById("submit-status-button");
+  var note      = document.getElementById("submit-status-note");
+  var draftNote = document.getElementById("status-draft-note");
+  var draft     = readDraft();
 
   function showXp() {
     xpNote.textContent = xpLine("status_" + claimSel.value);
   }
   claimSel.onchange = showXp;
   showXp();
+
+  /* A draft of this form, about this camera, put back; one about
+     another camera is left for that camera's page. */
+  if (draft && draft.kind === "status" && draft.cameraId === cameraId) {
+    if (draft.claim) {
+      claimSel.value = draft.claim;
+      showXp();
+    }
+    noteIn.value = draft.note || "";
+    draftNote.textContent = "What you filled in before is back in the form" +
+      (draft.photos ? ", except the photo, which needs choosing again" : "") + ".";
+  }
 
   /* The name, so the person can see they are on the right one - and
      its position, which the report has to carry too. */
@@ -2331,34 +3501,61 @@ function setUpStatusReport(cameraId) {
       nameEl.textContent = "camera #" + cameraId;
     });
 
+  /* The same picker and attacher as the new-camera form. */
+  var attacher = null;
+  var proofs = makeProofPicker(proofIn,
+    document.getElementById("s-status-proof-list"),
+    document.getElementById("s-status-proof-note"),
+    function () {
+      if (attacher) {
+        attacher.changed();
+      }
+    });
+
+  attacher = makeAttacher({
+    note: note,
+    button: button,
+    retry: document.getElementById("status-proof-retry"),
+    proofs: proofs
+  });
+
   button.onclick = function () {
-    var file = proofIn.files && proofIn.files[0];
+    var report;
 
     note.textContent = "";
-    button.disabled = true;
-    note.textContent = file ? "Preparing the file…" : "Sending…";
 
-    prepareProof(file, function (problem, blob, mime, ext) {
-      if (problem) {
-        button.disabled = false;
-        note.textContent = problem;
-        return;
-      }
+    if (!camera) {
+      note.textContent = "That camera could not be found.";
+      return;
+    }
+    if (proofs.busy()) {
+      note.textContent = "The photos are still being prepared - a moment, then press again.";
+      return;
+    }
+    if (attacher.waiting()) {
+      note.textContent = "The last report's photos are still to go: try them again, or take them out.";
+      return;
+    }
 
+    /* Read once, whether it goes now or after an account is made;
+       see setUpNewReport() for why. */
+    report = {
+      kind: "status",
+      cameraId: cameraId,
+      claim: claimSel.value,
+      note: noteIn.value.trim()
+    };
+
+    function send() {
+      button.disabled = true;
       note.textContent = "Sending…";
-
-      if (!camera) {
-        button.disabled = false;
-        note.textContent = "That camera could not be found.";
-        return;
-      }
 
       sb.from("reports").insert({
         user_id: currentUser.id,
-        kind: "status",
-        camera_id: cameraId,
-        status_claim: claimSel.value,
-        note: noteIn.value.trim(),
+        kind: report.kind,
+        camera_id: report.cameraId,
+        status_claim: report.claim,
+        note: report.note,
         lat: camera.lat,
         lon: camera.lon
       }).select("id").single().then(function (result) {
@@ -2368,21 +3565,25 @@ function setUpStatusReport(cameraId) {
           return;
         }
 
-        function finish(uploadProblem) {
-          button.disabled = false;
-          noteIn.value = ""; proofIn.value = "";
-          note.textContent = uploadProblem
-            ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)
-            : "Sent for review. Thank you.";
-        }
+        noteIn.value = ""; draftNote.textContent = "";
+        forgetDraft();
 
-        if (blob) {
-          uploadProof(result.data.id, blob, mime, ext, finish);
-        } else {
-          finish(null);
-        }
+        attacher.start(result.data.id);
       }).catch(recover(button, note));
+    }
+
+    if (currentUser) {
+      send();
+      return;
+    }
+
+    keepDraft({
+      kind: "status", cameraId: cameraId, claim: report.claim,
+      note: report.note, photos: proofs.items().length
     });
+    note.textContent = "Almost there: an account is needed to send it. Make one below, or sign in, " +
+      "and the report goes as it stands.";
+    askForAccount(send);
   };
 }
 
@@ -4737,6 +5938,116 @@ function setUpLeaderboardPage() {
 
   tabs[0].className = "toggle on";
   loadBoard(tabs[0].getAttribute("data-view"));
+  showXpTable();
+}
+
+/* ---------------- what a report is worth ----------------
+
+   The form says what the one report being written is worth, and
+   nothing said that a transport camera is worth fifty and a van site
+   five - which is the thing that tells a contributor where the gaps
+   in the record are. xp_rules is readable by anyone (schema.sql,
+   "xp_rules: read"), so the leaderboard page publishes it: every
+   rule's key as words, and its XP, read off the table on every load
+   and never typed here, so a change made in the dashboard is what
+   the page says the next time it is opened.
+
+   The keys are the schema's: new_<type> for a camera of that kind,
+   status_<claim> for a state report, first_report_bonus once. The
+   kinds are named through typeLabel() like every other label on the
+   site, so a kind renamed in CAMERA_TYPES is renamed here; a key
+   this file does not know is shown as it is rather than dropped,
+   because a rule in the table is a rule. Rows come out in the order
+   the legend uses for the kinds, then the state reports, then the
+   bonus, whatever order the table returns. */
+function xpRuleWords(key) {
+  var m = /^new_(.+)$/.exec(key);
+
+  if (m) {
+    return "A camera the map did not have: " + typeLabel(m[1]);
+  }
+  if (key === "status_nonfunctional") {
+    return "A camera on the map that is not working";
+  }
+  if (key === "status_removed") {
+    return "A camera on the map that has gone";
+  }
+  if (key === "status_active") {
+    return "A camera on the map that is back in use";
+  }
+  if (key === "first_report_bonus") {
+    return "Your first confirmed report, once - a bonus";
+  }
+  return key;
+}
+
+/* Where a key sits: kinds in CAMERA_TYPES order, then the state
+   claims, then the bonus, then anything else. */
+function xpRuleOrder(key) {
+  var m = /^new_(.+)$/.exec(key);
+  var i;
+
+  if (m) {
+    for (i = 0; i < CAMERA_TYPES.length; i++) {
+      if (CAMERA_TYPES[i].type === m[1]) {
+        return i;
+      }
+    }
+    return CAMERA_TYPES.length;
+  }
+  if (/^status_/.test(key)) {
+    return 100 + ["status_nonfunctional", "status_removed", "status_active"].indexOf(key);
+  }
+  if (key === "first_report_bonus") {
+    return 200;
+  }
+  return 300;
+}
+
+function showXpTable() {
+  var body = document.getElementById("xp-body");
+  var note = document.getElementById("xp-note");
+
+  if (!body) {
+    return;
+  }
+  if (!configured) {
+    note.textContent = "The table is not available on this copy of the site.";
+    return;
+  }
+
+  note.textContent = "Loading…";
+
+  loadXpRules(function () {
+    var keys = [];
+    var key;
+    var i;
+    var tr;
+    var td;
+
+    for (key in xpRules) {
+      if (Object.prototype.hasOwnProperty.call(xpRules, key)) {
+        keys.push(key);
+      }
+    }
+    keys.sort(function (a, b) {
+      return xpRuleOrder(a) - xpRuleOrder(b);
+    });
+
+    body.innerHTML = "";
+    for (i = 0; i < keys.length; i++) {
+      tr = document.createElement("tr");
+      td = document.createElement("td");
+      td.textContent = xpRuleWords(keys[i]);
+      tr.appendChild(td);
+      td = document.createElement("td");
+      td.textContent = xpRules[keys[i]];
+      tr.appendChild(td);
+      body.appendChild(tr);
+    }
+
+    note.textContent = keys.length ? "" : "Could not load the table.";
+  });
 }
 
 function loadBoard(view) {

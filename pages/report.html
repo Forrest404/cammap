@@ -110,23 +110,43 @@
 
     <h2 id="report-title">Report a camera</h2>
 
-    <!-- Signed out this page has nothing to offer, and the database
-         would refuse the report anyway. -->
-    <div id="report-locked" style="display:none">
-      <p>
-        You need an account to send a report in. It asks for nothing but
-        a password &mdash; see <a href="account.html">Account</a>.
-      </p>
-    </div>
+    <!-- Always on the page, script or no script: what a report is and
+         what happens to it. Everything below this line is built by
+         account.js and hidden until it has been. -->
+    <p class="lead">
+      A report is a pin on the map, a few words, and a photo if you
+      have one. It is checked before it goes on the map: once enough
+      people report the same spot it goes on by itself, and until then
+      a moderator looks first.
+    </p>
 
+    <!-- Shown if the site has no Supabase project set up behind it.
+         The map cannot be pointed at without one, so the form stays
+         hidden rather than offering a pin that goes nowhere. -->
+    <p id="report-unavailable" class="note" style="display:none">
+      Reports are not available on this copy of the site.
+    </p>
+
+    <!-- The form, for everyone. It used to hide behind an account:
+         signed out, the page offered one sentence and a link, and
+         most people who have just seen a van will never make an
+         account before they know what is being asked of them. So the
+         whole thing - the map, the crosshair, the photo - is here for
+         anyone, and the account is asked for at the one moment it is
+         needed, when Send is pressed, in the boxes further down. What
+         has been filled in stays filled in across that. The database
+         still refuses a report from nobody (the insert policy needs
+         auth.uid() = user_id), which is the lock; showing the form is
+         the courtesy. -->
     <div id="report-form" style="display:none">
 
       <!-- Reporting a camera the map does not have. -->
       <div id="report-new">
         <p class="lead">
-          Seen a facial recognition camera that is not on the map? Send it
-          in. Once enough people report the same spot it goes on the map
-          by itself; until then a moderator looks first.
+          Seen a facial recognition camera that is not on the map? Send
+          it in. You can fill all of this in now; an account &mdash; two
+          random words and a password, nothing else &mdash; is asked for
+          when you send it, and nothing you have typed is lost.
         </p>
 
         <div class="report-layout">
@@ -165,17 +185,168 @@
           <label for="s-note">Anything worth adding</label>
           <textarea id="s-note" placeholder="optional"></textarea>
 
-          <label for="s-proof">A photo or video, if you have one</label>
-          <input type="file" id="s-proof" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
+          <!-- Up to three, because a moderator often needs a close shot
+               and a wide one. Each is re-saved through a canvas the
+               moment it is chosen - which is what strips the location
+               and the device out of it - and shown here as a thumbnail
+               with a way to take it out again. account.js builds the
+               list; the input is emptied after each choice so the
+               originals are never held, only the re-saved copies. -->
+          <!-- Photos only. A video carries its location and the device
+               that made it, and nothing in a browser can strip that
+               without a library the CSP will not load; a photo is
+               re-saved here first, which does. NOTES.md, "The reporting
+               loop", has the decision. -->
+          <label for="s-proof">Photos, if you have any &mdash; up to three</label>
+          <input type="file" id="s-proof" multiple accept="image/jpeg,image/png,image/webp">
+          <ul class="proof-list" id="s-proof-list" aria-label="Photos to send"></ul>
+          <p class="note" id="s-proof-note" role="status"></p>
           <p class="hint">
             Photos are re-saved in your browser before upload, which
-            removes location and camera details from the file. Videos are
-            sent as they are, so check what yours contains. Proof is seen
-            by moderators only. 20 MB at most.
+            removes location and camera details from the file. Video is
+            not accepted, because that cannot be done to a video here
+            and a video carries the same details. Proof is seen by
+            moderators only. 20 MB each at most.
           </p>
 
-          <button id="submit-button">Send for review</button>
-          <p class="note" id="submit-note"></p>
+          <!-- What was filled in before a reload, if anything: the
+               draft is put back into the fields above and this line
+               says so. Empty otherwise. -->
+          <p class="note" id="draft-note" role="status"></p>
+
+          <div class="row">
+            <button id="submit-button">Send for review</button>
+            <!-- Only after a report went in and one of its photos did
+                 not: the report is the person's own and still pending,
+                 so the photos that failed can still be attached. -->
+            <button id="proof-retry" class="quiet" type="button" style="display:none">Try the photos again</button>
+          </div>
+          <p class="note" id="submit-note" role="status"></p>
+
+          <!-- The receipt. "Sent for review" and the form clearing was
+               all a person got; now the report's number, in a box that
+               copies, and a link to it under Your reports on the
+               account page, where what becomes of it is listed. The
+               number is the database's, so it survives anything; the
+               last one sent is also kept for this browser session, so
+               a reload of this page shows it again. account.js moves
+               this under the state form when that is the one showing. -->
+          <div class="receipt" id="receipt" role="status" style="display:none">
+            <p id="receipt-text"></p>
+            <div class="row receipt-row">
+              <input type="text" id="receipt-box" class="copy-box" readonly aria-label="Report number">
+              <button id="receipt-copy" class="quiet" type="button">Copy</button>
+              <span class="hint" id="receipt-said"></span>
+            </div>
+            <p class="hint">
+              It is listed under <a id="receipt-link" href="account.html">Your
+              reports</a> on your account page, with what becomes of it.
+            </p>
+          </div>
+        </div>
+
+        <!-- The account, asked for at the moment of sending and not
+             before. account.js moves this block, and the recovery
+             card box above it, under whichever form is showing, and
+             shows it only when Send is pressed by someone signed out;
+             what was typed into the form stays where it is. Sign-up
+             and sign-in are the account page's own boxes, with the
+             same ids, so account.js wires them once for both pages -
+             setUpAccountForms() - and the recovery card is the same
+             card, printed by the same rules. -->
+        <div class="box" id="recovery-after" style="display:none">
+          <h3>Your recovery card</h3>
+          <p class="hint" id="recovery-after-hint"></p>
+          <div id="recovery-after-home"></div>
+        </div>
+
+        <div id="report-account" class="report-account" style="display:none" tabindex="-1">
+          <h3>An account, to send it</h3>
+          <p class="hint">
+            Nothing you have filled in is lost. An account is two random
+            words and a password &mdash; no email, no name, nothing about
+            you &mdash; and the report goes as it stands the moment you
+            have one.
+          </p>
+
+          <div class="account-forms">
+
+            <div class="box" id="signup-box">
+              <h3>Make an account</h3>
+
+              <p class="hint">Your username. It is the only way back in,
+                and there is nothing to send a reminder to &mdash; so the
+                card below is for keeping.</p>
+
+              <div class="username-row">
+                <code id="new-username" class="username-big">&hellip;</code>
+                <button id="reroll-button" class="quiet" title="Pick a different one">Another</button>
+              </div>
+
+              <div class="pw-head">
+                <label for="new-password">Password</label>
+                <button id="passphrase-button" class="quiet small" type="button">Make me one</button>
+              </div>
+              <input type="password" id="new-password" autocomplete="new-password">
+              <label for="new-password-again">Password again</label>
+              <input type="password" id="new-password-again" autocomplete="new-password">
+              <p class="hint">At least 10 characters, with a capital, a
+                number and a symbol. Or press <em>Make me one</em>: five
+                random words and a number.</p>
+
+              <!-- The recovery card, as on the account page: one
+                   element, moved into the box above once the account
+                   exists. Nothing on it leaves the browser. -->
+              <div class="recovery masked" id="recovery">
+                <div class="card" id="recovery-card" role="group" aria-labelledby="card-title">
+                  <p class="card-title" id="card-title">cammap &middot; recovery card</p>
+                  <p class="card-line">
+                    <span class="card-label">Username</span>
+                    <code class="card-value" id="card-username"></code>
+                  </p>
+                  <p class="card-line">
+                    <span class="card-label">Password</span>
+                    <code class="card-value card-pw-plain" id="card-password"></code>
+                    <code class="card-value card-pw-masked" id="card-password-masked" aria-hidden="true"></code>
+                  </p>
+                  <p class="card-text">
+                    This is the only way back into the account. There is
+                    no email on it, so nothing can be sent and nothing can
+                    be reset. Keep this somewhere safe, and destroy it
+                    when you no longer need it.
+                  </p>
+                  <p class="card-text card-site" id="card-site"></p>
+                </div>
+                <div class="row card-actions">
+                  <button id="print-card-button" class="quiet" type="button" disabled>Print this card</button>
+                  <button id="show-password-button" class="quiet" type="button" aria-pressed="false">Show</button>
+                </div>
+                <label class="tick" for="saved-tick">
+                  <input type="checkbox" id="saved-tick">
+                  <span>I have saved my username and password somewhere
+                    &mdash; this card printed, written down, or in a
+                    password manager.</span>
+                </label>
+              </div>
+
+              <button id="signup-button" disabled>Make the account and send</button>
+              <p class="note" id="signup-note"></p>
+            </div>
+
+            <div class="box">
+              <h3>Sign back in</h3>
+
+              <label for="signin-username">Username</label>
+              <input type="text" id="signin-username" placeholder="copper.heron"
+                     autocomplete="username" autocapitalize="none" spellcheck="false">
+              <label for="signin-password">Password</label>
+              <input type="password" id="signin-password" autocomplete="current-password">
+
+              <button id="signin-button">Sign in and send</button>
+              <p class="note" id="signin-note"></p>
+            </div>
+
+          </div>
         </div>
         </div>
 
@@ -197,6 +368,12 @@
               Zoom in as far as it goes &mdash; the closer the pin, the
               less a moderator has to guess.
             </p>
+            <!-- "Someone reported this corner two days ago", when the
+                 database says so as the pin lands (pending_near, in
+                 schema.sql). Empty otherwise. A live region, so a
+                 screen reader hears it arrive without leaving the
+                 map. -->
+            <p class="note" id="pick-dup" role="status"></p>
             <p class="hint">
               Have coordinates from somewhere else? Type them into the
               two boxes opposite and the pin will move to them.
@@ -229,12 +406,19 @@
           <label for="s-status-note">Anything worth adding</label>
           <textarea id="s-status-note" placeholder="optional"></textarea>
 
-          <label for="s-status-proof">A photo or video, if you have one</label>
-          <input type="file" id="s-status-proof" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
-          <p class="hint">Moderators only. Photos have their location data removed first.</p>
+          <label for="s-status-proof">Photos, if you have any &mdash; up to three</label>
+          <input type="file" id="s-status-proof" multiple accept="image/jpeg,image/png,image/webp">
+          <ul class="proof-list" id="s-status-proof-list" aria-label="Photos to send"></ul>
+          <p class="note" id="s-status-proof-note" role="status"></p>
+          <p class="hint">Moderators only. Photos have their location data removed first; video is not accepted. 20 MB each at most.</p>
 
-          <button id="submit-status-button">Send for review</button>
-          <p class="note" id="submit-status-note"></p>
+          <p class="note" id="status-draft-note" role="status"></p>
+
+          <div class="row">
+            <button id="submit-status-button">Send for review</button>
+            <button id="status-proof-retry" class="quiet" type="button" style="display:none">Try the photos again</button>
+          </div>
+          <p class="note" id="submit-status-note" role="status"></p>
         </div>
 
         <p class="hint">

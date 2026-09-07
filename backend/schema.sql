@@ -674,19 +674,21 @@ grant select, insert on public.reports to authenticated;
 
 -- ---------------- report_proof ----------------
 
--- One row per photo or video attached to a report. The file itself
--- sits in the private "proof" storage bucket (set up further down) at
+-- One row per photo attached to a report. The file itself sits in
+-- the private "proof" storage bucket (set up further down) at
 -- storage_path, which must be <user id>/<report id>/<file name>. A
 -- moderator sees the file through a signed URL the client asks for;
--- nobody else can reach it.
+-- nobody else can reach it. Photos only since version 2.12 (the
+-- block just below the grants says why); the constraint is named so
+-- that block can replace it on an older table.
 create table if not exists public.report_proof (
   id           bigint generated always as identity primary key,
   report_id    bigint not null references public.reports(id) on delete cascade,
   user_id      uuid not null references public.profiles(id) on delete cascade,
   storage_path text not null unique,
   mime         text not null
-                 check (mime in ('image/jpeg', 'image/png', 'image/webp',
-                                 'video/mp4', 'video/webm')),
+                 constraint report_proof_mime_check
+                 check (mime in ('image/jpeg', 'image/png', 'image/webp')),
   bytes        bigint not null check (bytes > 0 and bytes <= 20971520),   -- 20 MB, same as the bucket
   created_at   timestamptz not null default now()
 );
@@ -720,6 +722,48 @@ create policy "report_proof: delete own pending"
 
 revoke all on public.report_proof from anon, authenticated;
 grant select, insert, delete on public.report_proof to authenticated;
+
+-- version 2.12: video is refused. The form used to take MP4 and WebM
+-- and send them as they were, with a hint asking the person to check
+-- what theirs contained - on a site whose promise is anonymity, and
+-- to the one person who can least afford to leak a position: someone
+-- standing in front of a van, filming it. A video carries the same
+-- things a photo does - a GPS track, the device, the time - in a
+-- container the browser cannot rebuild the way it re-saves a photo
+-- through a canvas, and stripping it in plain JavaScript would take a
+-- library the Content-Security-Policy will not load. A warning would
+-- have made the promise the person's to keep for us. So the form
+-- refuses video at the moment of choosing, and this narrows the two
+-- places the server decides: the check on report_proof.mime here,
+-- and the bucket's allowed_mime_types, below, in the insert that
+-- creates it. Migration 010 is the same statements; if you change
+-- one, change the other. QUESTIONS.md item 1 records the decision.
+--
+-- Nothing is deleted. A video row that already exists stays, with
+-- its file: taking a person's evidence away because the rule changed
+-- is not this schema's to do. The new check is therefore added NOT
+-- VALID - checked on every new row, not on old ones - and validated
+-- only if no video row exists, so that on a database with none the
+-- constraint ends up exactly as a fresh database's does. On one that
+-- has some, the notice below says so, and the constraint stays not
+-- valid until the maintainer decides what to do with those rows and
+-- runs "alter table public.report_proof validate constraint
+-- report_proof_mime_check" by hand.
+alter table public.report_proof drop constraint if exists report_proof_mime_check;
+alter table public.report_proof add constraint report_proof_mime_check
+  check (mime in ('image/jpeg', 'image/png', 'image/webp')) not valid;
+
+do $$
+declare
+  videos integer;
+begin
+  select count(*) into videos from public.report_proof where mime like 'video/%';
+  if videos = 0 then
+    alter table public.report_proof validate constraint report_proof_mime_check;
+  else
+    raise notice 'report_proof has % video row(s) from before version 2.12. They are kept; report_proof_mime_check stays NOT VALID (new rows are still checked) until you decide about them and run: alter table public.report_proof validate constraint report_proof_mime_check', videos;
+  end if;
+end $$;
 
 -- ---------------- xp_events ----------------
 
@@ -1032,6 +1076,79 @@ $$;
 
 revoke all on function public.cluster_of_report(bigint) from public, anon, authenticated;
 grant execute on function public.cluster_of_report(bigint) to service_role;
+
+-- version 2.11: is a report already waiting here? The one question
+-- the report form may ask before Send, so a person placing a pin
+-- hears "someone reported this corner two days ago" while they are
+-- still placing it rather than "refused" after they have typed
+-- everything and attached a photograph. Migration 009 is the same
+-- statements; if you change one, change the other.
+--
+-- Why a function and not a select: the reports read policy shows a
+-- person their own rows and a moderator everyone's, and that is
+-- right - it is the policy that keeps who-reported-what from anyone
+-- else. A plain select from the form could therefore never see
+-- another person's pending report, which is exactly the one the
+-- question is about. So the answer comes through one narrow window,
+-- security definer, that reads across the policy and hands back two
+-- fields.
+--
+-- The anonymity test - what does a stranger learn by calling this
+-- repeatedly? Whether a new-camera report is waiting within the
+-- auto-approve radius of any point in London, and how many days ago
+-- the newest was sent. Not who sent it, not how many people, not its
+-- kind, note or exact position. "A report is waiting near here" is
+-- the same thing the map would show at that spot once the report is
+-- approved, minus the position, and it says nothing about any
+-- account; that is why it is acceptable, and why the function is
+-- granted to anon as well - the signed-out visitor is filling the
+-- form now. What is withheld and why: the count of reports, because
+-- the sentence has no use for it and a count is a finer instrument
+-- than a flag - watched over time it would say when each report
+-- arrived, one by one; and the exact time, rounded to whole days for
+-- the same reason. Coordinates in, two fields out, no identity
+-- anywhere: that is the line, and it is the one CLAUDE.md draws for
+-- every call the browser may make. It is rate-limited by its own
+-- cheapness - one probe of reports_pending_cell_idx, the same grid
+-- walk cluster_of_report makes - and returns for a point outside
+-- London without looking.
+--
+-- The column is `found`, not `exists`: exists is a keyword, and a
+-- column that has to be quoted everywhere it is read is a trap laid
+-- for whoever reads it next.
+create or replace function public.pending_near(lat double precision, lon double precision)
+returns table (found boolean, days_ago integer)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with s as (
+    select auto_approve_radius_m::double precision as radius,
+           ceil(auto_approve_radius_m / 111.32)::integer as nlat,
+           ceil(auto_approve_radius_m / (111.32 * cos(radians(pending_near.lat))))::integer as nlon
+      from public.settings where id = 1),
+  here as (
+    select round(pending_near.lat::numeric, 3) as clat,
+           round(pending_near.lon::numeric, 3) as clon),
+  newest as (
+    select max(r.created_at) as at
+      from public.reports r, s, here
+     where pending_near.lat between 51.28 and 51.70
+       and pending_near.lon between -0.51 and 0.33
+       and r.kind = 'new'
+       and r.state = 'pending'
+       and r.cell_lat between here.clat - s.nlat * 0.001 and here.clat + s.nlat * 0.001
+       and r.cell_lon between here.clon - s.nlon * 0.001 and here.clon + s.nlon * 0.001
+       and public.metres_between(pending_near.lat, pending_near.lon, r.lat, r.lon) <= s.radius)
+  select at is not null,
+         case when at is null then null
+              else floor(extract(epoch from (now() - at)) / 86400)::integer end
+    from newest;
+$$;
+
+revoke all on function public.pending_near(double precision, double precision) from public, anon, authenticated;
+grant execute on function public.pending_near(double precision, double precision) to anon, authenticated, service_role;
 
 -- ---------------- approving and rejecting ----------------
 
@@ -2136,10 +2253,14 @@ grant execute on function public.delete_my_account() to authenticated, service_r
 -- report is pending; never overwrite. The size and type limits are
 -- enforced by the bucket itself before a byte is stored. The insert
 -- below is what creates the bucket - it appears in the dashboard on
--- its own, and re-running keeps the limits as written here.
+-- its own, and re-running keeps the limits as written here. Photos
+-- only since version 2.12 (see report_proof above for why): the
+-- on-conflict update is what narrows the list on a bucket that
+-- already exists, and the dashboard shows the same list under
+-- Storage -> proof -> settings, where it should read the same.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('proof', 'proof', false, 20971520,
-        array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
+        array['image/jpeg', 'image/png', 'image/webp'])
 on conflict (id) do update
   set public             = excluded.public,
       file_size_limit    = excluded.file_size_limit,

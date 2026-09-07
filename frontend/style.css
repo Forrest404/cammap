@@ -1859,13 +1859,232 @@ details.explain strong {
 }
 
 /* ------------------------------------------------------------------
-   REPORTING (Wave 4: the reporting agent writes this block)
+   REPORTING
 
-   Rules for the report form open to everyone, the duplicate notice,
-   the three-photo picker, the Your reports list, the receipt, and the
-   XP table on the leaderboard. If the agent needs no rule here, this
-   block is removed rather than left empty.
+   The reporting loop, closed at both ends. The report form is open
+   to everyone and asks for an account at the moment of sending; a
+   report says what it is worth before it is written, warns about a
+   duplicate before it is filled in, takes three photographs, is
+   listed afterwards with what became of it, and hands back a
+   receipt. What is here is only what those need from the
+   stylesheet that the FORMS, ACCOUNTS and queue rules do not
+   already give them. The long version is "The reporting loop" in
+   NOTES.md.
    ------------------------------------------------------------------ */
+
+/* ---------- the account, asked for under the form ----------
+
+   The account page's two boxes, brought under the form and shown
+   only when Send is pressed by someone signed out. Set off above by
+   a rule in the accent rather than put in a box of its own: it is
+   the answer to the button just pressed, and the one thing on the
+   page waiting on the person, the way .confirm is on the account
+   page. It takes focus by script when it appears (tabindex -1), so
+   the outline that would draw on a focused block is taken off - the
+   ring is for the keyboard, and the boxes inside keep theirs. */
+.report-account {
+  margin: 0 0 16px 0;
+  padding: 14px 0 0 0;
+  border-top: 1px solid var(--accent);
+}
+
+.report-account:focus {
+  outline: none;
+}
+
+.report-account .account-forms {
+  margin: 12px 0 0 0;
+}
+
+/* ---------- "someone reported this corner" ----------
+
+   The duplicate sentence, under the picker's hint. A .note reserves
+   a line and has no margin below, which is right for a note under a
+   button and wrong for a sentence with another hint after it; when
+   it has something to say it takes a gap, and when it has nothing
+   it takes the one line and no more. */
+#pick-dup:not(:empty) {
+  margin-bottom: 10px;
+}
+
+/* ---------- the photos, before they are sent ----------
+
+   Up to three thumbnails under the file picker, each with its name,
+   its re-saved size and a button to take it out. Small, because
+   they are there to be recognised - "the close one, the wide one" -
+   not looked at; the moderation queue shows them larger. The
+   remove button is button.remove from the points list, the same
+   small bordered box at the end of a row. Empty, the list takes no
+   room, so a form with no photo looks as it did. */
+ul.proof-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul.proof-list:empty {
+  margin: 0;
+}
+
+ul.proof-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 4px;
+  border: 1px solid var(--rule);
+  font-size: 12px;
+  color: var(--dim);
+}
+
+ul.proof-list img {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+/* Room for a short name, a size and "· sent" - "a.png · 2 KB · sent"
+   is 19 characters - before a long name is cut with an ellipsis. */
+ul.proof-list .proof-name {
+  max-width: 20ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The proof line reserves no height while it has nothing to say -
+   it sits between the list and a hint, and an empty line there is
+   a gap for nothing - and takes a gap below when it does, so a
+   refusal does not run into the hint under it. */
+#s-proof-note:empty,
+#s-status-proof-note:empty {
+  display: none;
+}
+
+#s-proof-note:not(:empty),
+#s-status-proof-note:not(:empty) {
+  margin-bottom: 10px;
+}
+
+/* Send and "Try the photos again" side by side; on a phone the
+   second wraps under the first. */
+.report-main .row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* ---------- Your reports ----------
+
+   The list on the account page is a ul.queue like the moderation
+   lists, and takes their rules: the strong line, the dim meta line,
+   the body. Two things of its own. The moderator's note is set off
+   from the meta line above it, in the text colour rather than the
+   dim, because it is the one thing on the page written to the person
+   by a person and should read as words rather than as data. And the
+   row a receipt links to (#report-<id>) is lit with a rule in the
+   accent at its left, the way a panel opened in a row is set off
+   under MODERATION, so it can be found in a list of thirty; a row
+   takes focus by script when it is lit, and the outline that would
+   draw on a focused list item is taken off in favour of the rule. */
+ul.queue .mod-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+}
+
+ul.queue li.spotlit {
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
+}
+
+ul.queue li.spotlit:focus {
+  outline: none;
+}
+
+/* A box on the account page holds itself to 42ch; the list of
+   reports is the moderation queue's width, and reads badly folded
+   into a column of that measure. */
+#reports-box {
+  max-width: 68ch;
+}
+
+/* ---------- the receipt ----------
+
+   Under the Send button once a report is in: the number, a box that
+   copies it, and the link to it under Your reports. Bordered in the
+   accent like .confirm on the account page, because it is the one
+   thing on the page that has just changed and the thing to take
+   away. The box is sized to a number - "#12345" - and reads as a
+   value, not a field to type in: the FORMS rules would stretch it
+   to the row and give it a well, so both are undone here. */
+.receipt {
+  margin: 12px 0 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  font-size: 13px;
+}
+
+.receipt p {
+  margin: 0 0 8px 0;
+}
+
+.receipt p.hint {
+  margin: 8px 0 0 0;
+}
+
+.receipt .receipt-row {
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.receipt input.copy-box {
+  width: 9ch;
+  margin: 0;
+  padding: 4px 8px;
+  background: none;
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.receipt .hint {
+  margin: 0;
+}
+
+/* ---------- what a report is worth ----------
+
+   The XP table on the leaderboard page is a table.board like the
+   boards above it, two columns: words, then a number. The board's
+   own rules right-align and dim its first column, which there is a
+   rank; here it is a sentence, so it goes back to the left in the
+   text colour and is allowed to wrap on a phone. */
+table.board.xp td:first-child {
+  text-align: left;
+  color: var(--text);
+  white-space: normal;
+}
+
+table.board.xp td:nth-child(2) {
+  text-align: right;
+  color: var(--dim);
+}
+
+/* The heading over it sits under the boards' empty line or the last
+   row's rule, and wants a breath of room; so does the line saying
+   where to leave the list, which follows "Nobody yet." or the table
+   with nothing between. */
+#xp-title {
+  margin-top: 28px;
+}
+
+#leave-hint {
+  margin-top: 14px;
+}
 
 /* ------------------------------------------------------------------
    THE WORDS
