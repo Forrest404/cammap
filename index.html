@@ -3,6 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- What a request from this page says about where it came from.
+     Cross-origin hosts - OpenFreeMap, Esri, Supabase, Nominatim - get
+     the origin only: Nominatim's usage policy asks for a referrer
+     that identifies the application, and the origin does. Same-origin
+     requests get the full URL, which is why a position must never be
+     in a query string on this site - it would reach the host with
+     the page request and ride in the Referer of every script, style
+     and font the page loads; a fragment is never sent at all. This
+     is the browser's default in Chrome and Firefox, declared so it
+     does not depend on a default. Nine copies, one per page;
+     stamp.py does not police this tag. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <!-- Identical on all seven pages, and must stay that way: it is what
      makes the no-CDN rule something the browser enforces rather than
      something we remember. tools/stamp.py fails if they drift. Why
@@ -133,7 +145,7 @@
              The privacy line is in NOTES.md, "The map as a tool". -->
         <div class="map-toggles">
           <button id="near-me" class="toggle" aria-pressed="false" hidden
-                  title="Centre the map on where you are. Asked for only when you press this, never on its own; nothing is stored or sent anywhere. Press again to clear it.">Near me</button>
+                  title="Centre the map on where you are. Asked for only when you press this, never on its own; nothing is stored or sent anywhere, and nothing is written to the address bar. Press again to clear it.">Near me</button>
         </div>
         <div class="map-toggles" id="view-buttons">
           <button class="toggle on" data-view="dark" aria-pressed="true" title="The dark map">Dark</button>

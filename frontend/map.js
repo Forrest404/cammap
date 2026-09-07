@@ -1989,17 +1989,22 @@ function pageAddress() {
   return window.location.href.split("#")[0].split("?")[0];
 }
 
-/* A link to a camera: the view as it stands, and the camera - the
-   same thing the address bar holds while its popup is open, so the
-   two can never disagree about what a link to a camera is. Worked
-   out when the link is asked for, not when the popup was built,
-   because the view may have moved since. */
+/* A link to a camera: the camera's own spot, at the zoom the map is
+   at, and the camera - never the map's centre. This and the address
+   bar were once the same string on purpose, so the two could not
+   disagree about what a link to a camera is; but the centre is
+   wherever the visitor is looking from, and a popup opened by
+   clicking a dot does not move the map, so a link made from the
+   centre was a link to the visitor with a camera named after it -
+   and after Near me, the visitor is where they are standing. The
+   camera's coordinates are the same for everyone and say nothing
+   about who copied them. Worked out when the link is asked for, not
+   when the popup was built, because the zoom may have changed since. */
 function linkTo(point) {
-  var centre = map.getCenter();
   var zoom = Math.round(map.getZoom() * 100) / 100;
 
-  return pageAddress() + "#" + zoom + "/" + centre.lat.toFixed(5) + "/" +
-         centre.lng.toFixed(5) + "&camera=" + cameraLinkId(point);
+  return pageAddress() + "#" + zoom + "/" + point.lat.toFixed(5) + "/" +
+         point.lon.toFixed(5) + "&camera=" + cameraLinkId(point);
 }
 
 /* "Copy link" in the popup. An <a> and not a <button>, because it is
@@ -2096,8 +2101,15 @@ function copyLinkRow(point) {
    not have would be. So a right-click on the map, or a long press on
    a phone, opens a small popup at that spot with one row, "Report a
    camera here", which opens the report form with the pin already
-   placed there - report.html?lat=&lon=, to six decimals, which is
-   the precision the map writes everywhere else.
+   placed there - report.html#<lat>/<lon>, to six decimals, which is
+   the precision the map writes everywhere else. In the fragment and
+   never the query string: a query string is part of the page
+   request, so it goes to the host, into the server's log, and into
+   the Referer of every stylesheet, script and font the page then
+   loads from the same origin - and the spot a person right-clicked
+   is very often where they are standing. A fragment is never sent
+   anywhere by the browser. The privacy pass watched the query form
+   arrive in the Referer of nine same-origin requests; that is L4.
 
    Right-click. MapLibre already keeps the browser's own menu off the
    canvas: its mouse handlers call preventDefault on contextmenu there
@@ -2134,9 +2146,18 @@ var lastOffer = { at: 0, x: 0, y: 0 };
 
 /* map.js only runs on the map, which is the page at the root, so the
    report page is one folder down from here - as the popup's "Report
-   its state" link already assumes. */
+   its state" link already assumes.
+
+   The fragment is exactly  #<lat>/<lon>  - latitude first, a slash
+   between, six decimals each, no zoom, nothing else - which is what
+   the report page's reader in account.js parses, so the two must be
+   changed together. It cannot be mistaken for the report page's
+   other fragment, #report-<n>, and it is the map's own lat/lon order.
+   The old form - the pair as query parameters - is not written
+   anywhere, on purpose, and must not come back: see the heading
+   above. */
 function reportHereHref(lngLat) {
-  return "pages/report.html?lat=" + lngLat.lat.toFixed(6) + "&lon=" + lngLat.lng.toFixed(6);
+  return "pages/report.html#" + lngLat.lat.toFixed(6) + "/" + lngLat.lng.toFixed(6);
 }
 
 function offerReportAt(lngLat, point) {
@@ -3067,11 +3088,23 @@ render();
 
    points.js is drawn first and at once, so the map is never blank
    waiting on a network. Then, if there is a Supabase project behind
-   the site, the cameras table is fetched and laid over it: a row
-   that came from the seed replaces its seed entry (so a camera the
+   the site, the cameras are fetched and laid over it: a row that
+   came from the seed replaces its seed entry (so a camera the
    moderators have since marked non-functional shows as such), and a
    row that came from a report is added. If the fetch fails for any
    reason the seed simply stands.
+
+   Fetched from a view, cameras_public, and not from the table. The
+   table carries approved_by, approved_at and updated_at, and anyone
+   could select them: a moderator's uuid against every camera they
+   approved, and the hour they did it, which beside the leaderboard
+   is a name against a time (the privacy pass's L3 and L6). The view
+   carries only what the map may read - the columns named below and
+   nothing else - and only visible rows, and the table is revoked
+   from the anonymous role by the same migration. The view is the
+   map's read; the table is the moderators'. A column the map comes
+   to need is added to the view, on purpose, and never by widening
+   what the table lets out.
 
    The result is kept in the browser for a few minutes. A busy day is
    many people opening the map, not many changes to it, so most of
@@ -3205,15 +3238,18 @@ function overlayCameras(rows) {
 
 /* The four newer record fields, from a database row onto a point -
    but only when the row actually carries them. The columns arrived in
-   migrations 001 to 003, which are written and not yet applied, and
-   the fetch below does not ask for them yet either: PostgREST refuses
-   the whole query if one named column is missing, and the map would
-   rather draw the seed's values than nothing. So a row without the
-   columns leaves the point's own values standing, whether those came
-   from points.js or from the defaults above; a row with them wins,
-   the way the row wins on name, note and state. periods is the tell:
-   it is the first of the three migrations, so a row that has it has
-   been through all of them. */
+   migrations 001 to 003, and the view the map reads names them; the
+   table it falls back to, on a database with no migrations applied,
+   does not, because PostgREST refuses the whole query if one named
+   column is missing, and the map would rather draw the seed's values
+   than nothing. So a row without the columns leaves the point's own
+   values standing, whether those came from points.js or from the
+   defaults above; a row with them wins, the way the row wins on
+   name, note and state. periods is the tell: it is the first of the
+   three migrations, so a row that has it has been through all of
+   them. The cache holds rows from whichever query answered, and
+   either shape overlays: the names are the same, and this is the
+   only place the difference is felt. */
 function takeRecordFields(point, row) {
   if (row.periods === undefined) {
     return point;
@@ -3264,34 +3300,80 @@ function loadCamerasFromDatabase() {
     return;
   }
 
-  /* Only the columns the map needs, only visible rows, and a hard
-     ceiling on how many. The ceiling is well above what one city
-     will hold; it is there so a runaway table cannot ship megabytes
-     to every visitor.
+  /* The view first. It has exactly the columns the map may read -
+     the fourteen named here, and the select names them all so that
+     a column added to the view is a deliberate addition here too -
+     and only visible rows, so it needs no filter of its own (it has
+     no `visible` column to filter on). A hard ceiling on how many,
+     well above what one city will hold, so a runaway table cannot
+     ship megabytes to every visitor.
 
-     periods, source_label, source_url and approximate are not asked
-     for yet, on purpose: they arrive with migrations 001 to 003, which
-     the maintainer has not run, and PostgREST refuses a whole query
-     for one column it does not know. Naming them here before the
-     columns exist would blank the overlay for every visitor. When the
-     popup comes to draw them, the select grows and takeRecordFields()
-     above already knows what to do with the answer. */
-  sb.from("cameras")
-    .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key")
-    .eq("visible", true)
+     Then, if the view is not there, the table. The live database has
+     none of the migrations applied, so until migration 012 is run
+     the view does not exist and PostgREST answers 404 - code 42P01
+     from older versions, PGRST205 from newer ones, "could not find
+     the table in the schema cache". That one answer, and only that
+     one, sends the map to the table for the ten columns it has
+     always had: the four newer record fields are left out there,
+     because PostgREST refuses a whole query for one column it does
+     not know, and takeRecordFields() above leaves the seed's values
+     standing for a row without them. Any other error is the seed
+     standing, as it always was.
+
+     When the fallback can go: once migration 012 has been applied
+     and the view seen to answer. It should go then, not merely may:
+     the same migration revokes the table from the anonymous role,
+     so a fallback to it would only fail slower, and the branch would
+     be a second query to keep honest for nothing. */
+  function settle(result) {
+    if (result.error || !Array.isArray(result.data)) {
+      /* The seed stands, and so a camera link by database id has
+         no answer here; say so rather than wait for one. */
+      cameraLinkSettled();
+      return;
+    }
+    cacheCameras(result.data);
+    overlayCameras(result.data);
+  }
+
+  function fromTheTable() {
+    sb.from("cameras")
+      .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key")
+      .eq("visible", true)
+      .limit(5000)
+      .then(settle, function () {
+        cameraLinkSettled();
+      });
+  }
+
+  sb.from("cameras_public")
+    .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key," +
+            "periods,source_label,source_url,approximate")
     .limit(5000)
     .then(function (result) {
-      if (result.error || !Array.isArray(result.data)) {
-        /* The seed stands, and so a camera link by database id has
-           no answer here; say so rather than wait for one. */
-        cameraLinkSettled();
+      if (result.error && viewMissing(result)) {
+        fromTheTable();
         return;
       }
-      cacheCameras(result.data);
-      overlayCameras(result.data);
+      settle(result);
     }, function () {
       cameraLinkSettled();
     });
+}
+
+/* Whether a failed read says the view is not there - as against any
+   other failure, which is the seed standing. PostgREST's code for a
+   relation it cannot find was Postgres's own 42P01, and is PGRST205
+   since version 12; both come with a 404, and supabase-js passes the
+   status through, so the status is the third tell for a version that
+   words it some other way. Nothing else is taken as "missing": a
+   permission refused, say, is 42501 with a 403, and falling back on
+   that would turn a misconfigured view into a silent read of the
+   table it was made to replace. */
+function viewMissing(result) {
+  var code = result.error && result.error.code;
+
+  return code === "42P01" || code === "PGRST205" || result.status === 404;
 }
 
 /* ------------------------------------------------------------------
@@ -3324,7 +3406,9 @@ function loadCamerasFromDatabase() {
    a throttle holds the writes to one every quarter of a second so a
    drag does not flood the browser's own bookkeeping either. The
    hash is written only once the map has moved; a page that was
-   opened plain keeps a plain address.
+   opened plain keeps a plain address. And it is not written at all
+   while Near me holds a fix - the view is then the visitor's own
+   position, and the bar is blanked instead; see "Near me" below.
 
    Which id a camera carries. A row from the database has an id that
    is the same for everyone and survives a rename, so a camera that
@@ -3423,7 +3507,23 @@ function currentHash() {
 }
 
 function writeHash() {
-  var hash = currentHash();
+  var hash;
+
+  /* Not while Near me holds a fix. The map is then looking at where
+     the visitor is standing, and the bar following it would put
+     their position, to about a metre, in the one place that is
+     copied without thinking and kept in the browser's history -
+     written by the page, not by them. So from the fix arriving
+     until the second press clears it, nothing is written here;
+     blankHash() took the old view out when the fix arrived, and the
+     first move after clearing writes as usual. `here` is declared
+     under "Near me" further down; a var is hoisted, so before that
+     line runs it is simply undefined, and no fix is held. */
+  if (here) {
+    return;
+  }
+
+  hash = currentHash();
 
   if (hash === lastWrittenHash) {
     return;
@@ -3441,6 +3541,31 @@ function writeHash() {
       window.location.replace(hash);
     } catch (err2) {
       /* then the address bar simply does not follow the map */
+    }
+  }
+}
+
+/* Take the view out of the bar: the plain address, as a page opened
+   plain has. For Near me, which must not leave the view it just
+   replaced in the bar - a stale view is read as the current one, and
+   it may name a camera whose popup has since closed - and must not
+   write the one it moved to. A bare "#" rather than the address
+   with its fragment taken off: replacing the address with one that
+   has no fragment is a navigation, and in the location.replace
+   fallback a reload, while "#" is a fragment change in both, and
+   location.hash reads as empty for it. The last write is remembered
+   as empty for the same reason, so the hashchange listener below
+   ignores the fallback's own event and the first write afterwards
+   sees something to do. */
+function blankHash() {
+  lastWrittenHash = "";
+  try {
+    window.history.replaceState(null, "", "#");
+  } catch (err) {
+    try {
+      window.location.replace("#");
+    } catch (err2) {
+      /* then the old view stays in the bar; nothing new is written */
     }
   }
 }
@@ -3608,11 +3733,17 @@ loadCamerasFromDatabase();
    nothing, and a refusal has to work as well as a yes. So the browser
    is asked only when the button is pressed, the answer lives in one
    variable for this visit, and it is written nowhere - not to
-   storage, not to the database, not to the hash on its own account.
-   (The hash follows the map, and after Near me the map is looking at
-   where you are, as it would be after you panned there; copying the
-   address then is copying a view of your street. The site does not
-   do that for you.)
+   storage, not to the database, and not to the address bar. That
+   last was not always so: the hash follows the map, and after Near
+   me the map is looking at where you are, so the bar used to carry
+   your position to about a metre - written by the page, not by you,
+   into the one place that is copied without thinking and kept in
+   the browser's history. So while a fix is held the bar is blanked
+   to the plain address and writeHash() writes nothing; the first
+   move after the second press clears the fix writes as usual. And a
+   link copied from a popup centres on the camera, never on the map's
+   centre - linkTo() - because a dot clicked while the map is looking
+   at your street does not move the map.
 
    What a press does: centres the map on the fix, close in or less so
    according to how good the fix is; draws where you are as a small
@@ -3875,6 +4006,12 @@ function gotHere(lat, lon, accuracy) {
 
   here = { lat: lat, lon: lon, accuracy: accuracy };
 
+  /* The bar first, before the map moves: from here until the fix is
+     cleared, writeHash() writes nothing, and the view that was in
+     the bar goes too, so what is copied from it is the plain address
+     and not a stale view read as the current one. */
+  blankHash();
+
   drawHere();
 
   if (inside) {
@@ -3893,11 +4030,17 @@ function gotHere(lat, lon, accuracy) {
 
   sayUnderMap(inside
     ? "Centred on where you are, to within about " + distanceText(accuracy) +
-      ". Nothing is stored or sent. Press Near me again to clear it."
+      ". Nothing is stored or sent, and nothing is written to the address bar. " +
+      "Press Near me again to clear it."
     : "You are outside London, which is all this map covers, so there is nothing to centre on; " +
-      "the list is in order of distance from you all the same. Press Near me again to clear it.");
+      "the list is in order of distance from you all the same. Nothing is stored or sent, " +
+      "and nothing is written to the address bar. Press Near me again to clear it.");
 }
 
+/* The second press. The bar stays blank until the map next moves:
+   writing it here would put back the view as it stands, which is
+   still where you are if you have not panned away, and the point of
+   the blank was that the page never writes that on its own. */
 function clearHere() {
   here = null;
   removeHere();

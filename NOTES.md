@@ -1421,7 +1421,9 @@ entry would turn the back button into a tour of everywhere you had
 been. Held to one write a quarter of a second, taken at the end of the
 interval, so a drag writes where it got to. A page opened plain keeps a
 plain address until the map moves; the URL only ever carries a view
-the visitor made or asked for.
+the visitor made or asked for - and while Near me holds a fix, no view
+at all: the bar is blanked and `writeHash()` writes nothing until the
+fix is cleared and the map next moves. Why is under Near me below.
 
 Which id a camera carries is the decision worth recording. A camera
 the database has given an id links by that: it is the same for every
@@ -1448,6 +1450,13 @@ the visitor.
 
 "Copy link" in the popup is an anchor whose `href` is the link itself,
 so a right-click and "copy link address" works before any script does.
+The link centres on the camera - its own coordinates, at the zoom the
+map is at - and never on the map's centre, though the bar and the link
+were once the same string on purpose. A popup opened by clicking a dot
+does not move the map, so a link made from the centre was a link to
+wherever the visitor was looking from, with a camera named after it;
+after Near me that is where they are standing. The camera's position
+is the same for everyone and says nothing about who copied it.
 A click copies it by the clipboard API, then `execCommand`, then a
 selected box with the address in it - none of the three is everywhere:
 the API is refused off the disk and on plain http, `execCommand` is
@@ -1465,11 +1474,24 @@ that honours it, and `showCameraLink()` uses that.
 position rather than a preference. The browser is asked for a location
 only when the button under the map is pressed. The answer lives in one
 variable for the visit and is written nowhere: not to storage, not to
-the database, not to the hash on its own account. The one honest
-caveat is that the hash follows the map, and after Near me the map is
-looking at where you are, as it would be after you panned there;
-copying the address bar then is copying a view of your street, which
-is the visitor's act and not the site's.
+the database, not to the address bar. The last of those is the privacy
+pass's finding L7. The hash follows the map, and after Near me the map
+is looking at where you are; the earlier version let the bar follow
+and called copying it the visitor's act. It was not: the page wrote
+`#16/51.50804/-0.12807` - a position to about a metre - into the one
+place that is copied without thinking and kept in the browser's
+history, and a stubbed fix proved it. So while a fix is held the bar
+is blanked to the plain address (`blankHash()`: a bare `#` rather than
+no fragment, because replacing the address with one that has no
+fragment is a reload in the `location.replace` fallback) and nothing
+is written to it, a stale view included - a stale view is read as the
+current one, and may name a camera whose popup has since closed. The
+second press clears the fix and does not write either: the map is
+still looking at your street if you have not panned away, and the
+point was that the page never writes that on its own. The first move
+after that writes as usual. A link copied from a popup meanwhile
+centres on the camera, not the map - see "Copy link" above. The line
+under the map and the button's title both say so.
 
 A press centres the map, closer or wider by how good the fix is
 (`zoomForAccuracy()`), draws where you are as a ring with a dot in it
@@ -1606,9 +1628,31 @@ reports nothing changed in any of the three files - that round trip is
 the check that the export writes what the script reads. The four newer
 fields travel with a point from `tidy()` onward, and `overlayCameras()`
 takes them from a database row only when the row has the columns
-(`takeRecordFields()`); the fetch does not name them until the
-migrations are applied, because PostgREST refuses a whole query for one
-column it does not know.
+(`takeRecordFields()`). The view the map reads names them; the table it
+falls back to does not, because PostgREST refuses a whole query for one
+column it does not know - see "The map's read" just below.
+
+**The map's read (L3, L6).** The map reads `cameras_public`, a view,
+and not the `cameras` table - `loadCamerasFromDatabase()` in `map.js`.
+The table carries `approved_by`, `approved_at` and `updated_at`, and
+until migration 012 anyone could select them: a moderator's uuid
+against every camera they approved, and the hour, which beside the
+daily leaderboard is a username against a time. The view carries the
+fourteen columns the map may read and only visible rows, and the
+select names all fourteen so that a column added to the view is a
+deliberate addition to the map as well. The live database has none of
+the migrations applied, so the view is not there yet; PostgREST says
+so with a 404 and code `42P01` or `PGRST205` (the live one says
+`PGRST205`), and on that answer alone the map asks the table for the
+ten columns it always had (`viewMissing()`). The fallback goes once 012
+has been applied and the view seen to answer - and must go then,
+because the same migration revokes the table from the anonymous role
+and the fallback would only fail slower. The cache in `STORAGE.cameras`
+holds rows from whichever query answered; the names are the same, and
+`takeRecordFields()` is the only place the difference is felt. The
+report form's context dots read the same cache and, without it, ask
+the table for four columns in `contextCameras()` in `account.js` -
+that read moves to the view with the same migration.
 
 **How it was checked.** Headless Chrome over the DevTools protocol with
 real mouse and keyboard events, at 1400 and 390 wide, on all three
