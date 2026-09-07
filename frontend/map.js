@@ -1989,17 +1989,22 @@ function pageAddress() {
   return window.location.href.split("#")[0].split("?")[0];
 }
 
-/* A link to a camera: the view as it stands, and the camera - the
-   same thing the address bar holds while its popup is open, so the
-   two can never disagree about what a link to a camera is. Worked
-   out when the link is asked for, not when the popup was built,
-   because the view may have moved since. */
+/* A link to a camera: the camera's own spot, at the zoom the map is
+   at, and the camera - never the map's centre. This and the address
+   bar were once the same string on purpose, so the two could not
+   disagree about what a link to a camera is; but the centre is
+   wherever the visitor is looking from, and a popup opened by
+   clicking a dot does not move the map, so a link made from the
+   centre was a link to the visitor with a camera named after it -
+   and after Near me, the visitor is where they are standing. The
+   camera's coordinates are the same for everyone and say nothing
+   about who copied them. Worked out when the link is asked for, not
+   when the popup was built, because the zoom may have changed since. */
 function linkTo(point) {
-  var centre = map.getCenter();
   var zoom = Math.round(map.getZoom() * 100) / 100;
 
-  return pageAddress() + "#" + zoom + "/" + centre.lat.toFixed(5) + "/" +
-         centre.lng.toFixed(5) + "&camera=" + cameraLinkId(point);
+  return pageAddress() + "#" + zoom + "/" + point.lat.toFixed(5) + "/" +
+         point.lon.toFixed(5) + "&camera=" + cameraLinkId(point);
 }
 
 /* "Copy link" in the popup. An <a> and not a <button>, because it is
@@ -3324,7 +3329,9 @@ function loadCamerasFromDatabase() {
    a throttle holds the writes to one every quarter of a second so a
    drag does not flood the browser's own bookkeeping either. The
    hash is written only once the map has moved; a page that was
-   opened plain keeps a plain address.
+   opened plain keeps a plain address. And it is not written at all
+   while Near me holds a fix - the view is then the visitor's own
+   position, and the bar is blanked instead; see "Near me" below.
 
    Which id a camera carries. A row from the database has an id that
    is the same for everyone and survives a rename, so a camera that
@@ -3423,7 +3430,23 @@ function currentHash() {
 }
 
 function writeHash() {
-  var hash = currentHash();
+  var hash;
+
+  /* Not while Near me holds a fix. The map is then looking at where
+     the visitor is standing, and the bar following it would put
+     their position, to about a metre, in the one place that is
+     copied without thinking and kept in the browser's history -
+     written by the page, not by them. So from the fix arriving
+     until the second press clears it, nothing is written here;
+     blankHash() took the old view out when the fix arrived, and the
+     first move after clearing writes as usual. `here` is declared
+     under "Near me" further down; a var is hoisted, so before that
+     line runs it is simply undefined, and no fix is held. */
+  if (here) {
+    return;
+  }
+
+  hash = currentHash();
 
   if (hash === lastWrittenHash) {
     return;
@@ -3441,6 +3464,31 @@ function writeHash() {
       window.location.replace(hash);
     } catch (err2) {
       /* then the address bar simply does not follow the map */
+    }
+  }
+}
+
+/* Take the view out of the bar: the plain address, as a page opened
+   plain has. For Near me, which must not leave the view it just
+   replaced in the bar - a stale view is read as the current one, and
+   it may name a camera whose popup has since closed - and must not
+   write the one it moved to. A bare "#" rather than the address
+   with its fragment taken off: replacing the address with one that
+   has no fragment is a navigation, and in the location.replace
+   fallback a reload, while "#" is a fragment change in both, and
+   location.hash reads as empty for it. The last write is remembered
+   as empty for the same reason, so the hashchange listener below
+   ignores the fallback's own event and the first write afterwards
+   sees something to do. */
+function blankHash() {
+  lastWrittenHash = "";
+  try {
+    window.history.replaceState(null, "", "#");
+  } catch (err) {
+    try {
+      window.location.replace("#");
+    } catch (err2) {
+      /* then the old view stays in the bar; nothing new is written */
     }
   }
 }
@@ -3608,11 +3656,17 @@ loadCamerasFromDatabase();
    nothing, and a refusal has to work as well as a yes. So the browser
    is asked only when the button is pressed, the answer lives in one
    variable for this visit, and it is written nowhere - not to
-   storage, not to the database, not to the hash on its own account.
-   (The hash follows the map, and after Near me the map is looking at
-   where you are, as it would be after you panned there; copying the
-   address then is copying a view of your street. The site does not
-   do that for you.)
+   storage, not to the database, and not to the address bar. That
+   last was not always so: the hash follows the map, and after Near
+   me the map is looking at where you are, so the bar used to carry
+   your position to about a metre - written by the page, not by you,
+   into the one place that is copied without thinking and kept in
+   the browser's history. So while a fix is held the bar is blanked
+   to the plain address and writeHash() writes nothing; the first
+   move after the second press clears the fix writes as usual. And a
+   link copied from a popup centres on the camera, never on the map's
+   centre - linkTo() - because a dot clicked while the map is looking
+   at your street does not move the map.
 
    What a press does: centres the map on the fix, close in or less so
    according to how good the fix is; draws where you are as a small
@@ -3875,6 +3929,12 @@ function gotHere(lat, lon, accuracy) {
 
   here = { lat: lat, lon: lon, accuracy: accuracy };
 
+  /* The bar first, before the map moves: from here until the fix is
+     cleared, writeHash() writes nothing, and the view that was in
+     the bar goes too, so what is copied from it is the plain address
+     and not a stale view read as the current one. */
+  blankHash();
+
   drawHere();
 
   if (inside) {
@@ -3893,11 +3953,17 @@ function gotHere(lat, lon, accuracy) {
 
   sayUnderMap(inside
     ? "Centred on where you are, to within about " + distanceText(accuracy) +
-      ". Nothing is stored or sent. Press Near me again to clear it."
+      ". Nothing is stored or sent, and nothing is written to the address bar. " +
+      "Press Near me again to clear it."
     : "You are outside London, which is all this map covers, so there is nothing to centre on; " +
-      "the list is in order of distance from you all the same. Press Near me again to clear it.");
+      "the list is in order of distance from you all the same. Nothing is stored or sent, " +
+      "and nothing is written to the address bar. Press Near me again to clear it.");
 }
 
+/* The second press. The bar stays blank until the map next moves:
+   writing it here would put back the view as it stands, which is
+   still where you are if you have not panned away, and the point of
+   the blank was that the page never writes that on its own. */
 function clearHere() {
   here = null;
   removeHere();
