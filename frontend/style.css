@@ -2341,11 +2341,255 @@ ul.queue .row {
 }
 
 /* ------------------------------------------------------------------
-   ACCOUNTS (Wave 3: the accounts agent writes this block)
+   ACCOUNTS
 
-   Rules for the account page's new boxes: change password, sign out
-   everywhere, the leaderboard switch, the recovery card and its print
-   layout, the delete-account confirmation, and the saved-camera state
-   line. If the agent needs no rule here, this block is removed rather
-   than left empty.
+   The account page's boxes for the ordinary operations an account
+   needs and the anonymity principle did not cover: signing out
+   everywhere, changing the password, the leaderboard switch, what a
+   saved camera has since become, the recovery card and its print
+   layout, and deleting the account. Each is a .box like the two
+   forms above them and takes its fields, buttons and notes from the
+   FORMS rules; what is here is only what those boxes have that no
+   other page does.
    ------------------------------------------------------------------ */
+
+/* A confirmation that appears under the button that asked for it -
+   sign out everywhere, and later delete - rather than a browser
+   dialog: the site uses none, a dialog cannot carry a sentence this
+   long, and a second button in the page is reachable by keyboard and
+   read by a screen reader like any other. Bordered in the accent so
+   it reads as the one thing on the page waiting for an answer. */
+.confirm {
+  margin: 12px 0 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+}
+
+.confirm p {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+}
+
+/* Two buttons that do not both fit a phone's width on one line. */
+.confirm .row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* A username inside a sentence: the accent, the weight of the big
+   one, at the size of the words around it. */
+code.username-inline {
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* A tick box with its words beside it - the leaderboard switch, and
+   "I have saved this" under the recovery card. The label rule under
+   FORMS makes every label a line of small capitals over a field,
+   which is wrong for a box that sits inside its own sentence; this
+   is label.pick from the moderation queue, written for a label whose
+   words are meant to be seen. The box takes the ring from KEYBOARD
+   FOCUS like any other checkbox. */
+label.tick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+label.tick input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+
+/* What the map now says about a saved camera - "Since marked
+   non-functional." - on its own line under the coordinates, in the
+   accent because it is news, at the coordinates' size because it is
+   a note on the row and not the row. Absent when there is nothing to
+   say, so a list of cameras that are as they were looks as it did. */
+a.saved-goto .state {
+  display: block;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+a.saved-goto:hover .state {
+  color: var(--text);
+}
+
+/* ---------- the recovery card ----------
+
+   A label with a button at its right - Password ... Make me one - on
+   one line. The label keeps its block capitals; the button is the
+   small quiet kind, because it is an offer beside a field and not
+   the form's action. */
+.pw-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pw-head label {
+  flex: 1 1 auto;
+}
+
+button.small {
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+/* The card itself: bordered in the text colour rather than the rule
+   grey, and doubled, so it reads as a thing apart from the panels
+   around it - the one thing on the page meant to leave it. */
+.recovery {
+  margin: 14px 0 12px 0;
+}
+
+.recovery .card {
+  padding: 14px 16px;
+  border: 3px double var(--text);
+}
+
+.recovery .card p {
+  margin: 0;
+}
+
+.recovery .card-title {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.recovery .card-line {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+}
+
+/* Each value on a line of its own under its label, so a passphrase
+   is read whole and not broken beside the word "password" - on
+   screen where it is checked against the field, and on paper where
+   a break at a hyphen would leave the reader guessing. */
+.recovery .card-label {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.recovery .card-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+/* An empty value keeps the line's height, so the card does not grow
+   when the first character of a password is typed. */
+.recovery .card-value:empty::before {
+  content: "\00a0";
+}
+
+.recovery .card-text {
+  margin: 10px 0 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+.recovery .card-site {
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+/* Masked on screen until Show: the card is read over a shoulder more
+   easily than a field. The print rules below always show the plain
+   one; a masked card on paper is no card. */
+.recovery.masked .card-pw-plain {
+  display: none;
+}
+
+.recovery:not(.masked) .card-pw-masked {
+  display: none;
+}
+
+.recovery .card-actions {
+  margin: 10px 0 12px 0;
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* The box the card comes back in after sign-up: the first thing on
+   the signed-in half, and it takes focus after a password change so
+   a keyboard user is brought to it. No ring: it is not a control. */
+#recovery-after:focus {
+  outline: none;
+}
+
+/* ---------- the card on paper ----------
+
+   Only while "Print this card" has put printing-card on <body>. The
+   rest of the page is kept out of the way with visibility rather
+   than display, because the card is a descendant of the sheet and
+   display: none on an ancestor takes the card with it; the sheet is
+   then given no height so the hidden page does not run to a second
+   sheet of paper, and the card is taken out of the flow and put at
+   the top. It is absolutely positioned against the page - nothing
+   between it and <body> is positioned - so the sheet's overflow
+   does not clip it. Scoped to the class: Ctrl-P on the account page
+   prints the page as prose like every other page, and the PAPER
+   rules for the map page are not touched. The palette has already
+   flipped to black on white in the PAPER block, so the card's
+   colours follow.
+
+   One side of paper: the card is 100mm wide and a few lines tall.
+   Each value goes on a line of its own under its label, at a size
+   the longest passphrase the generator makes (42 characters) fits
+   in, so a password is never broken across two lines where a reader
+   would have to guess whether the break was a hyphen. Checked with
+   Page.printToPDF at A4 - one page, the card and nothing else. */
+@media print {
+  body.printing-card .sheet {
+    visibility: hidden;
+    height: 0;
+    overflow: hidden;
+  }
+
+  body.printing-card .recovery .card {
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100mm;
+    max-width: 100%;
+    padding: 6mm 7mm;
+    border: 3pt double var(--text);   /* a double needs three device pixels to be one */
+    break-inside: avoid;
+  }
+
+  body.printing-card .recovery .card * {
+    visibility: visible;
+  }
+
+  body.printing-card .recovery .card .card-value {
+    font-size: 11pt;
+    color: var(--text);
+  }
+
+  body.printing-card .recovery .card .card-pw-plain {
+    display: block;
+  }
+
+  body.printing-card .recovery .card .card-pw-masked {
+    display: none;
+  }
+}

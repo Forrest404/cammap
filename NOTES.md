@@ -1495,15 +1495,187 @@ and will print with the list once it exists.
 
 ## Anonymity
 
-What the site keeps about a person: a username of two random words, a password hash, the reports they sent, and their XP. No email, no name, no IP address in any of our tables.
+What the site keeps about a person: a username of two random words, a password hash, the reports they sent, their XP, and one setting - whether they appear on the leaderboard, which is true unless they turn it off. No email, no name, no IP address in any of our tables. All of it can be deleted from the account page, in one call, by the person it is about; what cannot be taken back is a camera their report put on the map, and the page says so before it asks.
 
-Two honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. And a photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Videos are sent as they are, and the page says so.
+Three honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. A photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Videos are sent as they are, and the page says so. And when an account is deleted, its proof files are made unreachable by deleting their rows in the storage table; whether Supabase clears the bytes behind them from the bucket's store at once is theirs to promise, not ours.
 
 ### Changing, leaving and recovering an account
 
-*(Written by the Wave 3 accounts agent: signing out everywhere, changing
-the password, the leaderboard opt-out and where it is enforced, what a
-saved camera knows, the recovery card, and deleting an account.)*
+The generated username, the absent email and the refusal to build
+`username_available()` are the principled part of the accounts. What
+the principle did not cover were the ordinary things an account needs
+over its life: ending a session you cannot reach, changing a password
+typed on a machine you did not trust, staying off a public list,
+keeping the one thing that gets you back in, and leaving. Each is a
+box on the account page, and each was built against one test: *an
+endpoint that answers questions about accounts leaks as surely as a
+column does.* Before any call below was added, the question asked was
+what a stranger learns by calling it repeatedly with guesses. The
+answer for every one is written beside it here and in the comment
+above the function.
+
+**Sign out everywhere.** The nav's Log out ends this browser's session
+and no other; a session left open on a borrowed phone or a library
+machine could not be closed from anywhere else, and on this site those
+are the sessions that matter most. The box on the account page calls
+Supabase's sign-out with the global scope, which revokes every refresh
+token the account holds, so no session anywhere can renew itself, this
+one included. The honest limit, said in the confirmation: the access
+token a device already holds stays good until it runs out - the JWT
+expiry in the dashboard, an hour by default - and nothing can take it
+back sooner. The confirmation is a second button in the page rather
+than a browser dialog, because the site uses none and a dialog cannot
+carry that sentence. A failure leaves the page signed in and says so:
+clearing the page while the server still held every session would say
+the opposite of the truth. What a stranger learns by calling it: nothing
+- it carries the caller's own token and acts on the account that token
+belongs to.
+
+**Changing the password.** There was no way to; a password typed on a
+shared machine was the account's for good, and with no email there is
+no reset. Supabase's `updateUser({ password })` sets a new one for any
+session that holds a token, without asking for the old - which is
+exactly the session left open on someone else's machine. So the box
+asks for the current password and checks it first, by signing in with
+it against the account's own hidden email, and only then sets the new
+one. That is the existing sign-in surface, rate-limited by Supabase
+like every sign-in, and nothing was added to it: no new function, no
+new question the server answers. The username is the caller's own,
+read off their session and never typed. The refusal says "That is not
+the current password" rather than the sign-in form's "Wrong username or
+password", because here the username is known and only one thing can
+be wrong; success says "Password changed." and nothing else. What a
+stranger learns: whatever the sign-in form already tells them, at the
+sign-in form's rate - nothing more.
+
+**Off the leaderboard.** Every contributor's username, XP and count of
+approved reports were public and enumerable, a hundred at a time, to
+anyone at all. The names carry nothing personal, but what someone has
+reported, and how much, is a pattern, and on this site that can be
+enough. `profiles.show_on_leaderboard` (migration 007, schema version
+2.9) is true by default - the list is the reward the site offers - and
+a tick box on the account page turns it off; the points still count.
+The brief asked for the opt-out to be enforced by row-level security
+rather than by the query, and it is enforced neither way: the three
+leaderboards are materialized views, and PostgreSQL applies no RLS to a
+materialized view - a policy on `profiles` is never consulted when the
+view is refreshed, and a view cannot carry one of its own. The
+equivalent that meets the intent is the view definition itself, which
+is where the site's opt-out lives: `and p.show_on_leaderboard` in all
+three, so an opted-out row never enters the table the page reads, and
+no query a browser could write, and no future page that forgets to
+filter, can show it (QUESTIONS.md, item 6). The views are rebuilt every
+five minutes, and the page says so rather than promising "now". The
+switch is set through `set_leaderboard_visibility(shown boolean)`, the
+one thing on a profile a person may change and the only way to: the
+client roles have no update privilege on `profiles` at all, and the
+function writes the caller's own row by `auth.uid()`, takes no name or
+id, and returns nothing. What a stranger learns by calling it: nothing.
+The page reads the value on its own and not alongside the role, because
+PostgREST refuses a whole select for one column it does not know, and
+until the migration is run that refusal would otherwise cost a
+moderator their Moderate link; the box catches it and names the
+migration instead.
+
+**What a saved camera knows.** A saved camera is a copy - name, kind,
+position - taken when the star was pressed, and `saved_cameras` holds
+no camera id, deliberately: an id would be a row saying "this person is
+interested in this camera", on the one list that is meant to say
+nothing about anyone. The copy is kept. What changed is that the list
+on the account page now says what the map says about each row today:
+"Since marked non-functional", "Since marked no longer in use", or "No
+longer on the map at this spot". The matching is done in the browser,
+by kind and position, against the cameras the browser already holds
+for the map - the rows the map page keeps in storage for five minutes,
+or the same whole-table read of visible cameras the report form's
+picker makes - so the database gains no id, no join and no query that
+carries a saved position to it. Kind as well as position because North
+End in Croydon is on the map twice at one set of coordinates; not the
+name, because a corrected typo is not a removal. The third line is
+worded for what is known and no more: a pin a moderator has moved and
+a pin taken off the map look the same from here, and saying "removed"
+would be a guess. The row still links to the map at the saved position.
+Where the cameras cannot be fetched, the lines are simply absent.
+
+**The recovery card.** Sign-up showed the username and warned, in a
+hint, that it was the only way back in and nothing could be reset.
+True, and not enough: lockout is the predictable cost of an account
+with no email, and a cost that is predictable should be designed for,
+not disclosed. Two things were built, both entirely in the browser.
+*Make me one* fills both password fields with a passphrase - five
+words from the two lists the username is drawn from, the first
+capitalised, hyphens between, a number on the end,
+`Copper-heron-tidal-marsh-glen-42` - which passes the dashboard's rule
+and can be read off a card and typed. How random it is: the lists
+together hold 274 distinct words, so five draws are 40.5 bits and the
+number adds 6.6, about 47 bits, all from `crypto.getRandomValues`
+through a draw that discards the uneven top of the 32-bit range so no
+word is favoured; without that source nothing is made and the person
+is told to choose their own, because `Math.random` is not a source for
+a password. The person may keep it or type over it. Then *the card*: a
+box in the sign-up form showing the username and the password as it
+stands, masked until *Show* is pressed because a card is read over a
+shoulder more easily than a field, with the site's address worked out
+from the page's own location rather than typed (so it is not one more
+copy of the address to keep in step), a *Print this card* button, and a
+real checkbox, "I have saved my username and password somewhere",
+without which *Make the account* stays disabled. Print is offered only
+for a password the server would accept and both fields agree on. The
+same card is shown once more straight after sign-up, and after a
+password change, at the top of the signed-in half with the same tick,
+because after that the password is never shown again; the tick puts it
+away and the password is forgotten with it, and so does a session
+ending with the card still out, so a password is never left on the
+screen of a machine someone has walked away from. It is one element,
+`#recovery`, moved between its two homes. Printing puts
+`printing-card` on `<body>` around `window.print()` and takes it off on
+`afterprint`; while it is there the ACCOUNTS print rules in `style.css`
+hide the sheet with `visibility` (the card is inside it, so `display`
+would take the card too), give the sheet no height so the hidden page
+does not run to a second sheet, and place the card alone at the top,
+90mm wide, password plain - a masked card on paper is no card. Scoped
+to the class, not the page, so Ctrl-P on the account page prints prose
+like every other page and the Wave 1 print view of the map is not
+touched. Checked with `Page.printToPDF` at A4: one page, the card and
+nothing else. Nothing about the card is sent anywhere.
+
+**Deleting the account.** There was no way out but abandonment. A site
+built on collecting nothing should let a person take back the little it
+holds, and be honest about what it cannot take back. The box on the
+account page says both before it asks for anything, and then asks for
+the username typed out; the button is disabled until it matches. One
+call, `delete_my_account()` (migration 008, schema version 2.10): a
+`security definer` function that takes nothing, answers nothing, and
+deletes the `auth.users` row of the account whose token made the call -
+the caller and nobody else. The rest is the cascade the tables already
+declared: the profile, every report the person sent, the proof rows on
+them, the XP awards and the saved list. The proof *files* go by their
+own route, because `storage.objects` references nothing of ours: the
+function deletes the rows under the caller's own prefix, which is what
+makes a file unreachable through the storage API. What stays, and why:
+a camera that is on the map because of that person's report stays on
+the map - it is part of the record now, and deleting a person does not
+un-see a camera - with `source = 'report'`, `approved_at`, `approved_by`
+if a moderator did it, and its `moderation_log` rows, which is what an
+audit of it needs; three columns that point at a person
+(`cameras.approved_by`, `reports.resolved_by`, `moderation_log.actor`)
+are set null rather than cascading, so a moderator's decisions outlive
+the moderator. The reports themselves go rather than staying with the
+person detached, because they are the little the site holds about a
+person - what they reported, where, when, with what photograph - and
+taking that back is the point of leaving; what is lost with them is the
+note and the picture, which were the person's. The username is released
+with the profile row, so the two words may one day be drawn again for
+someone else; nothing would connect them, and a leaderboard row up to
+five minutes old names an account that no longer exists. Afterwards the
+browser still holds a token for an account that does not exist, so the
+page signs out locally whatever the server says to that, and says one
+sentence. What a stranger learns by calling it repeatedly: nothing.
+Proved on a throwaway cluster: the caller's `auth.users` row, profile,
+reports, proof rows and storage objects, XP and saved cameras gone; the
+count of cameras unchanged and their camera still visible; a plain
+`delete from auth.users` or `update profiles` by a client role refused;
+anon refused; the released username drawn again by a new account.
 
 ## Forrest404
 

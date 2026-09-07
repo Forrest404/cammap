@@ -116,6 +116,93 @@ function passwordProblem(pw) {
   return "";
 }
 
+/* ---------------- a passphrase, made here ----------------
+
+   Lockout is the predictable cost of the anonymity choice: with no
+   email there is no reset, so the password is the whole of the way
+   back in, and a password a person makes up on the spot is either
+   weak or forgotten. So the sign-up form offers to make one: five
+   words from the same two lists the username is drawn from, the
+   first capitalised, hyphens between, and a number on the end -
+   "Copper-heron-tidal-marsh-glen-42". That passes the dashboard's
+   rule (a capital, lower case, a digit, and the hyphens are the
+   symbols) and it is the kind of thing a person can read off a card
+   and type.
+
+   How random it is, so nobody has to take it on trust. The two lists
+   together hold 274 distinct words (one, birch, is in both, and is
+   counted once), so five draws are 5 x log2(274) = 40.5 bits, and the
+   number, 0 to 99, adds log2(100) = 6.6: about 47 bits in all, every
+   one of them from crypto.getRandomValues. Which word is capitalised
+   is fixed and adds nothing. For scale, a ten-character password of
+   the shape the rule asks for, chosen by a person, is usually
+   reckoned at 30 bits or fewer. A guess against the sign-in form is
+   rate-limited by Supabase; 47 bits is well beyond an offline
+   attack's patience for a hash bcrypt made, which is what Supabase
+   stores.
+
+   randomBelow() takes a 32-bit value and throws away the top of the
+   range that does not divide evenly, so no word is more likely than
+   another - pickFrom() uses a plain modulo, which for a username is
+   fine and for a password is a bias worth the three extra lines.
+   Without crypto.getRandomValues nothing is made: Math.random is not
+   a source for a password, and the person is told to choose their
+   own rather than handed a weak one that looks strong. */
+var PASSPHRASE_WORDS = 5;
+
+function randomBelow(n) {
+  var buf = new Uint32Array(1);
+  var limit = Math.floor(4294967296 / n) * n;
+
+  do {
+    window.crypto.getRandomValues(buf);
+  } while (buf[0] >= limit);
+
+  return buf[0] % n;
+}
+
+/* The two lists as one, each word once. Built on first use. */
+var passphraseWords = null;
+
+function passphraseList() {
+  var seen = {};
+  var all = WORDS_A.concat(WORDS_B);
+  var i;
+
+  if (passphraseWords) {
+    return passphraseWords;
+  }
+  passphraseWords = [];
+  for (i = 0; i < all.length; i++) {
+    if (!seen[all[i]]) {
+      seen[all[i]] = true;
+      passphraseWords.push(all[i]);
+    }
+  }
+  return passphraseWords;
+}
+
+/* A passphrase, or null where the browser has no safe randomness. */
+function makePassphrase() {
+  var words;
+  var picked = [];
+  var i;
+
+  if (!(window.crypto && window.crypto.getRandomValues)) {
+    return null;
+  }
+
+  words = passphraseList();
+  for (i = 0; i < PASSPHRASE_WORDS; i++) {
+    picked.push(words[randomBelow(words.length)]);
+  }
+  picked[0] = picked[0].charAt(0).toUpperCase() + picked[0].slice(1);
+
+  return picked.join("-") + "-" + randomBelow(100);
+}
+
+var NO_PASSPHRASE = "This browser cannot make a safe one; choose a password of your own.";
+
 var sb = null;            /* the Supabase client, once created */
 var configured = false;   /* true once sb exists and looks usable */
 var currentUser = null;   /* the signed-in user, or null */
@@ -506,31 +593,237 @@ function signUp(username, password, onDone, retried) {
   });
 }
 
+/* What this page forgets when a session ends, whichever way it ended:
+   the nav's Log out, "sign out everywhere" on the account page, or
+   the account being deleted. The server side of each differs; what
+   the page does afterwards does not. */
+function forgetSession() {
+  var message = document.getElementById("account-message");
+
+  currentUser = null;
+  currentRole = "user";
+  currentXp = 0;
+  savedCameras = [];
+  renderNav();
+
+  /* A sentence left from an earlier sign-out would otherwise be read
+     twice; whoever ends this session writes its own afterwards. */
+  if (message) {
+    message.textContent = "";
+  }
+
+  /* The report page is no use signed out, and neither is the signed
+     in half of the account page, so leave for the map. Everywhere
+     else can stay where it is and just redraw. */
+  if (PAGE === "report.html" || PAGE === "moderate.html") {
+    window.location.href = pageHref("index.html");
+    return;
+  }
+
+  if (PAGE === "account.html") {
+    showAccountPage();
+    return;
+  }
+
+  if (typeof render === "function") {
+    render();
+  }
+}
+
 function signOut() {
-  sb.auth.signOut().then(function () {
-    currentUser = null;
-    currentRole = "user";
-    currentXp = 0;
-    savedCameras = [];
-    renderNav();
+  sb.auth.signOut().then(forgetSession);
+}
 
-    /* The report page is no use signed out, and neither is the signed
-       in half of the account page, so leave for the map. Everywhere
-       else can stay where it is and just redraw. */
-    if (PAGE === "report.html" || PAGE === "moderate.html") {
-      window.location.href = pageHref("index.html");
+/* ---------------- sign out everywhere ----------------
+
+   The nav's Log out ends this browser's session and no other. A
+   person who signed in on a borrowed phone, or a library machine,
+   and walked away had no way to close that session from anywhere
+   else - and on a site whose users may be exactly the people with a
+   reason to worry about who is holding their phone, that is the
+   session that matters most.
+
+   Supabase's global scope revokes every refresh token the account
+   holds, so no session anywhere can renew itself, this one included.
+   What it cannot do is reach into a device and take back the access
+   token it already has: that stays good until it runs out, which is
+   the JWT expiry set in the dashboard - an hour by default - and the
+   page says so rather than promising "at once". Nothing about the
+   account is sent or asked: the call carries this session's own
+   token and acts on the account it belongs to.
+
+   Unlike signOut(), a failure here leaves the page signed in and
+   says so. Clearing the page while the server still holds every
+   session would tell the person the opposite of the truth. */
+function signOutEverywhere(onDone) {
+  sb.auth.signOut({ scope: "global" }).then(function (result) {
+    if (result && result.error) {
+      onDone(authProblem(result.error));
       return;
     }
-
-    if (PAGE === "account.html") {
-      showAccountPage();
-      return;
-    }
-
-    if (typeof render === "function") {
-      render();
-    }
+    forgetSession();
+    onDone(null);
+  }).catch(function () {
+    onDone("Could not reach the server. Check your connection and try again.");
   });
+}
+
+/* ---------------- changing the password ----------------
+
+   There was no way to. A password typed on a shared machine was that
+   account's password for good, and with no email on the account
+   there is no reset to fall back on - so a change has to be possible
+   from inside a session, and it has to be safe from a session that
+   was left open.
+
+   Supabase's updateUser({ password }) does not ask for the old one:
+   any session that holds a token may set a new password. So the old
+   one is asked for here and checked first, by signing in with it -
+   signInWithPassword against this account's own hidden email - and
+   only when that succeeds is the new one set. That is the existing
+   sign-in surface, rate-limited by Supabase like every sign-in, and
+   nothing is added to it: no new endpoint, no new question the
+   server will answer. The username is the caller's own, read off
+   their session, never typed, so a stranger with a list of names
+   learns nothing here they could not already learn from the sign-in
+   form - which is to say nothing, at the sign-in form's rate.
+
+   The refusal is worded for the person it is addressed to. "Wrong
+   username or password" is the sign-in form's line, where the
+   ambiguity is the point; here the username is known and the only
+   thing that can be wrong is the current password, so that is what
+   is said. Success says "Password changed." and nothing more. */
+function changePassword(current, next, onDone) {
+  sb.auth.signInWithPassword({ email: emailFor(usernameOf(currentUser)), password: current })
+    .then(function (result) {
+      var code = result.error && (result.error.code || "");
+      var msg = result.error && result.error.message ? result.error.message : "";
+
+      if (result.error) {
+        onDone(code === "invalid_credentials" || /invalid login/i.test(msg)
+          ? "That is not the current password."
+          : authProblem(result.error));
+        return null;
+      }
+
+      return sb.auth.updateUser({ password: next }).then(function (updated) {
+        onDone(updated.error ? authProblem(updated.error) : null);
+      });
+    })
+    .catch(function () {
+      onDone("Could not reach the server. Check your connection and try again.");
+    });
+}
+
+/* ---------------- deleting the account ----------------
+
+   There was no way out but abandonment. A site built on collecting
+   nothing should let a person take back the little it holds, and be
+   honest about what it cannot take back - which the box on the
+   account page says in full before it asks for anything.
+
+   One call, delete_my_account(), which takes nothing, answers
+   nothing, and deletes the account whose token made the call: the
+   caller and nobody else. The cascade is the tables' own (see
+   schema.sql, version 2.10): the profile, every report, the proof
+   rows and files, the XP and the saved list go; a camera that a
+   report of theirs put on the map stays, with the date it was
+   approved and nothing about them. What a stranger learns by calling
+   it repeatedly: nothing.
+
+   Afterwards the browser still holds a token for an account that
+   does not exist, so it signs out locally - whatever the server says
+   to that, since the account it would be signing out of is gone -
+   and the page says one sentence. */
+function deleteAccount(onDone) {
+  sb.rpc("delete_my_account").then(function (result) {
+    if (result.error) {
+      onDone(result.error.code === "42883"
+        ? "Deleting is not in the database yet: run backend/migrations/008_delete_account.sql in the SQL editor."
+        : (result.error.message || "That did not go through."));
+      return null;
+    }
+
+    function gone() {
+      forgetSession();
+      onDone(null);
+    }
+
+    return sb.auth.signOut().then(gone, gone);
+  }).catch(function () {
+    onDone("Could not reach the server. Check your connection and try again.");
+  });
+}
+
+/* The "Delete this account" box. The typed confirmation is the
+   person's own username, compared the way sign-in compares it -
+   trimmed, lower-cased - and the button is disabled until it
+   matches, so it cannot be pressed by accident and cannot be pressed
+   for the wrong account. */
+function setUpDeleteAccount() {
+  var input  = document.getElementById("delete-confirm");
+  var button = document.getElementById("delete-button");
+  var note   = document.getElementById("delete-note");
+
+  if (!input || !button) {
+    return;
+  }
+
+  function matches() {
+    return !!currentUser && input.value.trim().toLowerCase() === usernameOf(currentUser);
+  }
+
+  input.oninput = function () {
+    button.disabled = !matches();
+    note.textContent = "";
+  };
+
+  button.onclick = function () {
+    var name = usernameOf(currentUser);
+
+    if (!matches()) {
+      button.disabled = true;
+      return;
+    }
+
+    button.disabled = true;
+    input.disabled = true;
+    note.textContent = "Deleting…";
+
+    deleteAccount(function (problem) {
+      input.disabled = false;
+
+      if (problem) {
+        button.disabled = !matches();
+        note.textContent = problem;
+        return;
+      }
+
+      /* forgetSession() has shown the signed-out half; leave the
+         box ready for whoever signs in next, and say what happened
+         where the person is now looking. */
+      input.value = "";
+      note.textContent = "";
+      sayOnSignedOut("The account " + name + " is deleted, and with it its reports, " +
+        "XP and saved cameras. Cameras it put on the map are still there.");
+    });
+  };
+}
+
+/* One sentence for the signed-out half of the account page, after
+   something has ended the session from that page: the person is
+   looking at the sign-in form again and should be told why. It takes
+   focus so a screen reader hears it rather than finding itself at
+   the top of a page that has changed under it. */
+function sayOnSignedOut(text) {
+  var message = document.getElementById("account-message");
+
+  if (!message) {
+    return;
+  }
+  message.textContent = text;
+  message.setAttribute("tabindex", "-1");
+  message.focus();
 }
 
 function restoreSession(onDone) {
@@ -666,6 +959,87 @@ function showSavedList() {
   }
 
   empty.style.display = savedCameras.length === 0 ? "block" : "none";
+
+  /* The state lines need the map's cameras, which arrive after the
+     list is first drawn; the list is drawn again when they do, and
+     never asked for twice. */
+  if (savedCameras.length && !liveCameras && !liveCamerasAsked && configured) {
+    liveCamerasAsked = true;
+    contextCameras(function (rows) {
+      liveCameras = rows;
+      showSavedList();
+    });
+  }
+}
+
+/* ---------------- what a saved camera has since become ----------------
+
+   A saved camera is a copy - name, kind, position - taken the moment
+   the star was pressed, and the table deliberately holds no camera
+   id. That is the right call: an id would be a row saying "this
+   person is interested in this camera", and the list is meant to be
+   the one thing on the site that says nothing about anyone. But a
+   copy is a snapshot, and the map moves on: a camera is marked
+   non-functional, a shop pauses, a moderator takes a pin off the
+   map, and the saved list went on showing what was true the day it
+   was saved.
+
+   So each row is matched, here in the browser, against the cameras
+   the browser already holds for the map - the same rows the map
+   page keeps in storage for five minutes, or the same whole-table
+   read of visible cameras that the report form's picker makes - by
+   kind and position, and the row says what the match says. The
+   database gains nothing: no id, no join, and no query that carries
+   a saved position to the server, because the fetch is the map's
+   own and asks for everything.
+
+   Kind as well as position, for the reason samePlace() gives: North
+   End in Croydon is on the map twice at one set of coordinates, as
+   the fixed install and as the van site, and a shop and a van site
+   are not each other's state. Not the name: a moderator may have
+   corrected a typo, and a rename is not a removal.
+
+   What the line can honestly say. "Since marked non-functional" and
+   "no longer in use" come off the row's status. A van site is legacy
+   by definition (NOTES.md, "What active means"), so legacy says
+   nothing for one. A camera not found at that position and kind is
+   "no longer on the map at this spot" - which is what is known, and
+   deliberately not "removed": a moderator's Move takes a pin to a
+   corrected position, and from here that is the same as a pin taken
+   off. Guessing which would be estimating. The row still links to the
+   map at the saved position, where a person can look. */
+
+var liveCameras = null;        /* the map's visible cameras, once fetched */
+var liveCamerasAsked = false;  /* so the fetch is made at most once a visit */
+
+function savedState(saved) {
+  var wantType = saved.camera_type || "vancam";
+  var lat = Number(saved.lat).toFixed(6);
+  var lon = Number(saved.lon).toFixed(6);
+  var i;
+  var c;
+
+  if (!liveCameras) {
+    return "";
+  }
+
+  for (i = 0; i < liveCameras.length; i++) {
+    c = liveCameras[i];
+    if (c.type !== wantType ||
+        Number(c.lat).toFixed(6) !== lat ||
+        Number(c.lon).toFixed(6) !== lon) {
+      continue;
+    }
+    if (c.status === "nonfunctional" && c.type !== NONFUNCTIONAL_TYPE) {
+      return "Since marked non-functional.";
+    }
+    if (c.status === "legacy" && c.type !== "vancam") {
+      return "Since marked no longer in use.";
+    }
+    return "";
+  }
+
+  return "No longer on the map at this spot.";
 }
 
 function savedRow(saved) {
@@ -694,6 +1068,16 @@ function savedRow(saved) {
   coords.textContent = typeLabel(saved.camera_type) + " · " +
     Number(saved.lat).toFixed(4) + ", " + Number(saved.lon).toFixed(4);
   go.appendChild(coords);
+
+  /* What the map says about it now, if that is anything; inside the
+     link, so a screen reader hears it with the name it is about. */
+  var state = savedState(saved);
+  if (state) {
+    var line = document.createElement("span");
+    line.className = "state";
+    line.textContent = state;
+    go.appendChild(line);
+  }
 
   row.appendChild(go);
 
@@ -806,6 +1190,226 @@ function redrawSaved() {
 }
 
 /* ------------------------------------------------------------------
+   The recovery card
+
+   Sign-up used to show the username and warn, in a hint, that it was
+   the only way back in and nothing could be reset. True, and not
+   enough: lockout is the predictable cost of an account with no
+   email, and a cost that is predictable should be designed for, not
+   disclosed. So the sign-up box carries a card - the username and
+   the password, as typed or as made - with a button that prints it
+   alone on one side of paper, and a tick, "I have saved my username
+   and password somewhere", without which the account is not made.
+   The card is a thing to hold before the account exists, because
+   after sign-up the password is never shown again.
+
+   It is shown once more straight after sign-up, and after a password
+   change, in a box at the top of the signed-in half with the same
+   tick, in case it was not kept a moment ago; the tick puts it away
+   and the password is forgotten with it. It is one element, #recovery,
+   moved between the two homes, so there is one card to keep right.
+   Nothing on it leaves the browser: the values are read off the form
+   and written into the page, and the site's own address on it is
+   worked out from the page's location rather than typed, so it is
+   not one more copy of the address to keep in step.
+
+   On screen the password on the card is masked until Show is
+   pressed, as the fields are, because a card is read over a shoulder
+   more easily than a field. On paper it is always plain - a masked
+   card is no card - which the ACCOUNTS print rules see to.
+
+   Printing: "Print this card" puts printing-card on <body> and calls
+   window.print(); the print rules hide everything else while the
+   class is there, and afterprint takes it off. Scoped to the class
+   rather than to the page, so Ctrl-P on the account page still
+   prints the page as prose, as every other page does, and the Wave 1
+   print view of the map is untouched.
+   ------------------------------------------------------------------ */
+
+var CARD_MASK = "••••••••••••";
+
+/* Where the card is and what its tick means: "signup" - in the
+   sign-up box, the tick gates Make the account; "after" - in the
+   signed-in half, the tick puts it away. */
+var cardMode = "signup";
+
+function fillCard(username, password) {
+  var user = document.getElementById("card-username");
+  var plain = document.getElementById("card-password");
+  var masked = document.getElementById("card-password-masked");
+  var site = document.getElementById("card-site");
+
+  if (!user || !plain || !masked) {
+    return;
+  }
+  user.textContent = username || "";
+  plain.textContent = password || "";
+  masked.textContent = password ? CARD_MASK : "";
+  if (site) {
+    site.textContent = siteAddress();
+  }
+}
+
+/* The map's address, from where this page is: "https://.../cammap/"
+   on Pages, the server's own address when served locally. Not typed,
+   so a move of the site does not leave a wrong address on a card. */
+function siteAddress() {
+  var a = document.createElement("a");
+
+  a.href = pageHref("index.html");
+  return a.href.replace(/index\.html$/, "");
+}
+
+/* Masked or plain, on the card and - while it is in the sign-up box -
+   in the two password fields, which say the same thing. */
+function setCardMasked(on) {
+  var wrap = document.getElementById("recovery");
+  var show = document.getElementById("show-password-button");
+  var newPw = document.getElementById("new-password");
+  var newPw2 = document.getElementById("new-password-again");
+
+  if (!wrap) {
+    return;
+  }
+  wrap.className = on ? "recovery masked" : "recovery";
+  if (show) {
+    show.textContent = on ? "Show" : "Hide";
+    show.setAttribute("aria-pressed", on ? "false" : "true");
+  }
+  if (cardMode === "signup" && newPw && newPw2) {
+    newPw.type = on ? "password" : "text";
+    newPw2.type = on ? "password" : "text";
+  }
+}
+
+function cardMasked() {
+  var wrap = document.getElementById("recovery");
+  return !wrap || wrap.className.indexOf("masked") !== -1;
+}
+
+/* The card in the sign-up box follows the form: the username shown,
+   the password as it stands. Print is offered only for a password
+   the server would accept and that both fields agree on, because a
+   printed card with a password the account will not have is worse
+   than none. */
+function refreshSignupCard() {
+  var shown = document.getElementById("new-username");
+  var newPw = document.getElementById("new-password");
+  var newPw2 = document.getElementById("new-password-again");
+  var print = document.getElementById("print-card-button");
+  var usable;
+
+  if (cardMode !== "signup" || !shown || !newPw || !newPw2) {
+    return;
+  }
+  fillCard(shown.textContent, newPw.value);
+  usable = passwordProblem(newPw.value) === "" && newPw.value === newPw2.value;
+  if (print) {
+    print.disabled = !usable;
+  }
+}
+
+/* The card into the signed-in half, filled with the account as it
+   now is. Called after sign-up and after a password change, with a
+   sentence for each. */
+function offerCard(username, password, hint) {
+  var wrap = document.getElementById("recovery");
+  var box = document.getElementById("recovery-after");
+  var home = document.getElementById("recovery-after-home");
+  var line = document.getElementById("recovery-after-hint");
+  var tick = document.getElementById("saved-tick");
+  var print = document.getElementById("print-card-button");
+
+  if (!wrap || !box || !home) {
+    return;
+  }
+  cardMode = "after";
+  home.appendChild(wrap);
+  fillCard(username, password);
+  setCardMasked(cardMasked());
+  if (tick) {
+    tick.checked = false;
+  }
+  if (print) {
+    print.disabled = false;
+  }
+  if (line) {
+    line.textContent = hint;
+  }
+  box.style.display = "block";
+}
+
+/* Back to the sign-up box, emptied. The password is forgotten here:
+   this runs when the tick is made in the signed-in half, and when a
+   session ends with the card still out, so a password is never left
+   on the screen of a machine someone has walked away from. */
+function putCardAway() {
+  var wrap = document.getElementById("recovery");
+  var box = document.getElementById("recovery-after");
+  var signupBtn = document.getElementById("signup-button");
+  var tick = document.getElementById("saved-tick");
+
+  if (!wrap || !signupBtn) {
+    return;
+  }
+  cardMode = "signup";
+  signupBtn.parentNode.insertBefore(wrap, signupBtn);
+  fillCard("", "");
+  if (tick) {
+    tick.checked = false;
+  }
+  signupBtn.disabled = true;
+  setCardMasked(true);
+  if (box) {
+    box.style.display = "none";
+  }
+  refreshSignupCard();
+}
+
+function printCard() {
+  if (document.body.className.indexOf("printing-card") === -1) {
+    document.body.className += " printing-card";
+  }
+  window.print();
+}
+
+/* Wired once, whichever home the card is in: the buttons and the
+   tick travel with it. */
+function setUpRecoveryCard() {
+  var tick = document.getElementById("saved-tick");
+  var print = document.getElementById("print-card-button");
+  var show = document.getElementById("show-password-button");
+  var signupBtn = document.getElementById("signup-button");
+
+  if (!tick || !print || !show || !signupBtn) {
+    return;
+  }
+
+  tick.onchange = function () {
+    if (cardMode === "signup") {
+      signupBtn.disabled = !tick.checked;
+      return;
+    }
+    if (tick.checked) {
+      putCardAway();
+    }
+  };
+
+  show.onclick = function () {
+    setCardMasked(!cardMasked());
+  };
+
+  print.onclick = printCard;
+
+  window.addEventListener("afterprint", function () {
+    document.body.className = document.body.className.replace(/\s*\bprinting-card\b/, "");
+  });
+
+  fillCard("", "");
+  setCardMasked(true);
+}
+
+/* ------------------------------------------------------------------
    The account page
    ------------------------------------------------------------------ */
 
@@ -828,15 +1432,297 @@ function showAccountPage() {
   outMsg.style.display = currentUser ? "none" : "block";
   inMsg.style.display  = currentUser ? "block" : "none";
 
+  /* A session that ended with the recovery card still out - a sign
+     out, everywhere or here - must not leave a password on the
+     screen. */
+  if (!currentUser && cardMode === "after") {
+    putCardAway();
+  }
+
   if (currentUser && who) {
     who.textContent = usernameOf(currentUser);
     var standing = document.getElementById("account-standing");
     if (standing) {
       standing.textContent = currentXp + " XP" + (isModerator() ? " \u00b7 " + currentRole : "");
     }
+    /* The confirmation under "Sign out everywhere" names the account
+       it is about, so nobody confirms it for the wrong one. */
+    var everywhereWho = document.getElementById("everywhere-who");
+    if (everywhereWho) {
+      everywhereWho.textContent = usernameOf(currentUser);
+    }
+    /* Likewise the delete box names the account to be typed, and
+       starts empty and disabled for every new sign-in. */
+    var deleteWho = document.getElementById("delete-who");
+    var deleteConfirm = document.getElementById("delete-confirm");
+    var deleteButton = document.getElementById("delete-button");
+    if (deleteWho) {
+      deleteWho.textContent = usernameOf(currentUser);
+    }
+    if (deleteConfirm && deleteButton) {
+      deleteConfirm.value = "";
+      deleteButton.disabled = true;
+    }
+    loadLeaderboardSwitch();
   }
 
   showSavedList();
+}
+
+/* ---------------- the leaderboard switch ----------------
+
+   The leaderboard is public: a username, a total and a count, a
+   hundred rows to anyone at all, signed in or not. The names carry
+   nothing personal, but what someone has reported, and how much, is
+   itself a pattern, and on this site that can be enough. So a person
+   can keep their row off it.
+
+   The switch is enforced on the server, in the definitions of the
+   three leaderboard views: a profile with show_on_leaderboard false
+   never enters the table the page reads (why the view and not a
+   policy is in schema.sql, version 2.9). The page only reports the
+   value and asks to change it, through set_leaderboard_visibility(),
+   which takes a boolean and acts on the caller's own row - the one
+   thing on a profile a person may change, and the only way to. The
+   views are rebuilt every five minutes, and the note says so rather
+   than promising "now".
+
+   The value is fetched on its own and not with the role: PostgREST
+   refuses a whole select for one column it does not know, so asking
+   for it alongside role and xp_total would, on a database that has
+   not had migration 007 run, cost a moderator their Moderate link.
+   Here the same refusal is caught by code - 42703, undefined column -
+   and the box says which migration to run. */
+function loadLeaderboardSwitch() {
+  var box  = document.getElementById("leaderboard-switch");
+  var note = document.getElementById("leaderboard-note");
+
+  if (!box || !currentUser) {
+    return;
+  }
+
+  box.disabled = true;
+  note.textContent = "";
+
+  sb.from("profiles").select("show_on_leaderboard").eq("id", currentUser.id).single()
+    .then(function (result) {
+      if (result.error) {
+        if (result.error.code === "42703") {
+          note.textContent = "The switch is not in the database yet: run backend/migrations/007_leaderboard_opt_out.sql in the SQL editor.";
+        } else {
+          note.textContent = "Could not read the setting.";
+        }
+        return;
+      }
+      box.checked = result.data.show_on_leaderboard !== false;
+      box.disabled = false;
+    })
+    .catch(function () {
+      note.textContent = "Could not read the setting.";
+    });
+}
+
+/* Wired once. A change is sent as it is made - there is nothing else
+   to fill in - and a refusal puts the box back the way it was, so it
+   never shows a state the server did not accept. */
+function setUpLeaderboardSwitch() {
+  var box  = document.getElementById("leaderboard-switch");
+  var note = document.getElementById("leaderboard-note");
+
+  if (!box) {
+    return;
+  }
+
+  box.onchange = function () {
+    var shown = box.checked;
+
+    box.disabled = true;
+    note.textContent = "Saving…";
+
+    sb.rpc("set_leaderboard_visibility", { shown: shown }).then(function (result) {
+      box.disabled = false;
+      if (result.error) {
+        box.checked = !shown;
+        note.textContent = result.error.code === "42883"
+          ? "The switch is not in the database yet: run backend/migrations/007_leaderboard_opt_out.sql in the SQL editor."
+          : (result.error.message || "That did not go through.");
+        return;
+      }
+      note.textContent = (shown ? "Saved: you will be on the list. " : "Saved: you are off the list. ") +
+        "The leaderboard is rebuilt every five minutes, so the change shows within that.";
+    }).catch(function () {
+      box.disabled = false;
+      box.checked = !shown;
+      note.textContent = "That did not go through. Try again in a moment.";
+    });
+  };
+}
+
+/* The "Change your password" box. The checks a person can be told
+   about without a round trip come first - the new password's shape,
+   the two copies agreeing, the new one not being the old one - and
+   the current password is only sent once those pass, so a slip does
+   not cost a sign-in attempt against the rate limit. */
+function setUpChangePassword() {
+  var current = document.getElementById("pw-current");
+  var next    = document.getElementById("pw-new");
+  var again   = document.getElementById("pw-new-again");
+  var button  = document.getElementById("pw-button");
+  var note    = document.getElementById("pw-note");
+  var passphrase = document.getElementById("pw-passphrase-button");
+
+  if (!current || !next || !again || !button) {
+    return;
+  }
+
+  /* The same passphrase the sign-up form offers, into both new
+     fields, shown so it can be read. There is no Hide here: the
+     fields are emptied once the change goes through. */
+  if (passphrase) {
+    passphrase.onclick = function () {
+      var made = makePassphrase();
+
+      note.textContent = "";
+      if (!made) {
+        note.textContent = NO_PASSPHRASE;
+        return;
+      }
+      next.value = made;
+      again.value = made;
+      next.type = "text";
+      again.type = "text";
+      next.focus();
+    };
+  }
+
+  button.onclick = function () {
+    var problem;
+
+    note.textContent = "";
+
+    if (current.value === "") {
+      note.textContent = "The current password is needed first.";
+      current.focus();
+      return;
+    }
+
+    problem = passwordProblem(next.value);
+    if (problem) {
+      note.textContent = problem;
+      next.focus();
+      return;
+    }
+
+    if (next.value !== again.value) {
+      note.textContent = "The two new passwords do not match.";
+      again.focus();
+      return;
+    }
+
+    if (next.value === current.value) {
+      note.textContent = "That is the password you already have.";
+      next.focus();
+      return;
+    }
+
+    button.disabled = true;
+    note.textContent = "Checking the current password…";
+
+    changePassword(current.value, next.value, function (error) {
+      var changed = next.value;
+
+      button.disabled = false;
+
+      if (error) {
+        note.textContent = error;
+        current.focus();
+        return;
+      }
+
+      current.value = "";
+      next.value = "";
+      again.value = "";
+      next.type = "password";
+      again.type = "password";
+      note.textContent = "Password changed.";
+
+      /* The old card is wrong now. Offer the new one, at the top of
+         the page, with the same tick to put it away. */
+      offerCard(usernameOf(currentUser), changed,
+        "The password is changed, and this is the only time the new one is shown. " +
+        "A card printed before now is out of date.");
+      window.scrollTo(0, 0);
+      var box = document.getElementById("recovery-after");
+      if (box) {
+        box.setAttribute("tabindex", "-1");
+        box.focus();
+      }
+    });
+  };
+
+  again.onkeydown = function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      button.onclick();
+    }
+  };
+}
+
+/* The "Sign out everywhere" box. The first button only reveals the
+   sentence and the second; nothing is sent until the second is
+   pressed. Focus follows the reveal so a keyboard user lands on the
+   question and not somewhere below it, and goes back to the first
+   button on Cancel. */
+function setUpEverywhere() {
+  var button  = document.getElementById("everywhere-button");
+  var confirm = document.getElementById("everywhere-confirm");
+  var yes     = document.getElementById("everywhere-yes");
+  var cancel  = document.getElementById("everywhere-cancel");
+  var note    = document.getElementById("everywhere-note");
+
+  if (!button || !confirm || !yes || !cancel) {
+    return;
+  }
+
+  button.onclick = function () {
+    note.textContent = "";
+    confirm.style.display = "block";
+    button.style.display = "none";
+    yes.focus();
+  };
+
+  cancel.onclick = function () {
+    confirm.style.display = "none";
+    button.style.display = "";
+    button.focus();
+  };
+
+  yes.onclick = function () {
+    var name = usernameOf(currentUser);
+
+    yes.disabled = true;
+    cancel.disabled = true;
+    note.textContent = "Signing out everywhere\u2026";
+
+    signOutEverywhere(function (problem) {
+      yes.disabled = false;
+      cancel.disabled = false;
+
+      if (problem) {
+        note.textContent = problem + " You are still signed in.";
+        return;
+      }
+
+      /* forgetSession() has shown the signed-out half by now; put the
+         box back the way it was for the next sign-in, and say what
+         happened where the person is now looking. */
+      note.textContent = "";
+      confirm.style.display = "none";
+      button.style.display = "";
+      sayOnSignedOut("Signed out everywhere. Every device that was signed in as " + name +
+        " has been signed out, or will be within the hour.");
+    });
+  };
 }
 
 function setUpAccountPage() {
@@ -852,7 +1738,15 @@ function setUpAccountPage() {
   var signinBtn  = document.getElementById("signin-button");
   var signinNote = document.getElementById("signin-note");
 
+  var passphrase = document.getElementById("passphrase-button");
+  var tick       = document.getElementById("saved-tick");
+
+  setUpLeaderboardSwitch();
+  setUpRecoveryCard();
   showAccountPage();
+  setUpChangePassword();
+  setUpEverywhere();
+  setUpDeleteAccount();
 
   if (!signupBtn || !signinBtn) {
     return;
@@ -861,17 +1755,49 @@ function setUpAccountPage() {
   /* -------- making an account -------- */
 
   shown.textContent = generateUsername();
+  refreshSignupCard();
 
   reroll.onclick = function () {
     shown.textContent = generateUsername();
     signupNote.textContent = "";
+    refreshSignupCard();
   };
+
+  /* Both fields at once, and shown rather than masked while it is
+     being read: a passphrase the person cannot see is one they
+     cannot copy down. They may keep it or type over it. */
+  passphrase.onclick = function () {
+    var made = makePassphrase();
+
+    signupNote.textContent = "";
+    if (!made) {
+      signupNote.textContent = NO_PASSPHRASE;
+      return;
+    }
+    newPw.value = made;
+    newPw2.value = made;
+    setCardMasked(false);
+    refreshSignupCard();
+    newPw.focus();
+  };
+
+  newPw.oninput = refreshSignupCard;
+  newPw2.oninput = refreshSignupCard;
 
   signupBtn.onclick = function () {
     var username = shown.textContent;
-    var problem = passwordProblem(newPw.value);
+    var password = newPw.value;
+    var problem = passwordProblem(password);
 
     signupNote.textContent = "";
+
+    /* The button is disabled until the tick is made; this is for a
+       press that reached it another way. */
+    if (!tick.checked) {
+      signupNote.textContent = "Tick the box once you have saved your username and password.";
+      tick.focus();
+      return;
+    }
 
     if (problem) {
       signupNote.textContent = problem;
@@ -879,7 +1805,7 @@ function setUpAccountPage() {
       return;
     }
 
-    if (newPw.value !== newPw2.value) {
+    if (password !== newPw2.value) {
       signupNote.textContent = "The two passwords do not match.";
       newPw2.focus();
       return;
@@ -889,7 +1815,7 @@ function setUpAccountPage() {
     reroll.disabled = true;
     signupNote.textContent = "Making the account…";
 
-    signUp(username, newPw.value, function (error, finalName) {
+    signUp(username, password, function (error, finalName) {
       signupBtn.disabled = false;
       reroll.disabled = false;
 
@@ -899,11 +1825,17 @@ function setUpAccountPage() {
       }
 
       /* If the shown name was taken and a fresh one used instead,
-         the person must see the one they actually got. */
+         the person must see the one they actually got - on the card,
+         which is where it now matters. The fields are emptied, and
+         the card carries the password until the tick puts it away. */
       shown.textContent = finalName;
       newPw.value = "";
       newPw2.value = "";
       signupNote.textContent = "";
+      offerCard(finalName, password,
+        "The account is made. This is the last time the password is shown: " +
+        "it cannot be reset, and after this page it is never shown again. " +
+        "If you did not keep the card a moment ago, keep it now.");
       showAccountPage();
     });
   };
