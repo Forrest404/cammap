@@ -1868,12 +1868,99 @@ details.explain strong {
    ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------
-   THE WORDS (Wave 4: the words agent writes this block)
+   THE WORDS
 
-   Rules for the About and rights pages' prose, post anchors and their
-   dates, and anything the feed link needs. If the agent needs no rule
-   here, this block is removed rather than left empty.
+   The About page, the rights page and the posts are prose, and prose
+   already has its rules under ABOUT AND THOUGHTS above. What is here
+   is the little the words needed that no prose page had before, and
+   why each is the way it is. The feed link needs nothing: it is a
+   <link> in the head and draws nothing.
    ------------------------------------------------------------------ */
+
+/* A post's permalink. A post has an id so that a link can land on it
+   (blog.html#post-...), and an anchor nobody can see is an anchor
+   nobody uses, so the heading carries a small link to itself: right-
+   click, copy link, and you have the address of the post. It sits
+   inside the h3 and undoes the heading's dress - the capitals, the
+   spacing, the weight, the accent - so it reads as an annotation on
+   the heading rather than part of the title. Dim rather than accent
+   because it is furniture, not content; the KEYBOARD FOCUS ring
+   covers it like any other link. */
+article.post h3 a.permalink {
+  margin-left: 10px;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--dim);
+}
+
+article.post h3 a.permalink:hover {
+  color: var(--text);
+}
+
+/* Where a link to a post lands. There is no fixed header on the site,
+   so nothing would hide the target; this only keeps the heading off
+   the very top edge of the window when the browser scrolls to it. */
+article.post {
+  scroll-margin-top: 14px;
+}
+
+/* The rights page. Short sections, each under its own heading, read
+   on a phone one thumb at a time - so its headings get more room
+   above them than a prose page's h3 has, to make the seams visible
+   while scrolling. Scoped to .rights so the account and report pages,
+   which are .prose too, keep their tighter spacing. */
+.prose.rights h3 {
+  margin-top: 30px;
+}
+
+/* The contents list at the top of the rights page: one line per
+   section, so a person who needs "if you are stopped" gets there in
+   one press. The same shape as ul.benefits on the account page,
+   without the rule down the side, which would say "these are points"
+   when they are links. */
+.prose ul.contents {
+  margin: 0 0 18px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prose ul.contents li {
+  margin: 0 0 6px 0;
+}
+
+/* A citation. Every legal claim on the rights page is followed by a
+   link to the document it comes from, in brackets. Smaller and dim so
+   that a paragraph reads as a paragraph and not as a bibliography -
+   still underlined, still a link, still 5.6:1 on the page (--dim). */
+.prose a.cite {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.prose a.cite:hover {
+  color: var(--text);
+}
+
+/* The notice at the top of the rights page - not legal advice, and
+   when it was checked - and any claim the page could not confirm.
+   Both are marked the same way, a rule down the left in the accent,
+   so that the eye catches them while scrolling; a screen reader gets
+   the words that start them ("Not confirmed:"), which is the mark
+   that matters. */
+.prose .notice,
+.prose .unconfirmed {
+  margin: 0 0 1.1em 0;
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--accent);
+}
+
+.prose .notice strong,
+.prose .unconfirmed strong {
+  color: var(--accent);
+  font-weight: 500;
+}
 
 /* ------------------------------------------------------------------
    PAPER

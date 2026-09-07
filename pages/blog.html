@@ -53,6 +53,12 @@
 <meta name="twitter:description" content="Notes and entries from cammap on facial recognition in London: what is being rolled out, by whom, and why it matters.">
 <meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
 <meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../feed.xml">
 <!-- The icon, in the forms the browsers between them ask for: SVG
      for the tab in Chrome and Firefox, .ico for Safari and anything
      older, a 180px PNG for an iOS home screen. manifest.json is what
@@ -79,7 +85,9 @@
     <span class="sep">&middot;</span>
     <a href="about.html">About</a>
     <span class="sep">&middot;</span>
-    <a href="blog.html" class="current">Thoughts</a>  
+    <a href="blog.html" class="current">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="rights.html">Rights</a>
     <!-- account.js fills this in once it knows whether anyone is
          signed in. Empty until then, so the nav never flickers. -->
     <span id="nav-account"></span>
@@ -97,9 +105,42 @@
 <!-- underneath this comment, and fill it in. The post nearest the    -->
 <!-- top of the file is the one shown first.                          -->
 <!--                                                                  -->
-<!-- <article class="post">                                           -->
-<!--   <h3>Your title here</h3>                                       -->
-<!--   <p class="date">1st January, 2026</p>                           -->
+<!-- Three things in the block are there so a post can be pointed at  -->
+<!-- from outside this page, and none of them needs a build step:     -->
+<!--                                                                  -->
+<!--   id        on the <article>. It is what a link to one post ends -->
+<!--             in - blog.html#post-2026-08-28-london-ai-face-...    -->
+<!--             - so it must be unique and must never change once    -->
+<!--             the post is published, or every link to it breaks.   -->
+<!--             The rule: "post-", the date as YYYY-MM-DD, "-", and  -->
+<!--             the title in lower case with every run of anything   -->
+<!--             that is not a letter or a digit turned into one      -->
+<!--             hyphen. "London AI Face Recognition" on 28 August    -->
+<!--             2026 is post-2026-08-28-london-ai-face-recognition.  -->
+<!--             The date goes first so two posts with one title on   -->
+<!--             different days still differ.                         -->
+<!--   permalink in the heading: a small "permalink" link whose href  -->
+<!--             is "#" plus that id. It is how a reader finds out    -->
+<!--             the anchor exists - right-click, copy link - and it  -->
+<!--             is the address the feed entry points at.             -->
+<!--   <time>    around the date, with datetime="YYYY-MM-DD". The     -->
+<!--             words inside are for people and can say "28th        -->
+<!--             August, 2026"; the attribute is for machines and     -->
+<!--             must be the ISO form, because a screen reader, a     -->
+<!--             crawler and the feed all read the attribute, not     -->
+<!--             the words.                                           -->
+<!--                                                                  -->
+<!-- Then the feed. A new post here is a new <entry> in feed.xml at   -->
+<!-- the root, written by hand - there is no generator - with the     -->
+<!-- same title, the same date, and a link to this anchor. The        -->
+<!-- comment at the top of feed.xml gives the recipe; NOTES.md, "The  -->
+<!-- words", says why the feed is what it is.                         -->
+<!--                                                                  -->
+<!-- <article class="post" id="post-YYYY-MM-DD-your-title-here">      -->
+<!--   <h3>Your title here <a class="permalink"                       -->
+<!--       href="#post-YYYY-MM-DD-your-title-here">permalink</a></h3> -->
+<!--   <p class="date"><time datetime="YYYY-MM-DD">1st January,       -->
+<!--       2026</time></p>                                            -->
 <!--   <p>First paragraph.</p>                                        -->
 <!--   <p>Second paragraph, if there is one.</p>                      -->
 <!-- </article>                                                       -->
@@ -108,9 +149,9 @@
 
 
   <!-- ---------------------------- POST ---------------------------- -->
-  <article class="post">
-    <h3>London AI Face Recognition</h3>
-    <p class="date">28th August, 2026</p>
+  <article class="post" id="post-2026-08-28-london-ai-face-recognition">
+    <h3>London AI Face Recognition <a class="permalink" href="#post-2026-08-28-london-ai-face-recognition">permalink</a></h3>
+    <p class="date"><time datetime="2026-08-28">28th August, 2026</time></p>
     <p>
       The Government is about to unleash the “largest ever” roll out of live
       facial recognition surveillance. At the same time, shops across the UK

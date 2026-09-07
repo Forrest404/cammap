@@ -54,6 +54,12 @@
      wrong guess is a broken link, so the nav here stays as written:
      the map, About and Thoughts, and the line below sends people back
      to the map. Nobody needs to sign in to be told a link has rotted. -->
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="feed.xml">
 <!-- The icon, in the forms the browsers between them ask for: SVG
      for the tab in Chrome and Firefox, .ico for Safari and anything
      older, a 180px PNG for an iOS home screen. manifest.json is what
@@ -81,6 +87,8 @@
     <a href="pages/about.html">About</a>
     <span class="sep">&middot;</span>
     <a href="pages/blog.html">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="pages/rights.html">Rights</a>
     <!-- account.js fills this in once it knows whether anyone is
          signed in. Empty until then, so the nav never flickers. -->
     <span id="nav-account"></span>

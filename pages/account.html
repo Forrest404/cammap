@@ -53,6 +53,12 @@
 <meta name="twitter:description" content="A cammap account is two random words and a password. No email, no name, nothing about you. With one you can save cameras and report new ones.">
 <meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
 <meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../feed.xml">
 <!-- The icon, in the forms the browsers between them ask for: SVG
      for the tab in Chrome and Firefox, .ico for Safari and anything
      older, a 180px PNG for an iOS home screen. manifest.json is what
@@ -80,6 +86,8 @@
     <a href="about.html">About</a>
     <span class="sep">&middot;</span>
     <a href="blog.html">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="rights.html">Rights</a>
     <!-- account.js fills this in once it knows whether anyone is
          signed in. Empty until then, so the nav never flickers. -->
     <span id="nav-account"></span>

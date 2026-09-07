@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- cammap - the pages a search engine should know about.
 
-     Written by hand. Six addresses do not need generating, and a
+     Written by hand. Seven addresses do not need generating, and a
      generator would be one more tool for a site that has none. Every
      page that is meant to be found is here; the moderation page is
      not, because its <head> says noindex - it is empty for anyone who
@@ -29,11 +29,15 @@
   </url>
   <url>
     <loc>https://forrest404.github.io/cammap/pages/about.html</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-09-07</lastmod>
   </url>
   <url>
     <loc>https://forrest404.github.io/cammap/pages/blog.html</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-09-07</lastmod>
+  </url>
+  <url>
+    <loc>https://forrest404.github.io/cammap/pages/rights.html</loc>
+    <lastmod>2026-09-07</lastmod>
   </url>
   <url>
     <loc>https://forrest404.github.io/cammap/pages/account.html</loc>

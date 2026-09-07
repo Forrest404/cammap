@@ -169,8 +169,169 @@ Run both scripts before every commit.
 
 ### The words
 
-*(Written by the Wave 4 words agent: what About draws from these notes,
-the rights page and its citations, post anchors and dates, and the feed.)*
+The repository explains itself at length and the site, for a long
+time, in about four hundred words. This section is about the pages
+that carry the argument to a visitor: the posts and how they are
+pointed at, the feed, what About says and where each sentence of it
+comes from, and the rights page with its citations. None of it runs
+any JavaScript of its own; every page here reads in full with
+scripts off, which for prose is the only honest test.
+
+**Posts can be pointed at (WORD-3).** A post used to be an `<article>`
+with a heading and a date in words, and nothing outside the page could
+name it. Now each carries an `id` on the article, a `<time datetime>`
+around the date, and a small "permalink" link in its heading. The id
+is `post-`, the date as `YYYY-MM-DD`, a hyphen, and the title lowered
+with every run of non-alphanumerics made one hyphen -
+`post-2026-08-28-london-ai-face-recognition` - so that the address of
+a post can be written by hand from its date and title, and two posts
+with one title on two days still differ. It must never change once a
+post is out: the feed entry points at it, and so does anyone who
+copied the link. The `<time>` is there because a screen reader, a
+crawler and the feed read the attribute and a person reads the words,
+and the two need not agree in form ("28th August, 2026" against
+`2026-08-28`). The permalink is in the heading because an anchor
+nobody can see is an anchor nobody uses; right-click, copy link, is
+the whole affordance, and the focus ring covers it. There is no fixed
+header on the site, so a link lands the article at the top of the
+window with `scroll-margin-top` keeping it off the edge; with one
+post the page is shorter than a phone screen plus that offset, so the
+browser scrolls as far as it can and stops, which is the browser
+being right and not the anchor being wrong. The template comment in
+`pages/blog.html` carries the rule so the next post copies the shape.
+
+**The feed (WORD-4).** `feed.xml` at the root, Atom, one entry per
+post, written by hand - there is no generator on this site and one
+post does not need one. Atom rather than RSS because one format is one
+copy to keep in step, its dates are RFC 3339 and nothing else, and it
+requires an `id`, a `title` and an `updated` on the feed and on every
+entry and an `author` on the feed, which is what lets the file be
+checked for shape without a network. The ids are tag URIs
+(`tag:forrest404.github.io,2026-08-28:post-…`) and not the post's
+address, because an id is a promise that this is the same post: a
+reader that meets a new id announces a new post to every subscriber,
+so an id that followed the URL would re-announce every post the day
+the site moved. The address is in `<link>`, where an address belongs.
+The times are midnight UTC on the post's date, because a post carries
+a day and not an hour, and an hour typed in would be a fact made up.
+The content is the post's paragraphs, escaped, so a reader shows the
+text and not a teaser. The author is "cammap": the site puts no names
+on itself and the feed is not the place to start. Every page's head
+carries `<link rel="alternate" type="application/atom+xml">` with a
+relative path, `feed.xml` from the root and `../feed.xml` from
+`pages/` (the 404 page's `<base>` makes the root form right there
+too), so a reader handed any address on the site finds it. The
+recipe for a new entry is the comment at the top of `feed.xml`, and
+the template comment on the blog page points at it.
+
+How it was checked: parsed with Python's `xml.etree`, the required
+elements and the RFC 3339 dates asserted, every entry's anchor looked
+up on `blog.html` and its date matched against the article's
+`<time datetime>`, and every article on the page required to have an
+entry; then each page loaded in headless Chrome and the resolved
+`href` of the link read back. The W3C feed validator fetches by
+address, so it is the maintainer's check after a push:
+`https://validator.w3.org/feed/check.cgi?url=https://forrest404.github.io/cammap/feed.xml`.
+
+One more place the site's address is written: the list under
+"Sharing the site" above should now include `feed.xml` - every
+`<link href>`, every entry's `<link>`, the author's `<uri>` and the
+`<icon>`; the tag URIs are deliberately not addresses and stay.
+
+**About (WORD-1).** One sentence inside an editing marker became five
+short sections, and none of it was composed fresh: each is a public
+reading of something already written here, and the marker comment in
+`pages/about.html` says so, so that a change to the source reaches the
+page. What LFR is comes from the survey's definition and the post on
+the Thoughts page (the "barcode" sentence is the maintainer's). Where
+every camera comes from is the header of `data/points.js` and "Where
+each camera comes from" above: the Met's records, the BTP register,
+named press for the shops, the source label and link every camera now
+carries, and null shown as nothing. What the map does not claim is
+"What active means" (a van parks for a shift and drives away; every
+van site legacy), the dropped prediction under TODO (Most used as the
+honest answer), "What is not known" (the approximate pins), and the
+survey's two findings that make the map incomplete by construction:
+the Met records no coordinates, and a shop's whole disclosure is the
+sign on its door. Who runs it is QUESTIONS.md item 4 - volunteers,
+donations, no organisation, no names - and "Anonymity" for what an
+account is; the hosting figure is still unknown (item 2), so the page
+says "donations pay for the hosting" and no number. The licence line
+is `LICENSE`. Two rules hold throughout: nothing is claimed that the
+record does not support, and no count is typed - "every camera on the
+map", never a figure - because a number in prose goes stale without a
+sound and the line under the map computes its own. The editing
+markers stay: with a page of prose they still say which lines are the
+furniture, and they cost nothing. The three description metas were
+sharpened to what the page now is.
+
+**Know your rights (WORD-2).** `pages/rights.html`: what to do when a
+van is in front of you, which is the moment someone is most likely to
+be reading this site on a phone. Six short sections, the most urgent
+first, a contents list at the top so "if you are stopped" is one
+press away, and a notice above everything saying that it is not legal
+advice, that it is what the public documents say with a link to each,
+and the date it was checked - typed once, in prose, inside a `<time>`,
+because a page like this is a document and a reader should see when it
+was last true. The rule for every sentence: a legal claim carries a
+link to the document it comes from, in brackets after the claim,
+styled small and dim (`a.cite`) so a paragraph reads as a paragraph;
+and a claim that could not be traced to a document is either not on
+the page or is marked in the page as "Not confirmed" with what would
+confirm it (`p.unconfirmed`, the accent rule down the left, the same
+mark as the notice). The comment at the top of the page lists, section
+by section, which document each claim rests on.
+
+Where the citations came from, and how they were checked. The survey
+in `london-lfr-cameras/results/` named the statutes, the cases and
+the guidance with dates and its own uncertainty flags; each document
+was then fetched and read on the day. The Met's and BTP's web pages
+refuse scripted requests (403), so they were read through the survey,
+and wherever the page can it cites their PDFs instead - the Met's
+Overt LFR Policy, its 2025 annual report and 2025 deployment record,
+and BTP's register download directly and were read in full. The
+policy is the backbone of the first two sections: signage outside the
+zone and officers who answer questions (§10), the leaflet, the
+deletion of non-matches (§3), the 24-hour watchlist and the 31-day
+alert data (§9), and the sentences worth quoting exactly - an alert
+"on its own … should not be taken as providing sufficient grounds by
+itself for arrest, search or detention", and failing to identify
+yourself "does not constitute a criminal offence" (§7). The statutes
+were read on legislation.gov.uk, not from memory: s60AA of the
+Criminal Justice and Public Order Act 1994 and s157 of the Crime and
+Policing Act 2026 (in force 29 June 2026) are the only two powers
+found that can require a face uncovered, and both need an
+authorisation for the place and time; PACE s61(6A)-(6B) for
+fingerprints away from a station; DPA 2018 ss 45 and 54 for a subject
+access request to the police (Part 3 - not UK GDPR article 15, which
+is the shop's regime) and UK GDPR arts 12 and 15 for a shop. The
+Facewatch section rests on Facewatch's own privacy notice, read in the
+Wayback Machine's capture of 13 July 2026 because facewatch.co.uk
+refuses scripts, and on the ICO's closure letter of 28 March 2023,
+which lists the eight breaches and says "regulatory action is not
+required"; the "repeat offenders or more serious offences" condition
+is redacted in that letter and is cited to Big Brother Watch's
+account, as the survey cites it.
+
+What was left out for want of a source, deliberately: any statement
+that you need not answer police questions (true in general law but
+not in a document the page could link), any Met web address for
+making a request (403 to scripts and one candidate 404 in the
+archive; the policy's LFR@met.police.uk is given instead), and
+BTP's own commitments beyond what TfL's press release and Biometric
+Update report. Two things are marked "Not confirmed" on the page:
+whether the Biometrics and Surveillance Camera Commissioner's post
+has a holder (gov.uk names nobody; the survey says vacant in one unit
+and filled in another), and whether an appeal in Thompson and Carlo
+has been lodged. The page says what would settle each.
+
+The nav gained **Rights** after Thoughts on every page, `class="current"`
+on the rights page only, and `stamp.py` holds all nine navs to the
+same after normalising; the sitemap gained the page and moved the
+`lastmod` of About and Thoughts to the day they changed, as its own
+comment asks. Every link on the page was fetched on the day and its
+status recorded in the wave's report: the police sites' pages answer
+403 to a script and open in a browser, and their PDFs answer 200.
 
 ### Sharing the site
 
