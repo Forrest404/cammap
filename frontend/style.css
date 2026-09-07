@@ -1859,6 +1859,23 @@ details.explain strong {
 }
 
 /* ------------------------------------------------------------------
+   REPORTING (Wave 4: the reporting agent writes this block)
+
+   Rules for the report form open to everyone, the duplicate notice,
+   the three-photo picker, the Your reports list, the receipt, and the
+   XP table on the leaderboard. If the agent needs no rule here, this
+   block is removed rather than left empty.
+   ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------
+   THE WORDS (Wave 4: the words agent writes this block)
+
+   Rules for the About and rights pages' prose, post anchors and their
+   dates, and anything the feed link needs. If the agent needs no rule
+   here, this block is removed rather than left empty.
+   ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------
    PAPER
 
    What printing the map page gives you: the list, in one column,

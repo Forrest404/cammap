@@ -167,6 +167,11 @@ JavaScript build differently. `seedKeyOf` now lives in `shared.js` so it can
 be checked and so the build script has one place to copy the format from.
 Run both scripts before every commit.
 
+### The words
+
+*(Written by the Wave 4 words agent: what About draws from these notes,
+the rights page and its citations, post anchors and dates, and the feed.)*
+
 ### Sharing the site
 
 Everything that decides what the site looks like from outside a
@@ -658,6 +663,13 @@ reached.
 
 Moving is in `schema.sql`, so an existing project needs the file re-run in the
 SQL editor before the button works. It is safe to run again, as always.
+
+### The reporting loop
+
+*(Written by the Wave 4 reporting agent: the form for everyone and what
+sign-up carries through, the duplicate check and what it does not say,
+three photos, why video is refused, Your reports, the receipt, reporting
+from the map, and the XP table on the leaderboard.)*
 
 ### Moderating at scale
 
