@@ -6,6 +6,16 @@ it can be revisited. Answer by editing this file or by telling the orchestrator.
 
 ## Open
 
+### 12. Two claims on the rights page are marked "Not confirmed"
+`pages/rights.html` states two things it could not source to a document and marks them
+on the page. (a) Whether the Biometrics and Surveillance Camera Commissioner post currently
+has a holder: gov.uk names nobody and the research survey disagrees with itself; an
+appointment notice would settle it. (b) Whether an appeal has been lodged in *Thompson and
+Carlo v Metropolitan Police Commissioner* after the 21 April 2026 judgment: Big Brother
+Watch's post of that day says "seeking to appeal"; a Court of Appeal listing would settle
+it. The page says it was checked on 7 September 2026; re-checking it when the consultation
+response lands is a maintenance task, not a programme one.
+
 ### 10. Two entries in the record disagree with themselves
 Found by the build script's import. **High Road, Haringey**: the note says `2023-24`, the
 `last` field says `2025`. One of them is wrong and only the source can say which; the script

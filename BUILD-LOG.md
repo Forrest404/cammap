@@ -116,10 +116,10 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | REP-3 | 4 | reporting | in-flight | | Your reports, paginated |
 | REP-8 | 4 | reporting | in-flight | | receipt id |
 | REP-7 | 4 | reporting | in-flight | | publish `xp_rules` on leaderboard |
-| WORD-3 | 4 | words | in-flight | | post ids, `<time datetime>` |
-| WORD-4 | 4 | words | in-flight | | `feed.xml`, head link on every page |
-| WORD-1 | 4 | words | in-flight | | About from NOTES.md; "who runs this" is a QUESTIONS item |
-| WORD-2 | 4 | words | in-flight | | `pages/rights.html`, every claim cited, nav link on every page |
+| WORD-3 | 4 | words | merged | 2a78770 | `id` per post, `<time datetime>`, a permalink; the rule in the template comment |
+| WORD-4 | 4 | words | merged | 475e9f2 | Atom `feed.xml` with tag-URI ids, linked from all nine heads; W3C validation after a push |
+| WORD-1 | 4 | words | merged | 09c02d5 | About in five sections drawn from NOTES and the record; no count typed; no names |
+| WORD-2 | 4 | words | merged | 45d30c5 | `pages/rights.html`: 54 citations, two claims marked Not confirmed; Rights link in all nine navs; sitemap gains it |
 | DATA-1 (UI) | 5 | record | todo | | popup source line; null says nothing |
 | DATA-7 (UI) | 5 | record | todo | | approximate drawn differently, legend entry, brightness rule |
 | DATA-8 | 5 | record | todo | | published-record notice on failure/timeout |
@@ -137,8 +137,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | Status | Count |
 | --- | --- |
 | todo | 9 |
-| in-flight | 12 |
-| merged | 0 |
+| in-flight | 8 |
+| merged | 4 |
 | verified | 37 |
 | blocked | 0 |
 | dropped | 0 |
