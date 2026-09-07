@@ -177,13 +177,22 @@
           <label for="s-note">Anything worth adding</label>
           <textarea id="s-note" placeholder="optional"></textarea>
 
-          <label for="s-proof">A photo or video, if you have one</label>
-          <input type="file" id="s-proof" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
+          <!-- Up to three, because a moderator often needs a close shot
+               and a wide one. Each is re-saved through a canvas the
+               moment it is chosen - which is what strips the location
+               and the device out of it - and shown here as a thumbnail
+               with a way to take it out again. account.js builds the
+               list; the input is emptied after each choice so the
+               originals are never held, only the re-saved copies. -->
+          <label for="s-proof">Photos, if you have any &mdash; up to three</label>
+          <input type="file" id="s-proof" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
+          <ul class="proof-list" id="s-proof-list" aria-label="Photos to send"></ul>
+          <p class="note" id="s-proof-note" role="status"></p>
           <p class="hint">
             Photos are re-saved in your browser before upload, which
             removes location and camera details from the file. Videos are
             sent as they are, so check what yours contains. Proof is seen
-            by moderators only. 20 MB at most.
+            by moderators only. 20 MB each at most.
           </p>
 
           <!-- What was filled in before a reload, if anything: the
@@ -191,7 +200,13 @@
                says so. Empty otherwise. -->
           <p class="note" id="draft-note" role="status"></p>
 
-          <button id="submit-button">Send for review</button>
+          <div class="row">
+            <button id="submit-button">Send for review</button>
+            <!-- Only after a report went in and one of its photos did
+                 not: the report is the person's own and still pending,
+                 so the photos that failed can still be attached. -->
+            <button id="proof-retry" class="quiet" type="button" style="display:none">Try the photos again</button>
+          </div>
           <p class="note" id="submit-note" role="status"></p>
         </div>
 
@@ -356,13 +371,18 @@
           <label for="s-status-note">Anything worth adding</label>
           <textarea id="s-status-note" placeholder="optional"></textarea>
 
-          <label for="s-status-proof">A photo or video, if you have one</label>
-          <input type="file" id="s-status-proof" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
-          <p class="hint">Moderators only. Photos have their location data removed first.</p>
+          <label for="s-status-proof">Photos, if you have any &mdash; up to three</label>
+          <input type="file" id="s-status-proof" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
+          <ul class="proof-list" id="s-status-proof-list" aria-label="Photos to send"></ul>
+          <p class="note" id="s-status-proof-note" role="status"></p>
+          <p class="hint">Moderators only. Photos have their location data removed first. 20 MB each at most.</p>
 
           <p class="note" id="status-draft-note" role="status"></p>
 
-          <button id="submit-status-button">Send for review</button>
+          <div class="row">
+            <button id="submit-status-button">Send for review</button>
+            <button id="status-proof-retry" class="quiet" type="button" style="display:none">Try the photos again</button>
+          </div>
           <p class="note" id="submit-status-note" role="status"></p>
         </div>
 

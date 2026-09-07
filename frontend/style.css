@@ -1907,6 +1907,76 @@ details.explain strong {
   margin-bottom: 10px;
 }
 
+/* ---------- the photos, before they are sent ----------
+
+   Up to three thumbnails under the file picker, each with its name,
+   its re-saved size and a button to take it out. Small, because
+   they are there to be recognised - "the close one, the wide one" -
+   not looked at; the moderation queue shows them larger. The
+   remove button is button.remove from the points list, the same
+   small bordered box at the end of a row. Empty, the list takes no
+   room, so a form with no photo looks as it did. */
+ul.proof-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul.proof-list:empty {
+  margin: 0;
+}
+
+ul.proof-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 4px;
+  border: 1px solid var(--rule);
+  font-size: 12px;
+  color: var(--dim);
+}
+
+ul.proof-list img {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+/* Room for a short name, a size and "· sent" - "a.png · 2 KB · sent"
+   is 19 characters - before a long name is cut with an ellipsis. */
+ul.proof-list .proof-name {
+  max-width: 20ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The proof line reserves no height while it has nothing to say -
+   it sits between the list and a hint, and an empty line there is
+   a gap for nothing - and takes a gap below when it does, so a
+   refusal does not run into the hint under it. */
+#s-proof-note:empty,
+#s-status-proof-note:empty {
+  display: none;
+}
+
+#s-proof-note:not(:empty),
+#s-status-proof-note:not(:empty) {
+  margin-bottom: 10px;
+}
+
+/* Send and "Try the photos again" side by side; on a phone the
+   second wraps under the first. */
+.report-main .row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
 /* ------------------------------------------------------------------
    THE WORDS (Wave 4: the words agent writes this block)
 

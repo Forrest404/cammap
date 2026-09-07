@@ -2000,6 +2000,361 @@ function randomName() {
   return n[0].toString(16) + n[1].toString(16);
 }
 
+/* ---------------- up to three photos ----------------
+
+   One file per report was the rule, and a moderator deciding whether
+   a pole on a street corner is a camera often needs two pictures: a
+   close one that shows the thing, and a wide one that shows where it
+   is. report_proof was always a separate table with a report_id, so
+   the schema expected more than one; this is the form catching up.
+
+   Each photo is prepared the moment it is chosen - re-saved through
+   the canvas, which is what strips the position and the device out
+   of it - and shown as a thumbnail with a way to take it out. Chosen
+   rather than sent time, for three reasons: a person can see what
+   they are about to send, and that it is the right three; a file
+   that cannot be sent (too big, not a photo) is refused beside the
+   picker and not after Send; and what is held is the re-saved copy,
+   never the original - the file input is emptied after each choice,
+   so the bytes with the location in them are not sitting in the form
+   waiting to be sent by mistake. The originals' names are kept for
+   the list, and go nowhere.
+
+   The 20 MB cap is per file, because it is the bucket's per-object
+   limit and the check on report_proof.bytes is per row; the hint
+   says "each". It is checked on the original, before re-saving - a
+   file over the cap is refused rather than shrunk, because a phone
+   photo that large is not a photo but a mistake, and the re-saved
+   copy is far smaller anyway.
+
+   Sending is one file at a time, in order, each its own upload and
+   its own report_proof row. If the second of three fails the report
+   is in and the first is attached, and neither is undone: the report
+   is the person's own and still pending, so report_proof's insert
+   policy admits the rest whenever they are sent, and the form offers
+   "Try the photos again" for exactly the ones that did not go,
+   without choosing them again. A partial failure is therefore a
+   report with fewer pictures than meant, said plainly, and never a
+   report lost. */
+
+var PROOF_MAX_FILES = 3;
+
+/* The picker: the file input, the <ul> the thumbnails go in, the
+   line refusals and progress are written to, and a function called
+   whenever the set changes. items() is what Send uploads; each item
+   is {blob, mime, ext, name, url, sent}. */
+function makeProofPicker(input, list, line, onChange) {
+  var items = [];
+  var preparing = 0;
+
+  function changed() {
+    if (onChange) {
+      onChange();
+    }
+  }
+
+  function say(text) {
+    if (line) {
+      line.textContent = text;
+    }
+  }
+
+  function bytesWords(n) {
+    return n >= 1024 * 1024 ? (n / (1024 * 1024)).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+  }
+
+  function redraw() {
+    var i;
+
+    if (!list) {
+      return;
+    }
+    list.innerHTML = "";
+    for (i = 0; i < items.length; i++) {
+      list.appendChild(thumb(items[i], i));
+    }
+  }
+
+  function thumb(item, index) {
+    var li = document.createElement("li");
+    var img = document.createElement("img");
+    var name = document.createElement("span");
+    var drop = document.createElement("button");
+    var label = "Photo " + (index + 1) + " of " + items.length + ", " + item.name;
+
+    img.src = item.url;
+    img.alt = label;
+    li.appendChild(img);
+
+    name.className = "proof-name";
+    name.textContent = item.name + " · " + bytesWords(item.blob.size) +
+      (item.sent ? " · sent" : "");
+    li.appendChild(name);
+
+    /* A real button, with the photo named in its label, so a screen
+       reader hears which one it removes and not three times "×". */
+    drop.type = "button";
+    drop.className = "remove";
+    drop.textContent = "×";
+    drop.title = "Remove this photo";
+    drop.setAttribute("aria-label", "Remove " + label);
+    drop.onclick = function () {
+      remove(item);
+    };
+    li.appendChild(drop);
+
+    return li;
+  }
+
+  function remove(item) {
+    var kept = [];
+    var i;
+
+    for (i = 0; i < items.length; i++) {
+      if (items[i] !== item) {
+        kept.push(items[i]);
+      }
+    }
+    items = kept;
+    URL.revokeObjectURL(item.url);
+    say("");
+    redraw();
+    changed();
+  }
+
+  /* The chosen files, one after another: prepareProof() is
+     asynchronous, and preparing three at once would be three
+     canvases the size of a phone photo at the same moment. Refusals
+     are collected and said together at the end. */
+  function add(files) {
+    var queue = [];
+    var refused = [];
+    var i;
+
+    for (i = 0; i < files.length; i++) {
+      queue.push(files[i]);
+    }
+
+    function next() {
+      var file = queue.shift();
+
+      if (!file) {
+        preparing--;
+        say(refused.length ? refused.join(" ") : "");
+        redraw();
+        changed();
+        return;
+      }
+      if (items.length >= PROOF_MAX_FILES) {
+        refused.push("Three at most: " + file.name + " was left out.");
+        next();
+        return;
+      }
+      prepareProof(file, function (problem, blob, mime, ext) {
+        if (problem) {
+          refused.push(file.name + ": " + problem.charAt(0).toLowerCase() + problem.slice(1));
+        } else if (blob) {
+          items.push({
+            blob: blob, mime: mime, ext: ext, name: file.name,
+            url: URL.createObjectURL(blob), sent: false
+          });
+        }
+        next();
+      });
+    }
+
+    preparing++;
+    say("Preparing…");
+    next();
+  }
+
+  if (input) {
+    input.onchange = function () {
+      if (input.files && input.files.length) {
+        add(input.files);
+      }
+      /* The originals are not kept: what is held is the re-saved
+         copy in items. Emptying the input also lets the same file
+         be chosen again after it was removed. */
+      input.value = "";
+    };
+  }
+
+  return {
+    items: function () {
+      return items;
+    },
+    busy: function () {
+      return preparing > 0;
+    },
+    /* How many are still to go, after a send that did not finish. */
+    unsent: function () {
+      var n = 0;
+      var i;
+
+      for (i = 0; i < items.length; i++) {
+        if (!items[i].sent) {
+          n++;
+        }
+      }
+      return n;
+    },
+    redraw: redraw,
+    clear: function () {
+      var i;
+
+      for (i = 0; i < items.length; i++) {
+        URL.revokeObjectURL(items[i].url);
+      }
+      items = [];
+      say("");
+      redraw();
+    }
+  };
+}
+
+/* Every item not yet sent, in order, one upload and one row each.
+   Stops at the first failure. Calls back with (problem, sent, total):
+   problem null when everything went, otherwise the upload's own
+   sentence, with `sent` how many are attached now and `total` how
+   many there are. An item that went is marked, so a second call
+   sends only the rest. */
+function uploadProofs(reportId, items, onDone) {
+  var i = 0;
+
+  function count() {
+    var n = 0;
+    var k;
+
+    for (k = 0; k < items.length; k++) {
+      if (items[k].sent) {
+        n++;
+      }
+    }
+    return n;
+  }
+
+  function next() {
+    var item;
+
+    while (i < items.length && items[i].sent) {
+      i++;
+    }
+    if (i >= items.length) {
+      onDone(null, count(), items.length);
+      return;
+    }
+    item = items[i];
+    uploadProof(reportId, item.blob, item.mime, item.ext, function (problem) {
+      if (problem) {
+        onDone(problem, count(), items.length);
+        return;
+      }
+      item.sent = true;
+      i++;
+      next();
+    });
+  }
+
+  next();
+}
+
+/* "Sent for review", with the photos accounted for: all of them, or
+   how many, and which did not go. The receipt for the report itself
+   is the caller's to add. */
+function sentWords(problem, sent, total) {
+  var ordinals = ["first", "second", "third"];
+  var why = problem === UPLOAD_FAILED ? "" : " (" + problem.charAt(0).toLowerCase() + problem.slice(1, -1) + ")";
+
+  if (!problem) {
+    return "";
+  }
+  return (sent ? sent + " of " + total + " photos attached; the " : "The ") +
+    (ordinals[sent] || "next") + " could not be uploaded" + why + ". " +
+    "Try the photos again: the report is in, and the rest can still be attached.";
+}
+
+/* uploadProof()'s plain refusal, named so sentWords() can tell it
+   from the rarer "uploaded but not recorded" and not say it twice. */
+var UPLOAD_FAILED = "The file could not be uploaded.";
+
+/* What both forms do once a report is in: attach its photos and say
+   how that went, and hold the report's id while any are still to
+   go. `ui` is the parts that differ between the two forms - the
+   note, the Send button, the Try-again button and the picker. Send
+   is disabled while photos are outstanding, because a second press
+   would be a second report; it comes back when they have gone, or
+   when the person takes the unsent ones out, which settles the
+   report as sent with what it has. */
+function makeAttacher(ui) {
+  var attachTo = null;   /* the report whose photos are still to go */
+
+  function showRetry(on) {
+    if (ui.retry) {
+      ui.retry.style.display = on ? "" : "none";
+    }
+  }
+
+  function settle(reportId, problem, sent, total) {
+    if (problem) {
+      attachTo = reportId;
+      ui.proofs.redraw();
+      showRetry(true);
+      ui.button.disabled = true;
+      ui.note.textContent = "Sent for review. " + sentWords(problem, sent, total);
+      return;
+    }
+    attachTo = null;
+    showRetry(false);
+    ui.button.disabled = false;
+    ui.proofs.clear();
+    ui.note.textContent = "Sent for review. Thank you.";
+    if (ui.done) {
+      ui.done(reportId);
+    }
+  }
+
+  if (ui.retry) {
+    ui.retry.onclick = function () {
+      if (attachTo === null || !currentUser) {
+        return;
+      }
+      ui.retry.disabled = true;
+      ui.note.textContent = "Sending the photos…";
+      uploadProofs(attachTo, ui.proofs.items(), function (problem, sent, total) {
+        ui.retry.disabled = false;
+        settle(attachTo, problem, sent, total);
+      });
+    };
+  }
+
+  return {
+    /* The report is in; now the photos, if there are any. */
+    start: function (reportId) {
+      var items = ui.proofs.items();
+
+      if (items.length) {
+        ui.note.textContent = "Sent. Attaching the photos…";
+        uploadProofs(reportId, items, function (problem, sent, total) {
+          settle(reportId, problem, sent, total);
+        });
+      } else {
+        settle(reportId, null, 0, 0);
+      }
+    },
+    /* The picker changed: if the ones that would not go have been
+       taken out, there is nothing left to try. */
+    changed: function () {
+      if (attachTo !== null && ui.proofs.unsent() === 0) {
+        settle(attachTo, null, 0, 0);
+      }
+    },
+    waiting: function () {
+      return attachTo !== null;
+    }
+  };
+}
+
 /* Uploads under the user's own prefix - which is the only place the
    storage policy lets them write - then records the file against the
    report. */
@@ -2009,7 +2364,7 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
   sb.storage.from("proof").upload(path, blob, { contentType: mime, upsert: false })
     .then(function (result) {
       if (result.error) {
-        onDone("The file could not be uploaded.");
+        onDone(UPLOAD_FAILED);
         return;
       }
       return sb.from("report_proof").insert({
@@ -2023,7 +2378,7 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
       });
     })
     .catch(function () {
-      onDone("The file could not be uploaded.");
+      onDone(UPLOAD_FAILED);
     });
 }
 
@@ -2628,11 +2983,33 @@ function setUpNewReport(startAt) {
     }, { enableHighAccuracy: true, timeout: 10000 });
   };
 
+  /* The photos: prepared as they are chosen, held as re-saved
+     copies, attached after the report is in. The picker tells the
+     attacher when the set changes, and the attacher is made after
+     the picker because it needs it; the guard on the hook is for
+     the moment in between. */
+  var attacher = null;
+  var proofs = makeProofPicker(proofIn,
+    document.getElementById("s-proof-list"),
+    document.getElementById("s-proof-note"),
+    function () {
+      if (attacher) {
+        attacher.changed();
+      }
+    });
+
+  attacher = makeAttacher({
+    note: note,
+    button: button,
+    retry: document.getElementById("proof-retry"),
+    proofs: proofs
+  });
+
   button.onclick = function () {
     var lat  = parseFloat(latIn.value);
     var lon  = parseFloat(lonIn.value);
     var name = nameIn.value.trim();
-    var file = proofIn.files && proofIn.files[0];
+    var report;
 
     note.textContent = "";
 
@@ -2651,87 +3028,75 @@ function setUpNewReport(startAt) {
       latIn.focus();
       return;
     }
+    if (proofs.busy()) {
+      note.textContent = "The photos are still being prepared - a moment, then press again.";
+      return;
+    }
+    if (attacher.waiting()) {
+      note.textContent = "The last report's photos are still to go: try them again, or take them out.";
+      return;
+    }
 
-    button.disabled = true;
-    note.textContent = file ? "Preparing the file…" : (currentUser ? "Sending…" : "");
+    /* Read off the form now, once, whether it goes this moment or
+       after an account is made: the send is the same either way,
+       and it must carry what was filled in when Send was pressed.
+       The photos are read at the moment of sending instead, so one
+       taken out while the account boxes were open is not sent. */
+    report = {
+      kind: "new",
+      type: typeSel.value,
+      name: name,
+      note: noteIn.value.trim(),
+      lat: lat,
+      lon: lon
+    };
 
-    prepareProof(file, function (problem, blob, mime, ext) {
-      var report;
+    function send() {
+      button.disabled = true;
+      note.textContent = "Sending…";
 
-      if (problem) {
-        button.disabled = false;
-        note.textContent = problem;
-        return;
-      }
+      sb.from("reports").insert({
+        user_id: currentUser.id,
+        kind: report.kind,
+        type: report.type,
+        name: report.name,
+        note: report.note,
+        lat: report.lat,
+        lon: report.lon
+      }).select("id").single().then(function (result) {
+        if (result.error) {
+          button.disabled = false;
+          note.textContent = reportProblem(result.error);
+          return;
+        }
 
-      /* Read off the form now, once, whether it goes this moment or
-         after an account is made: the send is the same either way,
-         and it must carry what was filled in when Send was pressed. */
-      report = {
-        kind: "new",
-        type: typeSel.value,
-        name: name,
-        note: noteIn.value.trim(),
-        lat: lat,
-        lon: lon
-      };
+        /* The report is in, whatever happens to the photos next:
+           the form is cleared of it and the draft forgotten. */
+        latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
+        locNote.textContent = ""; draftNote.textContent = "";
+        dup.clear();
+        forgetDraft();
 
-      function send() {
-        button.disabled = true;
-        note.textContent = "Sending…";
+        attacher.start(result.data.id);
+      }).catch(recover(button, note));
+    }
 
-        sb.from("reports").insert({
-          user_id: currentUser.id,
-          kind: report.kind,
-          type: report.type,
-          name: report.name,
-          note: report.note,
-          lat: report.lat,
-          lon: report.lon
-        }).select("id").single().then(function (result) {
-          if (result.error) {
-            button.disabled = false;
-            note.textContent = reportProblem(result.error);
-            return;
-          }
+    if (currentUser) {
+      send();
+      return;
+    }
 
-          function finish(uploadProblem) {
-            button.disabled = false;
-            latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
-            proofIn.value = ""; locNote.textContent = ""; draftNote.textContent = "";
-            dup.clear();
-            forgetDraft();
-            note.textContent = uploadProblem
-              ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)
-              : "Sent for review. Thank you.";
-          }
-
-          if (blob) {
-            uploadProof(result.data.id, blob, mime, ext, finish);
-          } else {
-            finish(null);
-          }
-        }).catch(recover(button, note));
-      }
-
-      if (currentUser) {
-        send();
-        return;
-      }
-
-      /* Nobody is signed in. Keep what was typed - here, and in
-         storage against a reload - and ask for the account under
-         the form. The button comes back so a person who decides
-         against an account is not left with a dead form. */
-      keepDraft({
-        kind: "new", type: report.type, lat: report.lat, lon: report.lon,
-        name: report.name, note: report.note, photos: blob ? 1 : 0
-      });
-      button.disabled = false;
-      note.textContent = "Almost there: an account is needed to send it. Make one below, or sign in, " +
-        "and the report goes as it stands.";
-      askForAccount(send);
+    /* Nobody is signed in. Keep what was typed - here, and in
+       storage against a reload - and ask for the account under
+       the form. The button comes back so a person who decides
+       against an account is not left with a dead form. */
+    keepDraft({
+      kind: "new", type: report.type, lat: report.lat, lon: report.lon,
+      name: report.name, note: report.note, photos: proofs.items().length
     });
+    note.textContent = "Almost there: an account is needed to send it. Make one below, or sign in, " +
+      "and the report goes as it stands.";
+    askForAccount(send);
   };
 }
 
@@ -2792,8 +3157,26 @@ function setUpStatusReport(cameraId) {
       nameEl.textContent = "camera #" + cameraId;
     });
 
+  /* The same picker and attacher as the new-camera form. */
+  var attacher = null;
+  var proofs = makeProofPicker(proofIn,
+    document.getElementById("s-status-proof-list"),
+    document.getElementById("s-status-proof-note"),
+    function () {
+      if (attacher) {
+        attacher.changed();
+      }
+    });
+
+  attacher = makeAttacher({
+    note: note,
+    button: button,
+    retry: document.getElementById("status-proof-retry"),
+    proofs: proofs
+  });
+
   button.onclick = function () {
-    var file = proofIn.files && proofIn.files[0];
+    var report;
 
     note.textContent = "";
 
@@ -2801,78 +3184,62 @@ function setUpStatusReport(cameraId) {
       note.textContent = "That camera could not be found.";
       return;
     }
+    if (proofs.busy()) {
+      note.textContent = "The photos are still being prepared - a moment, then press again.";
+      return;
+    }
+    if (attacher.waiting()) {
+      note.textContent = "The last report's photos are still to go: try them again, or take them out.";
+      return;
+    }
 
-    button.disabled = true;
-    note.textContent = file ? "Preparing the file…" : (currentUser ? "Sending…" : "");
+    /* Read once, whether it goes now or after an account is made;
+       see setUpNewReport() for why. */
+    report = {
+      kind: "status",
+      cameraId: cameraId,
+      claim: claimSel.value,
+      note: noteIn.value.trim()
+    };
 
-    prepareProof(file, function (problem, blob, mime, ext) {
-      var report;
+    function send() {
+      button.disabled = true;
+      note.textContent = "Sending…";
 
-      if (problem) {
-        button.disabled = false;
-        note.textContent = problem;
-        return;
-      }
+      sb.from("reports").insert({
+        user_id: currentUser.id,
+        kind: report.kind,
+        camera_id: report.cameraId,
+        status_claim: report.claim,
+        note: report.note,
+        lat: camera.lat,
+        lon: camera.lon
+      }).select("id").single().then(function (result) {
+        if (result.error) {
+          button.disabled = false;
+          note.textContent = reportProblem(result.error);
+          return;
+        }
 
-      /* Read once, whether it goes now or after an account is made;
-         see setUpNewReport() for why. */
-      report = {
-        kind: "status",
-        cameraId: cameraId,
-        claim: claimSel.value,
-        note: noteIn.value.trim()
-      };
+        noteIn.value = ""; draftNote.textContent = "";
+        forgetDraft();
 
-      function send() {
-        button.disabled = true;
-        note.textContent = "Sending…";
+        attacher.start(result.data.id);
+      }).catch(recover(button, note));
+    }
 
-        sb.from("reports").insert({
-          user_id: currentUser.id,
-          kind: report.kind,
-          camera_id: report.cameraId,
-          status_claim: report.claim,
-          note: report.note,
-          lat: camera.lat,
-          lon: camera.lon
-        }).select("id").single().then(function (result) {
-          if (result.error) {
-            button.disabled = false;
-            note.textContent = reportProblem(result.error);
-            return;
-          }
+    if (currentUser) {
+      send();
+      return;
+    }
 
-          function finish(uploadProblem) {
-            button.disabled = false;
-            noteIn.value = ""; proofIn.value = ""; draftNote.textContent = "";
-            forgetDraft();
-            note.textContent = uploadProblem
-              ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)
-              : "Sent for review. Thank you.";
-          }
-
-          if (blob) {
-            uploadProof(result.data.id, blob, mime, ext, finish);
-          } else {
-            finish(null);
-          }
-        }).catch(recover(button, note));
-      }
-
-      if (currentUser) {
-        send();
-        return;
-      }
-
-      keepDraft({
-        kind: "status", cameraId: cameraId, claim: report.claim,
-        note: report.note, photos: blob ? 1 : 0
-      });
-      button.disabled = false;
-      note.textContent = "Almost there: an account is needed to send it. Make one below, or sign in, " +
-        "and the report goes as it stands.";
-      askForAccount(send);
+    keepDraft({
+      kind: "status", cameraId: cameraId, claim: report.claim,
+      note: report.note, photos: proofs.items().length
     });
+    note.textContent = "Almost there: an account is needed to send it. Make one below, or sign in, " +
+      "and the report goes as it stands.";
+    askForAccount(send);
   };
 }
 

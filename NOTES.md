@@ -814,6 +814,38 @@ anon's plain select on reports is refused; a user's second pending
 report in a cell raises on `reports_one_new_per_cell_idx` while
 another person's at the same spot is accepted.
 
+**Three photos.** One file per report was the rule, and a moderator
+deciding whether a pole on a street corner is a camera often needs
+two pictures: a close one that shows the thing and a wide one that
+shows where it is. `report_proof` was always a separate table with
+a `report_id`, so the schema expected more; the form now takes up
+to three, on both the new-camera and the state form. Each is
+prepared the moment it is chosen - re-saved through the canvas,
+which is what strips the position and the device out of it - and
+shown as a thumbnail with a real remove button that names the
+photo it removes. Chosen time rather than Send time, for three
+reasons: the person sees what they are about to send; a file that
+cannot be sent is refused beside the picker rather than after
+everything else; and what the form holds is the re-saved copy and
+never the original - the file input is emptied after each choice,
+so the bytes with the location in them are not sitting in the form.
+The 20 MB cap is per file, because it is the bucket's per-object
+limit and the `report_proof.bytes` check is per row, and the hint
+says "each"; it is checked on the original, before re-saving,
+because a phone photo that large is not a photo but a mistake.
+Sending is one file at a time, in order, each its own upload and
+its own `report_proof` row. If the second of three fails, the
+report is in and the first is attached, and neither is undone: the
+report is the person's own and still pending, so the insert policy
+admits the rest whenever they are sent, and the form offers *Try
+the photos again* for exactly the ones that did not go, without
+choosing them again. A partial failure is a report with fewer
+pictures than meant, said plainly - never a report lost. Checked
+with the fake client: a forced failure on the second upload left
+one proof row and a retry sent only the second; the re-saved JPEG
+read back byte by byte carried no `Exif` segment, no make and no
+model where the original had all three.
+
 ### Moderating at scale
 
 The moderation page was built for a queue of a dozen and will be used,
