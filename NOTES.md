@@ -728,6 +728,36 @@ Signing out on the report page no longer sends the person to the
 map: the form is theirs whether or not they are signed in, and what
 is in it stays.
 
+**Reporting from the map.** The popup on a camera offered "Report
+its state"; a gap on the map offered nothing, and a gap is exactly
+where a camera the map does not have would be. A right-click on the
+map, or a long press on a phone, now opens a small popup at that
+spot with one row, *Report a camera here*, which opens the report
+form with the pin already placed - `report.html?lat=&lon=`, six
+decimals, the precision the map writes everywhere else. The
+right-click is MapLibre's own `contextmenu` map event: the library
+already keeps the browser's menu off the canvas (its mouse handlers
+call `preventDefault` there so a right-drag can rotate the map) and
+fires the map event on mouseup only if the mouse did not drag in
+between, so a right-drag is a rotate and never a report, and
+nothing on the page touches `contextmenu` anywhere but the canvas -
+the browser's menu on a link or a paragraph is what it always was.
+The long press is timed in `map.js`, because iOS Safari fires no
+`contextmenu` for a touch: one finger down for 600 ms within eight
+pixels is a press, and a finger that drifts further is a pan, so a
+press that turns into a drag is a pan and nothing else. Android
+Chrome fires `contextmenu` for a long press on its own account, a
+little before the timer; `offerReportAt()` will not open a second
+popup for the same spot within a second, so one press is one popup
+whichever way it arrived. After a press the `touchend` is
+`preventDefault`-ed so the browser does not make a click of it,
+because a MapLibre popup closes on a map click and the one just
+opened would close under the finger that opened it. Checked over
+the DevTools protocol: a right-click on the canvas opens the popup
+and its `defaultPrevented` is true; a synthetic right-click on a nav
+link is not prevented; a 600 ms touch with no movement opens the
+popup; a touch that moves 30 px and lifts opens nothing.
+
 ### Moderating at scale
 
 The moderation page was built for a queue of a dozen and will be used,
