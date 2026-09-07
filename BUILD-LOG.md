@@ -152,14 +152,14 @@ maintainer.
 
 | # | Finding | Origin | Action |
 | --- | --- | --- | --- |
-| L1 | `pending_near` answers on a sharp 100 m circle; 112 anon calls recover a pending report's position to six decimals, contradicting its own comment | programme (REP-2) | **fix**: answer per 0.001° cell (migration 011) |
+| L1 | `pending_near` answers on a sharp 100 m circle; 112 anon calls recover a pending report's position to six decimals, contradicting its own comment | programme (REP-2) | **fixed** `724d4d5`, *migration 011, unapplied*: per cell and its eight neighbours; the bisection now stops at the cell centre |
 | L2 | Sign-up is `username_available()` under another name: `user_already_exists` and the trigger's "is taken" | pre-existing | QUESTIONS 13; NOTES states it |
-| L3 | Daily board × `cameras.approved_at` links a username to a camera and a time | pre-existing structure | **fix** the column exposure (012); cadence and default → QUESTIONS 14 |
-| L4 | `report.html?lat=&lon=` puts a person's position in the page request and same-origin `Referer`; no referrer policy | programme (REP-6) | **fixed** `74a9b15` (writer, nine heads `strict-origin-when-cross-origin`); the reader in `account.js` lands with the server half |
-| L5 | Deletion keeps the reporter's words as the camera's name and note; the delete box said otherwise | programme copy; copy-on-approve pre-existing | **fix** the copy on the form, the box and NOTES; blanking → QUESTIONS 15 |
-| L6 | `cameras.approved_by`/`approved_at`/`updated_at` readable by anon: moderator uuids and working hours | pre-existing | **fix**: a public view for the map and the API (012); the map's read of `cameras_public` with a fallback landed `20b567e` |
+| L3 | Daily board × `cameras.approved_at` links a username to a camera and a time | pre-existing structure | **fixed** `8bd7d1c`, *migration 012, unapplied*: `cameras_public` view; table revoked from anon, column grant for authenticated; cadence and default → QUESTIONS 14 |
+| L4 | `report.html?lat=&lon=` puts a person's position in the page request and same-origin `Referer`; no referrer policy | programme (REP-6) | **fixed** `74a9b15` (writer, nine heads `strict-origin-when-cross-origin`) and `b4fa94c` (the reader takes `#<lat>/<lon>` only) |
+| L5 | Deletion keeps the reporter's words as the camera's name and note; the delete box said otherwise | programme copy; copy-on-approve pre-existing | **fixed** `7757ed2`: the form says what the words become, the delete box says what stays; blanking → QUESTIONS 15 |
+| L6 | `cameras.approved_by`/`approved_at`/`updated_at` readable by anon: moderator uuids and working hours | pre-existing | **fixed** with L3 (`8bd7d1c`); the map's read `20b567e`, account.js's two non-moderator reads `8bd7d1c`, all with a fallback until 012 |
 | L7 | Near me writes the person's position to the hash; a Copy link from a dot-click popup carries it | programme (MAP-1/2) | **fixed** `31f4a7d`: `writeHash()` skips while a fix is held, bar blanked to `#`, `linkTo()` uses the camera's coordinates |
-| L8 | The signed-out report draft in `sessionStorage` survives Log out | programme (REP-1) | **fix**: clear it on Log out |
+| L8 | The signed-out report draft in `sessionStorage` survives Log out | programme (REP-1) | **fixed** `4367e73`: `forgetSession()` clears both keys |
 
 Found clean: every RLS policy as anon and as a plain user; every `moderate_*` gate; both
 account functions; the deletion cascade; proof paths and EXIF stripping; no cookies, beacons
@@ -167,7 +167,9 @@ or sockets; the feed, cards, licence, About, rights page and the record name no 
 person. Honest limits to state in NOTES (the fix round adds them): sign-up answers the
 existence question at the auth rate limit; the search box sends its text to Nominatim; the
 report number is a running count; approved words stay on the map; the session sits in local
-storage until Log out; Near me shows in the address bar until cleared.
+storage until Log out; Near me shows in the address bar until cleared. **All seven added
+to NOTES "Anonymity" at `96bc188`.** The Wave 4 verifier's stale-comment defect fixed at
+`c2ab0ef`.
 
 ## Wave log
 

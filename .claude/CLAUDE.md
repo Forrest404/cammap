@@ -154,6 +154,20 @@ Things that look like they would work and do not:
 - **Camera colours are not in `style.css`.** There were six `--t-*` variables
   holding a second copy; nothing read them, so editing them changed nothing.
   They are gone. `CAMERA_TYPES` in `shared.js` is the only copy.
+- **A position never goes in a query string.** Every page's `<head>` carries
+  `<meta name="referrer" content="strict-origin-when-cross-origin">`, directly
+  after the viewport meta: cross-origin hosts get the origin only (Nominatim
+  asks for a referrer that identifies the application, and the origin does),
+  but same-origin requests carry the full URL — path and query — in the
+  `Referer` of every script, stylesheet and font the page loads, and the query
+  reaches the host in the page request and sits in history. So "Report a
+  camera here" links `pages/report.html#<lat>/<lon>`, never `?lat=&lon=`; a
+  fragment is never sent. Nine identical copies; `stamp.py` does not check
+  this tag. A new page copies it with its comment.
+- **Never `select("*")` on `cameras`.** `authenticated` holds a column-level
+  grant that leaves out `approved_by`, `approved_at`, `created_at` and
+  `updated_at`; PostgREST refuses a star select when any column is denied.
+  Name the columns.
 - **`localStorage` keys are in `STORAGE` in `shared.js`,** not written inline,
   and so are the two `sessionStorage` keys the report form uses. Four files
   touch the camera cache; a half-updated string does not error, it just
@@ -276,6 +290,20 @@ Things that look like they would work and do not:
 - **The leaderboard opt-out lives in the three materialized view
   definitions** (`and p.show_on_leaderboard`), not in RLS, which does not
   reach a materialized view. A new leaderboard view must carry it.
+- **`cameras_public` is the read API, and the map's only read.** A browser
+  that is not a moderator's reads cameras only through the view (schema
+  2.14); `anon` has nothing on the table. It holds exactly the fourteen
+  columns the map may read and only visible rows; the table keeps
+  `approved_by`, `approved_at`, `created_at`, `updated_at` to itself. A column
+  added to `cameras` is not public until it is added to the view, at the end
+  of its list. `map.js` and `account.js` fall back to the table's old columns
+  on a 404 with `42P01`/`PGRST205` (`viewMissing()`) until migration 012 is
+  applied; remove the fallback then.
+- **Near me and the address bar.** While a fix is held (`here` set),
+  `writeHash()` writes nothing and the bar is blanked to `#` by `blankHash()`;
+  `linkTo()` centres a Copy link on the camera's coordinates, never
+  `map.getCenter()`. Anything new that writes the hash, or builds a link from
+  the map's centre, must check `here` first.
 
 ## The rule the map's brightness answers to
 
@@ -311,11 +339,18 @@ non-moderator is a courtesy, never the lock.
 
 Every account call the browser can make acts on the caller and answers
 nothing: `set_leaderboard_visibility`, `delete_my_account`. The one call open
-to a stranger, `pending_near(lat, lon)`, takes coordinates and answers only
-whether a report is waiting near a spot and how old it is — what the map
-would show once it is approved. That is the line: a new call that takes a
-username or an email as input is a decision for the maintainer, not
-something to add.
+to a stranger, `pending_near(lat, lon)`, takes coordinates and answers per
+0.001° cell — whether a report is waiting in that cell or its eight
+neighbours, and how many days old — never by distance from a report, which
+a stranger could bisect to a point (the privacy pass did, in 112 calls). That
+is the line: a new call that takes a username or an email as input is a
+decision for the maintainer, not something to add.
+
+Every way a session ends goes through `forgetSession()`, which also clears
+`STORAGE.reportDraft` and `STORAGE.reportReceipt`; a new sign-out path must
+call it, not `sb.auth.signOut()` alone. Sign-up itself answers whether a
+username exists, at Supabase's rate limit — the one leak the repository
+cannot close (QUESTIONS.md 13); NOTES.md "Anonymity" says so.
 
 ## Checking your work
 
