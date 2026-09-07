@@ -69,6 +69,12 @@
 <link rel="stylesheet" href="../lib/maplibre-gl.css">
 <script src="../lib/maplibre-gl.js"></script>
 
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../feed.xml">
 <!-- The icon, in the forms the browsers between them ask for: SVG
      for the tab in Chrome and Firefox, .ico for Safari and anything
      older, a 180px PNG for an iOS home screen. manifest.json is what

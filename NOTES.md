@@ -200,6 +200,44 @@ browser scrolls as far as it can and stops, which is the browser
 being right and not the anchor being wrong. The template comment in
 `pages/blog.html` carries the rule so the next post copies the shape.
 
+**The feed (WORD-4).** `feed.xml` at the root, Atom, one entry per
+post, written by hand - there is no generator on this site and one
+post does not need one. Atom rather than RSS because one format is one
+copy to keep in step, its dates are RFC 3339 and nothing else, and it
+requires an `id`, a `title` and an `updated` on the feed and on every
+entry and an `author` on the feed, which is what lets the file be
+checked for shape without a network. The ids are tag URIs
+(`tag:forrest404.github.io,2026-08-28:post-…`) and not the post's
+address, because an id is a promise that this is the same post: a
+reader that meets a new id announces a new post to every subscriber,
+so an id that followed the URL would re-announce every post the day
+the site moved. The address is in `<link>`, where an address belongs.
+The times are midnight UTC on the post's date, because a post carries
+a day and not an hour, and an hour typed in would be a fact made up.
+The content is the post's paragraphs, escaped, so a reader shows the
+text and not a teaser. The author is "cammap": the site puts no names
+on itself and the feed is not the place to start. Every page's head
+carries `<link rel="alternate" type="application/atom+xml">` with a
+relative path, `feed.xml` from the root and `../feed.xml` from
+`pages/` (the 404 page's `<base>` makes the root form right there
+too), so a reader handed any address on the site finds it. The
+recipe for a new entry is the comment at the top of `feed.xml`, and
+the template comment on the blog page points at it.
+
+How it was checked: parsed with Python's `xml.etree`, the required
+elements and the RFC 3339 dates asserted, every entry's anchor looked
+up on `blog.html` and its date matched against the article's
+`<time datetime>`, and every article on the page required to have an
+entry; then each page loaded in headless Chrome and the resolved
+`href` of the link read back. The W3C feed validator fetches by
+address, so it is the maintainer's check after a push:
+`https://validator.w3.org/feed/check.cgi?url=https://forrest404.github.io/cammap/feed.xml`.
+
+One more place the site's address is written: the list under
+"Sharing the site" above should now include `feed.xml` - every
+`<link href>`, every entry's `<link>`, the author's `<uri>` and the
+`<icon>`; the tag URIs are deliberately not addresses and stay.
+
 ### Sharing the site
 
 Everything that decides what the site looks like from outside a
