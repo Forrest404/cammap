@@ -2494,14 +2494,132 @@ function sentWords(problem, sent, total) {
    from the rarer "uploaded but not recorded" and not say it twice. */
 var UPLOAD_FAILED = "The file could not be uploaded.";
 
-/* What both forms do once a report is in: attach its photos and say
-   how that went, and hold the report's id while any are still to
-   go. `ui` is the parts that differ between the two forms - the
-   note, the Send button, the Try-again button and the picker. Send
-   is disabled while photos are outstanding, because a second press
-   would be a second report; it comes back when they have gone, or
-   when the person takes the unsent ones out, which settles the
-   report as sent with what it has. */
+/* ---------------- the receipt ----------------
+
+   "Sent for review. Thank you." and the form clearing was all a
+   person got for a report: no number, no link, nothing to come back
+   with. People who send evidence somewhere want a receipt. The
+   report's number is the database's own id, handed back by the
+   insert, so it is known the moment the report is in and survives
+   anything; the receipt shows it in a box that copies, and links to
+   it under Your reports on the account page - #report-<id>, which
+   that list finds and lights - where what becomes of it is listed.
+
+   The last number sent is also kept in sessionStorage, so a reload
+   of this page - a phone that reloaded a tab, a person who came back
+   to check - shows the receipt again rather than a blank form as if
+   nothing had happened. Session storage, for the draft's reason: it
+   is this visit's, and a number left on a shared machine would tell
+   the next person which report was sent from it. Storage may be
+   refused, and then the receipt is shown once and not again, which
+   is what the page did before there was one. The key belongs in
+   STORAGE in shared.js beside the others; the orchestrator moves
+   it.
+
+   Copying is the Copy-link pattern from map.js: the clipboard API
+   where the page has it (it is refused on a page opened off the disk
+   and on plain http), execCommand on the selected box where it does
+   not, and where both fail the box is left selected so one keystroke
+   finishes the job. */
+var REPORT_RECEIPT_KEY = "cammap.report-receipt";
+
+function keepReceipt(id) {
+  try {
+    window.sessionStorage.setItem(REPORT_RECEIPT_KEY, JSON.stringify({ id: id, at: Date.now() }));
+  } catch (err) {
+    /* storage refused; the receipt is shown once, now */
+  }
+}
+
+function readReceipt() {
+  var raw;
+
+  try {
+    raw = window.sessionStorage.getItem(REPORT_RECEIPT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+/* Shows the receipt for a report id. `again` is true when it is
+   being shown after a reload rather than just after a send, and the
+   sentence says so. */
+function showReceipt(id, again) {
+  var box = document.getElementById("receipt");
+  var text = document.getElementById("receipt-text");
+  var field = document.getElementById("receipt-box");
+  var link = document.getElementById("receipt-link");
+  var said = document.getElementById("receipt-said");
+
+  if (!box || !text || !field || !link) {
+    return;
+  }
+  text.textContent = (again ? "Your last report this session is " : "Sent for review. Thank you. Your report is ") +
+    "#" + id + ".";
+  field.value = "#" + id;
+  link.href = pageHref("account.html") + "#report-" + id;
+  if (said) {
+    said.textContent = "";
+  }
+  box.style.display = "block";
+}
+
+function setUpReceipt() {
+  var copy = document.getElementById("receipt-copy");
+  var field = document.getElementById("receipt-box");
+  var said = document.getElementById("receipt-said");
+  var last = readReceipt();
+  var resetTimer = null;
+
+  if (!copy || !field) {
+    return;
+  }
+
+  function say(what) {
+    said.textContent = what;
+    window.clearTimeout(resetTimer);
+    resetTimer = window.setTimeout(function () {
+      said.textContent = "";
+    }, 4000);
+  }
+
+  function byCommand() {
+    var copied = false;
+
+    field.focus();
+    field.select();
+    try {
+      copied = document.execCommand("copy");
+    } catch (err) {
+      copied = false;
+    }
+    say(copied ? "Copied." : "Selected - press Ctrl-C, or Cmd-C on a Mac, to copy.");
+  }
+
+  copy.onclick = function () {
+    if (window.navigator.clipboard && window.navigator.clipboard.writeText) {
+      window.navigator.clipboard.writeText(field.value).then(function () {
+        say("Copied.");
+      }, byCommand);
+      return;
+    }
+    byCommand();
+  };
+
+  if (last && last.id) {
+    showReceipt(last.id, true);
+  }
+}
+
+/* What both forms do once a report is in: show the receipt, attach
+   the photos and say how that went, and hold the report's id while
+   any are still to go. `ui` is the parts that differ between the two
+   forms - the note, the Send button, the Try-again button and the
+   picker. Send is disabled while photos are outstanding, because a
+   second press would be a second report; it comes back when they
+   have gone, or when the person takes the unsent ones out, which
+   settles the report as sent with what it has. */
 function makeAttacher(ui) {
   var attachTo = null;   /* the report whose photos are still to go */
 
@@ -2517,17 +2635,14 @@ function makeAttacher(ui) {
       ui.proofs.redraw();
       showRetry(true);
       ui.button.disabled = true;
-      ui.note.textContent = "Sent for review. " + sentWords(problem, sent, total);
+      ui.note.textContent = sentWords(problem, sent, total);
       return;
     }
     attachTo = null;
     showRetry(false);
     ui.button.disabled = false;
     ui.proofs.clear();
-    ui.note.textContent = "Sent for review. Thank you.";
-    if (ui.done) {
-      ui.done(reportId);
-    }
+    ui.note.textContent = total ? "Sent, with " + total + (total === 1 ? " photo." : " photos.") : "";
   }
 
   if (ui.retry) {
@@ -2545,12 +2660,17 @@ function makeAttacher(ui) {
   }
 
   return {
-    /* The report is in; now the photos, if there are any. */
+    /* The report is in: the receipt first, since the number is known
+       and nothing that happens to the photos changes it; then the
+       photos, if there are any. */
     start: function (reportId) {
       var items = ui.proofs.items();
 
+      keepReceipt(reportId);
+      showReceipt(reportId, false);
+
       if (items.length) {
-        ui.note.textContent = "Sent. Attaching the photos…";
+        ui.note.textContent = "Attaching the photos…";
         uploadProofs(reportId, items, function (problem, sent, total) {
           settle(reportId, problem, sent, total);
         });
@@ -2758,7 +2878,7 @@ function reportProblem(error) {
   if (code === "23505") {
     if (/reports_one_new_per_cell_idx/.test(msg)) {
       return "You already have a report waiting at this spot. One pending report per person per corner; " +
-        "once it is decided you can send another.";
+        "once it is decided you can send another. It is listed under Your reports on your account page.";
     }
     if (/reports_one_status_per_camera_idx/.test(msg)) {
       return "You have already reported this camera's state: one report per person per camera.";
@@ -2950,6 +3070,7 @@ function setUpReportPage() {
   var title       = document.getElementById("report-title");
   var account     = document.getElementById("report-account");
   var cardBox     = document.getElementById("recovery-after");
+  var receipt     = document.getElementById("receipt");
   var main;
 
   var cameraId = (function () {
@@ -2975,18 +3096,25 @@ function setUpReportPage() {
   newBox.style.display = cameraId ? "none" : "block";
   stBox.style.display  = cameraId ? "block" : "none";
 
-  /* The account boxes and the card box are written once, in the
-     new-camera form's column; a state report is the other form, so
-     they are moved under that one instead. Under the form, not
-     above it: they answer a Send that was just pressed, and that is
-     where the person is looking. */
+  /* The account boxes, the card box and the receipt are written
+     once, in the new-camera form's column; a state report is the
+     other form, so they are moved under that one instead. Under the
+     form, not above it: they answer a Send that was just pressed,
+     and that is where the person is looking. The receipt goes into
+     the form's own box, after its note, where the sentence it
+     follows on from is. */
   if (cameraId && account && cardBox) {
     main = stBox.querySelector(".report-main");
     if (main) {
+      if (receipt && document.getElementById("submit-status-note")) {
+        document.getElementById("submit-status-note").parentNode.appendChild(receipt);
+      }
       main.appendChild(cardBox);
       main.appendChild(account);
     }
   }
+
+  setUpReceipt();
 
   /* The account page's own two boxes, wired the same way. After a
      sign-up the recovery card is offered as it is there, and then

@@ -909,6 +909,28 @@ was already paused on the day the star was pressed - the saved row
 is a copy of name, kind and position, deliberately not of state -
 and the line should say only what is known.
 
+**The receipt.** "Sent for review. Thank you." and the form
+clearing was all a person got for a report: no number, no link,
+nothing to come back with. Now, the moment the insert returns, the
+form shows the report's number - the database's own id, so it is
+known at once and survives anything - in a box that copies it, with
+a link to `account.html#report-<id>`, which *Your reports* finds and
+lights. The receipt is shown before the photos are attached and
+whatever happens to them, because nothing that happens to a photo
+changes the number. The last number sent is kept in
+`sessionStorage` (`cammap.report-receipt`, a constant in
+`account.js` until it joins `STORAGE`), so a reload of the report
+page shows "Your last report this session is #1234" rather than a
+blank form; session storage for the draft's reason, that a number
+left on a shared machine would tell the next person which report
+was sent from it; refused, the receipt is shown once. Copying is
+`map.js`'s Copy-link pattern - the clipboard API, then `execCommand`
+on the selected box, then the box left selected with a sentence
+saying which key finishes it - because the clipboard API is refused
+on a page opened off the disk and on plain http. The own-duplicate
+refusal now ends "It is listed under Your reports on your account
+page", since there is such a list.
+
 ### Moderating at scale
 
 The moderation page was built for a queue of a dozen and will be used,

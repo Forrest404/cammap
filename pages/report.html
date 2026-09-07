@@ -214,6 +214,27 @@
             <button id="proof-retry" class="quiet" type="button" style="display:none">Try the photos again</button>
           </div>
           <p class="note" id="submit-note" role="status"></p>
+
+          <!-- The receipt. "Sent for review" and the form clearing was
+               all a person got; now the report's number, in a box that
+               copies, and a link to it under Your reports on the
+               account page, where what becomes of it is listed. The
+               number is the database's, so it survives anything; the
+               last one sent is also kept for this browser session, so
+               a reload of this page shows it again. account.js moves
+               this under the state form when that is the one showing. -->
+          <div class="receipt" id="receipt" role="status" style="display:none">
+            <p id="receipt-text"></p>
+            <div class="row receipt-row">
+              <input type="text" id="receipt-box" class="copy-box" readonly aria-label="Report number">
+              <button id="receipt-copy" class="quiet" type="button">Copy</button>
+              <span class="hint" id="receipt-said"></span>
+            </div>
+            <p class="hint">
+              It is listed under <a id="receipt-link" href="account.html">Your
+              reports</a> on your account page, with what becomes of it.
+            </p>
+          </div>
         </div>
 
         <!-- The account, asked for at the moment of sending and not
