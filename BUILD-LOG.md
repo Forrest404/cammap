@@ -108,14 +108,14 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | ACCT-6 | 3 | accounts | verified | f364f1f | matched by kind and position against the map's own whole-table read; no `camera_id` |
 | ACCT-3 | 3 | accounts | verified | 9112dcb | client-side passphrase (47 bits, `crypto.getRandomValues`), one card, prints alone via `body.printing-card`, required tick |
 | ACCT-2 | 3 | accounts | verified | 39416f2 | *migration 008, unapplied*; `delete_my_account()` deletes the caller from `auth.users` (cascade) and their proof objects; cameras from approved reports stay |
-| REP-1 | 4 | reporting | in-flight | | form for everyone, account at submit |
-| REP-6 | 4 | reporting | in-flight | | long-press / right-click on the map → report with pin |
-| REP-2 | 4 | reporting | in-flight | | *migration* likely; cell check without leaking who |
-| REP-4 | 4 | reporting | in-flight | | up to three photos |
-| REP-5 | 4 | reporting | in-flight | | decision recorded in NOTES; QUESTIONS default is refuse video |
-| REP-3 | 4 | reporting | in-flight | | Your reports, paginated |
-| REP-8 | 4 | reporting | in-flight | | receipt id |
-| REP-7 | 4 | reporting | in-flight | | publish `xp_rules` on leaderboard |
+| REP-1 | 4 | reporting | merged | 3cda953 | form for everyone; draft held in memory and sessionStorage; account asked at Send, in place, with the recovery card |
+| REP-6 | 4 | reporting | merged | c6c540c | right-click on the canvas only, 600 ms long-press on touch; `report.html?lat=&lon=` places the pin |
+| REP-2 | 4 | reporting | merged | f2158c2 | *migration 009, unapplied*; `pending_near(lat, lon)` → `(found, days_ago)`, granted to anon; count and identity withheld |
+| REP-4 | 4 | reporting | merged | 5f4cfd7 | up to three, stripped at choose time, sent one by one; partial failure retried without re-choosing |
+| REP-5 | 4 | reporting | merged | 22708c6 | *migration 010, unapplied*; video refused in the form, the `mime` check and the bucket; NOT VALID if old rows exist |
+| REP-3 | 4 | reporting | merged | 906b96c | Your reports, paged with `makePager()`; `#report-<id>` lights a row |
+| REP-8 | 4 | reporting | merged | 542c42d | receipt with the id, copyable, kept in sessionStorage for the sitting |
+| REP-7 | 4 | reporting | merged | 7b59a3e | `xp_rules` rendered on the leaderboard in words; never a typed number |
 | WORD-3 | 4 | words | merged | 2a78770 | `id` per post, `<time datetime>`, a permalink; the rule in the template comment |
 | WORD-4 | 4 | words | merged | 475e9f2 | Atom `feed.xml` with tag-URI ids, linked from all nine heads; W3C validation after a push |
 | WORD-1 | 4 | words | merged | 09c02d5 | About in five sections drawn from NOTES and the record; no count typed; no names |
@@ -137,8 +137,8 @@ the source gives**, and MAP-4 filters by period overlap. Recorded in `QUESTIONS.
 | Status | Count |
 | --- | --- |
 | todo | 9 |
-| in-flight | 8 |
-| merged | 4 |
+| in-flight | 0 |
+| merged | 12 |
 | verified | 37 |
 | blocked | 0 |
 | dropped | 0 |
@@ -225,3 +225,14 @@ schema plus 007–008 dumped identical to fresh. Observations carried forward: t
 line "Since marked no longer in use" cannot know the shop was already legacy when starred
 (→ Wave 4 reporting agent, account.js); a stray leading space in `printCard()`'s className.
 Totals after Wave 3: 37 verified, 21 to go.
+
+**Wave 4 merge note (2026-09-07).** The words and reporting branches shared five files by
+design; git merged them without conflict and the orchestrator checked each by hand: on
+`report.html`, `account.html` and `leaderboard.html` the nav equals the words branch's, the
+body equals the reporting branch's, and the head is the reporting branch's plus the feed
+link; `style.css` carries both blocks; `NOTES.md` both sections. The two `sessionStorage`
+keys the reporting agent left as constants were moved into `STORAGE` at the merge. Two
+things for later waves: `pending_near()` carries a fourth copy of the London box (a cost
+guard, not a lock) that `stamp.py`'s bounds check does not read — the Wave 6 city agent
+folds it into KEEP-6; and the nav now shows "Report a camera" to a signed-out visitor
+(`renderNav()`), a one-line revert if unwanted.

@@ -62,8 +62,13 @@ index.html          the map. At the root, because that is what a web
 404.html            what Pages serves for any missing address, at any
                     depth - so it carries a <base href="/cammap/"> and
                     no account.js, whose path guess is wrong there. In
-                    stamp.py's page set like the others: eight pages now.
-pages/              about, blog, account, report, moderate, leaderboard
+                    stamp.py's page set like the others: nine pages now.
+pages/              about, blog, rights, account, report, moderate,
+                    leaderboard. A new page copies rights.html's head, nav
+                    and footer exactly; stamp.py holds it to them.
+feed.xml            Atom, hand-maintained: a new post is a new <entry> and
+                    the feed's <updated> moved to it. The recipe is in the
+                    template comment in pages/blog.html.
 frontend/shared.js  what the other files must agree on: camera types,
                     London bounds, the base styles and the dark lift
 frontend/map.js     the map: layers, glow, the list, edit mode
@@ -107,9 +112,10 @@ With no build step there are no partials, so four things are written out once
 per page. Changing one copy and not the others is the easiest mistake to make
 here, and the least visible.
 
-| Copied on all 8 pages | If you change it |
+| Copied on all 9 pages | If you change it |
 | --- | --- |
-| `<nav class="bar">` | edit all 8 — `stamp.py` **fails** if they drift |
+| `<nav class="bar">` | edit all 9 — `stamp.py` **fails** if they drift |
+| The feed `<link>` in every `<head>` | same — nine copies, relative path per page |
 | `<footer class="foot">` | same — `stamp.py` **fails** if they drift |
 | The `<meta>` Content-Security-Policy | same — `stamp.py` **fails** if they drift |
 | `<script>` tags for shared.js / account.js | same, plus add to `OWN` in `stamp.py` |
@@ -138,7 +144,7 @@ What it allows out, and why:
 - `style-src 'unsafe-inline'` — the swatches and the legend are coloured from
   `CAMERA_TYPES` by setting `style.background`, which is an inline style.
 
-Adding an outbound call means adding its host here too, on all eight pages, or
+Adding an outbound call means adding its host here too, on all nine pages, or
 it fails silently with only a console warning.
 
 ## Traps
@@ -148,9 +154,10 @@ Things that look like they would work and do not:
 - **Camera colours are not in `style.css`.** There were six `--t-*` variables
   holding a second copy; nothing read them, so editing them changed nothing.
   They are gone. `CAMERA_TYPES` in `shared.js` is the only copy.
-- **`localStorage` keys are in `STORAGE` in `shared.js`,** not written inline.
-  Four files touch the camera cache; a half-updated string does not error, it
-  just silently stops finding the cache.
+- **`localStorage` keys are in `STORAGE` in `shared.js`,** not written inline,
+  and so are the two `sessionStorage` keys the report form uses. Four files
+  touch the camera cache; a half-updated string does not error, it just
+  silently stops finding the cache.
 - **`flyTo` will not appear to work in a headless or backgrounded tab.**
   MapLibre advances camera flights on `requestAnimationFrame`, which a hidden
   tab does not run. `jumpTo` does work. This is an artifact of the harness, not
@@ -199,8 +206,9 @@ Things that look like they would work and do not:
   Fetch a column a migration adds on its own until the migration is run;
   `loadLeaderboardSwitch()` in `account.js` is the example. Putting it beside
   `role` would cost a moderator their Moderate link.
-- **`body.printing-card` prints the recovery card alone.** Set only around
-  the account page's Print button; never on another page.
+- **`body.printing-card` prints the recovery card alone.** Set only around a
+  *Print this card* button — on the account page and the report page, which
+  carries the same card with the same ids.
 
 ## Things that must not drift apart
 
@@ -251,6 +259,16 @@ Things that look like they would work and do not:
   remake `img/share.png` when the count moves.
 - **`metresBetween()` in `account.js` and `metres_between` in `schema.sql`**
   are twins — same formula, same radius. Change one, change the other.
+- **The account forms' ids** (`#new-username`, `#signup-button`, `#recovery`
+  and the rest) are written out on `account.html` and `report.html` and
+  wired once by `setUpAccountForms()`; rename one on both pages or the other
+  page's sign-up stops.
+- **`report_proof.mime` and the `proof` bucket's `allowed_mime_types`** hold
+  the same three photo types (schema version 2.12); video is refused in
+  `prepareProof()` for the reason in NOTES.md "The reporting loop".
+- **A blog post is three edits:** the `<article>` with its `id` and
+  `<time>`, an `<entry>` in `feed.xml`, and the blog's `lastmod` in
+  `sitemap.xml`. The id never changes once published.
 - **Every moderating action on a camera writes `moderation_log`** through its
   `actor`; a new `moderate_` function must too. Bulk actions call the
   per-report function once per row — there is deliberately no server
@@ -292,8 +310,11 @@ Every moderating action is gated on the server. A page hiding itself from a
 non-moderator is a courtesy, never the lock.
 
 Every account call the browser can make acts on the caller and answers
-nothing: `set_leaderboard_visibility`, `delete_my_account`. A new one that
-takes a username or an email as input is a decision for the maintainer, not
+nothing: `set_leaderboard_visibility`, `delete_my_account`. The one call open
+to a stranger, `pending_near(lat, lon)`, takes coordinates and answers only
+whether a report is waiting near a spot and how old it is — what the map
+would show once it is approved. That is the line: a new call that takes a
+username or an email as input is a decision for the maintainer, not
 something to add.
 
 ## Checking your work
@@ -328,14 +349,9 @@ one layer per colour shown rather than two —
 map.getStyle().layers.filter(l => l.id.startsWith('cammap-heat')).length
 ```
 
-The report form only renders signed in. To exercise the picker without an
-account, show the form and call its setup directly from the console:
-
-```js
-document.getElementById('report-form').style.display = 'block';
-document.getElementById('report-new').style.display = 'block';
-setUpNewReport();
-```
+The report form is shown to everyone; the account is asked for when Send is
+pressed. `setUpNewReport()` runs on load whether or not anyone is signed in,
+so the picker can be exercised with no account and no console call.
 
 ## The comments
 

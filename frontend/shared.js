@@ -197,7 +197,13 @@ var STORAGE = {
   cameras:   "cammap.cameras",
   view:      "cammap.view",
   draft:     "cammap.draft",
-  explained: "cammap.explained"
+  explained: "cammap.explained",
+  /* The two below are sessionStorage, not localStorage: a report half
+     written and the receipt for the last one sent belong to this tab and
+     this sitting, not to the browser. Named here all the same, because
+     the rule is that every key the site writes is in this one table. */
+  reportDraft:   "cammap.report-draft",
+  reportReceipt: "cammap.report-receipt"
 };
 
 /* Throw the camera cache away. Called after anything that changes what

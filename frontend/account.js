@@ -2521,7 +2521,7 @@ var UPLOAD_FAILED = "The file could not be uploaded.";
    and on plain http), execCommand on the selected box where it does
    not, and where both fail the box is left selected so one keystroke
    finishes the job. */
-var REPORT_RECEIPT_KEY = "cammap.report-receipt";
+var REPORT_RECEIPT_KEY = STORAGE.reportReceipt;
 
 function keepReceipt(id) {
   try {
@@ -2771,7 +2771,7 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
    The key is written here rather than in STORAGE in shared.js, which
    is where it belongs beside the others; this wave does not edit
    that file, and the orchestrator moves it. */
-var REPORT_DRAFT_KEY = "cammap.report-draft";
+var REPORT_DRAFT_KEY = STORAGE.reportDraft;
 
 var pendingSend = null;   /* what Send would have done, waiting for an account */
 

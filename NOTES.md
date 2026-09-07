@@ -1389,6 +1389,12 @@ Judge changes to these by looking at the map, not by reading them.
 
 The satellite view uses Esri's World Imagery from the open tile endpoint, with attribution, which is allowed for non-commercial use. It is not guaranteed. If it stops, the toggle stops showing imagery and nothing else breaks; the whole of it is one block at the top of `frontend/map.js`.
 
+### Provenance and the record on the page
+
+*(Written by the Wave 5 record agent: the source line in the popup, how an
+approximate pin is drawn and why, the published-record notice, the CSV and
+GeoJSON downloads, the period scrubber, the read API, and the press page.)*
+
 ### The map as a tool
 
 The drawing was the strongest thing in the project. What it lacked was

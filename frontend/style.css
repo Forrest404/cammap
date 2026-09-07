@@ -2182,6 +2182,15 @@ article.post {
 }
 
 /* ------------------------------------------------------------------
+   THE RECORD (Wave 5: the record agent writes this block)
+
+   Rules for the popup's source line, the approximate marker's legend
+   entry, the published-record notice, the download line in the footer,
+   the period scrubber, and the press and API pages. If the agent needs
+   no rule here, this block is removed rather than left empty.
+   ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------
    PAPER
 
    What printing the map page gives you: the list, in one column,
