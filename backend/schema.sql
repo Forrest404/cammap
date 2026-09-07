@@ -2295,7 +2295,11 @@ drop function if exists public.username_available(text);
 -- needs of an approved report survives on the camera it made:
 -- source = 'report', approved_at, approved_by if a moderator did it,
 -- and the camera's rows in moderation_log. What is lost is the
--- report's note and picture, which were the person's.
+-- report's picture, which was the person's. Its name and note are
+-- not lost: approve_report copied them onto the camera as its own
+-- name and note, and nothing copies them back, so they stay on the
+-- map after the person has left. QUESTIONS.md item 15 keeps them;
+-- the report form and the delete box say so.
 --
 -- The username is released with the profile row - the unique index
 -- on lower(username) no longer holds it - so the two words may one

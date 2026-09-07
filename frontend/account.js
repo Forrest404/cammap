@@ -741,8 +741,11 @@ function changePassword(current, next, onDone) {
    schema.sql, version 2.10): the profile, every report, the proof
    rows and files, the XP and the saved list go; a camera that a
    report of theirs put on the map stays, with the date it was
-   approved and nothing about them. What a stranger learns by calling
-   it repeatedly: nothing.
+   approved and with the name and note the report gave it - those
+   became the camera's own when it was approved, and the delete box
+   and the form both say so. The account that sent the report is not
+   on the camera row. What a stranger learns by calling it
+   repeatedly: nothing.
 
    Afterwards the browser still holds a token for an account that
    does not exist, so it signs out locally - whatever the server says
@@ -818,7 +821,8 @@ function setUpDeleteAccount() {
       input.value = "";
       note.textContent = "";
       sayOnSignedOut("The account " + name + " is deleted, and with it its reports, " +
-        "XP and saved cameras. Cameras it put on the map are still there.");
+        "XP and saved cameras. Cameras it put on the map are still there, with the " +
+        "name and note the reports gave them.");
     });
   };
 }

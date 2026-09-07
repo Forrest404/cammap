@@ -184,6 +184,18 @@
           <input type="text" id="s-name" placeholder="e.g. outside Stratford station, east exit">
           <label for="s-note">Anything worth adding</label>
           <textarea id="s-note" placeholder="optional"></textarea>
+          <!-- approve_report copies these two fields onto the camera row
+               as its name and note, and nothing copies them back:
+               deleting the account deletes the report, not the camera.
+               Said here, before Send, because the delete box on the
+               account page once said the opposite. QUESTIONS.md item 15
+               is the decision to keep the words. -->
+          <p class="hint">
+            If the report is approved, these two become the camera's name
+            and note on the map, for everyone, and they stay there:
+            deleting your account later takes back the report, not the
+            words it put on the map.
+          </p>
 
           <!-- Up to three, because a moderator often needs a close shot
                and a wide one. Each is re-saved through a canvas the

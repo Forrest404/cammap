@@ -1989,7 +1989,7 @@ and will print with the list once it exists.
 
 ## Anonymity
 
-What the site keeps about a person: a username of two random words, a password hash, the reports they sent, their XP, and one setting - whether they appear on the leaderboard, which is true unless they turn it off. No email, no name, no IP address in any of our tables. All of it can be deleted from the account page, in one call, by the person it is about; what cannot be taken back is a camera their report put on the map, and the page says so before it asks.
+What the site keeps about a person: a username of two random words, a password hash, the reports they sent, their XP, and one setting - whether they appear on the leaderboard, which is true unless they turn it off. No email, no name, no IP address in any of our tables. All of it can be deleted from the account page, in one call, by the person it is about; what cannot be taken back is a camera their report put on the map, with the name and note the report gave it, and the account page says so before it asks - as does the report form, under the two fields, before Send.
 
 Three honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. A photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Video is not accepted at all, because the same data cannot be stripped from a video in the browser, and the page says why. And when an account is deleted, its proof files are made unreachable by deleting their rows in the storage table; whether Supabase clears the bytes behind them from the bucket's store at once is theirs to promise, not ours.
 
@@ -2158,7 +2158,19 @@ the moderator. The reports themselves go rather than staying with the
 person detached, because they are the little the site holds about a
 person - what they reported, where, when, with what photograph - and
 taking that back is the point of leaving; what is lost with them is the
-note and the picture, which were the person's. The username is released
+picture, which was the person's. The name and the note are not lost:
+`approve_report` copies a report's "Where is it?" and "Anything worth
+adding" onto the camera row as its name and note the moment it is
+approved, and nothing copies them back, so a person's own sentence
+stays on the map after they have left. The delete box used to say the
+camera kept "nothing about you"; the privacy pass caught it, and now
+the box says "with the name and note you gave it" and the report form
+says under the two fields what they become. Whether deletion should
+blank those words is QUESTIONS.md item 15; the decision taken is to
+keep them, like a letter printed in a newspaper, and say so plainly.
+The camera keeps no trace of the account that reported it - the
+report row carried the user id, and it is gone - but it keeps the
+words, whatever the person put in them. The username is released
 with the profile row, so the two words may one day be drawn again for
 someone else; nothing would connect them, and a leaderboard row up to
 five minutes old names an account that no longer exists. Afterwards the
