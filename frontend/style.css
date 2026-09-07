@@ -1896,6 +1896,17 @@ details.explain strong {
   margin: 12px 0 0 0;
 }
 
+/* ---------- "someone reported this corner" ----------
+
+   The duplicate sentence, under the picker's hint. A .note reserves
+   a line and has no margin below, which is right for a note under a
+   button and wrong for a sentence with another hint after it; when
+   it has something to say it takes a gap, and when it has nothing
+   it takes the one line and no more. */
+#pick-dup:not(:empty) {
+  margin-bottom: 10px;
+}
+
 /* ------------------------------------------------------------------
    THE WORDS (Wave 4: the words agent writes this block)
 

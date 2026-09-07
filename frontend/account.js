@@ -2179,7 +2179,19 @@ function reportProblem(error) {
   if (code === "23514") {
     return "That is outside London. This map covers Greater London only.";
   }
+  /* Two unique indexes can refuse a report, and they mean different
+     things to the person: one pending new-camera report per person
+     per corner, and one state report per person per camera, ever.
+     The index is named in the message, so each gets its own
+     sentence rather than the one that used to cover both. */
   if (code === "23505") {
+    if (/reports_one_new_per_cell_idx/.test(msg)) {
+      return "You already have a report waiting at this spot. One pending report per person per corner; " +
+        "once it is decided you can send another.";
+    }
+    if (/reports_one_status_per_camera_idx/.test(msg)) {
+      return "You have already reported this camera's state: one report per person per camera.";
+    }
     return "You have already reported this one.";
   }
   if (/rate/i.test(msg) || code === "P0001" && /rate/i.test(msg)) {
@@ -2214,6 +2226,128 @@ function xpLine(key) {
   return typeof xpRules[key] === "number"
     ? "Worth " + xpRules[key] + " XP once it is confirmed."
     : "";
+}
+
+/* ---------------- a report already waiting here? ----------------
+
+   The database refuses a person's second pending report in the same
+   cell, and a camera approves itself once enough different people
+   have reported it; neither told the reporter anything until Send,
+   after the typing and the photograph. So as the pin lands - the
+   picker's move event, settled for half a second so that a drag
+   across the map is one question and not sixty - the form asks
+   pending_near(lat, lon) whether a new-camera report is already
+   waiting within the auto-approve radius of that spot, and how many
+   days ago the newest was sent. The answer is those two fields and
+   nothing else: schema.sql (version 2.11) says what a stranger
+   learns from it and why the count is withheld. A plain select on
+   reports could not answer this and must not: the read policy shows
+   a person their own rows and a moderator everyone's, which is what
+   keeps who-reported-what from anyone else, and the function is the
+   one narrow window through it.
+
+   What the sentence does with the answer: it says a report is
+   waiting, and invites this one, because the auto-approve threshold
+   is what turns strangers agreeing into a camera on the map without
+   a moderator - and the threshold is public (settings: read), so it
+   is quoted rather than left as "enough". The kind is the catch: the
+   function does not take one, on purpose (asking per kind would be a
+   finer probe for nothing the sentence needs), so the sentence says
+   "the same kind of camera" and leaves the kind to the person. A
+   refused call - the migration not yet run, the network gone - shows
+   nothing, which is what the page showed before there was a
+   sentence; a courtesy that cannot be given is not an error. */
+var DUP_CHECK_DELAY = 500;
+
+/* settings.auto_approve_users, fetched once for the sentence; null
+   until it is known, and the sentence says "enough people" then. */
+var autoApproveUsers = null;
+
+function loadThreshold() {
+  sb.from("settings").select("auto_approve_users").eq("id", 1).single()
+    .then(function (result) {
+      if (!result.error && result.data && typeof result.data.auto_approve_users === "number") {
+        autoApproveUsers = result.data.auto_approve_users;
+      }
+    })
+    .catch(function () {
+      /* the sentence goes on saying "enough people" */
+    });
+}
+
+function daysAgoWords(days) {
+  if (days === 0) {
+    return "today";
+  }
+  if (days === 1) {
+    return "yesterday";
+  }
+  return days + " days ago";
+}
+
+function duplicateSentence(daysAgo) {
+  var people = autoApproveUsers === null ? "enough people" : autoApproveUsers + " people";
+
+  return "Someone reported this corner " + daysAgoWords(daysAgo) + " and it is waiting to be checked. " +
+    "Adding yours helps it through: " + people + " reporting the same kind of camera here " +
+    "puts it on the map without a moderator.";
+}
+
+/* The check, with its debounce and its live line. at(lat, lon) is
+   called on every move; only the position that stands after
+   DUP_CHECK_DELAY of quiet is asked about, and an answer to an
+   earlier question that arrives after a later one was asked is
+   dropped, so the line never describes a spot the pin has left. */
+function makeDuplicateCheck(line) {
+  var timer = null;
+  var asked = 0;
+
+  function say(text) {
+    if (line) {
+      line.textContent = text;
+    }
+  }
+
+  function ask(lat, lon) {
+    var mine = ++asked;
+
+    sb.rpc("pending_near", { lat: lat, lon: lon }).then(function (result) {
+      var row = result.data && result.data[0];
+
+      if (mine !== asked) {
+        return;
+      }
+      if (result.error || !row || !row.found) {
+        say("");
+        return;
+      }
+      say(duplicateSentence(typeof row.days_ago === "number" ? row.days_ago : 0));
+    }).catch(function () {
+      if (mine === asked) {
+        say("");
+      }
+    });
+  }
+
+  return {
+    at: function (lat, lon) {
+      window.clearTimeout(timer);
+      if (typeof lat !== "number" || typeof lon !== "number" ||
+          isNaN(lat) || isNaN(lon) || !inLondon(lat, lon)) {
+        asked++;
+        say("");
+        return;
+      }
+      timer = window.setTimeout(function () {
+        ask(lat, lon);
+      }, DUP_CHECK_DELAY);
+    },
+    clear: function () {
+      window.clearTimeout(timer);
+      asked++;
+      say("");
+    }
+  };
 }
 
 /* A position in the address: report.html?lat=51.5&lon=-0.1, which is
@@ -2372,8 +2506,10 @@ function setUpNewReport(startAt) {
   var draftNote = document.getElementById("draft-note");
   var draft     = readDraft();
   var opening   = null;   /* where the pin starts, if anywhere */
+  var dup       = makeDuplicateCheck(document.getElementById("pick-dup"));
 
   fillTypeSelect(typeSel, "fixedcam");
+  loadThreshold();
 
   function showXp() {
     xpNote.textContent = xpLine("new_" + typeSel.value);
@@ -2408,6 +2544,7 @@ function setUpNewReport(startAt) {
   if (opening) {
     latIn.value = opening.lat.toFixed(6);
     lonIn.value = opening.lon.toFixed(6);
+    dup.at(opening.lat, opening.lon);
   }
 
   /* ---------------- the map and the two boxes ----------------
@@ -2416,7 +2553,8 @@ function setUpNewReport(startAt) {
      writes the numbers; typing numbers moves the pin. The guard below
      stops the two from talking each other in circles - without it,
      writing the boxes from a drag fires the input handler, which
-     moves the pin, which fires drag again. */
+     moves the pin, which fires drag again. Either way the pin moves,
+     the duplicate check is told where it is now. */
   var syncing = false;
 
   var picker = typeof makePicker === "function" ? makePicker({
@@ -2430,6 +2568,7 @@ function setUpNewReport(startAt) {
       lonIn.value = lon.toFixed(6);
       syncing = false;
       note.textContent = "";
+      dup.at(lat, lon);
     }
   }) : null;
 
@@ -2439,6 +2578,9 @@ function setUpNewReport(startAt) {
 
     if (picker && !syncing && !isNaN(lat) && !isNaN(lon)) {
       picker.setPoint(lat, lon, fly);
+    }
+    if (!syncing) {
+      dup.at(lat, lon);
     }
   }
 
@@ -2557,6 +2699,7 @@ function setUpNewReport(startAt) {
             button.disabled = false;
             latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
             proofIn.value = ""; locNote.textContent = ""; draftNote.textContent = "";
+            dup.clear();
             forgetDraft();
             note.textContent = uploadProblem
               ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)

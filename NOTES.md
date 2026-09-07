@@ -758,6 +758,62 @@ and its `defaultPrevented` is true; a synthetic right-click on a nav
 link is not prevented; a 600 ms touch with no movement opens the
 popup; a touch that moves 30 px and lifts opens nothing.
 
+**The duplicate check, and what it does not say.** The database
+refuses a person's second pending new-camera report in the same
+0.0001° cell, and a camera approves itself once enough *different*
+people have reported it within the auto-approve radius; the
+reporter learned neither until Send, after the typing and the
+photograph. Now, as the pin lands - the picker's move event,
+settled for half a second so a drag across the map is one question
+and not sixty - the form asks `pending_near(lat, lon)` (migration
+009, schema version 2.11) whether a new-camera report is waiting
+within the radius and how many days ago the newest was sent, and
+says so under the map: "Someone reported this corner two days ago
+and it is waiting to be checked. Adding yours helps it through: 3
+people reporting the same kind of camera here puts it on the map
+without a moderator." The threshold is quoted from `settings`,
+which is public, rather than written as "enough". The sentence sits
+in a live region so a screen reader hears it arrive.
+
+Why a function: the reports read policy shows a person their own
+rows and a moderator everyone's, and that is right - it is what
+keeps who-reported-what from anyone else. A plain select from the
+form could therefore never see another person's pending report,
+which is exactly the one the question is about; the function is a
+`security definer` window through the policy that answers two
+fields. What a stranger learns by calling it repeatedly: whether a
+new-camera report is waiting within about a hundred metres of any
+point in London, and how many days ago the newest was sent. Not
+who, not how many, not its kind, note or exact position. That is
+the same thing the map would show at that spot once the report is
+approved, minus the position, and it says nothing about any
+account - which is why it is acceptable, and why it is granted to
+`anon` as well, since the signed-out visitor is filling the form
+now. What is withheld and why: the count, because the sentence has
+no use for it and a count is a finer instrument than a flag -
+watched over time it would say when each report arrived, one by
+one; and the exact time, rounded to whole days for the same reason.
+Coordinates in, two fields out, no identity anywhere: that is the
+line CLAUDE.md draws for every call the browser may make. The kind
+is not taken either - a per-kind probe would be finer for nothing
+the sentence needs - so the sentence says "the same kind of camera"
+and leaves the kind to the person. The column is `found`, not
+`exists`, because `exists` is a keyword that would need quoting
+wherever it is read. Where the migration has not been run, or the
+network is gone, the line stays empty, which is what the page
+showed before there was a line.
+
+The refusal that still happens - a person's own earlier pending
+report in the same cell - is reworded from "You have already
+reported this one" to "You already have a report waiting at this
+spot", and told apart from the one-state-report-per-camera refusal
+by the index named in the error. Proved on a throwaway PostgreSQL:
+anon and a signed-in user get `(true, 2)` beside another person's
+two-day-old report and `(false, null)` elsewhere and outside London;
+anon's plain select on reports is refused; a user's second pending
+report in a cell raises on `reports_one_new_per_cell_idx` while
+another person's at the same spot is accepted.
+
 ### Moderating at scale
 
 The moderation page was built for a queue of a dozen and will be used,

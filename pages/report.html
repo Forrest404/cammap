@@ -318,6 +318,12 @@
               Zoom in as far as it goes &mdash; the closer the pin, the
               less a moderator has to guess.
             </p>
+            <!-- "Someone reported this corner two days ago", when the
+                 database says so as the pin lands (pending_near, in
+                 schema.sql). Empty otherwise. A live region, so a
+                 screen reader hears it arrive without leaving the
+                 map. -->
+            <p class="note" id="pick-dup" role="status"></p>
             <p class="hint">
               Have coordinates from somewhere else? Type them into the
               two boxes opposite and the pin will move to them.
