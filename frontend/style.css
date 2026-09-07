@@ -1859,13 +1859,42 @@ details.explain strong {
 }
 
 /* ------------------------------------------------------------------
-   REPORTING (Wave 4: the reporting agent writes this block)
+   REPORTING
 
-   Rules for the report form open to everyone, the duplicate notice,
-   the three-photo picker, the Your reports list, the receipt, and the
-   XP table on the leaderboard. If the agent needs no rule here, this
-   block is removed rather than left empty.
+   The reporting loop, closed at both ends. The report form is open
+   to everyone and asks for an account at the moment of sending; a
+   report says what it is worth before it is written, warns about a
+   duplicate before it is filled in, takes three photographs, is
+   listed afterwards with what became of it, and hands back a
+   receipt. What is here is only what those need from the
+   stylesheet that the FORMS, ACCOUNTS and queue rules do not
+   already give them. The long version is "The reporting loop" in
+   NOTES.md.
    ------------------------------------------------------------------ */
+
+/* ---------- the account, asked for under the form ----------
+
+   The account page's two boxes, brought under the form and shown
+   only when Send is pressed by someone signed out. Set off above by
+   a rule in the accent rather than put in a box of its own: it is
+   the answer to the button just pressed, and the one thing on the
+   page waiting on the person, the way .confirm is on the account
+   page. It takes focus by script when it appears (tabindex -1), so
+   the outline that would draw on a focused block is taken off - the
+   ring is for the keyboard, and the boxes inside keep theirs. */
+.report-account {
+  margin: 0 0 16px 0;
+  padding: 14px 0 0 0;
+  border-top: 1px solid var(--accent);
+}
+
+.report-account:focus {
+  outline: none;
+}
+
+.report-account .account-forms {
+  margin: 12px 0 0 0;
+}
 
 /* ------------------------------------------------------------------
    THE WORDS (Wave 4: the words agent writes this block)

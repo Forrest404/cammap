@@ -323,14 +323,20 @@ function renderNav() {
   navAccount.appendChild(navSeparator());
   navAccount.appendChild(navLink(pageHref("leaderboard.html"), "Leaderboard", PAGE === "leaderboard.html"));
 
+  /* The report form is everyone's too, since the account is asked
+     for at the moment of sending and not before (see "The report
+     page", below). The link used to appear only once someone was
+     signed in, which meant the people the form is for - someone who
+     has just seen a van and has no account - never saw the way to
+     it. */
+  navAccount.appendChild(navSeparator());
+  navAccount.appendChild(navLink(pageHref("report.html"), "Report a camera", PAGE === "report.html"));
+
   if (!currentUser) {
     navAccount.appendChild(navSeparator());
     navAccount.appendChild(navLink(pageHref("account.html"), "Account", PAGE === "account.html"));
     return;
   }
-
-  navAccount.appendChild(navSeparator());
-  navAccount.appendChild(navLink(pageHref("report.html"), "Report a camera", PAGE === "report.html"));
 
   if (isModerator()) {
     navAccount.appendChild(navSeparator());
@@ -612,16 +618,23 @@ function forgetSession() {
     message.textContent = "";
   }
 
-  /* The report page is no use signed out, and neither is the signed
-     in half of the account page, so leave for the map. Everywhere
-     else can stay where it is and just redraw. */
-  if (PAGE === "report.html" || PAGE === "moderate.html") {
+  /* The moderation page is no use signed out, so leave it for the
+     map. The report page used to go the same way and no longer does:
+     the form is everyone's now, and a person who signs out while
+     filling it in keeps what they have filled in. Everywhere else
+     can stay where it is and just redraw. */
+  if (PAGE === "moderate.html") {
     window.location.href = pageHref("index.html");
     return;
   }
 
   if (PAGE === "account.html") {
     showAccountPage();
+    return;
+  }
+
+  if (PAGE === "report.html") {
+    reportSignedOut();
     return;
   }
 
@@ -1726,6 +1739,46 @@ function setUpEverywhere() {
 }
 
 function setUpAccountPage() {
+  setUpLeaderboardSwitch();
+  setUpRecoveryCard();
+  showAccountPage();
+  setUpChangePassword();
+  setUpEverywhere();
+  setUpDeleteAccount();
+
+  setUpAccountForms({
+    signedUp: function (finalName, password) {
+      offerCard(finalName, password,
+        "The account is made. This is the last time the password is shown: " +
+        "it cannot be reset, and after this page it is never shown again. " +
+        "If you did not keep the card a moment ago, keep it now.");
+      showAccountPage();
+    },
+    signedIn: function () {
+      showAccountPage();
+    }
+  });
+}
+
+/* ---------------- the two boxes: make an account, sign back in ----------------
+
+   Wired once here for both pages that carry them. They were the
+   account page's alone until the report form opened to everyone and
+   needed the same two boxes at the moment of sending - the same
+   generated username, the same passphrase button, the same card and
+   the same tick - and two copies of this wiring would be two places
+   for the sign-up rule to drift apart. The markup is written out on
+   each page with the same ids, the way the nav is, so this finds it
+   wherever it is.
+
+   `hooks.signedUp(finalName, password)` is called once an account is
+   made, with the name actually claimed (the shown one may have been
+   taken in the moment between being shown and being sent) and the
+   password, which is the caller's to put on the card and then
+   forget; `hooks.signedIn()` after a sign-in. Neither page does the
+   same thing next, which is the whole of the difference between
+   them. */
+function setUpAccountForms(hooks) {
   var shown      = document.getElementById("new-username");
   var reroll     = document.getElementById("reroll-button");
   var newPw      = document.getElementById("new-password");
@@ -1740,13 +1793,6 @@ function setUpAccountPage() {
 
   var passphrase = document.getElementById("passphrase-button");
   var tick       = document.getElementById("saved-tick");
-
-  setUpLeaderboardSwitch();
-  setUpRecoveryCard();
-  showAccountPage();
-  setUpChangePassword();
-  setUpEverywhere();
-  setUpDeleteAccount();
 
   if (!signupBtn || !signinBtn) {
     return;
@@ -1832,11 +1878,7 @@ function setUpAccountPage() {
       newPw.value = "";
       newPw2.value = "";
       signupNote.textContent = "";
-      offerCard(finalName, password,
-        "The account is made. This is the last time the password is shown: " +
-        "it cannot be reset, and after this page it is never shown again. " +
-        "If you did not keep the card a moment ago, keep it now.");
-      showAccountPage();
+      hooks.signedUp(finalName, password);
     });
   };
 
@@ -1864,7 +1906,7 @@ function setUpAccountPage() {
       inName.value = "";
       inPw.value = "";
       signinNote.textContent = "";
-      showAccountPage();
+      hooks.signedIn();
     });
   };
 
@@ -1990,7 +2032,141 @@ function uploadProof(reportId, blob, mime, ext, onDone) {
    Two forms on one page. ?camera=<id> in the address means "report
    the state of this camera", otherwise it is "report a camera the map
    does not have". Both go into the reports table; the database
-   decides whether enough people agree for it to count on its own. */
+   decides whether enough people agree for it to count on its own.
+
+   For everyone, signed in or not. The page used to put a wall in
+   front of the form: signed out it showed one sentence and a link to
+   the account page, and hid the map, the crosshair and the photo
+   picker behind it. That order lost the people the form is for. Most
+   people who have just seen a van will never make an account first -
+   they do not yet know what is being asked, or that it is only two
+   words and a password - and by the time the account page had
+   explained it they had left. So the whole form is shown to anyone,
+   and the account is asked for at the one moment it is needed, when
+   Send is pressed, in the account page's own two boxes brought onto
+   this page under the form. What was filled in stays filled in; the
+   report goes the instant an account exists, with nothing retyped.
+
+   The lock did not move. The reports insert policy needs
+   auth.uid() = user_id, so nothing here could send a report from
+   nobody however the page were arranged; showing the form was only
+   ever a courtesy withheld. */
+
+/* ---------------- the draft, and the account asked for at the end ----------------
+
+   Where the draft lives, and why in two places.
+
+   In memory first. When Send is pressed by someone signed out, the
+   values are read off the form as they would be for a send, the
+   photo is prepared as it would be for a send, and the function that
+   would have sent them is kept in pendingSend - to be called the
+   moment an account exists. So the report goes exactly as it stood,
+   and the person types nothing twice. This path is whole on its own;
+   nothing below depends on storage.
+
+   And in sessionStorage as well: the pin, the kind, the name and the
+   note, so that a reload in the middle of signing up - a phone that
+   reloads a tab it put in the background, a mis-tap on the address
+   bar - does not lose them. Session storage rather than local,
+   because a draft is for this visit: a report half-written on a
+   shared machine should not greet the next person to open the page.
+   A photo cannot survive a reload - a blob is not something storage
+   holds at that size, and a file input cannot be refilled by script -
+   so the line that puts a draft back says the photo needs choosing
+   again. Storage may be refused outright, and every touch of it is
+   wrapped; refused, the in-memory path is all there is, and it is
+   enough.
+
+   The key is written here rather than in STORAGE in shared.js, which
+   is where it belongs beside the others; this wave does not edit
+   that file, and the orchestrator moves it. */
+var REPORT_DRAFT_KEY = "cammap.report-draft";
+
+var pendingSend = null;   /* what Send would have done, waiting for an account */
+
+function keepDraft(draft) {
+  try {
+    window.sessionStorage.setItem(REPORT_DRAFT_KEY, JSON.stringify(draft));
+  } catch (err) {
+    /* storage refused; the draft is still held in memory */
+  }
+}
+
+function readDraft() {
+  var raw;
+
+  try {
+    raw = window.sessionStorage.getItem(REPORT_DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function forgetDraft() {
+  try {
+    window.sessionStorage.removeItem(REPORT_DRAFT_KEY);
+  } catch (err) {
+    /* nothing to forget */
+  }
+}
+
+/* Send was pressed by someone signed out: hold what it would have
+   done and show the two account boxes under the form. Focus goes to
+   the block so a keyboard or screen-reader user lands on the question
+   rather than on a form that appears not to have answered. The
+   block's top is scrolled into view first and the focus asked not to
+   scroll: on a phone the block is taller than the screen, and a bare
+   focus() lands the view partway down it, with the heading that says
+   what has happened above the top edge. Older browsers ignore the
+   option and scroll as they always did, which is the same place near
+   enough. */
+function askForAccount(send) {
+  var block = document.getElementById("report-account");
+
+  pendingSend = send;
+  if (!block) {
+    return;
+  }
+  block.style.display = "block";
+  if (block.scrollIntoView) {
+    block.scrollIntoView(true);
+  }
+  block.focus({ preventScroll: true });
+}
+
+/* An account arrived - made or signed into, in the boxes on this
+   page - so the held send goes now. The boxes are put away first:
+   they were there for one reason and it is answered. */
+function accountArrived() {
+  var block = document.getElementById("report-account");
+  var go = pendingSend;
+
+  pendingSend = null;
+  if (block) {
+    block.style.display = "none";
+  }
+  if (go) {
+    go();
+  }
+}
+
+/* The session ended on this page - Log out in the nav. The form
+   keeps what is in it; a send that was waiting for an account is
+   forgotten, since the account it was waiting for has gone; and the
+   recovery card, if it is still out, is put away so a password is
+   not left on the screen. */
+function reportSignedOut() {
+  var block = document.getElementById("report-account");
+
+  pendingSend = null;
+  if (cardMode === "after") {
+    putCardAway();
+  }
+  if (block) {
+    block.style.display = "none";
+  }
+}
 
 /* The London box is inLondon() in frontend/shared.js, shared with the
    map so the two cannot come to disagree about where London ends.
@@ -2040,37 +2216,97 @@ function xpLine(key) {
     : "";
 }
 
+/* A position in the address: report.html?lat=51.5&lon=-0.1, which is
+   what "Report a camera here" on the map page links to. Six decimals
+   is what the map writes; anything that parses and is in London is
+   taken, anything else is ignored and the form opens as usual. */
+function startAtFromQuery() {
+  var mLat = /[?&]lat=(-?\d+(?:\.\d+)?)/.exec(window.location.search);
+  var mLon = /[?&]lon=(-?\d+(?:\.\d+)?)/.exec(window.location.search);
+  var lat;
+  var lon;
+
+  if (!mLat || !mLon) {
+    return null;
+  }
+  lat = parseFloat(mLat[1]);
+  lon = parseFloat(mLon[1]);
+  if (isNaN(lat) || isNaN(lon) || !inLondon(lat, lon)) {
+    return null;
+  }
+  return { lat: lat, lon: lon };
+}
+
 function setUpReportPage() {
-  var form   = document.getElementById("report-form");
-  var locked = document.getElementById("report-locked");
-  var newBox = document.getElementById("report-new");
-  var stBox  = document.getElementById("report-status");
-  var title  = document.getElementById("report-title");
+  var form        = document.getElementById("report-form");
+  var unavailable = document.getElementById("report-unavailable");
+  var newBox      = document.getElementById("report-new");
+  var stBox       = document.getElementById("report-status");
+  var title       = document.getElementById("report-title");
+  var account     = document.getElementById("report-account");
+  var cardBox     = document.getElementById("recovery-after");
+  var main;
 
   var cameraId = (function () {
     var m = /[?&]camera=(\d+)/.exec(window.location.search);
     return m ? Number(m[1]) : null;
   })();
 
-  if (!form || !locked) {
+  if (!form) {
     return;
   }
 
-  form.style.display   = currentUser ? "block" : "none";
-  locked.style.display = currentUser ? "none" : "block";
-
-  if (!currentUser) {
+  /* No Supabase behind this copy of the site: the form would take a
+     report with nowhere to send it, so it stays hidden and the line
+     above says why. */
+  if (!configured) {
+    if (unavailable) {
+      unavailable.style.display = "block";
+    }
     return;
   }
 
+  form.style.display   = "block";
   newBox.style.display = cameraId ? "none" : "block";
   stBox.style.display  = cameraId ? "block" : "none";
+
+  /* The account boxes and the card box are written once, in the
+     new-camera form's column; a state report is the other form, so
+     they are moved under that one instead. Under the form, not
+     above it: they answer a Send that was just pressed, and that is
+     where the person is looking. */
+  if (cameraId && account && cardBox) {
+    main = stBox.querySelector(".report-main");
+    if (main) {
+      main.appendChild(cardBox);
+      main.appendChild(account);
+    }
+  }
+
+  /* The account page's own two boxes, wired the same way. After a
+     sign-up the recovery card is offered as it is there, and then
+     the held report goes; after a sign-in it just goes. */
+  setUpRecoveryCard();
+  setUpAccountForms({
+    signedUp: function (finalName, password) {
+      offerCard(finalName, password,
+        "The account is made" + (pendingSend ? " and your report is being sent" : "") +
+        ". This is the last time the password is shown: it cannot be reset, and after " +
+        "this page it is never shown again. Keep the card now, then tick the box.");
+      if (cardBox) {
+        cardBox.setAttribute("tabindex", "-1");
+        cardBox.focus();
+      }
+      accountArrived();
+    },
+    signedIn: accountArrived
+  });
 
   loadXpRules(function () {
     if (cameraId) {
       setUpStatusReport(cameraId);
     } else {
-      setUpNewReport();
+      setUpNewReport(startAtFromQuery());
     }
   });
 
@@ -2121,7 +2357,7 @@ function contextCameras(onDone) {
     });
 }
 
-function setUpNewReport() {
+function setUpNewReport(startAt) {
   var typeSel   = document.getElementById("s-type");
   var xpNote    = document.getElementById("s-xp");
   var latIn     = document.getElementById("s-lat");
@@ -2133,6 +2369,9 @@ function setUpNewReport() {
   var proofIn   = document.getElementById("s-proof");
   var button    = document.getElementById("submit-button");
   var note      = document.getElementById("submit-note");
+  var draftNote = document.getElementById("draft-note");
+  var draft     = readDraft();
+  var opening   = null;   /* where the pin starts, if anywhere */
 
   fillTypeSelect(typeSel, "fixedcam");
 
@@ -2141,6 +2380,35 @@ function setUpNewReport() {
   }
   typeSel.onchange = showXp;
   showXp();
+
+  /* What was in the form before a reload, put back. Only a draft of
+     this form: one left by a state report is that form's. The line
+     says so, and says the photo needs choosing again, which is the
+     one thing storage could not keep. */
+  if (draft && draft.kind === "new") {
+    if (typeOf(draft.type)) {
+      typeSel.value = draft.type;
+      showXp();
+    }
+    if (typeof draft.lat === "number" && typeof draft.lon === "number") {
+      opening = { lat: draft.lat, lon: draft.lon };
+    }
+    nameIn.value = draft.name || "";
+    noteIn.value = draft.note || "";
+    draftNote.textContent = "What you filled in before is back in the form" +
+      (draft.photos ? ", except the photo, which needs choosing again" : "") + ".";
+  }
+
+  /* A position in the address - "Report a camera here" on the map -
+     is where the person just pointed, and wins over a remembered
+     pin. */
+  if (startAt) {
+    opening = startAt;
+  }
+  if (opening) {
+    latIn.value = opening.lat.toFixed(6);
+    lonIn.value = opening.lon.toFixed(6);
+  }
 
   /* ---------------- the map and the two boxes ----------------
 
@@ -2153,8 +2421,8 @@ function setUpNewReport() {
 
   var picker = typeof makePicker === "function" ? makePicker({
     container: "pick-map",
-    lat: null,
-    lon: null,
+    lat: opening ? opening.lat : null,
+    lon: opening ? opening.lon : null,
     draggable: true,
     onMove: function (lat, lon) {
       syncing = true;
@@ -2243,65 +2511,115 @@ function setUpNewReport() {
     }
 
     button.disabled = true;
-    note.textContent = file ? "Preparing the file…" : "Sending…";
+    note.textContent = file ? "Preparing the file…" : (currentUser ? "Sending…" : "");
 
     prepareProof(file, function (problem, blob, mime, ext) {
+      var report;
+
       if (problem) {
         button.disabled = false;
         note.textContent = problem;
         return;
       }
 
-      note.textContent = "Sending…";
-
-      sb.from("reports").insert({
-        user_id: currentUser.id,
+      /* Read off the form now, once, whether it goes this moment or
+         after an account is made: the send is the same either way,
+         and it must carry what was filled in when Send was pressed. */
+      report = {
         kind: "new",
         type: typeSel.value,
         name: name,
         note: noteIn.value.trim(),
         lat: lat,
         lon: lon
-      }).select("id").single().then(function (result) {
-        if (result.error) {
-          button.disabled = false;
-          note.textContent = reportProblem(result.error);
-          return;
-        }
+      };
 
-        function finish(uploadProblem) {
-          button.disabled = false;
-          latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
-          proofIn.value = ""; locNote.textContent = "";
-          note.textContent = uploadProblem
-            ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)
-            : "Sent for review. Thank you.";
-        }
+      function send() {
+        button.disabled = true;
+        note.textContent = "Sending…";
 
-        if (blob) {
-          uploadProof(result.data.id, blob, mime, ext, finish);
-        } else {
-          finish(null);
-        }
-      }).catch(recover(button, note));
+        sb.from("reports").insert({
+          user_id: currentUser.id,
+          kind: report.kind,
+          type: report.type,
+          name: report.name,
+          note: report.note,
+          lat: report.lat,
+          lon: report.lon
+        }).select("id").single().then(function (result) {
+          if (result.error) {
+            button.disabled = false;
+            note.textContent = reportProblem(result.error);
+            return;
+          }
+
+          function finish(uploadProblem) {
+            button.disabled = false;
+            latIn.value = ""; lonIn.value = ""; nameIn.value = ""; noteIn.value = "";
+            proofIn.value = ""; locNote.textContent = ""; draftNote.textContent = "";
+            forgetDraft();
+            note.textContent = uploadProblem
+              ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)
+              : "Sent for review. Thank you.";
+          }
+
+          if (blob) {
+            uploadProof(result.data.id, blob, mime, ext, finish);
+          } else {
+            finish(null);
+          }
+        }).catch(recover(button, note));
+      }
+
+      if (currentUser) {
+        send();
+        return;
+      }
+
+      /* Nobody is signed in. Keep what was typed - here, and in
+         storage against a reload - and ask for the account under
+         the form. The button comes back so a person who decides
+         against an account is not left with a dead form. */
+      keepDraft({
+        kind: "new", type: report.type, lat: report.lat, lon: report.lon,
+        name: report.name, note: report.note, photos: blob ? 1 : 0
+      });
+      button.disabled = false;
+      note.textContent = "Almost there: an account is needed to send it. Make one below, or sign in, " +
+        "and the report goes as it stands.";
+      askForAccount(send);
     });
   };
 }
 
 function setUpStatusReport(cameraId) {
-  var nameEl   = document.getElementById("status-camera-name");
-  var claimSel = document.getElementById("s-claim");
-  var xpNote   = document.getElementById("s-claim-xp");
-  var noteIn   = document.getElementById("s-status-note");
-  var proofIn  = document.getElementById("s-status-proof");
-  var button   = document.getElementById("submit-status-button");
-  var note     = document.getElementById("submit-status-note");
+  var nameEl    = document.getElementById("status-camera-name");
+  var claimSel  = document.getElementById("s-claim");
+  var xpNote    = document.getElementById("s-claim-xp");
+  var noteIn    = document.getElementById("s-status-note");
+  var proofIn   = document.getElementById("s-status-proof");
+  var button    = document.getElementById("submit-status-button");
+  var note      = document.getElementById("submit-status-note");
+  var draftNote = document.getElementById("status-draft-note");
+  var draft     = readDraft();
 
   function showXp() {
     xpNote.textContent = xpLine("status_" + claimSel.value);
   }
   claimSel.onchange = showXp;
   showXp();
+
+  /* A draft of this form, about this camera, put back; one about
+     another camera is left for that camera's page. */
+  if (draft && draft.kind === "status" && draft.cameraId === cameraId) {
+    if (draft.claim) {
+      claimSel.value = draft.claim;
+      showXp();
+    }
+    noteIn.value = draft.note || "";
+    draftNote.textContent = "What you filled in before is back in the form" +
+      (draft.photos ? ", except the photo, which needs choosing again" : "") + ".";
+  }
 
   /* The name, so the person can see they are on the right one - and
      its position, which the report has to carry too. */
@@ -2335,53 +2653,82 @@ function setUpStatusReport(cameraId) {
     var file = proofIn.files && proofIn.files[0];
 
     note.textContent = "";
+
+    if (!camera) {
+      note.textContent = "That camera could not be found.";
+      return;
+    }
+
     button.disabled = true;
-    note.textContent = file ? "Preparing the file…" : "Sending…";
+    note.textContent = file ? "Preparing the file…" : (currentUser ? "Sending…" : "");
 
     prepareProof(file, function (problem, blob, mime, ext) {
+      var report;
+
       if (problem) {
         button.disabled = false;
         note.textContent = problem;
         return;
       }
 
-      note.textContent = "Sending…";
+      /* Read once, whether it goes now or after an account is made;
+         see setUpNewReport() for why. */
+      report = {
+        kind: "status",
+        cameraId: cameraId,
+        claim: claimSel.value,
+        note: noteIn.value.trim()
+      };
 
-      if (!camera) {
-        button.disabled = false;
-        note.textContent = "That camera could not be found.";
+      function send() {
+        button.disabled = true;
+        note.textContent = "Sending…";
+
+        sb.from("reports").insert({
+          user_id: currentUser.id,
+          kind: report.kind,
+          camera_id: report.cameraId,
+          status_claim: report.claim,
+          note: report.note,
+          lat: camera.lat,
+          lon: camera.lon
+        }).select("id").single().then(function (result) {
+          if (result.error) {
+            button.disabled = false;
+            note.textContent = reportProblem(result.error);
+            return;
+          }
+
+          function finish(uploadProblem) {
+            button.disabled = false;
+            noteIn.value = ""; proofIn.value = ""; draftNote.textContent = "";
+            forgetDraft();
+            note.textContent = uploadProblem
+              ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)
+              : "Sent for review. Thank you.";
+          }
+
+          if (blob) {
+            uploadProof(result.data.id, blob, mime, ext, finish);
+          } else {
+            finish(null);
+          }
+        }).catch(recover(button, note));
+      }
+
+      if (currentUser) {
+        send();
         return;
       }
 
-      sb.from("reports").insert({
-        user_id: currentUser.id,
-        kind: "status",
-        camera_id: cameraId,
-        status_claim: claimSel.value,
-        note: noteIn.value.trim(),
-        lat: camera.lat,
-        lon: camera.lon
-      }).select("id").single().then(function (result) {
-        if (result.error) {
-          button.disabled = false;
-          note.textContent = reportProblem(result.error);
-          return;
-        }
-
-        function finish(uploadProblem) {
-          button.disabled = false;
-          noteIn.value = ""; proofIn.value = "";
-          note.textContent = uploadProblem
-            ? "Sent, but " + uploadProblem.charAt(0).toLowerCase() + uploadProblem.slice(1)
-            : "Sent for review. Thank you.";
-        }
-
-        if (blob) {
-          uploadProof(result.data.id, blob, mime, ext, finish);
-        } else {
-          finish(null);
-        }
-      }).catch(recover(button, note));
+      keepDraft({
+        kind: "status", cameraId: cameraId, claim: report.claim,
+        note: report.note, photos: blob ? 1 : 0
+      });
+      button.disabled = false;
+      note.textContent = "Almost there: an account is needed to send it. Make one below, or sign in, " +
+        "and the report goes as it stands.";
+      askForAccount(send);
     });
   };
 }

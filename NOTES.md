@@ -666,10 +666,67 @@ SQL editor before the button works. It is safe to run again, as always.
 
 ### The reporting loop
 
-*(Written by the Wave 4 reporting agent: the form for everyone and what
-sign-up carries through, the duplicate check and what it does not say,
-three photos, why video is refused, Your reports, the receipt, reporting
-from the map, and the XP table on the leaderboard.)*
+The picker with its crosshair, the context dots and the upload that
+strips a photograph were all well judged. What surrounded them was
+not: a wall in front and a void behind. In front, an account was
+required before a person could so much as look at the form. Behind,
+a report went into a queue and nothing was ever heard of it again -
+no number, no list, no word of what a moderator decided. This section
+is the two ends of that loop closed, and the reasoning at each step.
+
+**The form is everyone's; the account is asked for at the end.** The
+report page used to show one sentence to anyone signed out - "You
+need an account to send a report in" - and hide the map, the
+crosshair and the photo picker behind it. That order lost the people
+the form exists for. Most people who have just seen a van will never
+make an account first: they do not yet know what is being asked, or
+that it is only two words and a password, and by the time the account
+page had explained it they had gone. So the whole form is shown to
+anyone, signed in or not, and the account is asked for at the one
+moment it is needed: when *Send for review* is pressed. The account
+page's own two boxes - *Make an account*, with the generated
+username, the passphrase button, the recovery card and its tick; and
+*Sign back in* - are written out on the report page with the same
+ids, under the form, and `setUpAccountForms()` in `account.js` wires
+them once for both pages, with a hook for what each page does next.
+On the account page that is "show the signed-in half". On the report
+page it is "send the report that was waiting". The card is offered
+after sign-up exactly as it is there, in a box under the form, and
+it prints alone by the same `body.printing-card` rules - checked on
+the report page with `Page.printToPDF` - because the rules were
+written against `.sheet` and `#recovery`, not against the account
+page. The nav offers *Report a camera* signed out as well now, for
+the same reason the form does.
+
+What Send does when nobody is signed in: it validates the form as it
+would for a send, prepares the photograph as it would for a send,
+reads every value off the form once, and keeps the function that
+would have sent them in `pendingSend`. Then it shows the two boxes
+and moves focus to them. The moment an account exists - made or
+signed into - `accountArrived()` calls that function, and the report
+goes exactly as it stood, with nothing retyped. That path is whole
+on its own; nothing about it depends on storage. The draft is also
+written to `sessionStorage` - the pin, the kind, the name and the
+note - so that a reload in the middle of signing up (a phone that
+reloads a tab it put in the background, a mis-tap on the address
+bar) does not lose them; on the next load the form is filled back in
+and a line says so. Session storage rather than local, because a
+draft is for this visit and a report half-written on a shared
+machine should not greet the next person to open the page. A photo
+cannot survive a reload - a blob is not something storage holds at
+that size, and a file input cannot be refilled by script - so the
+line says the photo needs choosing again. Storage may be refused
+outright; every touch of it is wrapped, and refused, the in-memory
+path is all there is and it is enough. The key is a constant in
+`account.js` until it is moved beside the others in `STORAGE`.
+
+The lock did not move. The reports insert policy needs
+`auth.uid() = user_id`, so nothing on the page could ever send a
+report from nobody however the form was arranged; hiding the form
+was only a courtesy withheld, and showing it is the courtesy given.
+Signing out on the report page no longer sends the person to the
+map: the form is theirs whether or not they are signed in, and what
+is in it stays.
 
 ### Moderating at scale
 
