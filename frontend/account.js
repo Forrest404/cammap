@@ -3076,21 +3076,34 @@ function makeDuplicateCheck(line) {
   };
 }
 
-/* A position in the address: report.html?lat=51.5&lon=-0.1, which is
-   what "Report a camera here" on the map page links to. Six decimals
-   is what the map writes; anything that parses and is in London is
-   taken, anything else is ignored and the form opens as usual. */
-function startAtFromQuery() {
-  var mLat = /[?&]lat=(-?\d+(?:\.\d+)?)/.exec(window.location.search);
-  var mLon = /[?&]lon=(-?\d+(?:\.\d+)?)/.exec(window.location.search);
+/* A position in the address: report.html#51.507590/-0.127800 -
+   latitude, one slash, longitude, six decimals each and nothing
+   else - which is what "Report a camera here" on the map page links
+   to. Six decimals is what the map writes; anything that parses and
+   is in London is taken, anything else is ignored and the form opens
+   as usual.
+
+   In the fragment, not the query, since the privacy fix round (L4).
+   The link used to be report.html?lat=&lon=, and a query string
+   travels in the request itself: to the host, and on as the Referer
+   to anything the page then loads from elsewhere. A fragment never
+   leaves the browser; it is read here and nowhere else. The query
+   form is not read any more - a link in the old shape opens the form
+   empty, which is what an unrecognised address has always done - so
+   there is one shape, and the one the map writes. It cannot collide
+   with the #report-<n> the receipt links to on the account page:
+   that has letters in it, and this is two signed numbers with a
+   slash between. */
+function startAtFromHash() {
+  var m = /^#(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/.exec(window.location.hash);
   var lat;
   var lon;
 
-  if (!mLat || !mLon) {
+  if (!m) {
     return null;
   }
-  lat = parseFloat(mLat[1]);
-  lon = parseFloat(mLon[1]);
+  lat = parseFloat(m[1]);
+  lon = parseFloat(m[2]);
   if (isNaN(lat) || isNaN(lon) || !inLondon(lat, lon)) {
     return null;
   }
@@ -3174,7 +3187,7 @@ function setUpReportPage() {
     if (cameraId) {
       setUpStatusReport(cameraId);
     } else {
-      setUpNewReport(startAtFromQuery());
+      setUpNewReport(startAtFromHash());
     }
   });
 

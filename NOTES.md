@@ -894,7 +894,9 @@ its state"; a gap on the map offered nothing, and a gap is exactly
 where a camera the map does not have would be. A right-click on the
 map, or a long press on a phone, now opens a small popup at that
 spot with one row, *Report a camera here*, which opens the report
-form with the pin already placed - `report.html?lat=&lon=`, six
+form with the pin already placed - `report.html#<lat>/<lon>` since
+the privacy fix round (it was `?lat=&lon=`, and a query string
+travels in the request where a fragment stays in the browser), six
 decimals, the precision the map writes everywhere else. The
 right-click is MapLibre's own `contextmenu` map event: the library
 already keeps the browser's menu off the canvas (its mouse handlers
