@@ -63,9 +63,12 @@ index.html          the map. At the root, because that is what a web
                     depth - so it carries a <base href="/cammap/"> and
                     no account.js, whose path guess is wrong there. In
                     stamp.py's page set like the others: nine pages now.
-pages/              about, blog, rights, account, report, moderate,
-                    leaderboard. A new page copies rights.html's head, nav
-                    and footer exactly; stamp.py holds it to them.
+pages/              about, blog, rights, data, press, account, report,
+                    moderate, leaderboard. A new page copies rights.html's
+                    head, nav and footer exactly; stamp.py holds it to them.
+                    data.html documents the read API (the cameras_public
+                    view and a curl line); press.html is what to send a
+                    journalist. Neither is in the nav.
 feed.xml            Atom, hand-maintained: a new post is a new <entry> and
                     the feed's <updated> moved to it. The recipe is in the
                     template comment in pages/blog.html.
@@ -77,10 +80,14 @@ frontend/picker.js  the pin-dropping map: the report form, and the
 frontend/account.js accounts, reports, moderation, leaderboard - runs
                     on every page, because the nav does
 frontend/style.css  all of it
-data/cameras.csv    the record: the one data file you edit
+data/cameras.csv    the record: the one data file you edit, and the
+                    first of the footer's two downloads
 data/points.js      written out from cameras.csv by tools/build_points.py,
                     never by hand - the map's fallback when the database
                     cannot be reached
+data/cameras.geojson  the script's third output and the second download;
+                    RFC 7946, [lon, lat]; hand-edit it and stamp.py fails
+frontend/press.js   the press page's counts, computed from the record; in OWN
 backend/            schema.sql; seed.sql (also written by the script);
                     migrations/ (numbered, run by the maintainer, never
                     by anything here)
@@ -202,6 +209,15 @@ Things that look like they would work and do not:
   is the example. `moveMap()` is the one `flyTo`; route movement through it.
 - **A symbol layer in a font the style does not serve draws nothing.** Both
   OpenFreeMap styles carry `Noto Sans Regular`; the stack badge uses it.
+- **Nothing drawn under the cameras may be a translucent colour brighter
+  than the ceiling.** Over the glow it composites above 134 even when it
+  reads below it alone — the approximate halo's first draft measured 155.
+  Derive such a colour with `dimTo()` in `shared.js`, and measure new paint
+  with the dots and labels hidden, on Dark and on Satellite.
+- **The four cameras requests when the database is unreachable are
+  postgrest-js's own retry** (backoff 1/2/4 s). `liveUpdates(false)` shows the
+  published-record notice after ten seconds and `liveUpdates(true)` clears it
+  on any later success; a late answer still lands.
 - **`edit_camera` leaves `seed_key` alone,** so a re-seed overwrites an
   edited seed camera's name, note and status. Correct `data/cameras.csv` as
   well, or the edit is undone by the next seed.
@@ -271,6 +287,12 @@ Things that look like they would work and do not:
 - **`RECORD_SOURCES` in `shared.js` dates the record.** The count line under
   the map is computed; the dates are typed. Change them with the CSV, and
   remake `img/share.png` when the count moves.
+- **`periodSpan()` in `shared.js` and `period_span()` in `build_points.py`**
+  read a period key the same way (`YYYY`, `YYYY-YY`, `YYYY-YYYY`; a two-digit
+  tail takes the start's century). The year scrubber and `check.js` use the
+  first; the GeoJSON and the seed the second. Change one, change the other.
+- **The anon key is written in two places:** `supabase-config.js` and
+  `pages/data.html`, where the curl line prints it. Rotate both together.
 - **`metresBetween()` in `account.js` and `metres_between` in `schema.sql`**
   are twins — same formula, same radius. Change one, change the other.
 - **The account forms' ids** (`#new-username`, `#signup-button`, `#recovery`

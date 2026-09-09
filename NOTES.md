@@ -497,6 +497,17 @@ is known (QUESTIONS.md, item 2). Eight copies because the footer is
 written out per page and `stamp.py` holds them to be the same; when
 the number goes in, it goes in everywhere at once.
 
+### Working offline
+
+*(Written by the Wave 6 offline agent: what the service worker caches,
+how a deploy reaches a client that already has the old one, and how the
+update path was tested.)*
+
+### Fresh data
+
+*(Written by the Wave 6 freshness agent: what is drawn from the cache,
+what is revalidated, and what a redraw is careful to keep.)*
+
 ### What active means
 
 Every one of the 163 LFR van sites carries `status: legacy`, so the map opens
@@ -772,6 +783,12 @@ file to publish is this one, served as it is. It is already the most
 portable form of the record, it carries nothing that is not public, and a
 file that *is* the record cannot drift from it. A second CSV derived from
 the first would exist only to hide columns, and there are none to hide.
+
+### Another city
+
+*(Written by the Wave 6 city agent: the `CITY` object and what still has
+to be typed into SQL by hand, how a camera was given its borough, and how
+the borough pages are generated and checked.)*
 
 ### Roles
 

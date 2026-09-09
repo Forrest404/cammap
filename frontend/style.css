@@ -2459,6 +2459,29 @@ article.post {
 }
 
 /* ------------------------------------------------------------------
+   BOROUGHS (Wave 6: the city agent writes this block)
+
+   Rules for the generated borough pages: the count, the site list,
+   the busiest spot. If the agent needs no rule here, this block is
+   removed rather than left empty.
+   ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------
+   OFFLINE (Wave 6: the offline agent writes this block)
+
+   Rules for the one line that says the site is working from its cache
+   or that a newer version is ready. If the agent needs no rule here,
+   this block is removed rather than left empty.
+   ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------
+   FRESHNESS (Wave 6: the freshness agent writes this block)
+
+   Rules for anything the background revalidation shows. If the agent
+   needs no rule here, this block is removed rather than left empty.
+   ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------
    PAPER
 
    What printing the map page gives you: the list, in one column,
