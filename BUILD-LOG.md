@@ -167,9 +167,18 @@ or sockets; the feed, cards, licence, About, rights page and the record name no 
 person. Honest limits to state in NOTES (the fix round adds them): sign-up answers the
 existence question at the auth rate limit; the search box sends its text to Nominatim; the
 report number is a running count; approved words stay on the map; the session sits in local
-storage until Log out; Near me shows in the address bar until cleared. **All seven added
-to NOTES "Anonymity" at `96bc188`.** The Wave 4 verifier's stale-comment defect fixed at
-`c2ab0ef`.
+storage until Log out; Near me shows on the map and in the tiles fetched for it, never in
+the address bar. **All seven added to NOTES "Anonymity" at `96bc188`.** The Wave 4 verifier's
+stale-comment defect fixed at `c2ab0ef`.
+
+**Fix round verified (2026-09-09).** L1, L3, L4, L5, L6, L7, L8 closed and each reproduced
+by a verifier that did not do the work: the privacy agent's own bisection run unchanged
+against the new `pending_near` recovers a whole cell and no more; the four refused queries
+refused as anon, as a plain user and, for `select *` and the four columns, as a moderator;
+the right-click link followed to a placed pin with no fragment in any `Referer`; both
+storage keys gone on every way out; the old schema plus 011–012 dumped identical to fresh.
+L2 open by decision (QUESTIONS 13). No regressions. Three stale sentences in NOTES.md, left
+by the two halves written in parallel, corrected by the orchestrator at this commit.
 
 ## Wave log
 

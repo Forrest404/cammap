@@ -1112,8 +1112,8 @@ a link to `account.html#report-<id>`, which *Your reports* finds and
 lights. The receipt is shown before the photos are attached and
 whatever happens to them, because nothing that happens to a photo
 changes the number. The last number sent is kept in
-`sessionStorage` (`cammap.report-receipt`, a constant in
-`account.js` until it joins `STORAGE`), so a reload of the report
+`sessionStorage` (`STORAGE.reportReceipt` in `shared.js`), so a reload of
+the report
 page shows "Your last report this session is #1234" rather than a
 blank form; session storage for the draft's reason, that a number
 left on a shared machine would tell the next person which report
@@ -1687,8 +1687,8 @@ and the fallback would only fail slower. The cache in `STORAGE.cameras`
 holds rows from whichever query answered; the names are the same, and
 `takeRecordFields()` is the only place the difference is felt. The
 report form's context dots read the same cache and, without it, ask
-the table for four columns in `contextCameras()` in `account.js` -
-that read moves to the view with the same migration.
+the view for four columns in `contextCameras()` in `account.js`,
+through the same fallback to the table until the migration is applied.
 
 **How it was checked.** Headless Chrome over the DevTools protocol with
 real mouse and keyboard events, at 1400 and 390 wide, on all three
@@ -2057,7 +2057,7 @@ Seven more, found by an adversarial pass over the whole site after Wave 4 (BUILD
 
 *The session sits in the browser until Log out.* While signed in, supabase-js keeps the session's tokens in `localStorage`, and closing the tab does not end it. On a shared machine, press Log out: it ends the session here, and since the privacy fix round takes the report draft and the last receipt with it (L8). Sign out everywhere, on the account page, is for the machine you no longer have.
 
-*After Near me the address bar shows where you are.* The map writes its view to the fragment of the address as it moves, so after Near me the address bar carries the spot the phone gave, until the map is moved on or the address is cleared. A copy of the address bar is a copy of that.
+*After Near me the map shows where you are, and so do the tiles it fetches.* Nothing is stored, nothing is sent by this site, and since the privacy fix round nothing is written to the address bar either: while a fix is held the bar is blanked to `#`, and a link copied from a popup centres on the camera, not on you (L7). What cannot be avoided is that a map centred on a spot fetches the tiles for that spot from OpenFreeMap, and, on the Satellite view, from Esri - so those servers see which part of London the map showed, which after Near me is where you are. Press Near me again to clear it before moving on.
 
 ### Changing, leaving and recovering an account
 
