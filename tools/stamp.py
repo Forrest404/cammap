@@ -47,13 +47,15 @@ guards a copy that has drifted, or nearly drifted, once already:
                   own fields - a key that no longer matches its row
                   makes the next seed run insert a second camera
                   instead of updating one.
-  the generator   The two files are then regenerated from the CSV in
-                  memory and compared byte for byte with what is
-                  committed, the first differing line named. This is
-                  what makes "never edited by hand" a rule the commit
-                  enforces rather than one the header asks for, and it
-                  catches the other case too: a CSV edited and
-                  committed without the script being run.
+  the generator   The two files, and data/cameras.geojson - the
+                  download the same script writes for map tools - are
+                  then regenerated from the CSV in memory and compared
+                  byte for byte with what is committed, the first
+                  differing line named. This is what makes "never
+                  edited by hand" a rule the commit enforces rather
+                  than one the header asks for, and it catches the
+                  other case too: a CSV edited and committed without
+                  the script being run.
   the bounds      LONDON_BOUNDS in shared.js is what the browser checks
                   a pin against; three check constraints in schema.sql
                   are what the server checks against, kept separately
@@ -658,14 +660,16 @@ if camera_types:
 
 # ---- regenerated output matches committed output ----
 #
-# tools/build_points.py writes both data files from data/cameras.csv,
-# and from now on that is the only way either is written. So the check
-# is not "do the two files agree with each other" - the row-for-row
-# check above still asks that, and would catch a generator bug that hit
-# one file and not the other - but "are both files exactly what the CSV
-# produces". Regenerated here in memory and compared byte for byte, the
-# first differing line named. A hand edit to points.js fails it; so
-# does a CSV edited and committed without the script being run.
+# tools/build_points.py writes both data files, and the GeoJSON
+# download beside them, from data/cameras.csv, and from now on that is
+# the only way any of them is written. So the check is not "do the two
+# files agree with each other" - the row-for-row check above still asks
+# that, and would catch a generator bug that hit one file and not the
+# other - but "is every output exactly what the CSV produces".
+# Regenerated here in memory and compared byte for byte, the first
+# differing line named. A hand edit to points.js or to cameras.geojson
+# fails it; so does a CSV edited and committed without the script being
+# run.
 #
 # The generator is imported as a module rather than run as a
 # subprocess: nothing has to be written to a temporary directory, the
@@ -704,9 +708,9 @@ if build_points is not None:
         if lines:
             fail("GENERATED DRIFT: a data file is not what data/cameras.csv produces", lines +
                  ["Edit data/cameras.csv and run python3 tools/build_points.py; "
-                  "points.js and seed.sql are never edited by hand."])
+                  "points.js, seed.sql and cameras.geojson are never edited by hand."])
         else:
-            ok("generated: points.js and seed.sql are what cameras.csv builds, %d cameras" % count)
+            ok("generated: points.js, seed.sql and cameras.geojson are what cameras.csv builds, %d cameras" % count)
 
 
 # ---- verdict ----

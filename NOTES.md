@@ -27,8 +27,10 @@
     frontend/           the code that runs in a browser: shared.js, map.js,
                         picker.js, account.js, style.css.
     data/               cameras.csv, the record - the one file you edit -
-                        and points.js, written out from it by
-                        tools/build_points.py along with backend/seed.sql.
+                        and points.js and cameras.geojson, written out
+                        from it by tools/build_points.py along with
+                        backend/seed.sql. The CSV and the GeoJSON are
+                        the downloads the footer offers.
     backend/            schema.sql and seed.sql - the database.
     lib/ fonts/         vendored, pinned by version, not ours to edit.
     tools/              stamp.py and check.js, both run before every

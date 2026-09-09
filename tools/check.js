@@ -55,6 +55,21 @@
    explains, and the one build_points.py would undo if it turned up
    unchanged; and no two entries share a key.
 
+   The GeoJSON download. data/cameras.geojson is the same record for
+   map tools, written by the build script beside points.js. stamp.py
+   proves it is what the CSV produces; this proves its shape against
+   points.js as a tool would read it - a FeatureCollection, one Point
+   per entry with longitude first, the public fields as properties in
+   one order, a bbox inside London - so a change to the generator
+   that broke the file for QGIS would be named here, not found by the
+   next journalist to open it.
+
+   The brightness rule. The halo under an approximate pin is drawn in
+   the dot's colour dimmed to a ceiling, and brightnessOf() and
+   dimTo() in shared.js are what dim it; their arithmetic is pinned
+   here because a halo that came out brighter than a dot would be the
+   one thing the map's whole tuning exists to prevent.
+
    The count of cameras is not asserted. It changes, and a number in
    a check that is expected to change is a number nobody keeps
    honest.
@@ -439,6 +454,77 @@ if (havePoints && haveShared) {
       JSON.stringify(match[match.length - 1]));
     check("typeColourExpression is pure",
       sameJSON(expr, again) && JSON.stringify(T) === before);
+  });
+
+  section("the GeoJSON download", function () {
+    var P = site.POINTS;
+    var B = site.LONDON_BOUNDS;
+    var PROPS = ["name", "note", "type", "status", "last", "deployments", "periods",
+      "source_label", "source_url", "approximate", "seed_key"];
+    var g;
+    var f;
+    var i;
+    var k;
+    var keys;
+    var who;
+    var off = { geometry: [], keys: [], values: [], key: [] };
+    var bbox;
+
+    try {
+      g = JSON.parse(readFile("data/cameras.geojson"));
+    } catch (err) {
+      check("data/cameras.geojson is JSON", false, err && err.message);
+      return;
+    }
+
+    check("cameras.geojson is a FeatureCollection", g && g.type === "FeatureCollection" && Array.isArray(g.features));
+    if (!g || !Array.isArray(g.features)) {
+      return;
+    }
+    check("one feature per camera, in the record's order", g.features.length === P.length,
+      g.features.length + " features for " + P.length + " cameras");
+
+    /* [west, south, east, north], and inside the London box: a tool
+       that reads the bbox first should never be pointed off the map. */
+    bbox = g.bbox;
+    check("bbox is [west, south, east, north] inside LONDON_BOUNDS",
+      Array.isArray(bbox) && bbox.length === 4 &&
+      bbox[0] <= bbox[2] && bbox[1] <= bbox[3] &&
+      site.inLondon(bbox[1], bbox[0]) && site.inLondon(bbox[3], bbox[2]),
+      JSON.stringify(bbox));
+
+    /* Longitude first in the geometry - GeoJSON's order, the reverse
+       of the record's - and the position the same six-decimal number
+       points.js has; the properties exactly the public fields, in one
+       order, with the values points.js carries; and seed_key what
+       seedKeyOf() writes for the entry, since it is the join. */
+    for (i = 0; i < Math.min(g.features.length, P.length); i++) {
+      f = g.features[i];
+      who = nameOf(P[i], i);
+      if (!f || f.type !== "Feature" || !f.geometry || f.geometry.type !== "Point" ||
+          !Array.isArray(f.geometry.coordinates) || f.geometry.coordinates.length !== 2 ||
+          f.geometry.coordinates[0] !== P[i].lon || f.geometry.coordinates[1] !== P[i].lat) {
+        off.geometry.push(who + " " + JSON.stringify(f && f.geometry));
+        continue;
+      }
+      keys = Object.keys(f.properties || {});
+      if (!sameJSON(keys, PROPS)) {
+        off.keys.push(who + " " + JSON.stringify(keys));
+        continue;
+      }
+      for (k = 0; k < PROPS.length - 1; k++) {
+        if (!sameJSON(f.properties[PROPS[k]], P[i][PROPS[k]])) {
+          off.values.push(who + " " + PROPS[k] + ": " + JSON.stringify(f.properties[PROPS[k]]) + " for " + JSON.stringify(P[i][PROPS[k]]));
+        }
+      }
+      if (typeof site.seedKeyOf === "function" && f.properties.seed_key !== site.seedKeyOf(P[i])) {
+        off.key.push(who + " " + JSON.stringify(f.properties.seed_key));
+      }
+    }
+    check("every feature is a Point at [lon, lat] of its entry", off.geometry.length === 0, listOf(off.geometry));
+    check("every feature carries exactly the public fields, in order", off.keys.length === 0, listOf(off.keys));
+    check("every property is the value points.js has", off.values.length === 0, listOf(off.values));
+    check("every feature's seed_key is what seedKeyOf writes for its entry", off.key.length === 0, listOf(off.key));
   });
 
   section("the brightness rule", function () {

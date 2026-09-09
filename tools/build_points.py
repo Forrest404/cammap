@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Write data/points.js and backend/seed.sql from data/cameras.csv.
+"""Write data/points.js, backend/seed.sql and data/cameras.geojson from
+data/cameras.csv.
 
-    python3 tools/build_points.py              write both files
+    python3 tools/build_points.py              write all three files
     python3 tools/build_points.py --check      regenerate in memory, compare
                                                with what is committed, and
                                                exit non-zero naming the file
@@ -9,24 +10,50 @@
     python3 tools/build_points.py --import F   read a points.js at F back
                                                into data/cameras.csv
 
-The two output files hold the same cameras in two forms: points.js is
-what the map draws when the database cannot be reached, and seed.sql is
-what fills the database. They must agree row for row, and for a long
-time nothing made them. Both said they were written out by this script,
-and this script was not in the repository, so both were edited by hand
-- or one was pasted from index.html?edit and the other was brought into
-line afterwards, by somebody remembering. The row-for-row check in
-tools/stamp.py caught a drift after the fact; nothing prevented one.
+The output files hold the same cameras in three forms: points.js is
+what the map draws when the database cannot be reached, seed.sql is
+what fills the database, and cameras.geojson is the record as a
+download that a map tool opens. They must agree row for row, and for a
+long time nothing made the first two. Both said they were written out
+by this script, and this script was not in the repository, so both were
+edited by hand - or one was pasted from index.html?edit and the other
+was brought into line afterwards, by somebody remembering. The
+row-for-row check in tools/stamp.py caught a drift after the fact;
+nothing prevented one.
 
-Now there is one source table, data/cameras.csv, and the two files are
+Now there is one source table, data/cameras.csv, and the files are
 written from it and never edited by hand again. stamp.py regenerates
-both in memory on every run and fails if what is committed is not what
-the CSV produces, so a hand edit to either output cannot survive a
+all three in memory on every run and fails if what is committed is not
+what the CSV produces, so a hand edit to any output cannot survive a
 commit, and neither can a CSV edit that was not built. That is not a
 build step in the sense this project refuses: the browser runs the
 committed points.js exactly as before, and nothing has to run for the
 site to be served. It is a generator the maintainer runs by hand, the
 way stamp.py is a checker they run by hand, and CI only ever reads.
+
+The downloads
+-------------
+
+Two files are offered from the footer of every page, and only one of
+them is made here. data/cameras.csv is the record itself, served as it
+is: it is already the most portable form, it carries nothing that is
+not public, and a file that IS the record cannot drift from it. The
+other, data/cameras.geojson, is written by this script from the same
+rows: RFC 7946, one FeatureCollection, one Feature per camera with a
+Point geometry - [longitude, latitude], which is the order GeoJSON
+insists on and the opposite of everything else in this repository -
+and the public fields as properties in a fixed order (name, note,
+type, status, last, deployments, periods, source_label, source_url,
+approximate, seed_key; no database id, because the record has none).
+The collection carries a bbox and, as foreign members RFC 7946 allows,
+a name, the licence and the attribution line from LICENSE, so that a
+copy which has travelled still says what it is. Indented, keys in one
+order, so that a change to one camera is a diff of a few lines within
+that camera's feature. The file drops straight into QGIS, Datawrapper
+and the like; that it does is for the maintainer to confirm on a
+machine with QGIS on it - tools/check.js checks the shape against
+points.js on every run, and the structural checks in this script's
+history are in NOTES.md ("Provenance and the record on the page").
 
 The source table
 ----------------
@@ -212,6 +239,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CSV_FILE = "data/cameras.csv"
 POINTS_FILE = "data/points.js"
 SEED_FILE = "backend/seed.sql"
+GEOJSON_FILE = "data/cameras.geojson"
 SHARED_FILE = "frontend/shared.js"
 
 USAGE = "usage: python3 tools/build_points.py [--check | --import POINTS_JS]"
@@ -772,13 +800,63 @@ def render_seed(rows):
     return "\n".join(lines)
 
 
+# ---- writing cameras.geojson ----
+#
+# The download for map tools - see "The downloads" at the top. The
+# properties are the public fields of the record less the position,
+# which is the geometry, in a fixed order; seed_key last, because it is
+# the entry's identity in the record rather than a fact about the
+# camera, and a reader joining this file to the CSV or to the API
+# joins on it.
+
+GEOJSON_PROPERTIES = ["name", "note", "type", "status", "last", "deployments", "periods",
+                      "source_label", "source_url", "approximate", "seed_key"]
+
+# The attribution line, as LICENSE gives it. One more place the site's
+# address is written (NOTES.md, "Sharing the site").
+GEOJSON_ATTRIBUTION = ("Contains data from cammap (https://forrest404.github.io/cammap/), "
+                       "made available under the Open Database License (ODbL) 1.0.")
+
+
+def render_geojson(rows):
+    features = []
+    west = south = east = north = None
+    for row in rows:
+        # float(), not the Decimal: json.dumps has no notion of a
+        # Decimal, and a six-place decimal is the same number as the
+        # float that prints from it. Longitude first: GeoJSON's order.
+        lon, lat = float(row["lon"]), float(row["lat"])
+        west = lon if west is None else min(west, lon)
+        east = lon if east is None else max(east, lon)
+        south = lat if south is None else min(south, lat)
+        north = lat if north is None else max(north, lat)
+        properties = {}
+        for name in GEOJSON_PROPERTIES:
+            properties[name] = row[name]
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            "properties": properties,
+        })
+    collection = {
+        "type": "FeatureCollection",
+        "name": "cammap",
+        "license": "ODbL 1.0",
+        "attribution": GEOJSON_ATTRIBUTION,
+        "bbox": [west, south, east, north],
+        "features": features,
+    }
+    return json.dumps(collection, indent=2, ensure_ascii=False) + "\n"
+
+
 # ---- the three modes ----
 
 def regenerate(text=None):
-    """Both outputs as strings, from the CSV (or from CSV text given),
-    without touching the disk. stamp.py calls this."""
+    """All three outputs as strings, from the CSV (or from CSV text
+    given), without touching the disk. stamp.py calls this."""
     rows = read_csv(text)
-    return {POINTS_FILE: render_points(rows), SEED_FILE: render_seed(rows)}, len(rows)
+    return {POINTS_FILE: render_points(rows), SEED_FILE: render_seed(rows),
+            GEOJSON_FILE: render_geojson(rows)}, len(rows)
 
 
 def first_difference(a, b):
@@ -798,7 +876,7 @@ def build():
     outputs, count = regenerate()
     for rel, text in outputs.items():
         io.open(path(rel), "w", encoding="utf-8", newline="\n").write(text)
-    print("build_points: wrote %s and %s, %d cameras" % (POINTS_FILE, SEED_FILE, count))
+    print("build_points: wrote %s, %s and %s, %d cameras" % (POINTS_FILE, SEED_FILE, GEOJSON_FILE, count))
 
 
 def check():
@@ -816,7 +894,7 @@ def check():
             print("  Edit %s and run python3 tools/build_points.py; never edit %s by hand." % (CSV_FILE, rel))
     if bad:
         return 1
-    print("build_points: %s and %s match %s, %d cameras" % (POINTS_FILE, SEED_FILE, CSV_FILE, count))
+    print("build_points: %s, %s and %s match %s, %d cameras" % (POINTS_FILE, SEED_FILE, GEOJSON_FILE, CSV_FILE, count))
     return 0
 
 
