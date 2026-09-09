@@ -2359,6 +2359,68 @@ article.post {
   margin: 6px 0 0 0;
 }
 
+/* ---------- the data and press pages ----------
+
+   Two prose pages that carry things prose has not needed here before:
+   a line to copy (the curl request, the attribution), and a table of
+   columns. The block to copy is a field, not a quotation - the well
+   colour and the rule a text field has, at the small size the popup's
+   caption uses - and it wraps rather than scrolls: a curl line is
+   longer than a phone is wide, a box that scrolls sideways hides its
+   end, and a wrapped line still selects and copies as one. break-all
+   because a URL has nowhere natural to break. The table of columns
+   is the leaderboard's shape without its rules for numbers: the name
+   in the caption voice, the meaning beside it, a rule under each
+   row. Both print as they are; the palette flip under PAPER covers
+   the colours. */
+.prose pre {
+  margin: 0 0 1.1em 0;
+  padding: 8px 10px;
+  background: var(--field);
+  border: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.95em;
+}
+
+.prose table.columns {
+  width: 100%;
+  margin: 0 0 1.1em 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.prose table.columns th,
+.prose table.columns td {
+  padding: 5px 12px 5px 0;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+/* The name wraps - a row that names six columns at once would
+   otherwise push the table past a phone's edge - and so does a long
+   code token in the meaning, for the same reason. */
+.prose table.columns th {
+  width: 9em;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.prose table.columns td {
+  overflow-wrap: anywhere;
+}
+
 /* On paper the year in force is part of the filter state, which the
    print view says plainly: the label and the readout print as "Year
    2024" (or "Year All years"), and the slider, the marks and the hint
