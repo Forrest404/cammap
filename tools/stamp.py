@@ -127,8 +127,8 @@ PAGES = sorted(glob.glob("*.html")) + sorted(glob.glob("pages/**/*.html", recurs
 # add a script or stylesheet to frontend/, add it here - and the
 # "unstamped" check further down will tell you if you forget.
 OWN = ["frontend/shared.js", "frontend/map.js", "frontend/account.js",
-       "frontend/picker.js", "frontend/style.css", "data/points.js",
-       "supabase-config.js"]
+       "frontend/picker.js", "frontend/press.js", "frontend/style.css",
+       "data/points.js", "supabase-config.js"]
 
 # The tables schema.sql must carry a type constraint and a London
 # constraint for. Listed so the checks cannot pass by finding nothing:

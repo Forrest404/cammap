@@ -200,6 +200,40 @@ function typeColourExpression() {
   return ["case", ["==", ["get", "status"], "nonfunctional"], NONFUNCTIONAL_COLOUR, match];
 }
 
+/* What the record adds up to, for a page that states it in words -
+   the press page - worked out from the entries and never typed, for
+   the reason the count line under the map is: a number in prose goes
+   stale without a sound. The total, the count per kind in
+   CAMERA_TYPES order, how many pins the record marks approximate, how
+   many entries carry a period, and the first and last year any period
+   covers (null where none does). Pure, so tools/check.js can hold it
+   against the record. */
+function recordCounts(list) {
+  var out = { total: 0, byType: {}, approximate: 0, dated: 0, from: null, to: null };
+  var i;
+  var years;
+
+  for (i = 0; i < CAMERA_TYPES.length; i++) {
+    out.byType[CAMERA_TYPES[i].type] = 0;
+  }
+
+  for (i = 0; i < list.length; i++) {
+    out.total++;
+    out.byType[list[i].type] = (out.byType[list[i].type] || 0) + 1;
+    if (list[i].approximate === true) {
+      out.approximate++;
+    }
+    years = periodYears(list[i].periods);
+    if (years && years.length) {
+      out.dated++;
+      out.from = out.from === null ? years[0] : Math.min(out.from, years[0]);
+      out.to = out.to === null ? years[years.length - 1] : Math.max(out.to, years[years.length - 1]);
+    }
+  }
+
+  return out;
+}
+
 /* ---------------- the brightness rule, as arithmetic ----------------
 
    Nothing drawn under the cameras may be brighter than the dimmest

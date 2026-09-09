@@ -515,6 +515,53 @@ if (havePoints && haveShared) {
       site.periodYears(null) === null && site.periodYears(undefined) === null);
   });
 
+  section("recordCounts", function () {
+    var P = site.POINTS;
+    var c;
+    var sum = 0;
+    var k;
+    var approx = 0;
+    var dated = 0;
+    var i;
+    var y;
+    var from = null;
+    var to = null;
+
+    check("recordCounts is a function in shared.js", typeof site.recordCounts === "function");
+    if (typeof site.recordCounts !== "function") {
+      return;
+    }
+    c = site.recordCounts(P);
+
+    /* The press page states these in words. Held to the record they
+       are worked out from, not to a number: the count changes, and a
+       number in a check that is expected to change is a number nobody
+       keeps honest. */
+    for (k in c.byType) {
+      if (c.byType.hasOwnProperty(k)) {
+        sum += c.byType[k];
+      }
+    }
+    for (i = 0; i < P.length; i++) {
+      if (P[i].approximate === true) { approx++; }
+      y = site.periodYears(P[i].periods);
+      if (y && y.length) {
+        dated++;
+        from = from === null ? y[0] : Math.min(from, y[0]);
+        to = to === null ? y[y.length - 1] : Math.max(to, y[y.length - 1]);
+      }
+    }
+    check("recordCounts total is the record's length", c.total === P.length, c.total + " for " + P.length);
+    check("recordCounts kinds add up to the total", sum === c.total, sum + " for " + c.total);
+    check("recordCounts names every kind in CAMERA_TYPES, and no other",
+      sameJSON(Object.keys(c.byType), site.CAMERA_TYPES.map(function (t) { return t.type; })), JSON.stringify(Object.keys(c.byType)));
+    check("recordCounts approximate is the count of approximate entries", c.approximate === approx, c.approximate + " for " + approx);
+    check("recordCounts dated, from and to follow periodYears over the record",
+      c.dated === dated && c.from === from && c.to === to, JSON.stringify([c.dated, c.from, c.to]));
+    check("recordCounts of an empty record is zeros and nulls",
+      sameJSON([site.recordCounts([]).total, site.recordCounts([]).from, site.recordCounts([]).to], [0, null, null]));
+  });
+
   section("the GeoJSON download", function () {
     var P = site.POINTS;
     var B = site.LONDON_BOUNDS;

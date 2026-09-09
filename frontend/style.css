@@ -2421,6 +2421,27 @@ article.post {
   overflow-wrap: anywhere;
 }
 
+/* The share card on the press page, offered for reuse: the picture at
+   the column's width with its caption under it in the caption voice.
+   The image carries its own width and height in the markup so the
+   page does not jump as it loads; this only stops it overflowing. */
+.prose figure {
+  margin: 0 0 1.1em 0;
+}
+
+.prose figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+}
+
+.prose figcaption {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
 /* On paper the year in force is part of the filter state, which the
    print view says plainly: the label and the readout print as "Year
    2024" (or "Year All years"), and the slider, the marks and the hint
