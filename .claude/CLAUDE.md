@@ -62,7 +62,9 @@ index.html          the map. At the root, because that is what a web
 404.html            what Pages serves for any missing address, at any
                     depth - so it carries a <base href="/cammap/"> and
                     no account.js, whose path guess is wrong there. In
-                    stamp.py's page set like the others: nine pages now.
+                    stamp.py's page set like the others. The set is found,
+                    not listed: every *.html at the root and under pages/,
+                    eleven today and the borough pages when they come.
 pages/              about, blog, rights, data, press, account, report,
                     moderate, leaderboard. A new page copies rights.html's
                     head, nav and footer exactly; stamp.py holds it to them.
@@ -119,10 +121,10 @@ With no build step there are no partials, so four things are written out once
 per page. Changing one copy and not the others is the easiest mistake to make
 here, and the least visible.
 
-| Copied on all 9 pages | If you change it |
+| Copied on every page | If you change it |
 | --- | --- |
-| `<nav class="bar">` | edit all 9 — `stamp.py` **fails** if they drift |
-| The feed `<link>` in every `<head>` | same — nine copies, relative path per page |
+| `<nav class="bar">` | edit them all — `stamp.py` **fails** if they drift |
+| The feed `<link>` in every `<head>` | same — one copy per page, relative path per page |
 | `<footer class="foot">` | same — `stamp.py` **fails** if they drift |
 | The `<meta>` Content-Security-Policy | same — `stamp.py` **fails** if they drift |
 | `<script>` tags for shared.js / account.js | same, plus add to `OWN` in `stamp.py` |
@@ -151,7 +153,7 @@ What it allows out, and why:
 - `style-src 'unsafe-inline'` — the swatches and the legend are coloured from
   `CAMERA_TYPES` by setting `style.background`, which is an inline style.
 
-Adding an outbound call means adding its host here too, on all nine pages, or
+Adding an outbound call means adding its host here too, on every page, or
 it fails silently with only a console warning.
 
 ## Traps
@@ -169,8 +171,8 @@ Things that look like they would work and do not:
   `Referer` of every script, stylesheet and font the page loads, and the query
   reaches the host in the page request and sits in history. So "Report a
   camera here" links `pages/report.html#<lat>/<lon>`, never `?lat=&lon=`; a
-  fragment is never sent. Nine identical copies; `stamp.py` does not check
-  this tag. A new page copies it with its comment.
+  fragment is never sent. One identical copy per page; `stamp.py` does not
+  check this tag. A new page copies it with its comment.
 - **Never `select("*")` on `cameras`.** `authenticated` holds a column-level
   grant that leaves out `approved_by`, `approved_at`, `created_at` and
   `updated_at`; PostgREST refuses a star select when any column is denied.
@@ -216,7 +218,7 @@ Things that look like they would work and do not:
   with the dots and labels hidden, on Dark and on Satellite.
 - **The four cameras requests when the database is unreachable are
   postgrest-js's own retry** (backoff 1/2/4 s). `liveUpdates(false)` shows the
-  published-record notice after ten seconds and `liveUpdates(true)` clears it
+  published-record notice after eight seconds and `liveUpdates(true)` clears it
   on any later success; a late answer still lands.
 - **`edit_camera` leaves `seed_key` alone,** so a re-seed overwrites an
   edited seed camera's name, note and status. Correct `data/cameras.csv` as
