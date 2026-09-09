@@ -155,6 +155,29 @@
         <ul class="legend" id="legend"></ul>
       </div>
 
+      <!-- The years. A slider from the earliest year the record
+           covers to the latest, with a position before them for every
+           year at once; move it and the dots, the list and the count
+           show the cameras whose recorded period covers that year. It
+           filters the record and never predicts: a site recorded as a
+           span is shown in every year of the span, a camera the
+           record gives no period for is shown in every year, and the
+           range ends at the newest period in the record, not at this
+           year. The ends, the marks and the readout are written by
+           map.js from the points ("The years" there says why each
+           choice is what it is); hidden until it has, so a page
+           without JavaScript shows no slider that does nothing. The
+           label, the range and the output are the form a screen
+           reader already knows; aria-valuetext carries "All years"
+           for the position a number cannot name. -->
+      <div class="years" id="years" hidden>
+        <label for="year-range">Year</label>
+        <input type="range" id="year-range" aria-describedby="year-hint">
+        <output id="year-out" for="year-range">All years</output>
+        <div class="year-marks" id="year-marks" aria-hidden="true"></div>
+        <p class="hint" id="year-hint"></p>
+      </div>
+
       <!-- How to read the map, in words. The legend gives five
            colours and two fills, and a visitor had to work out for
            themselves that a hollow ring is a van site and why the

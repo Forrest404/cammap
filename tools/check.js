@@ -456,6 +456,65 @@ if (havePoints && haveShared) {
       sameJSON(expr, again) && JSON.stringify(T) === before);
   });
 
+  section("periodSpan and periodYears", function () {
+    var P = site.POINTS;
+    var keys = {};
+    var wrong = [];
+    var i;
+    var k;
+    var span;
+    var m;
+    var years;
+
+    check("periodSpan is a function in shared.js", typeof site.periodSpan === "function");
+    check("periodYears is a function in shared.js", typeof site.periodYears === "function");
+    if (typeof site.periodSpan !== "function" || typeof site.periodYears !== "function") {
+      return;
+    }
+
+    /* The three shapes, with the century arithmetic period_span() in
+       build_points.py does: a two-digit tail takes the start's century. */
+    check("periodSpan reads YYYY, YYYY-YY and YYYY-YYYY",
+      sameJSON(site.periodSpan("2025"), [2025, 2025]) &&
+      sameJSON(site.periodSpan("2023-24"), [2023, 2024]) &&
+      sameJSON(site.periodSpan("2020-2025"), [2020, 2025]) &&
+      sameJSON(site.periodSpan("2020-22"), [2020, 2022]),
+      JSON.stringify([site.periodSpan("2025"), site.periodSpan("2023-24"), site.periodSpan("2020-2025")]));
+    check("periodSpan gives a two-digit tail the start's century, as period_span() does",
+      sameJSON(site.periodSpan("1999-01"), [1999, 1901]));
+
+    /* Every key in the record, against the same reading done by hand
+       from the regular expression: the span starts at the first four
+       digits and ends at the tail read the same way. */
+    for (i = 0; i < P.length; i++) {
+      if (P[i].periods) {
+        for (k in P[i].periods) {
+          if (Object.prototype.hasOwnProperty.call(P[i].periods, k)) {
+            keys[k] = true;
+          }
+        }
+      }
+    }
+    for (k in keys) {
+      if (keys.hasOwnProperty(k)) {
+        m = /^(\d{4})(?:-(\d{2}|\d{4}))?$/.exec(k);
+        span = site.periodSpan(k);
+        if (!m || span[0] !== Number(m[1]) ||
+            span[1] !== (m[2] === undefined ? Number(m[1]) : (m[2].length === 4 ? Number(m[2]) : Number(m[1].slice(0, 2) + m[2]))) ||
+            span[0] > span[1]) {
+          wrong.push(k + " -> " + JSON.stringify(span));
+        }
+      }
+    }
+    check("periodSpan reads every key in the record, start no later than end", wrong.length === 0, listOf(wrong));
+
+    years = site.periodYears({ "2020-22": 1, "2025": 3, "2023-24": 1 });
+    check("periodYears lists each covered year once, earliest first",
+      sameJSON(years, [2020, 2021, 2022, 2023, 2024, 2025]), JSON.stringify(years));
+    check("periodYears of null is null, not an empty list",
+      site.periodYears(null) === null && site.periodYears(undefined) === null);
+  });
+
   section("the GeoJSON download", function () {
     var P = site.POINTS;
     var B = site.LONDON_BOUNDS;

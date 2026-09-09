@@ -358,7 +358,12 @@ function loadView() {
 function saveView() {
   try {
     window.localStorage.setItem(VIEW_KEY, JSON.stringify({
-      legacy: showLegacy,
+      /* Not a Legacy the year scrubber switched on: the year is not
+         remembered, so the switch it made is not either, or the next
+         visit would open on every van site with no year to explain
+         it. A press on Legacy itself makes it the visitor's, and
+         legacyByYear is cleared then. */
+      legacy: legacyByYear ? false : showLegacy,
       view: view,
       hidden: hiddenTypes,
 
@@ -1308,17 +1313,31 @@ function removePoint(id) {
 /* hiddenTypes and sortBy are declared up with showLegacy, above
    loadView(), so a remembered setting is not overwritten on the way
    past. The search term is not remembered: it is a question you are
-   asking now, not a setting. */
+   asking now, not a setting. Neither is the year - see "the years". */
 var searchTerm = "";
+var yearShown = null;
 
 function typeShown(type) {
   return !hiddenTypes[type];
 }
 
+/* Whether a camera is shown for the year chosen on the scrubber. No
+   year chosen shows everything. A camera whose record names no period
+   - a shop, a fixed install, the King's Cross estate - is shown in
+   every year: the record does not say when it was not there, and
+   hiding it for a year would be a claim the record does not make.
+   Otherwise, shown for every year any of its periods covers, through
+   periodYears() in shared.js, which is the one reading of a period
+   the site has. */
+function coversYear(point) {
+  return yearShown === null || !point.periods ||
+         periodYears(point.periods).indexOf(yearShown) !== -1;
+}
+
 /* The rule the map obeys. The search term is not in here on purpose -
    see above. */
 function isShown(point) {
-  return (showLegacy || point.status !== "legacy") && typeShown(point.type);
+  return (showLegacy || point.status !== "legacy") && typeShown(point.type) && coversYear(point);
 }
 
 /* And the rule the list obeys: the same, and then the search. */
@@ -1354,6 +1373,13 @@ function shownFilter() {
     }
   }
 
+  /* coversYear() as an expression: a feature with no `years` - the
+     record names no period - passes; one with them passes when the
+     chosen year is among them. */
+  if (yearShown !== null) {
+    filter.push(["any", ["!", ["has", "years"]], ["in", yearShown, ["get", "years"]]]);
+  }
+
   return filter;
 }
 
@@ -1387,14 +1413,17 @@ function applyFilters() {
 function setLegacy(on) {
   showLegacy = on;
 
-  /* The visitor's own press: whatever a solo switched on is theirs
-     now, and ending the solo will not switch it back. */
+  /* The visitor's own press: whatever a solo or the year scrubber
+     switched on is theirs now, and ending either will not switch it
+     back. */
   legacyBySolo = false;
+  legacyByYear = false;
   clearSoloNote();
 
   applyFilters();
   saveView();
   markLegacy();
+  sayYear();
 }
 
 function markLegacy() {
@@ -1524,10 +1553,18 @@ function kindsChanged() {
       " in the record is legacy, so Legacy has been switched on to show them.";
     sayUnderMap(soloNote);
   } else if (solo === null && legacyBySolo) {
-    showLegacy = false;
     legacyBySolo = false;
-    markLegacy();
     clearSoloNote();
+    /* Unless a year is chosen, in which case the year still wants
+       it: the van sites are what the record dates, and the scrubber
+       takes the switch over rather than letting it drop. */
+    if (yearShown !== null) {
+      legacyByYear = true;
+      sayYear();
+    } else {
+      showLegacy = false;
+      markLegacy();
+    }
   }
 
   if (solo !== null) {
@@ -1807,6 +1844,13 @@ function buildFeatures() {
         coordinates: lngLat(point.lat, point.lon)
       }
     };
+
+    /* The years the record covers for it, for the scrubber's filter
+       - left off altogether where the record names no period, which
+       is what the filter reads as "shown in every year". */
+    if (point.periods) {
+      feature.properties.years = periodYears(point.periods);
+    }
 
     all.push(feature);
 
@@ -3338,6 +3382,223 @@ function setUpExplain() {
 }
 
 /* ------------------------------------------------------------------
+   The years
+
+   A scrubber under the map: one position per year the record covers,
+   and one before them for every year at once. Move it to 2024 and
+   the map, the list and the count show the cameras whose recorded
+   period covers 2024; move it back and everything returns. Watching
+   the glow spread across London year by year is the most persuasive
+   thing this record can do, and it is done here with the record
+   alone.
+
+   What it filters by, and what it does not. A camera is shown for a
+   year when any key of its periods covers it - "2023-24" is 2023 and
+   2024, "2020-2025" is six years - through periodYears() in shared.js,
+   the one reading of a period the site has. It never picks a year
+   inside a span: the Met publishes "3 deployments 2023-2025" and not
+   which year each fell in, so a site with that period is shown in
+   all three, which is exactly what the record supports and no more.
+   And a camera whose record names no period - the shops, the two
+   fixed installs, the King's Cross estate - is shown in every year.
+   The record does not say when it was not there; a scrubber that hid
+   it for 2021 would be claiming it was not there in 2021, which is a
+   guess. The hint under the scrubber says so, so a visitor who sees a
+   shop that opened in 2026 standing at 2020 knows why.
+
+   The range runs from the earliest year any period covers to the
+   latest, worked out from the points and never typed: today that is
+   2020 to 2026, with the BTP register's 2026 the end, and a record
+   refreshed with a 2027 period moves the end on its own. It ends at
+   the newest period in the record, not at this year, because a
+   scrubber that offered 2028 would be offering a prediction. The
+   position before the first year is "All years"; a range cannot hold
+   a null, so the leftmost step stands for it, the readout says so,
+   and aria-valuetext says it to a screen reader. Arrow keys move it,
+   as they do any range, and the KEYBOARD FOCUS ring covers it.
+
+   Legacy. Every van site is legacy, and the van sites are 163 of the
+   172 cameras the record dates, so a year chosen with Legacy off
+   would show nine stations and the undated shops and look like a
+   broken map. So choosing a year switches Legacy on, as a solo of an
+   all-legacy kind does, and the hint says it has; returning to every
+   year switches it back off unless the visitor pressed Legacy
+   themselves in between, which makes it theirs. Not saved with the
+   view: a year is a question, not a setting, and neither it nor the
+   switch it made is remembered - see saveView().
+
+   The filter is one rule in three places that must agree: isShown()
+   for the list and the glow sources, shownFilter() for the dot and
+   halo layers, and the `years` property buildFeatures() writes for
+   the expression to read. applyFilters() brings all three into step
+   and the count is read out through announceThenCount(), so the
+   dots, the list, the count line and the live region change
+   together. Not in the hash: a link carries a view and a camera, and
+   a camera link to a site the chosen year does not cover puts the
+   scrubber back to every year, the way it switches Legacy on.
+   ------------------------------------------------------------------ */
+
+var yearsBox   = document.getElementById("years");
+var yearRange  = document.getElementById("year-range");
+var yearOut    = document.getElementById("year-out");
+var yearMarks  = document.getElementById("year-marks");
+var yearHint   = document.getElementById("year-hint");
+
+/* Whether the Legacy switch was turned on by the scrubber rather
+   than by a press on it, like legacyBySolo for the solo. */
+var legacyByYear = false;
+
+/* The years the record covers, from the points: [first, last], or
+   null where no point carries a period. */
+function recordYearRange() {
+  var from = null;
+  var to = null;
+  var i;
+  var years;
+
+  for (i = 0; i < points.length; i++) {
+    years = periodYears(points[i].periods);
+    if (years && years.length) {
+      from = from === null ? years[0] : Math.min(from, years[0]);
+      to = to === null ? years[years.length - 1] : Math.max(to, years[years.length - 1]);
+    }
+  }
+
+  return from === null ? null : { from: from, to: to };
+}
+
+/* Set the range's ends from the record, and draw the marks under it.
+   Called at start-up and again after the database has answered; a
+   chosen year is kept, since a range can only widen. The "All"
+   position is one step before the first year. */
+function fitYearRange() {
+  var range = recordYearRange();
+  var mark;
+  var y;
+
+  if (!yearsBox || !yearRange || !range) {
+    return;
+  }
+
+  if (String(yearRange.min) === String(range.from - 1) && String(yearRange.max) === String(range.to)) {
+    return;   /* nothing has moved */
+  }
+
+  yearRange.min = range.from - 1;
+  yearRange.max = range.to;
+  yearRange.step = 1;
+  yearRange.value = yearShown === null ? range.from - 1 : yearShown;
+
+  if (yearMarks) {
+    yearMarks.innerHTML = "";
+    for (y = range.from - 1; y <= range.to; y++) {
+      mark = document.createElement("span");
+      mark.textContent = y === range.from - 1 ? "All" : String(y);
+      mark.setAttribute("data-year", y === range.from - 1 ? "all" : String(y));
+      yearMarks.appendChild(mark);
+    }
+  }
+
+  sayYear();
+}
+
+/* The state alone - the year and the Legacy switch that comes with
+   it - for a caller that will apply the filters itself. */
+function chooseYear(year) {
+  var solo;
+
+  yearShown = year;
+
+  if (year !== null && !showLegacy) {
+    showLegacy = true;
+    legacyByYear = true;
+    markLegacy();
+  } else if (year === null && legacyByYear) {
+    legacyByYear = false;
+    /* Unless a solo of an all-legacy kind still wants it, in which
+       case the solo takes the switch over, with its own sentence. */
+    solo = soloType();
+    if (solo !== null && allLegacy(solo)) {
+      legacyBySolo = true;
+      soloNote = "Every " + (typeLabel(solo) || solo) +
+        " in the record is legacy, so Legacy has been switched on to show them.";
+      sayUnderMap(soloNote);
+    } else {
+      showLegacy = false;
+    }
+    markLegacy();
+  }
+
+  if (yearRange && yearRange.min !== "") {
+    yearRange.value = year === null ? yearRange.min : year;
+  }
+}
+
+/* A move of the scrubber. */
+function setYear(year) {
+  chooseYear(year);
+  applyFilters();
+  sayYear();
+  announceThenCount(year === null ? "All years" : "Year " + year);
+}
+
+/* The readout beside the scrubber, the value a screen reader is
+   given, the mark that is lit, and the hint under it. */
+function sayYear() {
+  var range;
+  var marks;
+  var i;
+  var text;
+
+  if (!yearRange || !yearOut || yearRange.min === "") {
+    return;
+  }
+
+  range = { from: Number(yearRange.min) + 1, to: Number(yearRange.max) };
+  text = yearShown === null ? "All years" : String(yearShown);
+  yearOut.textContent = text;
+  yearRange.setAttribute("aria-valuetext", text);
+
+  if (yearMarks) {
+    marks = yearMarks.children;
+    for (i = 0; i < marks.length; i++) {
+      marks[i].className = marks[i].getAttribute("data-year") === (yearShown === null ? "all" : String(yearShown)) ? "on" : "";
+    }
+  }
+
+  if (yearHint) {
+    if (yearShown === null) {
+      yearHint.textContent = "Every year the record covers, " + range.from + " to " + range.to +
+        ". Move the slider to see the cameras whose recorded period covers one year.";
+    } else {
+      yearHint.textContent = "Cameras whose recorded period covers " + yearShown +
+        ". A site recorded as a span, 2023-2025 say, is shown in every year of it, because the " +
+        "record does not say which year each visit fell in; a camera the record gives no period " +
+        "for - a shop, a fixed camera - is shown in every year, because hiding it would be a guess." +
+        (legacyByYear ? " Legacy has been switched on: the van sites are what the record dates." : "");
+    }
+  }
+}
+
+/* The block is hidden in the markup until this runs, so a page
+   without JavaScript shows no slider that does nothing. */
+function setUpYears() {
+  if (!yearsBox || !yearRange || !recordYearRange()) {
+    return;
+  }
+
+  fitYearRange();
+  yearsBox.hidden = false;
+
+  /* input, not change: a range fires input on every step of a drag
+     and on every arrow key, and the map should follow the thumb. */
+  yearRange.oninput = function () {
+    var value = Number(yearRange.value);
+    setYear(value === Number(yearRange.min) ? null : value);
+  };
+}
+
+/* ------------------------------------------------------------------
    Start up
    ------------------------------------------------------------------ */
 
@@ -3352,6 +3613,7 @@ if (EDITING) {
    list as it stands then, so there is nothing to draw here. */
 drawLegend();
 setUpExplain();
+setUpYears();
 render();
 
 /* ------------------------------------------------------------------
@@ -3493,6 +3755,11 @@ function overlayCameras(rows) {
   points = merged;
   refreshCameras();
   render();
+
+  /* The rows may carry a period the seed did not reach - the record
+     refreshed in the database ahead of the file - so the scrubber's
+     range is asked again. */
+  fitYearRange();
 
   /* A popup that was open before the database answered - a link
      opened it - is made again: its camera may now stand where the
@@ -3984,6 +4251,12 @@ function showCameraLink(point, centre) {
   if (hiddenTypes[point.type]) {
     hiddenTypes[point.type] = false;
     drawLegend();
+    changed = true;
+  }
+  /* A year the camera's record does not cover is put back to every
+     year, for the same reason: the link asked for the camera. */
+  if (!coversYear(point)) {
+    chooseYear(null);
     changed = true;
   }
   if (changed) {

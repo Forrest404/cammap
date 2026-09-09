@@ -2251,6 +2251,130 @@ article.post {
   overflow: hidden;
 }
 
+/* ---------- the year scrubber ----------
+
+   Under the legend: the label, the range and the readout on one row,
+   a row of marks under the range - "All", then each year - with the
+   one in force lit, and the hint under those. The range is drawn by
+   hand, because the browser's own is a rounded thumb on a rounded
+   track in its own blue, and this page has no rounded corners and
+   one accent: appearance none, a two-pixel rule for the track in
+   --rule, a square thumb in the accent. Firefox and the WebKit family
+   name the parts differently, so each rule is written twice and
+   never combined - a selector list with one unknown pseudo-element
+   is dropped whole. The KEYBOARD FOCUS block already lists
+   input[type="range"], so the ring needs nothing here.
+
+   The marks are aria-hidden: they say to the eye what the readout
+   and aria-valuetext say to a reader, and a row of eight numbers read
+   out on every step would be noise. The block is a grid of three
+   columns - the label, the range, the readout - so that the marks,
+   placed in the range's column on the row below, are exactly as wide
+   as the range at every width and each mark sits under its step; a
+   flex row and a guessed margin put them a step out on a phone. The
+   readout is the exact answer whatever the marks do. */
+.years {
+  display: grid;
+  /* A fixed width for the label's column, on purpose. An auto track
+     stretches to take the row's spare width and the range slid to
+     the right of a wide page; a max-content track took the hint's
+     whole sentence as its size - a spanning item's intrinsic width
+     is handed to any intrinsic track it crosses - and the page
+     scrolled sideways by two thousand pixels. 5ch is "YEAR" in the
+     label's capitals and spacing, and nothing here is intrinsic. */
+  grid-template-columns: 5ch minmax(0, 360px) 4.5em;
+  column-gap: 12px;
+  align-items: center;
+  margin: 10px 0 0 0;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.years label {
+  grid-column: 1;
+  margin: 0;
+}
+
+.years output {
+  grid-column: 3;
+  color: var(--text);
+}
+
+.years input[type="range"] {
+  grid-column: 2;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.years input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--rule);
+}
+
+.years input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+}
+
+.years input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--rule);
+}
+
+.years input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+}
+
+/* The marks, in the range's column on the row below it. */
+.year-marks {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  font-size: 11px;
+  color: var(--dim);   /* 5.6:1 - small, but text, and the promise holds */
+}
+
+.year-marks span.on {
+  color: var(--accent);
+}
+
+.years .hint {
+  grid-column: 1 / -1;
+  margin: 6px 0 0 0;
+}
+
+/* On paper the year in force is part of the filter state, which the
+   print view says plainly: the label and the readout print as "Year
+   2024" (or "Year All years"), and the slider, the marks and the hint
+   go, since none of them can be moved on paper. */
+@media print {
+  .years input[type="range"],
+  .year-marks,
+  .years .hint {
+    display: none;
+  }
+
+  .years {
+    color: var(--text);
+  }
+}
+
 /* ------------------------------------------------------------------
    PAPER
 

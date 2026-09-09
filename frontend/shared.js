@@ -85,6 +85,65 @@ function inLondon(lat, lon) {
          lon >= LONDON_BOUNDS[0][1] && lon <= LONDON_BOUNDS[1][1];
 }
 
+/* ---------------- the periods a record gives ----------------
+
+   A camera's `periods` is counted by the period the source gives -
+   {"2023-24": 1, "2025": 3} - and a key is YYYY, YYYY-YY or YYYY-YYYY,
+   the whole of the vocabulary the sources use (NOTES.md, "Deployments
+   by period"). The year scrubber on the map needs to know which years
+   a key covers, and nothing else may guess at that: a span covers
+   every year from its first to its last inclusive, and a two-digit
+   tail takes the century of the start, so "2023-24" is 2023 and 2024
+   and "2020-2025" is six years. That is all a period says. It does
+   not say which of those years a deployment fell in, which is why the
+   scrubber shows a site in every year its period covers and never
+   picks one.
+
+   periodSpan() is the twin of period_span() in tools/build_points.py
+   - same rule, same century arithmetic - and tools/check.js holds the
+   two together by running it over every key in the record. Change
+   one, change the other. */
+function periodSpan(key) {
+  var start = parseInt(key.slice(0, 4), 10);
+  var tail = key.slice(5);
+
+  if (key.length === 4) {
+    return [start, start];
+  }
+
+  return [start, tail.length === 4 ? parseInt(tail, 10) : parseInt(key.slice(0, 2) + tail, 10)];
+}
+
+/* Every year a periods object covers, each once, earliest first; null
+   where the record names no period - which is the case for a shop, a
+   fixed install and the King's Cross estate, and means "no year is
+   claimed", not "no year". */
+function periodYears(periods) {
+  var years = [];
+  var key;
+  var span;
+  var y;
+
+  if (!periods || typeof periods !== "object") {
+    return null;
+  }
+
+  for (key in periods) {
+    if (periods.hasOwnProperty(key)) {
+      span = periodSpan(key);
+      for (y = span[0]; y <= span[1]; y++) {
+        if (years.indexOf(y) === -1) {
+          years.push(y);
+        }
+      }
+    }
+  }
+
+  years.sort(function (a, b) { return a - b; });
+
+  return years;
+}
+
 /* seed_key is how a database row says which seed entry it is. It is
    built the same way here as in the build script, so they agree. */
 function seedKeyOf(point) {
