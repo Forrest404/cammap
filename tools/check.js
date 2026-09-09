@@ -55,6 +55,21 @@
    explains, and the one build_points.py would undo if it turned up
    unchanged; and no two entries share a key.
 
+   The GeoJSON download. data/cameras.geojson is the same record for
+   map tools, written by the build script beside points.js. stamp.py
+   proves it is what the CSV produces; this proves its shape against
+   points.js as a tool would read it - a FeatureCollection, one Point
+   per entry with longitude first, the public fields as properties in
+   one order, a bbox inside London - so a change to the generator
+   that broke the file for QGIS would be named here, not found by the
+   next journalist to open it.
+
+   The brightness rule. The halo under an approximate pin is drawn in
+   the dot's colour dimmed to a ceiling, and brightnessOf() and
+   dimTo() in shared.js are what dim it; their arithmetic is pinned
+   here because a halo that came out brighter than a dot would be the
+   one thing the map's whole tuning exists to prevent.
+
    The count of cameras is not asserted. It changes, and a number in
    a check that is expected to change is a number nobody keeps
    honest.
@@ -439,6 +454,227 @@ if (havePoints && haveShared) {
       JSON.stringify(match[match.length - 1]));
     check("typeColourExpression is pure",
       sameJSON(expr, again) && JSON.stringify(T) === before);
+  });
+
+  section("periodSpan and periodYears", function () {
+    var P = site.POINTS;
+    var keys = {};
+    var wrong = [];
+    var i;
+    var k;
+    var span;
+    var m;
+    var years;
+
+    check("periodSpan is a function in shared.js", typeof site.periodSpan === "function");
+    check("periodYears is a function in shared.js", typeof site.periodYears === "function");
+    if (typeof site.periodSpan !== "function" || typeof site.periodYears !== "function") {
+      return;
+    }
+
+    /* The three shapes, with the century arithmetic period_span() in
+       build_points.py does: a two-digit tail takes the start's century. */
+    check("periodSpan reads YYYY, YYYY-YY and YYYY-YYYY",
+      sameJSON(site.periodSpan("2025"), [2025, 2025]) &&
+      sameJSON(site.periodSpan("2023-24"), [2023, 2024]) &&
+      sameJSON(site.periodSpan("2020-2025"), [2020, 2025]) &&
+      sameJSON(site.periodSpan("2020-22"), [2020, 2022]),
+      JSON.stringify([site.periodSpan("2025"), site.periodSpan("2023-24"), site.periodSpan("2020-2025")]));
+    check("periodSpan gives a two-digit tail the start's century, as period_span() does",
+      sameJSON(site.periodSpan("1999-01"), [1999, 1901]));
+
+    /* Every key in the record, against the same reading done by hand
+       from the regular expression: the span starts at the first four
+       digits and ends at the tail read the same way. */
+    for (i = 0; i < P.length; i++) {
+      if (P[i].periods) {
+        for (k in P[i].periods) {
+          if (Object.prototype.hasOwnProperty.call(P[i].periods, k)) {
+            keys[k] = true;
+          }
+        }
+      }
+    }
+    for (k in keys) {
+      if (keys.hasOwnProperty(k)) {
+        m = /^(\d{4})(?:-(\d{2}|\d{4}))?$/.exec(k);
+        span = site.periodSpan(k);
+        if (!m || span[0] !== Number(m[1]) ||
+            span[1] !== (m[2] === undefined ? Number(m[1]) : (m[2].length === 4 ? Number(m[2]) : Number(m[1].slice(0, 2) + m[2]))) ||
+            span[0] > span[1]) {
+          wrong.push(k + " -> " + JSON.stringify(span));
+        }
+      }
+    }
+    check("periodSpan reads every key in the record, start no later than end", wrong.length === 0, listOf(wrong));
+
+    years = site.periodYears({ "2020-22": 1, "2025": 3, "2023-24": 1 });
+    check("periodYears lists each covered year once, earliest first",
+      sameJSON(years, [2020, 2021, 2022, 2023, 2024, 2025]), JSON.stringify(years));
+    check("periodYears of null is null, not an empty list",
+      site.periodYears(null) === null && site.periodYears(undefined) === null);
+  });
+
+  section("recordCounts", function () {
+    var P = site.POINTS;
+    var c;
+    var sum = 0;
+    var k;
+    var approx = 0;
+    var dated = 0;
+    var i;
+    var y;
+    var from = null;
+    var to = null;
+
+    check("recordCounts is a function in shared.js", typeof site.recordCounts === "function");
+    if (typeof site.recordCounts !== "function") {
+      return;
+    }
+    c = site.recordCounts(P);
+
+    /* The press page states these in words. Held to the record they
+       are worked out from, not to a number: the count changes, and a
+       number in a check that is expected to change is a number nobody
+       keeps honest. */
+    for (k in c.byType) {
+      if (c.byType.hasOwnProperty(k)) {
+        sum += c.byType[k];
+      }
+    }
+    for (i = 0; i < P.length; i++) {
+      if (P[i].approximate === true) { approx++; }
+      y = site.periodYears(P[i].periods);
+      if (y && y.length) {
+        dated++;
+        from = from === null ? y[0] : Math.min(from, y[0]);
+        to = to === null ? y[y.length - 1] : Math.max(to, y[y.length - 1]);
+      }
+    }
+    check("recordCounts total is the record's length", c.total === P.length, c.total + " for " + P.length);
+    check("recordCounts kinds add up to the total", sum === c.total, sum + " for " + c.total);
+    check("recordCounts names every kind in CAMERA_TYPES, and no other",
+      sameJSON(Object.keys(c.byType), site.CAMERA_TYPES.map(function (t) { return t.type; })), JSON.stringify(Object.keys(c.byType)));
+    check("recordCounts approximate is the count of approximate entries", c.approximate === approx, c.approximate + " for " + approx);
+    check("recordCounts dated, from and to follow periodYears over the record",
+      c.dated === dated && c.from === from && c.to === to, JSON.stringify([c.dated, c.from, c.to]));
+    check("recordCounts of an empty record is zeros and nulls",
+      sameJSON([site.recordCounts([]).total, site.recordCounts([]).from, site.recordCounts([]).to], [0, null, null]));
+  });
+
+  section("the GeoJSON download", function () {
+    var P = site.POINTS;
+    var B = site.LONDON_BOUNDS;
+    var PROPS = ["name", "note", "type", "status", "last", "deployments", "periods",
+      "source_label", "source_url", "approximate", "seed_key"];
+    var g;
+    var f;
+    var i;
+    var k;
+    var keys;
+    var who;
+    var off = { geometry: [], keys: [], values: [], key: [] };
+    var bbox;
+
+    try {
+      g = JSON.parse(readFile("data/cameras.geojson"));
+    } catch (err) {
+      check("data/cameras.geojson is JSON", false, err && err.message);
+      return;
+    }
+
+    check("cameras.geojson is a FeatureCollection", g && g.type === "FeatureCollection" && Array.isArray(g.features));
+    if (!g || !Array.isArray(g.features)) {
+      return;
+    }
+    check("one feature per camera, in the record's order", g.features.length === P.length,
+      g.features.length + " features for " + P.length + " cameras");
+
+    /* [west, south, east, north], and inside the London box: a tool
+       that reads the bbox first should never be pointed off the map. */
+    bbox = g.bbox;
+    check("bbox is [west, south, east, north] inside LONDON_BOUNDS",
+      Array.isArray(bbox) && bbox.length === 4 &&
+      bbox[0] <= bbox[2] && bbox[1] <= bbox[3] &&
+      site.inLondon(bbox[1], bbox[0]) && site.inLondon(bbox[3], bbox[2]),
+      JSON.stringify(bbox));
+
+    /* Longitude first in the geometry - GeoJSON's order, the reverse
+       of the record's - and the position the same six-decimal number
+       points.js has; the properties exactly the public fields, in one
+       order, with the values points.js carries; and seed_key what
+       seedKeyOf() writes for the entry, since it is the join. */
+    for (i = 0; i < Math.min(g.features.length, P.length); i++) {
+      f = g.features[i];
+      who = nameOf(P[i], i);
+      if (!f || f.type !== "Feature" || !f.geometry || f.geometry.type !== "Point" ||
+          !Array.isArray(f.geometry.coordinates) || f.geometry.coordinates.length !== 2 ||
+          f.geometry.coordinates[0] !== P[i].lon || f.geometry.coordinates[1] !== P[i].lat) {
+        off.geometry.push(who + " " + JSON.stringify(f && f.geometry));
+        continue;
+      }
+      keys = Object.keys(f.properties || {});
+      if (!sameJSON(keys, PROPS)) {
+        off.keys.push(who + " " + JSON.stringify(keys));
+        continue;
+      }
+      for (k = 0; k < PROPS.length - 1; k++) {
+        if (!sameJSON(f.properties[PROPS[k]], P[i][PROPS[k]])) {
+          off.values.push(who + " " + PROPS[k] + ": " + JSON.stringify(f.properties[PROPS[k]]) + " for " + JSON.stringify(P[i][PROPS[k]]));
+        }
+      }
+      if (typeof site.seedKeyOf === "function" && f.properties.seed_key !== site.seedKeyOf(P[i])) {
+        off.key.push(who + " " + JSON.stringify(f.properties.seed_key));
+      }
+    }
+    check("every feature is a Point at [lon, lat] of its entry", off.geometry.length === 0, listOf(off.geometry));
+    check("every feature carries exactly the public fields, in order", off.keys.length === 0, listOf(off.keys));
+    check("every property is the value points.js has", off.values.length === 0, listOf(off.values));
+    check("every feature's seed_key is what seedKeyOf writes for its entry", off.key.length === 0, listOf(off.key));
+  });
+
+  section("the brightness rule", function () {
+    var T = site.CAMERA_TYPES;
+    var ceiling = 128;
+    var over = [];
+    var offHue = [];
+    var i;
+    var dimmed;
+    var a;
+    var b;
+
+    check("brightnessOf is the perceived scale: white 255, black 0, the fixed red 134",
+      typeof site.brightnessOf === "function" &&
+      site.brightnessOf("#ffffff") === 255 && site.brightnessOf("#000000") === 0 &&
+      Math.round(site.brightnessOf("#cf6a58")) === 134,
+      typeof site.brightnessOf === "function" ? String(site.brightnessOf("#cf6a58")) : "missing");
+    if (typeof site.dimTo !== "function") {
+      check("dimTo is a function in shared.js", false);
+      return;
+    }
+
+    /* The halo under an approximate pin is every kind's colour dimmed
+       to the ceiling: at or under it afterwards, the hue kept (the
+       channels scale together), and a colour already under it left
+       exactly as it is. */
+    for (i = 0; i < T.length; i++) {
+      dimmed = site.dimTo(T[i].colour, ceiling);
+      if (!HEX_COLOUR.test(dimmed) || site.brightnessOf(dimmed) > ceiling) {
+        over.push(T[i].type + " -> " + dimmed + " (" + site.brightnessOf(dimmed) + ")");
+      }
+      a = [1, 3, 5].map(function (p) { return parseInt(T[i].colour.slice(p, p + 2), 16); });
+      b = [1, 3, 5].map(function (p) { return parseInt(dimmed.slice(p, p + 2), 16); });
+      /* the same factor on every channel, to within the rounding */
+      if (Math.abs(b[0] * a[1] - b[1] * a[0]) > a[0] + a[1] || Math.abs(b[2] * a[1] - b[1] * a[2]) > a[2] + a[1]) {
+        offHue.push(T[i].type + " " + T[i].colour + " -> " + dimmed);
+      }
+    }
+    check("dimTo brings every kind's colour to the ceiling or under", over.length === 0, listOf(over));
+    check("dimTo keeps the hue: every channel scaled by the same factor", offHue.length === 0, listOf(offHue));
+    check("dimTo leaves a colour already under the ceiling alone",
+      site.dimTo("#0d0d0d", ceiling) === "#0d0d0d" && site.dimTo("#5c5c5c", ceiling) === "#5c5c5c");
+    check("dimTo of the non-functional colour is under the ceiling",
+      site.brightnessOf(site.dimTo(site.NONFUNCTIONAL_COLOUR, ceiling)) <= ceiling);
   });
 
   section("seedKeyOf", function () {

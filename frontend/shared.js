@@ -85,6 +85,65 @@ function inLondon(lat, lon) {
          lon >= LONDON_BOUNDS[0][1] && lon <= LONDON_BOUNDS[1][1];
 }
 
+/* ---------------- the periods a record gives ----------------
+
+   A camera's `periods` is counted by the period the source gives -
+   {"2023-24": 1, "2025": 3} - and a key is YYYY, YYYY-YY or YYYY-YYYY,
+   the whole of the vocabulary the sources use (NOTES.md, "Deployments
+   by period"). The year scrubber on the map needs to know which years
+   a key covers, and nothing else may guess at that: a span covers
+   every year from its first to its last inclusive, and a two-digit
+   tail takes the century of the start, so "2023-24" is 2023 and 2024
+   and "2020-2025" is six years. That is all a period says. It does
+   not say which of those years a deployment fell in, which is why the
+   scrubber shows a site in every year its period covers and never
+   picks one.
+
+   periodSpan() is the twin of period_span() in tools/build_points.py
+   - same rule, same century arithmetic - and tools/check.js holds the
+   two together by running it over every key in the record. Change
+   one, change the other. */
+function periodSpan(key) {
+  var start = parseInt(key.slice(0, 4), 10);
+  var tail = key.slice(5);
+
+  if (key.length === 4) {
+    return [start, start];
+  }
+
+  return [start, tail.length === 4 ? parseInt(tail, 10) : parseInt(key.slice(0, 2) + tail, 10)];
+}
+
+/* Every year a periods object covers, each once, earliest first; null
+   where the record names no period - which is the case for a shop, a
+   fixed install and the King's Cross estate, and means "no year is
+   claimed", not "no year". */
+function periodYears(periods) {
+  var years = [];
+  var key;
+  var span;
+  var y;
+
+  if (!periods || typeof periods !== "object") {
+    return null;
+  }
+
+  for (key in periods) {
+    if (periods.hasOwnProperty(key)) {
+      span = periodSpan(key);
+      for (y = span[0]; y <= span[1]; y++) {
+        if (years.indexOf(y) === -1) {
+          years.push(y);
+        }
+      }
+    }
+  }
+
+  years.sort(function (a, b) { return a - b; });
+
+  return years;
+}
+
 /* seed_key is how a database row says which seed entry it is. It is
    built the same way here as in the build script, so they agree. */
 function seedKeyOf(point) {
@@ -139,6 +198,82 @@ function typeColourExpression() {
   match.push(CAMERA_TYPES[1].colour);   /* fallback: the van colour */
 
   return ["case", ["==", ["get", "status"], "nonfunctional"], NONFUNCTIONAL_COLOUR, match];
+}
+
+/* What the record adds up to, for a page that states it in words -
+   the press page - worked out from the entries and never typed, for
+   the reason the count line under the map is: a number in prose goes
+   stale without a sound. The total, the count per kind in
+   CAMERA_TYPES order, how many pins the record marks approximate, how
+   many entries carry a period, and the first and last year any period
+   covers (null where none does). Pure, so tools/check.js can hold it
+   against the record. */
+function recordCounts(list) {
+  var out = { total: 0, byType: {}, approximate: 0, dated: 0, from: null, to: null };
+  var i;
+  var years;
+
+  for (i = 0; i < CAMERA_TYPES.length; i++) {
+    out.byType[CAMERA_TYPES[i].type] = 0;
+  }
+
+  for (i = 0; i < list.length; i++) {
+    out.total++;
+    out.byType[list[i].type] = (out.byType[list[i].type] || 0) + 1;
+    if (list[i].approximate === true) {
+      out.approximate++;
+    }
+    years = periodYears(list[i].periods);
+    if (years && years.length) {
+      out.dated++;
+      out.from = out.from === null ? years[0] : Math.min(out.from, years[0]);
+      out.to = out.to === null ? years[years.length - 1] : Math.max(out.to, years[years.length - 1]);
+    }
+  }
+
+  return out;
+}
+
+/* ---------------- the brightness rule, as arithmetic ----------------
+
+   Nothing drawn under the cameras may be brighter than the dimmest
+   camera dot - the fixed-camera red, 134 on the perceived scale
+   0.299 R + 0.587 G + 0.114 B. The LIFT table below is tuned to it by
+   eye and measured after; this is the same rule for a colour that has
+   to be derived rather than typed. dimTo() scales a colour down, hue
+   kept, until its brightness is at or under a ceiling: the halo under
+   an approximate pin is the dot's own colour dimmed this way, because
+   a translucent lighter colour over a pixel the glow has already
+   lifted near the ceiling can only push it over, and a colour that is
+   itself under the ceiling never can - over anything brighter than
+   itself it darkens. A colour already under the ceiling comes back
+   as it is. */
+function brightnessOf(hex) {
+  var r = parseInt(hex.slice(1, 3), 16);
+  var g = parseInt(hex.slice(3, 5), 16);
+  var b = parseInt(hex.slice(5, 7), 16);
+
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+function dimTo(hex, ceiling) {
+  var was = brightnessOf(hex);
+  var by;
+  var i;
+  var part;
+  var out = "#";
+
+  if (was <= ceiling) {
+    return hex;
+  }
+
+  by = ceiling / was;
+  for (i = 1; i < 7; i += 2) {
+    part = Math.floor(parseInt(hex.slice(i, i + 2), 16) * by);
+    out += (part < 16 ? "0" : "") + part.toString(16);
+  }
+
+  return out;
 }
 
 /* Fills a <select> from the table above, so no page has to keep its

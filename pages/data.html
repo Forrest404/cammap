@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- What a request from this page says about where it came from.
+     Cross-origin hosts - OpenFreeMap, Esri, Supabase, Nominatim - get
+     the origin only: Nominatim's usage policy asks for a referrer
+     that identifies the application, and the origin does. Same-origin
+     requests get the full URL, which is why a position must never be
+     in a query string on this site - it would reach the host with
+     the page request and ride in the Referer of every script, style
+     and font the page loads; a fragment is never sent at all. This
+     is the browser's default in Chrome and Firefox, declared so it
+     does not depend on a default. Nine copies, one per page;
+     stamp.py does not police this tag. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- Identical on all seven pages, and must stay that way: it is what
+     makes the no-CDN rule something the browser enforces rather than
+     something we remember. tools/stamp.py fails if they drift. Why
+     each source is listed, and what breaks without worker-src, is in
+     CLAUDE.md under "The Content-Security-Policy". -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
+  img-src 'self' data: blob: https://server.arcgisonline.com
+          https://tiles.openfreemap.org https://*.openfreemap.org
+          https://*.supabase.co;
+  media-src 'self' blob: https://*.supabase.co;
+  worker-src blob:;
+  child-src blob:;
+  connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
+              https://tiles.openfreemap.org https://*.openfreemap.org
+              https://server.arcgisonline.com
+              https://nominatim.openstreetmap.org;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'none';
+  frame-ancestors 'none'">
+<title>The data &mdash; cammap</title>
+<meta name="description" content="The record behind the map, to take away or to read over its API: what is in the CSV and the GeoJSON, the licence, and the read-only endpoint with a curl line that works as written.">
+<link rel="canonical" href="https://forrest404.github.io/cammap/pages/data.html">
+<!-- What a shared link turns into. Each page has its own title and
+     description - one shared across the site would be the failure
+     mode - and all of them show the same card, img/share.png, which
+     is the map itself photographed by tools/share-card.html and
+     committed, because a static site has nothing to draw one with on
+     request. The addresses are absolute because a card scraper has no
+     base to resolve against; they name the site's home on Pages, and
+     NOTES.md ("Sharing the site") lists every file that does. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cammap">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://forrest404.github.io/cammap/pages/data.html">
+<meta property="og:title" content="The data — cammap">
+<meta property="og:description" content="The record behind the map, to take away or to read over its API: what is in the CSV and the GeoJSON, the licence, and the read-only endpoint with a curl line that works as written.">
+<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The data — cammap">
+<meta name="twitter:description" content="The record behind the map, to take away or to read over its API: what is in the CSV and the GeoJSON, the licence, and the read-only endpoint with a curl line that works as written.">
+<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../feed.xml">
+<!-- The icon, in the forms the browsers between them ask for: SVG
+     for the tab in Chrome and Firefox, .ico for Safari and anything
+     older, a 180px PNG for an iOS home screen. manifest.json is what
+     makes "Add to Home Screen" on Android an icon rather than a
+     screenshot; theme-color is what the browser paints its own frame
+     around the page. All are drawn from img/favicon.svg - NOTES.md,
+     "Sharing the site", says how the raster ones are made from it. -->
+<link rel="icon" href="../img/favicon.ico" sizes="32x32">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<meta name="apple-mobile-web-app-title" content="cammap">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../frontend/style.css?v=c1855d33">
+</head>
+<body>
+<div class="sheet">
+
+<header class="masthead">
+  <h1 class="title">cammap</h1>
+  <nav class="bar">
+    <a href="../index.html">Map</a>
+    <span class="sep">&middot;</span>
+    <a href="about.html">About</a>
+    <span class="sep">&middot;</span>
+    <a href="blog.html">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="rights.html">Rights</a>
+    <!-- account.js fills this in once it knows whether anyone is
+         signed in. Empty until then, so the nav never flickers. -->
+    <span id="nav-account"></span>
+  </nav>
+</header>
+
+<!-- ================================================================
+     THE DATA - where each part of this page comes from.
+
+     The record and its columns are the docstring of
+     tools/build_points.py and NOTES.md ("The build script and the
+     record"); the GeoJSON's shape is that script's render_geojson();
+     the licence is LICENSE; the read API is the view cameras_public
+     in backend/schema.sql (version 2.14, migration 012) and the way
+     map.js reads it. The key printed here is the project's
+     publishable key from supabase-config.js: it is public by design -
+     every visitor's browser holds it - and reads what the site shows.
+
+     No count is typed on this page, for the reason About gives: a
+     number in prose goes stale without a sound. The line under the
+     map computes its own, and the API gives it on request (see
+     "Paging and the count").
+
+     Not in the nav: the nav has four static links and wraps on a
+     phone already. The page is reached from About, from the press
+     page, and from the Download line in the footer of every page.
+
+     The curl lines were run against the live project on the day
+     this was written. The view answers 404 there until migration 012
+     has been applied by the maintainer; the section "Until the view
+     is there" says so and shows the request that answers today.
+     When the ledger (BUILD-LOG.md) says 012 has been run, that
+     section can go and this comment with it.
+
+     No JavaScript of its own; the page reads in full with scripts
+     off. Written for the person who opens the CSV to check the map:
+     a journalist, a researcher, a council officer.
+     ================================================================ -->
+
+<main>
+  <div class="prose">
+
+    <h2>The data</h2>
+
+    <p>
+      Everything the map shows is one record, and the record is public.
+      This page says what is in it, how to take it away, on what terms,
+      and how to read it over the same interface the map reads it from.
+    </p>
+
+    <h3>What the record is</h3>
+
+    <p>
+      One file of comma-separated values, one camera per line, kept in the
+      site's repository as <code>data/cameras.csv</code>. It is edited by
+      hand, from the documents - the Metropolitan Police's published live
+      facial recognition deployment records, the British Transport
+      Police's deployment register, and named press reporting for the
+      shops and the fixed cameras - and nothing in it is estimated. Where
+      a source gives no value the record holds none: a camera without a
+      known source cites nothing, a site the record gives as a borough is
+      marked approximate rather than placed on a street, and a period is
+      written exactly as the record states it. A script writes everything
+      else the site uses from that one file, and the site's checks refuse
+      a commit in which any of them differs from it. The
+      <a href="about.html">About page</a> says what the map does and does
+      not claim; the line under the map says how many cameras there are,
+      which years the records run to, and when they were last checked.
+    </p>
+
+    <h3>Take it away</h3>
+
+    <ul class="contents">
+      <li>
+        <a href="../data/cameras.csv" download>cameras.csv</a> - the record
+        itself, served as it is. One header row, one camera per line,
+        UTF-8, quoted only where a field needs it (RFC 4180). It is the
+        file the maintainer edits, so a copy of it cannot differ from what
+        the map draws.
+      </li>
+      <li>
+        <a href="../data/cameras.geojson" download>cameras.geojson</a> - the
+        same cameras for a map tool: RFC 7946, one FeatureCollection, one
+        Point per camera, written from the CSV by the same script that
+        writes the map's own data. It opens in QGIS, in Datawrapper, and in
+        anything else that reads GeoJSON.
+      </li>
+    </ul>
+
+    <p>The columns of the CSV, in the order they are written:</p>
+
+    <table class="columns">
+      <tr><th scope="row">name</th><td>The place, as the source names it.</td></tr>
+      <tr><th scope="row">type</th><td>One of <code>fixedcam</code>, <code>vancam</code>, <code>transportcam</code>, <code>facewatchcam</code>, <code>privatecam</code>: a fixed police camera, a police van site, a British Transport Police station, a shop running Facewatch, a private estate's own system.</td></tr>
+      <tr><th scope="row">status</th><td><code>active</code> or <code>legacy</code>. Every van site is legacy: a van parks for a shift and drives away, so no van site claims to be active.</td></tr>
+      <tr><th scope="row">lat, lon</th><td>Decimal degrees, six places, latitude first.</td></tr>
+      <tr><th scope="row">approximate</th><td><code>true</code> where the source gave a borough or a district rather than a street and the pin sits at the middle of the area; <code>false</code> otherwise.</td></tr>
+      <tr><th scope="row">last</th><td>The last year the source records the camera, or blank.</td></tr>
+      <tr><th scope="row">periods</th><td>The recorded uses, counted by the period the source gives them in - <code>2023-24:1</code>, <code>2023-2025:3</code>, <code>2026:4</code>, or several separated by semicolons. Blank where the source names no period. A span is never split into years, because the source does not say which year each use fell in.</td></tr>
+      <tr><th scope="row">deployments</th><td>How many times a source records the spot being used: the sum of the periods where they are given, otherwise one.</td></tr>
+      <tr><th scope="row">source_label</th><td>The record or report the entry rests on, named - "Met Police LFR deployment record, 2025", "The Register, 6 February 2026" - or blank where none is known.</td></tr>
+      <tr><th scope="row">source_url</th><td>Where that document is, as an https address, or blank. Never a URL without a label.</td></tr>
+      <tr><th scope="row">note</th><td>The entry's prose, preserved to the character.</td></tr>
+    </table>
+
+    <p>
+      The GeoJSON carries the same fields as each feature's properties,
+      less <code>lat</code> and <code>lon</code>, which are the geometry -
+      <code>[longitude, latitude]</code>, the order GeoJSON insists on -
+      with <code>periods</code> as an object (<code>{"2023-24": 1}</code>)
+      and <code>approximate</code> as a boolean, and one field more,
+      <code>seed_key</code>: the entry's identity in the record, built as
+      <code>name|lat|lon|type</code>, which is what the map's database
+      matches rows on and what to join this file to the API on. The
+      collection carries a <code>bbox</code> and, as foreign members, the
+      licence and the attribution line below.
+    </p>
+
+    <h3>The licence</h3>
+
+    <p>
+      The record is published under the
+      <a href="https://opendatacommons.org/licenses/odbl/1-0/">Open Database
+      License 1.0</a>: copy it, plot it, join it, build on it, commercially
+      or not, provided that you attribute it, share a database you build on
+      it under the same licence, and do not lock it behind a technical
+      restriction. The attribution to use is
+    </p>
+
+    <pre>Contains data from cammap (https://forrest404.github.io/cammap/),
+made available under the Open Database License (ODbL) 1.0.</pre>
+
+    <p>
+      The record was itself assembled from public sources, and each entry
+      says which; reusing it does not remove the need to credit those where
+      your own use calls for it. The code that draws the map is not
+      licensed for reuse. Both are set out in the
+      <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a>
+      in the repository.
+    </p>
+
+    <h3>Reading it over the API</h3>
+
+    <p>
+      The map reads its cameras from a database view called
+      <code>cameras_public</code>, through the REST interface every
+      Supabase project has (PostgREST), with a key that is public by
+      design: every visitor's browser holds it. Anyone may read the view
+      the same way. It answers only what the map may read - the fourteen
+      columns below, for the cameras that are on the map - and nothing
+      about any account.
+    </p>
+
+    <p>Copy this line as it stands:</p>
+
+    <pre>curl "https://hdwdefswcnkzlvmyqybw.supabase.co/rest/v1/cameras_public?select=id,name,lat,lon,type,status" \
+  -H "apikey: sb_publishable_ZC5aCGJcmfMqC3qMNJ2rxg_ogaOyE1r" \
+  -H "Authorization: Bearer sb_publishable_ZC5aCGJcmfMqC3qMNJ2rxg_ogaOyE1r"</pre>
+
+    <p>
+      Both headers are needed, and both carry the same key. The answer is
+      JSON, one object per camera. The columns the view has, and so the
+      names <code>select=</code> takes:
+    </p>
+
+    <table class="columns">
+      <tr><th scope="row">id</th><td>The camera's number in the database. It is the same for everyone and survives a rename, and the map's own links carry it (<code>#camera=42</code>).</td></tr>
+      <tr><th scope="row">name, note, lat, lon, type, status</th><td>As in the CSV. <code>status</code> can also be <code>nonfunctional</code>, a state a moderator sets from a report.</td></tr>
+      <tr><th scope="row">last_seen</th><td>The CSV's <code>last</code>.</td></tr>
+      <tr><th scope="row">deployments, periods, source_label, source_url, approximate</th><td>As in the CSV; <code>periods</code> is JSON.</td></tr>
+      <tr><th scope="row">seed_key</th><td>The entry's identity in the record, as in the GeoJSON; null for a camera that came from a report rather than the record.</td></tr>
+    </table>
+
+    <p>
+      The view also holds cameras that are not in the CSV: reports that
+      moderators have checked and put on the map. The line under the map
+      says how many, separately from the record's own count, so the
+      figures can be checked against the file.
+    </p>
+
+    <p>
+      Filters are PostgREST's: a column, an operator and a value in the
+      query string. The van sites, with only their names and positions:
+    </p>
+
+    <pre>curl "https://hdwdefswcnkzlvmyqybw.supabase.co/rest/v1/cameras_public?type=eq.vancam&amp;select=name,lat,lon" \
+  -H "apikey: sb_publishable_ZC5aCGJcmfMqC3qMNJ2rxg_ogaOyE1r" \
+  -H "Authorization: Bearer sb_publishable_ZC5aCGJcmfMqC3qMNJ2rxg_ogaOyE1r"</pre>
+
+    <p>
+      <code>eq</code>, <code>neq</code>, <code>gt</code>, <code>lt</code>,
+      <code>in</code> and the rest, <code>order=</code>,
+      <code>limit=</code> and <code>offset=</code> are all as PostgREST
+      documents them.
+    </p>
+
+    <h3>Paging and the count</h3>
+
+    <p>
+      A request answers up to a thousand rows, the project's default page,
+      which is more than the record holds today; if it ever is not, ask for
+      the rest with <code>limit=</code> and <code>offset=</code>, or with a
+      <code>Range: 0-999</code> header and then <code>Range: 1000-1999</code>.
+      For the count without the rows, send <code>Prefer: count=exact</code>
+      on a HEAD request and read the <code>content-range</code> header, which
+      ends <code>/</code> and the total.
+    </p>
+
+    <h3>A fair rate</h3>
+
+    <p>
+      The whole record is one request of about a hundred kilobytes. Ask for
+      it once and keep it, rather than once per question, and cache it for
+      a few minutes if a page of yours asks on load, which is what the map
+      does. A few requests a minute is nothing; a request a second from a
+      script all day is what the project's free tier is not for, and for
+      anything that heavy the CSV is the same data with no request at all.
+    </p>
+
+    <h3>Until the view is there</h3>
+
+    <p class="notice">
+      <strong>The view is not yet on the live project.</strong> It is added
+      by a database change the maintainer runs by hand (migration 012 in
+      the repository), and until that has been done the line above answers
+      <code>404</code> with
+      <code>{"code":"PGRST205", &hellip; "message":"Could not find the table
+      'public.cameras_public' in the schema cache"}</code>, which is what it
+      answered on the day this page was written. The same request against
+      the underlying table answers today, with the same headers and the same
+      columns:
+    </p>
+
+    <pre>curl "https://hdwdefswcnkzlvmyqybw.supabase.co/rest/v1/cameras?select=id,name,lat,lon,type,status" \
+  -H "apikey: sb_publishable_ZC5aCGJcmfMqC3qMNJ2rxg_ogaOyE1r" \
+  -H "Authorization: Bearer sb_publishable_ZC5aCGJcmfMqC3qMNJ2rxg_ogaOyE1r"</pre>
+
+    <p>
+      The map itself falls back to the table the same way. Once the
+      migration has been run the view answers as written and the table
+      stops answering the public key; if you build on this, build on the
+      view.
+    </p>
+
+    <h3>What it does not answer</h3>
+
+    <p>
+      Nothing about anyone. The view carries no column that names a person
+      - not who reported a camera, not who approved it, not when - and the
+      key reads what the site shows and writes nothing without an account.
+      The <a href="about.html">About page</a> says what an account is and
+      what the site keeps, which is a username of two random words, a
+      password hash, the reports a person sent and their points, and
+      nothing else.
+    </p>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+       hosting" is true and says nothing - a precise small number is
+       far more persuasive than an unspecified appeal, and it fits a
+       site that says exactly what it knows everywhere else. The figure
+       was not available when this was written (QUESTIONS.md, item 2:
+       what the Supabase project and the cammap.app domain come to per
+       month; the Pages hosting itself is free). When it is known, make
+       the line below read, on all eight pages at once or stamp.py
+       fails:
+
+         cammap is free and has no advertising. Donations pay for the
+         hosting, which costs about £N a month.
+
+       Until then the sentence stays as it is: a number that has not
+       been checked is worse than none on a site whose whole argument
+       is that nothing on it is estimated. -->
+  <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+  <!-- One licence, for the record only. The cameras are ODbL 1.0 so
+       that the record can be cited, plotted and built on, which is
+       what the site is for; the code is not licensed for reuse, and
+       LICENSE at the root says both. The link leaves the site: LICENSE
+       is served without a content type by Pages, which most browsers
+       download rather than show, so it points at the licence itself. -->
+  <span class="foot-note">Data <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> &middot; <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a></span>
+  <!-- The record, to take away. The CSV is the record itself, served
+       as it is - the one file the maintainer edits, so a download of
+       it cannot drift from what the map draws. The GeoJSON is written
+       from it by tools/build_points.py beside points.js and seed.sql,
+       never by hand; stamp.py fails if it is not what the CSV
+       produces. Both are ODbL like the line above says. The download
+       attribute saves the file rather than showing it, since a CSV
+       in a browser tab is no use to anyone. -->
+  <span class="foot-note">Download the data: <a href="../data/cameras.csv" download>CSV</a> &middot; <a href="../data/cameras.geojson" download>GeoJSON</a> &middot; <a href="data.html">about the data</a></span>
+</footer>
+
+</div>
+<!-- The account controls live in the nav, so every page needs these
+     three. All local files; nothing is fetched from a CDN. -->
+<script src="../lib/supabase.js"></script>
+<script src="../frontend/shared.js?v=c1855d33"></script>
+<script src="../supabase-config.js?v=c1855d33"></script>
+<script src="../frontend/account.js?v=c1855d33"></script>
+</body>
+</html>

@@ -2184,11 +2184,279 @@ article.post {
 /* ------------------------------------------------------------------
    THE RECORD (Wave 5: the record agent writes this block)
 
-   Rules for the popup's source line, the approximate marker's legend
-   entry, the published-record notice, the download line in the footer,
-   the period scrubber, and the press and API pages. If the agent needs
-   no rule here, this block is removed rather than left empty.
+   What makes the record legible on the page: the popup's source line,
+   the approximate marker's legend entry, the published-record notice,
+   the download line in the footer, the period scrubber, and the press
+   and data pages. Each rule says why it is here; the reasoning that
+   did not fit is under "Provenance and the record on the page" in
+   NOTES.md.
    ------------------------------------------------------------------ */
+
+/* ---------- the source line in the popup ----------
+
+   "Source: Met Police LFR deployment record, 2025", under the note.
+   It wears the popup's dim caption voice (.kind) because it is a
+   citation and not a call to action - the accent in the popup is for
+   Copy link and Report its state, the things a visitor does - and its
+   link is styled as the rights page styles a citation (.prose a.cite):
+   underlined, dim, the text colour on hover. --dim is 5.6:1 on the
+   page, so the link is a link to the eye and reads at the ratio the
+   header promises. It is a link, so the KEYBOARD FOCUS ring covers it
+   like any other. */
+.maplibregl-popup-content .source a {
+  color: var(--dim);
+}
+
+.maplibregl-popup-content .source a:hover {
+  color: var(--text);
+}
+
+/* ---------- the approximate marker's legend entry ----------
+
+   The swatch for "Approximate position": a wider, thinner ring than
+   the legacy swatch, in the van colour dimmed to the brightness
+   ceiling, because that is what the halo under an approximate pin is
+   on the map - a ring two and a half times the dot, in the dot's own
+   hue held under the rule (approxPaint() in map.js; the colour comes
+   from dimTo() there, inline, like every swatch colour). Drawn the
+   same way so the key can be read off the map. On paper the printer
+   is told to keep swatch colours already; a thin ring prints as a
+   thin ring. */
+.swatch.approx {
+  width: 11px;
+  height: 11px;
+  border-width: 1px;
+  background: none;
+}
+
+/* ---------- the published-record notice ----------
+
+   "Showing the published record; live updates unavailable." under
+   the record line, in the record line's own dim caption voice - it is
+   a fact about the page, not an alarm, and the accent would make it
+   one. Empty, it keeps its place in the tree at no height, for the
+   reason .map-note:empty does under ACCESSIBILITY: it is a live
+   region, and a region that appears with its first sentence is not
+   read. On paper it prints with the record line, black, because a
+   printed list that may be missing a moderator's change should say
+   so beside its date. */
+.record-notice {
+  margin-top: 2px;
+}
+
+.record-notice:empty {
+  display: block;
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* ---------- the year scrubber ----------
+
+   Under the legend: the label, the range and the readout on one row,
+   a row of marks under the range - "All", then each year - with the
+   one in force lit, and the hint under those. The range is drawn by
+   hand, because the browser's own is a rounded thumb on a rounded
+   track in its own blue, and this page has no rounded corners and
+   one accent: appearance none, a two-pixel rule for the track in
+   --rule, a square thumb in the accent. Firefox and the WebKit family
+   name the parts differently, so each rule is written twice and
+   never combined - a selector list with one unknown pseudo-element
+   is dropped whole. The KEYBOARD FOCUS block already lists
+   input[type="range"], so the ring needs nothing here.
+
+   The marks are aria-hidden: they say to the eye what the readout
+   and aria-valuetext say to a reader, and a row of eight numbers read
+   out on every step would be noise. The block is a grid of three
+   columns - the label, the range, the readout - so that the marks,
+   placed in the range's column on the row below, are exactly as wide
+   as the range at every width and each mark sits under its step; a
+   flex row and a guessed margin put them a step out on a phone. The
+   readout is the exact answer whatever the marks do. */
+.years {
+  display: grid;
+  /* A fixed width for the label's column, on purpose. An auto track
+     stretches to take the row's spare width and the range slid to
+     the right of a wide page; a max-content track took the hint's
+     whole sentence as its size - a spanning item's intrinsic width
+     is handed to any intrinsic track it crosses - and the page
+     scrolled sideways by two thousand pixels. 5ch is "YEAR" in the
+     label's capitals and spacing, and nothing here is intrinsic. */
+  grid-template-columns: 5ch minmax(0, 360px) 4.5em;
+  column-gap: 12px;
+  align-items: center;
+  margin: 10px 0 0 0;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.years label {
+  grid-column: 1;
+  margin: 0;
+}
+
+.years output {
+  grid-column: 3;
+  color: var(--text);
+}
+
+.years input[type="range"] {
+  grid-column: 2;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.years input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--rule);
+}
+
+.years input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+}
+
+.years input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--rule);
+}
+
+.years input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+}
+
+/* The marks, in the range's column on the row below it. */
+.year-marks {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  font-size: 11px;
+  color: var(--dim);   /* 5.6:1 - small, but text, and the promise holds */
+}
+
+.year-marks span.on {
+  color: var(--accent);
+}
+
+.years .hint {
+  grid-column: 1 / -1;
+  margin: 6px 0 0 0;
+}
+
+/* ---------- the data and press pages ----------
+
+   Two prose pages that carry things prose has not needed here before:
+   a line to copy (the curl request, the attribution), and a table of
+   columns. The block to copy is a field, not a quotation - the well
+   colour and the rule a text field has, at the small size the popup's
+   caption uses - and it wraps rather than scrolls: a curl line is
+   longer than a phone is wide, a box that scrolls sideways hides its
+   end, and a wrapped line still selects and copies as one. break-all
+   because a URL has nowhere natural to break. The table of columns
+   is the leaderboard's shape without its rules for numbers: the name
+   in the caption voice, the meaning beside it, a rule under each
+   row. Both print as they are; the palette flip under PAPER covers
+   the colours. */
+.prose pre {
+  margin: 0 0 1.1em 0;
+  padding: 8px 10px;
+  background: var(--field);
+  border: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.95em;
+}
+
+.prose table.columns {
+  width: 100%;
+  margin: 0 0 1.1em 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.prose table.columns th,
+.prose table.columns td {
+  padding: 5px 12px 5px 0;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+/* The name wraps - a row that names six columns at once would
+   otherwise push the table past a phone's edge - and so does a long
+   code token in the meaning, for the same reason. */
+.prose table.columns th {
+  width: 9em;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.prose table.columns td {
+  overflow-wrap: anywhere;
+}
+
+/* The share card on the press page, offered for reuse: the picture at
+   the column's width with its caption under it in the caption voice.
+   The image carries its own width and height in the markup so the
+   page does not jump as it loads; this only stops it overflowing. */
+.prose figure {
+  margin: 0 0 1.1em 0;
+}
+
+.prose figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+}
+
+.prose figcaption {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+/* On paper the year in force is part of the filter state, which the
+   print view says plainly: the label and the readout print as "Year
+   2024" (or "Year All years"), and the slider, the marks and the hint
+   go, since none of them can be moved on paper. */
+@media print {
+  .years input[type="range"],
+  .year-marks,
+  .years .hint {
+    display: none;
+  }
+
+  .years {
+    color: var(--text);
+  }
+}
 
 /* ------------------------------------------------------------------
    PAPER

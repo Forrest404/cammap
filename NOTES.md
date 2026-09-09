@@ -27,8 +27,10 @@
     frontend/           the code that runs in a browser: shared.js, map.js,
                         picker.js, account.js, style.css.
     data/               cameras.csv, the record - the one file you edit -
-                        and points.js, written out from it by
-                        tools/build_points.py along with backend/seed.sql.
+                        and points.js and cameras.geojson, written out
+                        from it by tools/build_points.py along with
+                        backend/seed.sql. The CSV and the GeoJSON are
+                        the downloads the footer offers.
     backend/            schema.sql and seed.sql - the database.
     lib/ fonts/         vendored, pinned by version, not ours to edit.
     tools/              stamp.py and check.js, both run before every
@@ -1427,9 +1429,251 @@ The satellite view uses Esri's World Imagery from the open tile endpoint, with a
 
 ### Provenance and the record on the page
 
-*(Written by the Wave 5 record agent: the source line in the popup, how an
-approximate pin is drawn and why, the published-record notice, the CSV and
-GeoJSON downloads, the period scrubber, the read API, and the press page.)*
+"Nothing here is estimated" was honoured in the data and taken on trust by
+a visitor, who had no way to see it. This section is the record made
+legible: the source cited on every camera, an approximate pin drawn as
+one, an honest line when the database is out of reach, the record as a
+file to take away and an interface to query, a slider through the years,
+and a page to hand to the press. Each piece is under its own heading in
+`frontend/map.js`, `tools/build_points.py` or the page itself and says
+why there; this is the shorter account, the numbers that were measured,
+and the reasoning that did not fit in a comment.
+
+**The source, cited (DATA-1).** The popup gains one row under the note:
+"Source: Met Police LFR deployment record, 2023-24", the label as the
+record gives it, linked to `source_url` where the record has one, in a
+new tab with `rel="noopener noreferrer"` as the footer's external link
+is. Where `source_label` is null the row is not drawn - not "unknown",
+not "official records", nothing - because a null in the record is the
+record saying it does not know, and a vague line would be worse than
+none on a map whose argument is that nothing on it is estimated. Every
+row of the published record carries a label today, so the absent case is
+a camera that came from a report or a hand-typed entry in `?edit`; a
+label with no URL, which the CSV allows, is shown as text. The link is
+the first focusable thing in the popup, so the popup's own focus lands
+on it and Tab runs on through Copy link, Report its state and the close
+button in the order they sit on the screen. The list row's spoken text
+does not repeat the citation: the note it already reads names the record
+in prose for every Met and BTP entry, and a row's button opens the popup
+where the link is. The 34 spanning-period van sites cite the Met's
+records index, as QUESTIONS.md item 11 decided; that is the record, and
+the popup shows it.
+
+**An approximate pin, drawn as one (DATA-7).** The forty-three van sites
+the Met's record gives as a borough or a district were drawn exactly like
+a pin on a known pole. Now a wider, fainter ring sits under the dot - two
+and a half times its radius, in the dot's own colour - drawn from
+`["get", "approximate"]` on the feature and never from the note's phrase,
+filtered as the dots are so it never hints at a camera the list does not
+admit to, and slid in under the map's lettering with the glow. It is a
+fixed number of pixels wide and not a number of metres: the record gives
+no radius, and a ring in metres would be this page deciding how big a
+borough is, which is the guess the field exists to avoid. The legend
+gains "Approximate position" beside the legacy ring, drawn the same way,
+and `labelOf()` adds "· approximate position", so the popup's kind line,
+the list row's spoken text and the swatch's title on paper all say it;
+"How to read this map" gains the sentence. The picker's context dots on
+the report form and the `?edit` tool draw no halo, on purpose: they show
+where cameras are so a pin can be placed beside them.
+
+The brightness rule, measured rather than reasoned, and the measurement
+changed the design. The first draft drew the ring in the type colour,
+translucent, and the method was the Wave 2 one: screenshot the map with
+and without the two halo layers, diff, take the brightest pixel the
+layers made brighter. Over the hottest glow on a road at the opening
+zoom - which already stands at about 148 with nothing new drawn, the
+glow being the cameras' own paint and not the base map's - the ring
+came out at 155. Any lighter colour laid over a pixel that bright can
+only lighten it, however thin. So the halo is drawn in the dot's colour
+dimmed to a ceiling of 128 (`dimTo()` and `brightnessOf()` in
+`shared.js`, hue kept: the van colour becomes rgb(165, 121, 65)), which
+over anything brighter than itself darkens and over anything darker
+brightens to no more than itself. Measured over the bare map - the base
+map and the glow, with the dots, the badge and every label hidden in
+both shots, because a label's placement and fade change between two
+renders on their own and a diff that includes them reports label
+anti-aliasing as new paint - the brightest pixel the halo adds is 126.6
+on Dark at the opening zoom and 125.8 at zoom 13, 121.5 on Satellite at
+the opening zoom and 112.9 at zoom 13, and no brightened pixel reaches
+134. Over imagery the fill is off and the ring wears the Near me ring's
+black casing, at 0.85 rather than the type colour's own strength,
+because the van colour over black at 0.9 is 157. When the glow is
+rebuilt it is anchored under the halo, so the stack stays glow, halo,
+lettering, dots. `check.js` holds the two functions: every kind's colour
+dimmed to the ceiling lands at or under it with the hue kept, and a
+colour already under it comes back as it is.
+
+**When the database cannot be reached (DATA-8).** The seed stood, and
+that was always right; what was missing was any sign of it. One dim line
+under the record line now says "Showing the published record; live
+updates unavailable." - written by `liveUpdates(false)` when the cameras
+read fails for any reason that is not the view being missing (which is
+the fallback's business), and by a timer at eight seconds when nothing
+has answered by then, since supabase-js has no timeout of its own and a
+request that hangs is the commonest way a bad connection fails. The
+request is not abandoned: an answer that arrives late still lays its
+rows over the map and clears the line, and so does any later successful
+fetch through `liveUpdates(true)` - the cache expiring and the next load
+asking again, or a background revalidation, which is the call for
+whoever builds that to make. A camera link by database id is not given
+up at the timer either: the line under the map says the database has
+not answered, and the link opens if it does. The notice is its own
+polite live region beside `#record-line` and not in `#map-note`, which
+a link or Near me clears; empty, it keeps its place in the tree at no
+height, for the reason `.map-note:empty` does.
+
+The four attempts the Wave 2 verification saw are postgrest-js's own
+retry, and they stay. A GET that fails at the network, or answers 503
+or 520, is tried up to three more times with a backoff of one, two and
+four seconds (`retryEnabled` in the vendored `lib/supabase.js`, on by
+default for idempotent methods); watched over the DevTools protocol
+against an unresolvable host the request goes out at 0.2, 1.2, 3.3 and
+7.6 seconds, each with its CORS preflight, carrying `X-Retry-Count` 1 to
+3. On a street with bad signal a request that fails once and succeeds a
+second later is exactly the case this map meets, the seed is drawn
+meanwhile, the three retries take about as long as the timer, and a
+fourth attempt that succeeds clears the line. Turning the retry off
+would trade that for nothing. What the page shows in that state
+otherwise: the nav's Leaderboard, Report a camera and Account links,
+which `account.js` writes whenever the project is configured, reachable
+or not, and which lead to pages that say for themselves that they
+cannot load. The map's line is about the map.
+
+**The record, to take away (DATA-2).** Two files from the footer of
+every page. `data/cameras.csv` is served as it is - it is the record,
+and a file that is the record cannot drift from it. `data/cameras.geojson`
+is the third output of `tools/build_points.py`: RFC 7946, one
+FeatureCollection, one Point per camera with longitude first (GeoJSON's
+order, the reverse of everything else here), the public fields as
+properties in one fixed order - name, note, type, status, last,
+deployments, periods, source_label, source_url, approximate, seed_key; no
+database id, since the record has none - a bbox, and as foreign members
+a name, the licence and `LICENSE`'s attribution line, so a copy that has
+travelled still says what it is. Indented, keys in one order, so a
+change to one camera is a diff of a few lines within that camera's
+feature. `stamp.py`'s generated check and `--check` cover it with the
+other two outputs, a hand edit fails both naming the file and the line,
+and `check.js` reads it back against `points.js` as a map tool would.
+Validated structurally in Python, since neither QGIS nor `ogr2ogr` is on
+the machine the wave ran on: 182 features, every property on every
+feature and every value the CSV's, the bbox `[-0.481667, 51.36544,
+0.221379, 51.65309]` inside `LONDON_BOUNDS`, one trailing newline, no
+escaped non-ASCII. Opening it in QGIS is for the maintainer. Two things
+move together when the record is refreshed and are worth saying in one
+place: the count line under the map and `img/share.png` move with the
+count, and the downloads move with the script - run it, and commit all
+four files. The `download` attribute on the footer's links saves the
+file rather than showing it; Pages serves the GeoJSON with its own
+content type, a local `http.server` as an untyped download, and the
+attribute makes both a download.
+
+**The years (MAP-4).** A range under the legend, one position per year
+the record covers and one before them for every year at once, its ends
+worked out from the points and never typed: 2020 to 2026 today, the BTP
+register's 2026 the end, and a record with a 2027 period moves it on its
+own. It ends at the newest period in the record and not at this year,
+because a scrubber that offered 2028 would be offering a prediction.
+Arrow keys move it, the readout and `aria-valuetext` say "All years" or
+"2024" (a range cannot hold a null, so the leftmost step stands for it),
+and the count is read out through `announceThenCount()` as "Year 2024.
+114 of 187 cameras shown". What it filters by is one rule in three
+places that must agree: `isShown()` for the list and the glow sources,
+`shownFilter()` for the dot and halo layers - `["any", ["!", ["has",
+"years"]], ["in", 2024, ["get", "years"]]]` - and the `years` property
+`buildFeatures()` writes on each feature; `applyFilters()` moves the
+dots, the glow, the list, the count and the live region together.
+
+Two decisions the brief left open. A camera is shown for a year when any
+key of its periods covers it, through `periodSpan()` and `periodYears()`
+in `shared.js`, the twins of `period_span()` in the build script, held
+together by `check.js` over every key in the record - and never for a
+year inside a span the record does not name. And a camera the record
+gives no period for - the shops, the two fixed installs, the King's
+Cross estate - is shown in every year. The record does not say when it
+was not there; a scrubber that hid a shop for 2021 would be claiming it
+was not there in 2021, which is a guess, and the hint under the slider
+says so for the visitor who sees a shop that opened in 2026 standing at
+2020. Legacy: every van site is legacy and the van sites are 163 of the
+172 cameras the record dates, so a year chosen with Legacy off would
+show nine stations and the undated shops and look like a broken map.
+Choosing a year therefore switches Legacy on, as a solo of an
+all-legacy kind does, and the hint says it has; returning to every year
+switches it off again unless the visitor pressed Legacy themselves in
+between, which makes it theirs, and the solo and the scrubber hand the
+switch to each other rather than dropping it. Not saved with the view
+and not in the hash: a year is a question, not a setting, and the
+switch it made is not saved either (`saveView()`). A camera link to a
+site the year does not cover puts the scrubber back to every year, the
+way it switches Legacy on. On paper the label and the readout print as
+"Year 2024" with the rest of the filter state and the slider goes.
+Driven by real arrow keys against the live database: 2020 shows the ten
+undated cameras, four spanning van sites and the five report rows; 2023
+shows 114, 2025 111, 2026 24 with the nine stations; Sainsbury's Camden
+Town and the fixed North End stand at every year.
+
+The block is a grid with a fixed-width label column, and that was
+learned twice: an `auto` track stretched to take the row's spare width
+and slid the range across a wide page, and a `max-content` track took
+the hint's whole sentence as its size - a spanning item hands its
+intrinsic width to any intrinsic track it crosses - and the page
+scrolled sideways by two thousand pixels. `5ch` is "YEAR" in the label's
+capitals, and nothing in the grid is intrinsic now.
+
+**The read API (DATA-6).** `pages/data.html`: what the record is, the
+CSV's twelve columns and the GeoJSON's properties, the ODbL terms with
+the attribution line to copy, and the read API - the view
+`cameras_public` and its fourteen columns, the endpoint, the two headers
+with the publishable key printed (it is public by design; every
+visitor's browser holds it), a `curl` line to copy as it stands, one
+PostgREST filter, paging by `limit`/`offset` or `Range` with
+`Prefer: count=exact` for the count, a fair rate, and what the view
+answers nothing about. No count is typed, for About's reason. Not in the
+nav, which wraps on a phone already; reached from About, from the
+press page, and from the footer's Download line. Run against the live
+project on the day: the view line answers 404 with `PGRST205` "Could
+not find the table 'public.cameras_public' in the schema cache",
+because migration 012 has not been applied (QUESTIONS.md item 9 is the
+same state), so the page says so under "Until the view is there" and
+prints the same request against the table, which answers rows today -
+both copied off the rendered page and run as printed. The filter, the
+count (185 visible rows to the anon key that day), `Range` paging and
+`offset` paging all answered; no key answers 401. Once 012 is run the
+view line works as written and that section can go. The page is a
+second copy of the key: `supabase-config.js` is the first, and a project
+that rotates its key changes both.
+
+**The press page (REACH-6).** `pages/press.html`: the counts, worked out
+from the record by `frontend/press.js` through `recordCounts()` in
+`shared.js` when the page loads and never typed (the paragraph carries a
+sentence pointing at the map's own line for a reader without
+JavaScript); the method in three paragraphs, each a public reading of
+this file - where the record comes from, what the map does not claim,
+what is approximate and what is missing; the downloads and the data
+page; the licence with the attribution line and a sentence for an
+article; the share card offered for reuse with the date it was made and
+its base map credited; the rights page; and the contact, which is the
+repository's issues page and no mailbox, with a `TODO (REACH-6)`
+comment beside it for an address if the maintainer wants one
+(QUESTIONS.md item 17). No person is named, on the principle the site
+applies to everyone else. `press.js` is in `OWN` and stamped like the
+rest; `check.js` holds `recordCounts()` to the record - the total, the
+kinds adding up, the approximate count, the years - rather than to a
+number that changes.
+
+**How it was checked.** Headless Chrome over the DevTools protocol at
+1400 and 390: the popup's three source states read back from the DOM
+and its tab order walked; the halo shot with and without its layers on
+Dark and Satellite at two zooms and diffed with the Wave 2 method, then
+with the dots and every label hidden; the cameras request counted with
+`Network.enable` against an unresolvable host, a stubbed request that
+never answers and a stubbed answer twelve seconds late; the scrubber
+moved by real ArrowRight, ArrowLeft, Home and End with the dot filter,
+the glow sources, the list, the count and the live region read after
+each; the two new pages tab-walked and shot at both widths with no
+horizontal scroll; the print view rendered with a year set; and the
+`curl` lines copied off the rendered data page and run. `stamp.py
+--check` (bar the stale stamps the merge re-does), `check.js` and
+`build_points.py --check` before every commit.
 
 ### The map as a tool
 

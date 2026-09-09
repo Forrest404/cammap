@@ -25,11 +25,19 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://forrest404.github.io/cammap/</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-09-09</lastmod>
   </url>
   <url>
     <loc>https://forrest404.github.io/cammap/pages/about.html</loc>
-    <lastmod>2026-09-07</lastmod>
+    <lastmod>2026-09-09</lastmod>
+  </url>
+  <url>
+    <loc>https://forrest404.github.io/cammap/pages/data.html</loc>
+    <lastmod>2026-09-09</lastmod>
+  </url>
+  <url>
+    <loc>https://forrest404.github.io/cammap/pages/press.html</loc>
+    <lastmod>2026-09-09</lastmod>
   </url>
   <url>
     <loc>https://forrest404.github.io/cammap/pages/blog.html</loc>

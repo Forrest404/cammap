@@ -118,6 +118,47 @@ function isLight() {
 var SOURCE = "cameras";
 var DOT    = "cammap-dot";
 
+/* ---------------- what is not known ----------------
+
+   The Met's record gives some van sites as a borough or a district
+   rather than a street, and the pin for those sits at the middle of
+   the area. The note has always said so - "(pin marks the surrounding
+   area, not an exact spot)", forty-three sites - and the map drew
+   them exactly like a pin on a known pole, which was a claim the
+   record does not make. Since the record grew the `approximate`
+   field the difference can be drawn from a field, and it is: a wider,
+   fainter ring under the dot, in the dot's own colour, that says "in
+   here somewhere" the way the Near me accuracy ring says how far the
+   browser might be wrong. Showing what is not known is more
+   persuasive than hiding it, on a map whose argument is that nothing
+   on it is estimated.
+
+   The ring is a fixed number of pixels wide, not a number of metres.
+   The record gives no radius - "Acton", "Barnet" - and a ring drawn
+   in metres would be this page deciding how big a borough is, which
+   is exactly the guess the field exists to avoid. So the halo is a
+   mark on the pin, like the hollow ring is a mark on a legacy site,
+   and not a measurement; the legend says "approximate position" and
+   nothing more precise.
+
+   It is drawn from ["get", "approximate"] on the feature, never from
+   the note's phrase: the field is the record's, one cell per camera,
+   and a pin the maintainer knows to be approximate for another
+   reason is that cell set, not a sentence to match (Station Parade,
+   QUESTIONS.md item 10). It obeys the same filter as the dots - a
+   halo under a dot that is not shown would be a hint at a camera the
+   list does not admit to - and, like every other layer here, the
+   brightness rule: nothing drawn under the cameras may be brighter
+   than the dimmest dot. It is drawn in the dot's colour dimmed to
+   that ceiling, which is what makes the rule hold wherever the ring
+   lands; approxPaint() says how that was arrived at, and the numbers
+   measured are in NOTES.md ("Provenance and the record on the page").
+
+   The picker's context dots on the report form and the ?edit tool
+   do not draw it. They show where cameras are so a pin can be placed
+   beside them, and a halo there would say nothing a reporter needs. */
+var APPROX = "cammap-approx";   /* the halo, and APPROX-casing under it over imagery */
+
 /* The glow is not one heatmap but one per camera colour - a heatmap
    can only carry a single colour ramp, and the glow should match the
    point - so the heatmap layers are not separate. heatLayers records
@@ -317,7 +358,12 @@ function loadView() {
 function saveView() {
   try {
     window.localStorage.setItem(VIEW_KEY, JSON.stringify({
-      legacy: showLegacy,
+      /* Not a Legacy the year scrubber switched on: the year is not
+         remembered, so the switch it made is not either, or the next
+         visit would open on every van site with no year to explain
+         it. A press on Legacy itself makes it the visitor's, and
+         legacyByYear is cleared then. */
+      legacy: legacyByYear ? false : showLegacy,
       view: view,
       hidden: hiddenTypes,
 
@@ -563,7 +609,7 @@ function clearOurLayersAndSources() {
   for (i = 0; i < layers.length; i++) {
     id = layers[i].id;
     if (id === DOT || id === SATELLITE || id === STACK ||
-        id.indexOf(HEAT) === 0 || id.indexOf(HERE) === 0) {
+        id.indexOf(HEAT) === 0 || id.indexOf(HERE) === 0 || id.indexOf(APPROX) === 0) {
       ours.push(id);
     }
   }
@@ -793,6 +839,98 @@ function dotPaint() {
   };
 }
 
+/* The halo under an approximate pin - see "what is not known" at
+   the top. Same source as the dots, filtered to approximate: true
+   (and to whatever the dots are filtered to, by applyLegacyFilter),
+   drawn under them so the dot sits in the middle of its ring.
+
+   The colour answers to the brightness rule by construction, not by
+   opacity. The first version drew the ring in the dot's own colour,
+   translucent - the van colour is 173 on the perceived scale against
+   the rule's 134 - and measured it: on the black it was 69, over a
+   road 120, and over the hottest glow at the opening zoom, where a
+   road under the Piccadilly glow already stands at about 148 with
+   nothing new drawn, it came out at 155. Any lighter colour laid over
+   a pixel that bright can only lighten it, however thin. So the halo
+   is drawn in the dot's colour dimmed to HALO_BRIGHTNESS (dimTo() in
+   shared.js, hue kept): over anything darker than itself it
+   brightens to no more than that, and over anything brighter it
+   darkens. Measured again, the brightest pixel it adds is then under
+   the ceiling on every view, at every zoom, whatever it lands on.
+
+   Within that, the opacities are for the eye. On the dark map the
+   ring is 0.6 and the fill 0.12 - a quiet ring, a breath of colour
+   inside it. Over imagery the fill is off, since a wash on a
+   photograph says nothing, and the ring wears the black casing the
+   Near me ring does so it reads as a line and not a smear. On the
+   light map, which the rule does not govern, the ring is firmer
+   still so a dark orange holds on pale ground.
+
+   Two and a half times the dot's radius at every zoom - wide enough
+   to read as "around here" beside the dot, narrow enough that two
+   approximate boroughs an inch apart at the widest zoom do not
+   overlap into a smear. Fixed pixels, not metres: see the note at
+   the top. */
+
+/* Under the rule's 134 with room for anti-aliasing and rounding: a
+   pixel on a ring's edge is a blend of the ring and what is under it,
+   and lands between the two, never above either. */
+var HALO_BRIGHTNESS = 128;
+
+/* typeColourExpression(), with every colour dimmed to the ceiling.
+   Built from CAMERA_TYPES like the dots' own paint, so a halo can
+   never be a hue the legend does not show; the non-functional colour
+   first, as there. */
+function haloColourExpression() {
+  var match = ["match", ["get", "type"]];
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    match.push(TYPES[i].type, dimTo(TYPES[i].colour, HALO_BRIGHTNESS));
+  }
+  match.push(dimTo(TYPES[1].colour, HALO_BRIGHTNESS));   /* fallback: the van colour */
+
+  return ["case", ["==", ["get", "status"], "nonfunctional"],
+          dimTo(NONFUNCTIONAL_COLOUR, HALO_BRIGHTNESS), match];
+}
+
+function approxPaint() {
+  var colour = haloColourExpression();
+  var imagery = view === "satellite";
+
+  return {
+    "circle-radius": ["interpolate", ["linear"], ["zoom"],
+      WIDEST_ZOOM, 6,
+      14, 10,
+      CLOSEST_ZOOM, 17],
+
+    "circle-color": colour,
+    "circle-opacity": imagery ? 0 : (isLight() ? 0.14 : 0.12),
+
+    "circle-stroke-color": colour,
+    "circle-stroke-width": isLight() || imagery ? 1.2 : 1,
+    "circle-stroke-opacity": imagery ? 0.85 : (isLight() ? 0.7 : 0.6)
+  };
+}
+
+/* The casing under the ring, for imagery only - the page's own black
+   round the colour, as the style's labels wear a dark halo over a
+   photograph. Off everywhere else: black on the dark map is black on
+   black, and on the light map it would turn a quiet ring into a
+   heavy one. Same recipe as the Near me ring's casing. */
+function approxCasingPaint() {
+  return {
+    "circle-radius": ["interpolate", ["linear"], ["zoom"],
+      WIDEST_ZOOM, 6,
+      14, 10,
+      CLOSEST_ZOOM, 17],
+    "circle-opacity": 0,
+    "circle-stroke-color": "#0d0d0d",
+    "circle-stroke-width": 3.5,
+    "circle-stroke-opacity": view === "satellite" ? 0.85 : 0
+  };
+}
+
 function addCameras(beneath) {
   var built = buildFeatures();
 
@@ -801,6 +939,29 @@ function addCameras(beneath) {
   map.addSource(SOURCE, { type: "geojson", data: collection(built.all) });
 
   addGlow(built, beneath);
+
+  /* Over the glow and under the map's own lettering, like the glow
+     itself: the casing, then the ring, each slid in beneath the
+     first label. The dots go over everything, labels included,
+     because the cameras are the point; the halo is a mark on the
+     backdrop, and a place name is allowed to write over it. That is
+     also what keeps the rule honest - measured over the labels, a
+     translucent ring on a lifted place name came out brighter than
+     the name was, and the answer was not a fainter ring but the
+     right place in the stack. */
+  map.addLayer({
+    id: APPROX + "-casing",
+    type: "circle",
+    source: SOURCE,
+    paint: approxCasingPaint()
+  }, beneath);
+
+  map.addLayer({
+    id: APPROX,
+    type: "circle",
+    source: SOURCE,
+    paint: approxPaint()
+  }, beneath);
 
   map.addLayer({
     id: DOT,
@@ -1014,12 +1175,12 @@ function tidy(list) {
 
       /* The four fields the record grew after the eight above, carried
          through as they are so that nothing between the file and the
-         page loses them: the ?edit export writes them back out, and
-         the popup will read them once it draws provenance. None of
-         them is drawn yet. A draft saved before the fields existed, or
-         a hand-typed entry, has none, and gets the same defaults the
-         build script gives a blank cell - null, null, null, false -
-         never a plausible value.
+         page loses them: the ?edit export writes them back out, the
+         popup cites the source (sourceRow()), and an approximate pin
+         is drawn with a halo (approxPaint()). A draft saved before
+         the fields existed, or a hand-typed entry, has none, and
+         gets the same defaults the build script gives a blank cell -
+         null, null, null, false - never a plausible value.
 
          periods       the deployments counted by the period the source
                        gives them in - {"2023-24": 1} - or null where
@@ -1152,17 +1313,31 @@ function removePoint(id) {
 /* hiddenTypes and sortBy are declared up with showLegacy, above
    loadView(), so a remembered setting is not overwritten on the way
    past. The search term is not remembered: it is a question you are
-   asking now, not a setting. */
+   asking now, not a setting. Neither is the year - see "the years". */
 var searchTerm = "";
+var yearShown = null;
 
 function typeShown(type) {
   return !hiddenTypes[type];
 }
 
+/* Whether a camera is shown for the year chosen on the scrubber. No
+   year chosen shows everything. A camera whose record names no period
+   - a shop, a fixed install, the King's Cross estate - is shown in
+   every year: the record does not say when it was not there, and
+   hiding it for a year would be a claim the record does not make.
+   Otherwise, shown for every year any of its periods covers, through
+   periodYears() in shared.js, which is the one reading of a period
+   the site has. */
+function coversYear(point) {
+  return yearShown === null || !point.periods ||
+         periodYears(point.periods).indexOf(yearShown) !== -1;
+}
+
 /* The rule the map obeys. The search term is not in here on purpose -
    see above. */
 function isShown(point) {
-  return (showLegacy || point.status !== "legacy") && typeShown(point.type);
+  return (showLegacy || point.status !== "legacy") && typeShown(point.type) && coversYear(point);
 }
 
 /* And the rule the list obeys: the same, and then the search. */
@@ -1182,8 +1357,9 @@ function isListed(point) {
          (point.note || "").toLowerCase().indexOf(term) !== -1;
 }
 
-/* The same rule again, as something MapLibre can evaluate per dot. */
-function applyLegacyFilter() {
+/* The same rule again, as something MapLibre can evaluate per dot:
+   the clauses of isShown(), as an expression. */
+function shownFilter() {
   var filter = ["all"];
   var type;
 
@@ -1197,8 +1373,30 @@ function applyLegacyFilter() {
     }
   }
 
+  /* coversYear() as an expression: a feature with no `years` - the
+     record names no period - passes; one with them passes when the
+     chosen year is among them. */
+  if (yearShown !== null) {
+    filter.push(["any", ["!", ["has", "years"]], ["in", yearShown, ["get", "years"]]]);
+  }
+
+  return filter;
+}
+
+/* Applied to the dots, and to the halo under an approximate pin with
+   one clause more - the halo is only ever under a dot that is shown,
+   and only under one the record says is approximate. Keyed on the
+   field, never on the note's phrase: see "what is not known". */
+function applyLegacyFilter() {
+  var filter = shownFilter();
+  var approx = filter.concat([["==", ["get", "approximate"], true]]);
+
   if (map.getLayer(DOT)) {
     map.setFilter(DOT, filter.length > 1 ? filter : null);
+  }
+  if (map.getLayer(APPROX)) {
+    map.setFilter(APPROX, approx);
+    map.setFilter(APPROX + "-casing", approx);
   }
 }
 
@@ -1215,14 +1413,17 @@ function applyFilters() {
 function setLegacy(on) {
   showLegacy = on;
 
-  /* The visitor's own press: whatever a solo switched on is theirs
-     now, and ending the solo will not switch it back. */
+  /* The visitor's own press: whatever a solo or the year scrubber
+     switched on is theirs now, and ending either will not switch it
+     back. */
   legacyBySolo = false;
+  legacyByYear = false;
   clearSoloNote();
 
   applyFilters();
   saveView();
   markLegacy();
+  sayYear();
 }
 
 function markLegacy() {
@@ -1352,10 +1553,18 @@ function kindsChanged() {
       " in the record is legacy, so Legacy has been switched on to show them.";
     sayUnderMap(soloNote);
   } else if (solo === null && legacyBySolo) {
-    showLegacy = false;
     legacyBySolo = false;
-    markLegacy();
     clearSoloNote();
+    /* Unless a year is chosen, in which case the year still wants
+       it: the van sites are what the record dates, and the scrubber
+       takes the switch over rather than letting it drop. */
+    if (yearShown !== null) {
+      legacyByYear = true;
+      sayYear();
+    } else {
+      showLegacy = false;
+      markLegacy();
+    }
   }
 
   if (solo !== null) {
@@ -1414,6 +1623,17 @@ function applyView() {
     }
   }
 
+  /* The halo under an approximate pin changes with the ground too:
+     fainter or firmer, and its casing on only over imagery. */
+  if (map.getLayer(APPROX)) {
+    paint = approxPaint();
+    for (i = 0; i < VIEW_PAINT.length; i++) {
+      map.setPaintProperty(APPROX, VIEW_PAINT[i], paint[VIEW_PAINT[i]]);
+    }
+    map.setPaintProperty(APPROX + "-casing", "circle-stroke-opacity",
+      approxCasingPaint()["circle-stroke-opacity"]);
+  }
+
   /* Where you are wears a dark casing over imagery and none
      elsewhere - see drawHere(), under "Near me". */
   applyHereView();
@@ -1462,15 +1682,19 @@ function setView(next) {
 }
 
 /* A plain legend row: a swatch and a name, and nothing to press. Used
-   for the two entries that are states rather than kinds. */
-function legendNote(colour, text, hollow) {
+   for the entries that are states rather than kinds. `drawn` says
+   how the swatch is filled, the way the marker it stands for is:
+   "hollow" is the legacy ring, "approx" the wider faint ring under an
+   approximate pin, and anything else a solid dot. */
+function legendNote(colour, text, drawn) {
   var item = document.createElement("li");
   var swatch = document.createElement("span");
 
-  swatch.className = hollow ? "swatch hollow" : "swatch";
-  if (hollow) {
+  if (drawn === "hollow" || drawn === "approx") {
+    swatch.className = "swatch " + drawn;
     swatch.style.borderColor = colour;
   } else {
+    swatch.className = "swatch";
     swatch.style.background = colour;
   }
 
@@ -1561,10 +1785,14 @@ function drawLegend() {
     legend.appendChild(item);
   }
 
-  /* Not kinds but states, and both are said by the fill rather than
-     the colour, so there is nothing here to switch off. */
-  legend.appendChild(legendNote(NONFUNCTIONAL_COLOUR, "Non-functional", false));
-  legend.appendChild(legendNote(TYPES[1].colour, "Legacy (no longer in use)", true));
+  /* Not kinds but states, and all three are said by the fill rather
+     than the colour, so there is nothing here to switch off. The
+     third is the halo under a pin the record gives as an area, drawn
+     in the van colour because every such pin is a van site today;
+     the halo on the map takes its dot's own colour whatever the kind. */
+  legend.appendChild(legendNote(NONFUNCTIONAL_COLOUR, "Non-functional", "solid"));
+  legend.appendChild(legendNote(TYPES[1].colour, "Legacy (no longer in use)", "hollow"));
+  legend.appendChild(legendNote(dimTo(TYPES[1].colour, HALO_BRIGHTNESS), "Approximate position", "approx"));
 
   if (had && had.type) {
     again = legend.querySelector((had.only ? "button.legend-only" : "button.legend-key") +
@@ -1605,13 +1833,24 @@ function buildFeatures() {
         type: point.type,
         status: point.status,
         deployments: point.deployments || 1,
-        order: DRAW_ORDER[point.type] || 0
+        order: DRAW_ORDER[point.type] || 0,
+
+        /* The halo layer is filtered on this. A boolean from the
+           field and never from the note - see "what is not known". */
+        approximate: point.approximate === true
       },
       geometry: {
         type: "Point",
         coordinates: lngLat(point.lat, point.lon)
       }
     };
+
+    /* The years the record covers for it, for the scrubber's filter
+       - left off altogether where the record names no period, which
+       is what the filter reads as "shown in every year". */
+    if (point.periods) {
+      feature.properties.years = periodYears(point.periods);
+    }
 
     all.push(feature);
 
@@ -1728,7 +1967,10 @@ function refreshCameras() {
      the colours actually changed, not on every refresh. */
   if (!sameColours(glowGroups(), glowColoursNow())) {
     removeGlow();
-    addGlow(built, glowAnchor);
+    /* Under the approximate halo when that is standing, so the stack
+       stays glow, halo, lettering, dots however many times the glow
+       is made again; the halo's casing is the lowest of its layers. */
+    addGlow(built, map.getLayer(APPROX + "-casing") ? APPROX + "-casing" : glowAnchor);
     return;
   }
 
@@ -1891,7 +2133,10 @@ function chooserRow(point) {
   return item;
 }
 
-/* "LFR van site · legacy · last seen 2024" and the like. */
+/* "LFR van site · legacy · last seen 2024" and the like - and, where
+   the record gives the pin as an area, "· approximate position" on
+   the end, so the kind line in the popup, the list row's spoken text
+   and the swatch's title on paper all say what the halo draws. */
 function labelOf(point) {
   var label = typeLabel(point.type) || "Camera";
 
@@ -1902,6 +2147,10 @@ function labelOf(point) {
     }
   } else if (point.status === "nonfunctional") {
     label += " · non-functional";
+  }
+
+  if (point.approximate) {
+    label += " · approximate position";
   }
 
   return label;
@@ -1925,6 +2174,12 @@ function popupFor(point) {
   if (point.note) {
     box.appendChild(document.createElement("br"));
     box.appendChild(document.createTextNode(point.note));
+  }
+
+  /* Where the entry comes from, when the record says. Absent
+     otherwise - see sourceRow(). */
+  if (point.source_label) {
+    box.appendChild(sourceRow(point));
   }
 
   box.appendChild(document.createElement("br"));
@@ -1980,6 +2235,66 @@ function popupFor(point) {
   }
 
   return box;
+}
+
+/* ---------------- where an entry comes from ----------------
+
+   "Source: Met Police LFR deployment record, 2025", under the note,
+   with the label linked to the document where the record has one.
+   This is the line that turns a dot from a claim into a citation: a
+   visitor who doubts a van site can open the Met's own PDF and find
+   the row. The label is source_label as the record gives it and the
+   link is source_url, both carried from data/cameras.csv through
+   points.js (tidy()) or, once the database has answered through the
+   view, from the row (takeRecordFields()).
+
+   Where the record has no source the row is not drawn. Not "Source:
+   unknown", not "official records" - nothing. A vague line would be
+   worse than none on a map whose argument is that nothing on it is
+   estimated; a null in the record is the record saying it does not
+   know, and the popup says the same by saying nothing. Today every
+   row of the published record carries a label, so the absent case is
+   a camera that came from a report (the database's row has no
+   source_label) or a hand-typed entry in ?edit, and those say
+   nothing, correctly. A label with no URL - none in the record
+   today, but the CSV allows it - is shown as text: the record names
+   the document without saying where it is.
+
+   The link opens in a new tab, as the footer's Donate link does: a
+   PDF from the Met in the map's own tab would take the visitor away
+   from the popup they were reading, and the back button would land
+   them on a map that has forgotten it. rel="noopener noreferrer" for
+   the reason every external link here carries it. Plain text and a
+   plain link, in the popup's tab order after the close button and
+   before Copy link, because that is where it sits on the screen.
+
+   The list row does not repeat it. Its spoken text says the kind and
+   the state after the name (rowFor()), and the note it reads next
+   already names the record in prose for every Met and BTP entry -
+   "Met Police LFR van - 3 deployments 2023-2025" - so a citation on
+   every row would read the same words twice to a screen reader
+   skimming a hundred and eighty rows. The popup is where the link
+   is, and a row's button opens the popup. */
+function sourceRow(point) {
+  var row = document.createElement("span");
+  var link;
+
+  row.className = "kind source";
+  row.appendChild(document.createTextNode("Source: "));
+
+  if (point.source_url) {
+    link = document.createElement("a");
+    link.href = point.source_url;
+    link.textContent = point.source_label;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.title = "The record this entry rests on, in a new tab";
+    row.appendChild(link);
+  } else {
+    row.appendChild(document.createTextNode(point.source_label));
+  }
+
+  return row;
 }
 
 /* The address a link to this page starts with: what is in the bar,
@@ -3067,6 +3382,223 @@ function setUpExplain() {
 }
 
 /* ------------------------------------------------------------------
+   The years
+
+   A scrubber under the map: one position per year the record covers,
+   and one before them for every year at once. Move it to 2024 and
+   the map, the list and the count show the cameras whose recorded
+   period covers 2024; move it back and everything returns. Watching
+   the glow spread across London year by year is the most persuasive
+   thing this record can do, and it is done here with the record
+   alone.
+
+   What it filters by, and what it does not. A camera is shown for a
+   year when any key of its periods covers it - "2023-24" is 2023 and
+   2024, "2020-2025" is six years - through periodYears() in shared.js,
+   the one reading of a period the site has. It never picks a year
+   inside a span: the Met publishes "3 deployments 2023-2025" and not
+   which year each fell in, so a site with that period is shown in
+   all three, which is exactly what the record supports and no more.
+   And a camera whose record names no period - the shops, the two
+   fixed installs, the King's Cross estate - is shown in every year.
+   The record does not say when it was not there; a scrubber that hid
+   it for 2021 would be claiming it was not there in 2021, which is a
+   guess. The hint under the scrubber says so, so a visitor who sees a
+   shop that opened in 2026 standing at 2020 knows why.
+
+   The range runs from the earliest year any period covers to the
+   latest, worked out from the points and never typed: today that is
+   2020 to 2026, with the BTP register's 2026 the end, and a record
+   refreshed with a 2027 period moves the end on its own. It ends at
+   the newest period in the record, not at this year, because a
+   scrubber that offered 2028 would be offering a prediction. The
+   position before the first year is "All years"; a range cannot hold
+   a null, so the leftmost step stands for it, the readout says so,
+   and aria-valuetext says it to a screen reader. Arrow keys move it,
+   as they do any range, and the KEYBOARD FOCUS ring covers it.
+
+   Legacy. Every van site is legacy, and the van sites are 163 of the
+   172 cameras the record dates, so a year chosen with Legacy off
+   would show nine stations and the undated shops and look like a
+   broken map. So choosing a year switches Legacy on, as a solo of an
+   all-legacy kind does, and the hint says it has; returning to every
+   year switches it back off unless the visitor pressed Legacy
+   themselves in between, which makes it theirs. Not saved with the
+   view: a year is a question, not a setting, and neither it nor the
+   switch it made is remembered - see saveView().
+
+   The filter is one rule in three places that must agree: isShown()
+   for the list and the glow sources, shownFilter() for the dot and
+   halo layers, and the `years` property buildFeatures() writes for
+   the expression to read. applyFilters() brings all three into step
+   and the count is read out through announceThenCount(), so the
+   dots, the list, the count line and the live region change
+   together. Not in the hash: a link carries a view and a camera, and
+   a camera link to a site the chosen year does not cover puts the
+   scrubber back to every year, the way it switches Legacy on.
+   ------------------------------------------------------------------ */
+
+var yearsBox   = document.getElementById("years");
+var yearRange  = document.getElementById("year-range");
+var yearOut    = document.getElementById("year-out");
+var yearMarks  = document.getElementById("year-marks");
+var yearHint   = document.getElementById("year-hint");
+
+/* Whether the Legacy switch was turned on by the scrubber rather
+   than by a press on it, like legacyBySolo for the solo. */
+var legacyByYear = false;
+
+/* The years the record covers, from the points: [first, last], or
+   null where no point carries a period. */
+function recordYearRange() {
+  var from = null;
+  var to = null;
+  var i;
+  var years;
+
+  for (i = 0; i < points.length; i++) {
+    years = periodYears(points[i].periods);
+    if (years && years.length) {
+      from = from === null ? years[0] : Math.min(from, years[0]);
+      to = to === null ? years[years.length - 1] : Math.max(to, years[years.length - 1]);
+    }
+  }
+
+  return from === null ? null : { from: from, to: to };
+}
+
+/* Set the range's ends from the record, and draw the marks under it.
+   Called at start-up and again after the database has answered; a
+   chosen year is kept, since a range can only widen. The "All"
+   position is one step before the first year. */
+function fitYearRange() {
+  var range = recordYearRange();
+  var mark;
+  var y;
+
+  if (!yearsBox || !yearRange || !range) {
+    return;
+  }
+
+  if (String(yearRange.min) === String(range.from - 1) && String(yearRange.max) === String(range.to)) {
+    return;   /* nothing has moved */
+  }
+
+  yearRange.min = range.from - 1;
+  yearRange.max = range.to;
+  yearRange.step = 1;
+  yearRange.value = yearShown === null ? range.from - 1 : yearShown;
+
+  if (yearMarks) {
+    yearMarks.innerHTML = "";
+    for (y = range.from - 1; y <= range.to; y++) {
+      mark = document.createElement("span");
+      mark.textContent = y === range.from - 1 ? "All" : String(y);
+      mark.setAttribute("data-year", y === range.from - 1 ? "all" : String(y));
+      yearMarks.appendChild(mark);
+    }
+  }
+
+  sayYear();
+}
+
+/* The state alone - the year and the Legacy switch that comes with
+   it - for a caller that will apply the filters itself. */
+function chooseYear(year) {
+  var solo;
+
+  yearShown = year;
+
+  if (year !== null && !showLegacy) {
+    showLegacy = true;
+    legacyByYear = true;
+    markLegacy();
+  } else if (year === null && legacyByYear) {
+    legacyByYear = false;
+    /* Unless a solo of an all-legacy kind still wants it, in which
+       case the solo takes the switch over, with its own sentence. */
+    solo = soloType();
+    if (solo !== null && allLegacy(solo)) {
+      legacyBySolo = true;
+      soloNote = "Every " + (typeLabel(solo) || solo) +
+        " in the record is legacy, so Legacy has been switched on to show them.";
+      sayUnderMap(soloNote);
+    } else {
+      showLegacy = false;
+    }
+    markLegacy();
+  }
+
+  if (yearRange && yearRange.min !== "") {
+    yearRange.value = year === null ? yearRange.min : year;
+  }
+}
+
+/* A move of the scrubber. */
+function setYear(year) {
+  chooseYear(year);
+  applyFilters();
+  sayYear();
+  announceThenCount(year === null ? "All years" : "Year " + year);
+}
+
+/* The readout beside the scrubber, the value a screen reader is
+   given, the mark that is lit, and the hint under it. */
+function sayYear() {
+  var range;
+  var marks;
+  var i;
+  var text;
+
+  if (!yearRange || !yearOut || yearRange.min === "") {
+    return;
+  }
+
+  range = { from: Number(yearRange.min) + 1, to: Number(yearRange.max) };
+  text = yearShown === null ? "All years" : String(yearShown);
+  yearOut.textContent = text;
+  yearRange.setAttribute("aria-valuetext", text);
+
+  if (yearMarks) {
+    marks = yearMarks.children;
+    for (i = 0; i < marks.length; i++) {
+      marks[i].className = marks[i].getAttribute("data-year") === (yearShown === null ? "all" : String(yearShown)) ? "on" : "";
+    }
+  }
+
+  if (yearHint) {
+    if (yearShown === null) {
+      yearHint.textContent = "Every year the record covers, " + range.from + " to " + range.to +
+        ". Move the slider to see the cameras whose recorded period covers one year.";
+    } else {
+      yearHint.textContent = "Cameras whose recorded period covers " + yearShown +
+        ". A site recorded as a span, 2023-2025 say, is shown in every year of it, because the " +
+        "record does not say which year each visit fell in; a camera the record gives no period " +
+        "for - a shop, a fixed camera - is shown in every year, because hiding it would be a guess." +
+        (legacyByYear ? " Legacy has been switched on: the van sites are what the record dates." : "");
+    }
+  }
+}
+
+/* The block is hidden in the markup until this runs, so a page
+   without JavaScript shows no slider that does nothing. */
+function setUpYears() {
+  if (!yearsBox || !yearRange || !recordYearRange()) {
+    return;
+  }
+
+  fitYearRange();
+  yearsBox.hidden = false;
+
+  /* input, not change: a range fires input on every step of a drag
+     and on every arrow key, and the map should follow the thumb. */
+  yearRange.oninput = function () {
+    var value = Number(yearRange.value);
+    setYear(value === Number(yearRange.min) ? null : value);
+  };
+}
+
+/* ------------------------------------------------------------------
    Start up
    ------------------------------------------------------------------ */
 
@@ -3081,6 +3613,7 @@ if (EDITING) {
    list as it stands then, so there is nothing to draw here. */
 drawLegend();
 setUpExplain();
+setUpYears();
 render();
 
 /* ------------------------------------------------------------------
@@ -3223,6 +3756,11 @@ function overlayCameras(rows) {
   refreshCameras();
   render();
 
+  /* The rows may carry a period the seed did not reach - the record
+     refreshed in the database ahead of the file - so the scrubber's
+     range is asked again. */
+  fitYearRange();
+
   /* A popup that was open before the database answered - a link
      opened it - is made again: its camera may now stand where the
      row says rather than where the seed did, and has an id to hang
@@ -3284,8 +3822,68 @@ function cacheCameras(rows) {
   }
 }
 
+/* ---------------- when the database cannot be reached ----------------
+
+   The seed stands - that was always the behaviour, and it is the
+   right one: a map drawn at once from the published record is better
+   than a blank one waiting on a network. What was missing was any
+   sign of it. A visitor on a train with no signal, or on the day the
+   project's database is down, saw a map that looked exactly like the
+   live one and had no way to know that a camera a moderator took off
+   yesterday was still on it. So one dim line under the record line,
+   in the record line's own voice: "Showing the published record;
+   live updates unavailable." It says what is shown - the record, which
+   is exact - and what is not, and nothing more.
+
+   When it appears: on any failure of the read that is not the view
+   being missing (viewMissing(), which is the fallback's business, not
+   a failure), and after LIVE_TIMEOUT if nothing has answered by then.
+   supabase-js has no timeout of its own, and a request that hangs is
+   the commonest way a bad connection fails; so a timer runs beside the
+   request and speaks at eight seconds. The request is not abandoned:
+   an answer that arrives late is still an answer, the rows are laid
+   over the map as they would have been, and the line clears - which
+   is also what a later successful fetch does, when the cache has
+   expired and the next load asks again, or when a revalidation asks
+   in the background. liveUpdates(true) is the call that clears it;
+   anything that fetches the cameras and succeeds should make it.
+
+   The line sits beside the record line and not in #map-note, which is
+   for what the map has to say about a link or Near me and is cleared
+   by them; this is a standing fact about the page until it is not.
+   It is its own polite live region, so a screen reader hears it once
+   when it arrives, and a live region's clearing is not read out.
+
+   What is not said: the nav. account.js writes the Leaderboard and
+   Account links whenever the project is configured, reachable or not,
+   so those links are there and lead to pages that will say for
+   themselves that they cannot load. The map's line is about the map.
+
+   Four attempts, on purpose. Watching the network with the host
+   unreachable shows the cameras request go out four times - the
+   Wave 2 observation. That is postgrest-js, not this page: a GET
+   that fails at the network, or answers 503 or 520, is retried up
+   to three times with a backoff of one, two and four seconds
+   (`retryEnabled` in the vendored lib/supabase.js, on by default for
+   idempotent methods). On a street with bad signal a request that
+   fails once and succeeds a second later is exactly the case a map
+   like this meets, the seed is already drawn while it waits, and the
+   three retries take about as long as the timer here - so the line
+   speaks at eight seconds either way, and a fourth attempt that
+   succeeds clears it. Turning the retry off would trade that for
+   nothing. */
+var LIVE_TIMEOUT = 8000;   /* milliseconds before the line speaks */
+var recordNotice = document.getElementById("record-notice");
+
+function liveUpdates(available) {
+  if (recordNotice) {
+    recordNotice.textContent = available ? "" : "Showing the published record; live updates unavailable.";
+  }
+}
+
 function loadCamerasFromDatabase() {
   var cached;
+  var slow;
 
   if (EDITING || typeof configured === "undefined" || !configured || !sb) {
     /* No database on this page, so no camera will ever get an id: a
@@ -3298,6 +3896,28 @@ function loadCamerasFromDatabase() {
   if (cached) {
     overlayCameras(cached);
     return;
+  }
+
+  /* The timer beside the request - see above. Cleared by whichever
+     answer comes first; a late answer still lands through settle().
+     A camera link by database id is not given up here: the answer
+     may still come, and if it does the link is followed then. The
+     line under the map says why the camera has not opened, in a
+     sentence cameraLinkSettled() takes back if it can answer. */
+  slow = window.setTimeout(function () {
+    slow = null;
+    liveUpdates(false);
+    if (pendingCameraLink) {
+      linkWaitNote = "The database has not answered yet, so the camera this link points to cannot be shown; it will open if it does.";
+      sayUnderMap(linkWaitNote);
+    }
+  }, LIVE_TIMEOUT);
+
+  function answered() {
+    if (slow !== null) {
+      window.clearTimeout(slow);
+      slow = null;
+    }
   }
 
   /* The view first. It has exactly the columns the map may read -
@@ -3326,14 +3946,27 @@ function loadCamerasFromDatabase() {
      so a fallback to it would only fail slower, and the branch would
      be a second query to keep honest for nothing. */
   function settle(result) {
+    answered();
     if (result.error || !Array.isArray(result.data)) {
-      /* The seed stands, and so a camera link by database id has
-         no answer here; say so rather than wait for one. */
+      /* The seed stands, and the line says so; a camera link by
+         database id has no answer here, so say that rather than
+         wait for one. */
+      liveUpdates(false);
       cameraLinkSettled();
       return;
     }
+    liveUpdates(true);
     cacheCameras(result.data);
     overlayCameras(result.data);
+  }
+
+  /* The request itself failed to complete - a network error the
+     retries did not get past, or an exception - as against the
+     server answering with an error, which settle() sees. */
+  function failed() {
+    answered();
+    liveUpdates(false);
+    cameraLinkSettled();
   }
 
   function fromTheTable() {
@@ -3341,9 +3974,7 @@ function loadCamerasFromDatabase() {
       .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key")
       .eq("visible", true)
       .limit(5000)
-      .then(settle, function () {
-        cameraLinkSettled();
-      });
+      .then(settle, failed);
   }
 
   sb.from("cameras_public")
@@ -3356,9 +3987,7 @@ function loadCamerasFromDatabase() {
         return;
       }
       settle(result);
-    }, function () {
-      cameraLinkSettled();
-    });
+    }, failed);
 }
 
 /* Whether a failed read says the view is not there - as against any
@@ -3437,9 +4066,12 @@ var hashTimer = null;
 var lastWrittenHash = null;
 
 /* A camera link the page could not answer yet, and whether answering
-   it should also centre the map. */
+   it should also centre the map. linkWaitNote is what the line under
+   the map was told while the database was slow to answer, so that
+   only that sentence is taken back when it does. */
 var pendingCameraLink = null;
 var pendingCameraCentre = false;
+var linkWaitNote = null;
 
 var mapNote = document.getElementById("map-note");
 
@@ -3621,6 +4253,12 @@ function showCameraLink(point, centre) {
     drawLegend();
     changed = true;
   }
+  /* A year the camera's record does not cover is put back to every
+     year, for the same reason: the link asked for the camera. */
+  if (!coversYear(point)) {
+    chooseYear(null);
+    changed = true;
+  }
   if (changed) {
     applyFilters();
   }
@@ -3657,6 +4295,13 @@ function cameraLinkSettled() {
   if (!pendingCameraLink) {
     return;
   }
+
+  /* Only the waiting sentence is taken back, not whatever Near me or
+     a bad view in the same link has said there since. */
+  if (linkWaitNote !== null && mapNote && mapNote.textContent === linkWaitNote) {
+    sayUnderMap("");
+  }
+  linkWaitNote = null;
 
   point = pointByLinkId(pendingCameraLink);
   if (point) {
