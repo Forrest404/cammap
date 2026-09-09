@@ -3555,8 +3555,68 @@ function cacheCameras(rows) {
   }
 }
 
+/* ---------------- when the database cannot be reached ----------------
+
+   The seed stands - that was always the behaviour, and it is the
+   right one: a map drawn at once from the published record is better
+   than a blank one waiting on a network. What was missing was any
+   sign of it. A visitor on a train with no signal, or on the day the
+   project's database is down, saw a map that looked exactly like the
+   live one and had no way to know that a camera a moderator took off
+   yesterday was still on it. So one dim line under the record line,
+   in the record line's own voice: "Showing the published record;
+   live updates unavailable." It says what is shown - the record, which
+   is exact - and what is not, and nothing more.
+
+   When it appears: on any failure of the read that is not the view
+   being missing (viewMissing(), which is the fallback's business, not
+   a failure), and after LIVE_TIMEOUT if nothing has answered by then.
+   supabase-js has no timeout of its own, and a request that hangs is
+   the commonest way a bad connection fails; so a timer runs beside the
+   request and speaks at eight seconds. The request is not abandoned:
+   an answer that arrives late is still an answer, the rows are laid
+   over the map as they would have been, and the line clears - which
+   is also what a later successful fetch does, when the cache has
+   expired and the next load asks again, or when a revalidation asks
+   in the background. liveUpdates(true) is the call that clears it;
+   anything that fetches the cameras and succeeds should make it.
+
+   The line sits beside the record line and not in #map-note, which is
+   for what the map has to say about a link or Near me and is cleared
+   by them; this is a standing fact about the page until it is not.
+   It is its own polite live region, so a screen reader hears it once
+   when it arrives, and a live region's clearing is not read out.
+
+   What is not said: the nav. account.js writes the Leaderboard and
+   Account links whenever the project is configured, reachable or not,
+   so those links are there and lead to pages that will say for
+   themselves that they cannot load. The map's line is about the map.
+
+   Four attempts, on purpose. Watching the network with the host
+   unreachable shows the cameras request go out four times - the
+   Wave 2 observation. That is postgrest-js, not this page: a GET
+   that fails at the network, or answers 503 or 520, is retried up
+   to three times with a backoff of one, two and four seconds
+   (`retryEnabled` in the vendored lib/supabase.js, on by default for
+   idempotent methods). On a street with bad signal a request that
+   fails once and succeeds a second later is exactly the case a map
+   like this meets, the seed is already drawn while it waits, and the
+   three retries take about as long as the timer here - so the line
+   speaks at eight seconds either way, and a fourth attempt that
+   succeeds clears it. Turning the retry off would trade that for
+   nothing. */
+var LIVE_TIMEOUT = 8000;   /* milliseconds before the line speaks */
+var recordNotice = document.getElementById("record-notice");
+
+function liveUpdates(available) {
+  if (recordNotice) {
+    recordNotice.textContent = available ? "" : "Showing the published record; live updates unavailable.";
+  }
+}
+
 function loadCamerasFromDatabase() {
   var cached;
+  var slow;
 
   if (EDITING || typeof configured === "undefined" || !configured || !sb) {
     /* No database on this page, so no camera will ever get an id: a
@@ -3569,6 +3629,28 @@ function loadCamerasFromDatabase() {
   if (cached) {
     overlayCameras(cached);
     return;
+  }
+
+  /* The timer beside the request - see above. Cleared by whichever
+     answer comes first; a late answer still lands through settle().
+     A camera link by database id is not given up here: the answer
+     may still come, and if it does the link is followed then. The
+     line under the map says why the camera has not opened, in a
+     sentence cameraLinkSettled() takes back if it can answer. */
+  slow = window.setTimeout(function () {
+    slow = null;
+    liveUpdates(false);
+    if (pendingCameraLink) {
+      linkWaitNote = "The database has not answered yet, so the camera this link points to cannot be shown; it will open if it does.";
+      sayUnderMap(linkWaitNote);
+    }
+  }, LIVE_TIMEOUT);
+
+  function answered() {
+    if (slow !== null) {
+      window.clearTimeout(slow);
+      slow = null;
+    }
   }
 
   /* The view first. It has exactly the columns the map may read -
@@ -3597,14 +3679,27 @@ function loadCamerasFromDatabase() {
      so a fallback to it would only fail slower, and the branch would
      be a second query to keep honest for nothing. */
   function settle(result) {
+    answered();
     if (result.error || !Array.isArray(result.data)) {
-      /* The seed stands, and so a camera link by database id has
-         no answer here; say so rather than wait for one. */
+      /* The seed stands, and the line says so; a camera link by
+         database id has no answer here, so say that rather than
+         wait for one. */
+      liveUpdates(false);
       cameraLinkSettled();
       return;
     }
+    liveUpdates(true);
     cacheCameras(result.data);
     overlayCameras(result.data);
+  }
+
+  /* The request itself failed to complete - a network error the
+     retries did not get past, or an exception - as against the
+     server answering with an error, which settle() sees. */
+  function failed() {
+    answered();
+    liveUpdates(false);
+    cameraLinkSettled();
   }
 
   function fromTheTable() {
@@ -3612,9 +3707,7 @@ function loadCamerasFromDatabase() {
       .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key")
       .eq("visible", true)
       .limit(5000)
-      .then(settle, function () {
-        cameraLinkSettled();
-      });
+      .then(settle, failed);
   }
 
   sb.from("cameras_public")
@@ -3627,9 +3720,7 @@ function loadCamerasFromDatabase() {
         return;
       }
       settle(result);
-    }, function () {
-      cameraLinkSettled();
-    });
+    }, failed);
 }
 
 /* Whether a failed read says the view is not there - as against any
@@ -3708,9 +3799,12 @@ var hashTimer = null;
 var lastWrittenHash = null;
 
 /* A camera link the page could not answer yet, and whether answering
-   it should also centre the map. */
+   it should also centre the map. linkWaitNote is what the line under
+   the map was told while the database was slow to answer, so that
+   only that sentence is taken back when it does. */
 var pendingCameraLink = null;
 var pendingCameraCentre = false;
+var linkWaitNote = null;
 
 var mapNote = document.getElementById("map-note");
 
@@ -3928,6 +4022,13 @@ function cameraLinkSettled() {
   if (!pendingCameraLink) {
     return;
   }
+
+  /* Only the waiting sentence is taken back, not whatever Near me or
+     a bad view in the same link has said there since. */
+  if (linkWaitNote !== null && mapNote && mapNote.textContent === linkWaitNote) {
+    sayUnderMap("");
+  }
+  linkWaitNote = null;
 
   point = pointByLinkId(pendingCameraLink);
   if (point) {

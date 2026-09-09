@@ -2229,6 +2229,28 @@ article.post {
   background: none;
 }
 
+/* ---------- the published-record notice ----------
+
+   "Showing the published record; live updates unavailable." under
+   the record line, in the record line's own dim caption voice - it is
+   a fact about the page, not an alarm, and the accent would make it
+   one. Empty, it keeps its place in the tree at no height, for the
+   reason .map-note:empty does under ACCESSIBILITY: it is a live
+   region, and a region that appears with its first sentence is not
+   read. On paper it prints with the record line, black, because a
+   printed list that may be missing a moderator's change should say
+   so beside its date. */
+.record-notice {
+  margin-top: 2px;
+}
+
+.record-notice:empty {
+  display: block;
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
 /* ------------------------------------------------------------------
    PAPER
 

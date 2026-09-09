@@ -208,6 +208,18 @@
            and a screen reader reads it where it sits. -->
       <p class="record-line" id="record-line"></p>
 
+      <!-- Under it, only when it is true: "Showing the published
+           record; live updates unavailable." Written by map.js when
+           the database cannot be reached or has not answered in
+           eight seconds, cleared when a later fetch succeeds; empty,
+           it takes no room. Its own polite live region, so a screen
+           reader hears it once when it arrives - and not #map-note,
+           which is for what a link or Near me has to say and is
+           cleared by them. The seed the map draws meanwhile is the
+           published record, which is exact; what the line says is
+           that a change a moderator made since may not be on it. -->
+      <p class="record-line record-notice" id="record-notice" aria-live="polite"></p>
+
       <!-- The one line under the map for what the map has to say: a
            link it could not follow, what Near me found or did not.
            Filled by map.js; hidden while empty; read out as it
