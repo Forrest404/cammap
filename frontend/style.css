@@ -2211,6 +2211,24 @@ article.post {
   color: var(--text);
 }
 
+/* ---------- the approximate marker's legend entry ----------
+
+   The swatch for "Approximate position": a wider, thinner ring than
+   the legacy swatch, in the van colour dimmed to the brightness
+   ceiling, because that is what the halo under an approximate pin is
+   on the map - a ring two and a half times the dot, in the dot's own
+   hue held under the rule (approxPaint() in map.js; the colour comes
+   from dimTo() there, inline, like every swatch colour). Drawn the
+   same way so the key can be read off the map. On paper the printer
+   is told to keep swatch colours already; a thin ring prints as a
+   thin ring. */
+.swatch.approx {
+  width: 11px;
+  height: 11px;
+  border-width: 1px;
+  background: none;
+}
+
 /* ------------------------------------------------------------------
    PAPER
 

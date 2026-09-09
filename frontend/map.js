@@ -118,6 +118,47 @@ function isLight() {
 var SOURCE = "cameras";
 var DOT    = "cammap-dot";
 
+/* ---------------- what is not known ----------------
+
+   The Met's record gives some van sites as a borough or a district
+   rather than a street, and the pin for those sits at the middle of
+   the area. The note has always said so - "(pin marks the surrounding
+   area, not an exact spot)", forty-three sites - and the map drew
+   them exactly like a pin on a known pole, which was a claim the
+   record does not make. Since the record grew the `approximate`
+   field the difference can be drawn from a field, and it is: a wider,
+   fainter ring under the dot, in the dot's own colour, that says "in
+   here somewhere" the way the Near me accuracy ring says how far the
+   browser might be wrong. Showing what is not known is more
+   persuasive than hiding it, on a map whose argument is that nothing
+   on it is estimated.
+
+   The ring is a fixed number of pixels wide, not a number of metres.
+   The record gives no radius - "Acton", "Barnet" - and a ring drawn
+   in metres would be this page deciding how big a borough is, which
+   is exactly the guess the field exists to avoid. So the halo is a
+   mark on the pin, like the hollow ring is a mark on a legacy site,
+   and not a measurement; the legend says "approximate position" and
+   nothing more precise.
+
+   It is drawn from ["get", "approximate"] on the feature, never from
+   the note's phrase: the field is the record's, one cell per camera,
+   and a pin the maintainer knows to be approximate for another
+   reason is that cell set, not a sentence to match (Station Parade,
+   QUESTIONS.md item 10). It obeys the same filter as the dots - a
+   halo under a dot that is not shown would be a hint at a camera the
+   list does not admit to - and, like every other layer here, the
+   brightness rule: nothing drawn under the cameras may be brighter
+   than the dimmest dot. It is drawn in the dot's colour dimmed to
+   that ceiling, which is what makes the rule hold wherever the ring
+   lands; approxPaint() says how that was arrived at, and the numbers
+   measured are in NOTES.md ("Provenance and the record on the page").
+
+   The picker's context dots on the report form and the ?edit tool
+   do not draw it. They show where cameras are so a pin can be placed
+   beside them, and a halo there would say nothing a reporter needs. */
+var APPROX = "cammap-approx";   /* the halo, and APPROX-casing under it over imagery */
+
 /* The glow is not one heatmap but one per camera colour - a heatmap
    can only carry a single colour ramp, and the glow should match the
    point - so the heatmap layers are not separate. heatLayers records
@@ -563,7 +604,7 @@ function clearOurLayersAndSources() {
   for (i = 0; i < layers.length; i++) {
     id = layers[i].id;
     if (id === DOT || id === SATELLITE || id === STACK ||
-        id.indexOf(HEAT) === 0 || id.indexOf(HERE) === 0) {
+        id.indexOf(HEAT) === 0 || id.indexOf(HERE) === 0 || id.indexOf(APPROX) === 0) {
       ours.push(id);
     }
   }
@@ -793,6 +834,98 @@ function dotPaint() {
   };
 }
 
+/* The halo under an approximate pin - see "what is not known" at
+   the top. Same source as the dots, filtered to approximate: true
+   (and to whatever the dots are filtered to, by applyLegacyFilter),
+   drawn under them so the dot sits in the middle of its ring.
+
+   The colour answers to the brightness rule by construction, not by
+   opacity. The first version drew the ring in the dot's own colour,
+   translucent - the van colour is 173 on the perceived scale against
+   the rule's 134 - and measured it: on the black it was 69, over a
+   road 120, and over the hottest glow at the opening zoom, where a
+   road under the Piccadilly glow already stands at about 148 with
+   nothing new drawn, it came out at 155. Any lighter colour laid over
+   a pixel that bright can only lighten it, however thin. So the halo
+   is drawn in the dot's colour dimmed to HALO_BRIGHTNESS (dimTo() in
+   shared.js, hue kept): over anything darker than itself it
+   brightens to no more than that, and over anything brighter it
+   darkens. Measured again, the brightest pixel it adds is then under
+   the ceiling on every view, at every zoom, whatever it lands on.
+
+   Within that, the opacities are for the eye. On the dark map the
+   ring is 0.6 and the fill 0.12 - a quiet ring, a breath of colour
+   inside it. Over imagery the fill is off, since a wash on a
+   photograph says nothing, and the ring wears the black casing the
+   Near me ring does so it reads as a line and not a smear. On the
+   light map, which the rule does not govern, the ring is firmer
+   still so a dark orange holds on pale ground.
+
+   Two and a half times the dot's radius at every zoom - wide enough
+   to read as "around here" beside the dot, narrow enough that two
+   approximate boroughs an inch apart at the widest zoom do not
+   overlap into a smear. Fixed pixels, not metres: see the note at
+   the top. */
+
+/* Under the rule's 134 with room for anti-aliasing and rounding: a
+   pixel on a ring's edge is a blend of the ring and what is under it,
+   and lands between the two, never above either. */
+var HALO_BRIGHTNESS = 128;
+
+/* typeColourExpression(), with every colour dimmed to the ceiling.
+   Built from CAMERA_TYPES like the dots' own paint, so a halo can
+   never be a hue the legend does not show; the non-functional colour
+   first, as there. */
+function haloColourExpression() {
+  var match = ["match", ["get", "type"]];
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    match.push(TYPES[i].type, dimTo(TYPES[i].colour, HALO_BRIGHTNESS));
+  }
+  match.push(dimTo(TYPES[1].colour, HALO_BRIGHTNESS));   /* fallback: the van colour */
+
+  return ["case", ["==", ["get", "status"], "nonfunctional"],
+          dimTo(NONFUNCTIONAL_COLOUR, HALO_BRIGHTNESS), match];
+}
+
+function approxPaint() {
+  var colour = haloColourExpression();
+  var imagery = view === "satellite";
+
+  return {
+    "circle-radius": ["interpolate", ["linear"], ["zoom"],
+      WIDEST_ZOOM, 6,
+      14, 10,
+      CLOSEST_ZOOM, 17],
+
+    "circle-color": colour,
+    "circle-opacity": imagery ? 0 : (isLight() ? 0.14 : 0.12),
+
+    "circle-stroke-color": colour,
+    "circle-stroke-width": isLight() || imagery ? 1.2 : 1,
+    "circle-stroke-opacity": imagery ? 0.85 : (isLight() ? 0.7 : 0.6)
+  };
+}
+
+/* The casing under the ring, for imagery only - the page's own black
+   round the colour, as the style's labels wear a dark halo over a
+   photograph. Off everywhere else: black on the dark map is black on
+   black, and on the light map it would turn a quiet ring into a
+   heavy one. Same recipe as the Near me ring's casing. */
+function approxCasingPaint() {
+  return {
+    "circle-radius": ["interpolate", ["linear"], ["zoom"],
+      WIDEST_ZOOM, 6,
+      14, 10,
+      CLOSEST_ZOOM, 17],
+    "circle-opacity": 0,
+    "circle-stroke-color": "#0d0d0d",
+    "circle-stroke-width": 3.5,
+    "circle-stroke-opacity": view === "satellite" ? 0.85 : 0
+  };
+}
+
 function addCameras(beneath) {
   var built = buildFeatures();
 
@@ -801,6 +934,29 @@ function addCameras(beneath) {
   map.addSource(SOURCE, { type: "geojson", data: collection(built.all) });
 
   addGlow(built, beneath);
+
+  /* Over the glow and under the map's own lettering, like the glow
+     itself: the casing, then the ring, each slid in beneath the
+     first label. The dots go over everything, labels included,
+     because the cameras are the point; the halo is a mark on the
+     backdrop, and a place name is allowed to write over it. That is
+     also what keeps the rule honest - measured over the labels, a
+     translucent ring on a lifted place name came out brighter than
+     the name was, and the answer was not a fainter ring but the
+     right place in the stack. */
+  map.addLayer({
+    id: APPROX + "-casing",
+    type: "circle",
+    source: SOURCE,
+    paint: approxCasingPaint()
+  }, beneath);
+
+  map.addLayer({
+    id: APPROX,
+    type: "circle",
+    source: SOURCE,
+    paint: approxPaint()
+  }, beneath);
 
   map.addLayer({
     id: DOT,
@@ -1014,12 +1170,12 @@ function tidy(list) {
 
       /* The four fields the record grew after the eight above, carried
          through as they are so that nothing between the file and the
-         page loses them: the ?edit export writes them back out, and
-         the popup cites the source (sourceRow()). approximate is not
-         drawn yet. A draft saved before the fields existed, or a
-         hand-typed entry, has none, and gets the same defaults the
-         build script gives a blank cell - null, null, null, false -
-         never a plausible value.
+         page loses them: the ?edit export writes them back out, the
+         popup cites the source (sourceRow()), and an approximate pin
+         is drawn with a halo (approxPaint()). A draft saved before
+         the fields existed, or a hand-typed entry, has none, and
+         gets the same defaults the build script gives a blank cell -
+         null, null, null, false - never a plausible value.
 
          periods       the deployments counted by the period the source
                        gives them in - {"2023-24": 1} - or null where
@@ -1182,8 +1338,9 @@ function isListed(point) {
          (point.note || "").toLowerCase().indexOf(term) !== -1;
 }
 
-/* The same rule again, as something MapLibre can evaluate per dot. */
-function applyLegacyFilter() {
+/* The same rule again, as something MapLibre can evaluate per dot:
+   the clauses of isShown(), as an expression. */
+function shownFilter() {
   var filter = ["all"];
   var type;
 
@@ -1197,8 +1354,23 @@ function applyLegacyFilter() {
     }
   }
 
+  return filter;
+}
+
+/* Applied to the dots, and to the halo under an approximate pin with
+   one clause more - the halo is only ever under a dot that is shown,
+   and only under one the record says is approximate. Keyed on the
+   field, never on the note's phrase: see "what is not known". */
+function applyLegacyFilter() {
+  var filter = shownFilter();
+  var approx = filter.concat([["==", ["get", "approximate"], true]]);
+
   if (map.getLayer(DOT)) {
     map.setFilter(DOT, filter.length > 1 ? filter : null);
+  }
+  if (map.getLayer(APPROX)) {
+    map.setFilter(APPROX, approx);
+    map.setFilter(APPROX + "-casing", approx);
   }
 }
 
@@ -1414,6 +1586,17 @@ function applyView() {
     }
   }
 
+  /* The halo under an approximate pin changes with the ground too:
+     fainter or firmer, and its casing on only over imagery. */
+  if (map.getLayer(APPROX)) {
+    paint = approxPaint();
+    for (i = 0; i < VIEW_PAINT.length; i++) {
+      map.setPaintProperty(APPROX, VIEW_PAINT[i], paint[VIEW_PAINT[i]]);
+    }
+    map.setPaintProperty(APPROX + "-casing", "circle-stroke-opacity",
+      approxCasingPaint()["circle-stroke-opacity"]);
+  }
+
   /* Where you are wears a dark casing over imagery and none
      elsewhere - see drawHere(), under "Near me". */
   applyHereView();
@@ -1462,15 +1645,19 @@ function setView(next) {
 }
 
 /* A plain legend row: a swatch and a name, and nothing to press. Used
-   for the two entries that are states rather than kinds. */
-function legendNote(colour, text, hollow) {
+   for the entries that are states rather than kinds. `drawn` says
+   how the swatch is filled, the way the marker it stands for is:
+   "hollow" is the legacy ring, "approx" the wider faint ring under an
+   approximate pin, and anything else a solid dot. */
+function legendNote(colour, text, drawn) {
   var item = document.createElement("li");
   var swatch = document.createElement("span");
 
-  swatch.className = hollow ? "swatch hollow" : "swatch";
-  if (hollow) {
+  if (drawn === "hollow" || drawn === "approx") {
+    swatch.className = "swatch " + drawn;
     swatch.style.borderColor = colour;
   } else {
+    swatch.className = "swatch";
     swatch.style.background = colour;
   }
 
@@ -1561,10 +1748,14 @@ function drawLegend() {
     legend.appendChild(item);
   }
 
-  /* Not kinds but states, and both are said by the fill rather than
-     the colour, so there is nothing here to switch off. */
-  legend.appendChild(legendNote(NONFUNCTIONAL_COLOUR, "Non-functional", false));
-  legend.appendChild(legendNote(TYPES[1].colour, "Legacy (no longer in use)", true));
+  /* Not kinds but states, and all three are said by the fill rather
+     than the colour, so there is nothing here to switch off. The
+     third is the halo under a pin the record gives as an area, drawn
+     in the van colour because every such pin is a van site today;
+     the halo on the map takes its dot's own colour whatever the kind. */
+  legend.appendChild(legendNote(NONFUNCTIONAL_COLOUR, "Non-functional", "solid"));
+  legend.appendChild(legendNote(TYPES[1].colour, "Legacy (no longer in use)", "hollow"));
+  legend.appendChild(legendNote(dimTo(TYPES[1].colour, HALO_BRIGHTNESS), "Approximate position", "approx"));
 
   if (had && had.type) {
     again = legend.querySelector((had.only ? "button.legend-only" : "button.legend-key") +
@@ -1605,7 +1796,11 @@ function buildFeatures() {
         type: point.type,
         status: point.status,
         deployments: point.deployments || 1,
-        order: DRAW_ORDER[point.type] || 0
+        order: DRAW_ORDER[point.type] || 0,
+
+        /* The halo layer is filtered on this. A boolean from the
+           field and never from the note - see "what is not known". */
+        approximate: point.approximate === true
       },
       geometry: {
         type: "Point",
@@ -1728,7 +1923,10 @@ function refreshCameras() {
      the colours actually changed, not on every refresh. */
   if (!sameColours(glowGroups(), glowColoursNow())) {
     removeGlow();
-    addGlow(built, glowAnchor);
+    /* Under the approximate halo when that is standing, so the stack
+       stays glow, halo, lettering, dots however many times the glow
+       is made again; the halo's casing is the lowest of its layers. */
+    addGlow(built, map.getLayer(APPROX + "-casing") ? APPROX + "-casing" : glowAnchor);
     return;
   }
 
@@ -1891,7 +2089,10 @@ function chooserRow(point) {
   return item;
 }
 
-/* "LFR van site · legacy · last seen 2024" and the like. */
+/* "LFR van site · legacy · last seen 2024" and the like - and, where
+   the record gives the pin as an area, "· approximate position" on
+   the end, so the kind line in the popup, the list row's spoken text
+   and the swatch's title on paper all say what the halo draws. */
 function labelOf(point) {
   var label = typeLabel(point.type) || "Camera";
 
@@ -1902,6 +2103,10 @@ function labelOf(point) {
     }
   } else if (point.status === "nonfunctional") {
     label += " · non-functional";
+  }
+
+  if (point.approximate) {
+    label += " · approximate position";
   }
 
   return label;

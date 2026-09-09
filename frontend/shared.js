@@ -141,6 +141,48 @@ function typeColourExpression() {
   return ["case", ["==", ["get", "status"], "nonfunctional"], NONFUNCTIONAL_COLOUR, match];
 }
 
+/* ---------------- the brightness rule, as arithmetic ----------------
+
+   Nothing drawn under the cameras may be brighter than the dimmest
+   camera dot - the fixed-camera red, 134 on the perceived scale
+   0.299 R + 0.587 G + 0.114 B. The LIFT table below is tuned to it by
+   eye and measured after; this is the same rule for a colour that has
+   to be derived rather than typed. dimTo() scales a colour down, hue
+   kept, until its brightness is at or under a ceiling: the halo under
+   an approximate pin is the dot's own colour dimmed this way, because
+   a translucent lighter colour over a pixel the glow has already
+   lifted near the ceiling can only push it over, and a colour that is
+   itself under the ceiling never can - over anything brighter than
+   itself it darkens. A colour already under the ceiling comes back
+   as it is. */
+function brightnessOf(hex) {
+  var r = parseInt(hex.slice(1, 3), 16);
+  var g = parseInt(hex.slice(3, 5), 16);
+  var b = parseInt(hex.slice(5, 7), 16);
+
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+function dimTo(hex, ceiling) {
+  var was = brightnessOf(hex);
+  var by;
+  var i;
+  var part;
+  var out = "#";
+
+  if (was <= ceiling) {
+    return hex;
+  }
+
+  by = ceiling / was;
+  for (i = 1; i < 7; i += 2) {
+    part = Math.floor(parseInt(hex.slice(i, i + 2), 16) * by);
+    out += (part < 16 ? "0" : "") + part.toString(16);
+  }
+
+  return out;
+}
+
 /* Fills a <select> from the table above, so no page has to keep its
    own copy of the list. `selected` is which one starts chosen, since
    the sensible default differs by page: the map's own add form opens

@@ -441,6 +441,50 @@ if (havePoints && haveShared) {
       sameJSON(expr, again) && JSON.stringify(T) === before);
   });
 
+  section("the brightness rule", function () {
+    var T = site.CAMERA_TYPES;
+    var ceiling = 128;
+    var over = [];
+    var offHue = [];
+    var i;
+    var dimmed;
+    var a;
+    var b;
+
+    check("brightnessOf is the perceived scale: white 255, black 0, the fixed red 134",
+      typeof site.brightnessOf === "function" &&
+      site.brightnessOf("#ffffff") === 255 && site.brightnessOf("#000000") === 0 &&
+      Math.round(site.brightnessOf("#cf6a58")) === 134,
+      typeof site.brightnessOf === "function" ? String(site.brightnessOf("#cf6a58")) : "missing");
+    if (typeof site.dimTo !== "function") {
+      check("dimTo is a function in shared.js", false);
+      return;
+    }
+
+    /* The halo under an approximate pin is every kind's colour dimmed
+       to the ceiling: at or under it afterwards, the hue kept (the
+       channels scale together), and a colour already under it left
+       exactly as it is. */
+    for (i = 0; i < T.length; i++) {
+      dimmed = site.dimTo(T[i].colour, ceiling);
+      if (!HEX_COLOUR.test(dimmed) || site.brightnessOf(dimmed) > ceiling) {
+        over.push(T[i].type + " -> " + dimmed + " (" + site.brightnessOf(dimmed) + ")");
+      }
+      a = [1, 3, 5].map(function (p) { return parseInt(T[i].colour.slice(p, p + 2), 16); });
+      b = [1, 3, 5].map(function (p) { return parseInt(dimmed.slice(p, p + 2), 16); });
+      /* the same factor on every channel, to within the rounding */
+      if (Math.abs(b[0] * a[1] - b[1] * a[0]) > a[0] + a[1] || Math.abs(b[2] * a[1] - b[1] * a[2]) > a[2] + a[1]) {
+        offHue.push(T[i].type + " " + T[i].colour + " -> " + dimmed);
+      }
+    }
+    check("dimTo brings every kind's colour to the ceiling or under", over.length === 0, listOf(over));
+    check("dimTo keeps the hue: every channel scaled by the same factor", offHue.length === 0, listOf(offHue));
+    check("dimTo leaves a colour already under the ceiling alone",
+      site.dimTo("#0d0d0d", ceiling) === "#0d0d0d" && site.dimTo("#5c5c5c", ceiling) === "#5c5c5c");
+    check("dimTo of the non-functional colour is under the ceiling",
+      site.brightnessOf(site.dimTo(site.NONFUNCTIONAL_COLOUR, ceiling)) <= ceiling);
+  });
+
   section("seedKeyOf", function () {
     var rows;
     var wrong = [];
