@@ -1833,6 +1833,29 @@ details.explain p {
   color: var(--dim);
 }
 
+/* The key, one row per mark. Marker-less and flush left because the
+   term at the head of each row is the marker - a bullet beside it
+   would be a second one saying nothing. The gap between rows is
+   wider than the line-height so the eye lands on a row rather than
+   on a paragraph; that gap is the whole reason this reads faster
+   than the prose it replaced. */
+details.explain ul.explain-list {
+  margin: 8px 0 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+details.explain ul.explain-list li {
+  margin: 0 0 7px 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--dim);
+}
+
+details.explain ul.explain-list li:last-child {
+  margin-bottom: 0;
+}
+
 details.explain strong {
   color: var(--text);
   font-weight: 600;
@@ -3361,5 +3384,151 @@ button.small {
 
   body.printing-card .recovery .card .card-pw-masked {
     display: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   TOUCH, AND THE FINGER'S SIZE
+
+   Everything above is sized for a mouse, which lands where it is
+   pointed. A finger does not: it covers about nine millimetres, so
+   Apple asks for 44pt of target and Material for 48dp, and the
+   toggles under the map measured 24 pixels tall. Legacy, Near me,
+   the three views and the three sorts - the controls this map is
+   *for* - were the smallest things on the page, on the device most
+   people carry past a van.
+
+   The fix is in a pointer query rather than a width one. A width
+   query would grow the buttons on a small window on a desktop, where
+   the mouse is still exact and the density is the point; `pointer:
+   coarse` asks the question actually being asked, which is what is
+   doing the pointing. So the retro density survives on a desktop at
+   any width, and a phone gets a target it can hit.
+
+   The height goes on with padding and a min-height rather than by
+   growing the type: the type scale is the look, and a 12px label in
+   a 44px target still reads as the same control. */
+@media (pointer: coarse) {
+  button,
+  button.toggle,
+  .bar a,
+  a.donate {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 8px between targets, so a thumb that lands between two of them
+     hits neither rather than the wrong one. */
+  .map-toggles {
+    gap: 8px;
+  }
+
+  /* A row of sorts is drawn as one bar with shared borders, so the
+     gap that separates the others would break it apart. It keeps its
+     seam and gets the height instead. */
+  #points-sort {
+    gap: 0;
+  }
+
+  /* The list rows are the other thing a finger goes for: a camera
+     name is a link to a dot on the map. */
+  ul.points li button,
+  ul.points li a {
+    min-height: 44px;
+  }
+
+  /* A field is a target before it is a field - it has to be tapped
+     to be typed in. These are the report form's, which is the one
+     thing on the site done standing up, one-handed, usually in a
+     hurry. Height only: the padding stays, so the text sits where it
+     did and only the box around it grows. */
+  select,
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="email"],
+  input[type="file"] {
+    min-height: 44px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   THE SIXTEEN-PIXEL RULE
+
+   iOS Safari zooms the page in when a field with type smaller than
+   16px takes focus, and does not zoom back out. Every field on the
+   report form and the account form was 14px, so tapping the first
+   one threw the layout sideways and left the person to pinch their
+   way back - once per field. It reads as the site breaking, and it
+   is one number.
+
+   Only under the phone breakpoint: 14px is the right size for these
+   fields on a desktop, where nothing zooms, and the type scale is
+   the look. */
+@media (max-width: 700px) {
+  select,
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="email"],
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   THE ONE MOVEMENT
+
+   Colour only, and 120ms of it. Nothing here slides, grows or fades
+   in: a terminal does not, and the flat instant state change is a
+   large part of why this page reads as an instrument rather than an
+   app. But an instant *colour* flip on a toggle reads as a redraw
+   rather than as an answer, and 120ms is under the threshold where a
+   change stops feeling like a consequence of the press.
+
+   Only `color`, `background-color` and `border-color` are named -
+   never `all`, which would catch a layout property and animate a
+   reflow. Nothing here moves a box, so nothing here can shift the
+   page under a finger.
+
+   The map's own flights are governed separately, in map.js, which
+   reads prefers-reduced-motion for itself; this block covers what
+   the stylesheet does. */
+button,
+button.toggle,
+button.legend-key,
+.bar a,
+a.donate,
+details.explain summary,
+input:focus,
+select:focus,
+textarea:focus {
+  transition: color 120ms ease-out,
+              background-color 120ms ease-out,
+              border-color 120ms ease-out;
+}
+
+/* Asked for no motion, given none. A colour transition is mild
+   enough that most guidance would leave it, but "reduce" is a
+   preference about the interface as a whole and this is the only
+   place the stylesheet moves at all - so it is the only place that
+   has to answer, and answering completely is cheaper than judging.
+   The focus ring is deliberately outside the transition list above,
+   so it never fades in for anyone. */
+@media (prefers-reduced-motion: reduce) {
+  button,
+  button.toggle,
+  button.legend-key,
+  .bar a,
+  a.donate,
+  details.explain summary,
+  input:focus,
+  select:focus,
+  textarea:focus {
+    transition: none;
   }
 }

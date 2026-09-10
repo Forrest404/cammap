@@ -99,7 +99,7 @@
 <meta name="apple-mobile-web-app-title" content="cammap">
 <meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="fonts/fonts.css">
-<link rel="stylesheet" href="frontend/style.css?v=972a6b76">
+<link rel="stylesheet" href="frontend/style.css?v=83449903">
 </head>
 <body>
 <div class="sheet">
@@ -178,19 +178,25 @@
         <p class="hint" id="year-hint"></p>
       </div>
 
-      <!-- How to read the map, in words. The legend gives five
-           colours and two fills, and a visitor had to work out for
-           themselves that a hollow ring is a van site and why the
-           map opens with none of them on it. Five sentences: the
-           colours, the ring, the wider ring under an approximate
-           pin, the glow, and why van sites sit behind Legacy - each
-           drawn from NOTES.md ("What active means", "What is not
-           known", "Tuning the glow"), none claiming what the data
-           does not.
-           The list of kinds in the first sentence is filled in by
-           map.js from CAMERA_TYPES, so it cannot disagree with the
-           key above it; without JavaScript the sentence still reads,
-           without the list.
+      <!-- How to read the map. The legend gives five colours and two
+           fills, and a visitor had to work out for themselves that a
+           hollow ring is a van site and why the map opens with none
+           of them on it. One row per thing the eye can see - the
+           colour, the fill, the wider ring, the glow, the Legacy
+           toggle - each drawn from NOTES.md ("What active means",
+           "What is not known", "Tuning the glow"), none claiming
+           what the data does not.
+
+           A list rather than the paragraph this was, because every
+           row answers "what does that mark mean" and nobody reads a
+           key as prose: the term is what the eye is looking for, so
+           the term leads and the sentence follows it. Half the words
+           it took, and the same five facts.
+
+           The list of kinds on the first row is filled in by map.js
+           from CAMERA_TYPES, so it cannot disagree with the key
+           above it; without JavaScript the row still reads, without
+           the list.
 
            Open in the markup, so a page without JavaScript shows it;
            map.js closes it on any visit after the first, and
@@ -200,26 +206,13 @@
            and the focus ring covers summary already. -->
       <details class="explain" id="explain" open>
         <summary>How to read this map</summary>
-        <p>
-          Colour says what a camera is<span id="explain-kinds"></span>.
-          The key above gives each kind its colour.
-          A solid dot is a camera in use; a hollow ring in the same
-          colour is a legacy site, one no longer in use; a dot filled
-          in the non-functional colour is one reported as not working,
-          whatever its kind.
-          A wider, fainter ring round a dot means the record gave the
-          site as an area &ndash; a borough, a district &ndash; and the
-          pin sits at the middle of it, not on a known spot.
-          Pull back and the dots pool into a glow, weighed by how many
-          times the record has a spot being used &ndash; so a place a
-          van has been sent twenty times reads hotter than one it
-          visited once &ndash; and a camera on its own makes no glow
-          at all.
-          Every LFR van site sits behind the <strong>Legacy</strong>
-          toggle: a van parks for a shift and drives away, so the
-          record can say where one has been and never where one is
-          now, and the map opens on the cameras fixed to something.
-        </p>
+        <ul class="explain-list">
+          <li><strong>Colour</strong> &ndash; the kind of camera<span id="explain-kinds"></span>.</li>
+          <li><strong>Solid dot</strong> &ndash; in use. <strong>Hollow ring</strong> &ndash; a legacy site, no longer in use. <strong>Non-functional colour</strong> &ndash; reported as not working, whatever its kind.</li>
+          <li><strong>Wider, fainter ring</strong> &ndash; the record gave an area, not a spot. The pin sits at its middle.</li>
+          <li><strong>Glow</strong>, as you pull back &ndash; how often the record has a spot being used. Twenty visits read hotter than one; a camera on its own makes none.</li>
+          <li><strong>Legacy</strong> &ndash; every LFR van site sits behind this toggle. A van parks for a shift and drives away, so the record says where one has <em>been</em>, never where one is now.</li>
+        </ul>
       </details>
 
       <!-- What the map is a map of, and how old it is: the count of
@@ -427,17 +420,17 @@
      Supabase CDN script above failed to load, account.js notices and
      says the account panel is unavailable rather than breaking
      anything. -->
-<script src="data/points.js?v=972a6b76"></script>
-<script src="frontend/shared.js?v=972a6b76"></script>
-<script src="supabase-config.js?v=972a6b76"></script>
-<script src="frontend/account.js?v=972a6b76"></script>
-<script src="frontend/map.js?v=972a6b76"></script>
+<script src="data/points.js?v=83449903"></script>
+<script src="frontend/shared.js?v=83449903"></script>
+<script src="supabase-config.js?v=83449903"></script>
+<script src="frontend/account.js?v=83449903"></script>
+<script src="frontend/map.js?v=83449903"></script>
 <!-- Last, on every page, and needed by nothing: registers the service
      worker that keeps a copy of the site for a street with no signal,
      and shows the one line under the page when a newer version is
      ready. A file rather than a script written here because the
      policy above allows no inline script. sw.js says what is kept
      and what never is. -->
-<script src="frontend/offline.js?v=972a6b76"></script>
+<script src="frontend/offline.js?v=83449903"></script>
 </body>
 </html>

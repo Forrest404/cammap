@@ -92,7 +92,7 @@
 <meta name="apple-mobile-web-app-title" content="cammap">
 <meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=972a6b76">
+<link rel="stylesheet" href="../frontend/style.css?v=83449903">
 </head>
 <body>
 <div class="sheet">
@@ -126,10 +126,9 @@
          what happens to it. Everything below this line is built by
          account.js and hidden until it has been. -->
     <p class="lead">
-      A report is a pin on the map, a few words, and a photo if you
-      have one. It is checked before it goes on the map: once enough
-      people report the same spot it goes on by itself, and until then
-      a moderator looks first.
+      A report is a pin, a few words, and a photo if you have one.
+      Once enough people report the same spot it goes on the map by
+      itself; until then a moderator looks first.
     </p>
 
     <!-- Shown if the site has no Supabase project set up behind it.
@@ -154,11 +153,13 @@
 
       <!-- Reporting a camera the map does not have. -->
       <div id="report-new">
+        <!-- The one thing this mode has to say that the lead above
+             does not: fill it in first, account afterwards. What an
+             account *is* belongs where one is made, further down, and
+             was said in both places. -->
         <p class="lead">
-          Seen a facial recognition camera that is not on the map? Send
-          it in. You can fill all of this in now; an account &mdash; two
-          random words and a password, nothing else &mdash; is asked for
-          when you send it, and nothing you have typed is lost.
+          Fill this in now &mdash; an account is asked for when you
+          send, and nothing you have typed is lost.
         </p>
 
         <div class="report-layout">
@@ -185,11 +186,10 @@
             <span id="locate-note"></span>
           </p>
           <p class="hint">
-            Worth knowing: the coordinates you send are published with
-            the camera if the report is approved. If you press the
-            button while standing at the camera, that is where you
-            were. Nothing records that it was you &mdash; but move the
-            numbers to the camera rather than to yourself.
+            Approved reports publish these coordinates. Nothing records
+            that they were yours &mdash; but press the button at the
+            camera and that is where you stood, so move the pin onto
+            the camera, not onto yourself.
           </p>
 
           <label for="s-name">Where is it?</label>
@@ -225,12 +225,16 @@
           <input type="file" id="s-proof" multiple accept="image/jpeg,image/png,image/webp">
           <ul class="proof-list" id="s-proof-list" aria-label="Photos to send"></ul>
           <p class="note" id="s-proof-note" role="status"></p>
+          <!-- Why video cannot be stripped the way a photo can is in
+               NOTES.md, "The reporting loop". A form is not where a
+               person reads it; what they need here is the rule and
+               the reassurance. The update form below says the same
+               sentence, so the two cannot drift into different
+               promises about the same upload. -->
           <p class="hint">
-            Photos are re-saved in your browser before upload, which
-            removes location and camera details from the file. Video is
-            not accepted, because that cannot be done to a video here
-            and a video carries the same details. Proof is seen by
-            moderators only. 20 MB each at most.
+            Photos are stripped of location and camera details in your
+            browser before upload. Video is not accepted. Seen by
+            moderators only; 20 MB each at most.
           </p>
 
           <!-- What was filled in before a reload, if anything: the
@@ -286,11 +290,15 @@
 
         <div id="report-account" class="report-account" style="display:none" tabindex="-1">
           <h3>An account, to send it</h3>
+          <!-- "Nothing you filled in is lost" is the lead's promise at
+               the top of the form; repeating it here read as though a
+               second, different thing were being promised. What this
+               box has to say that nothing above does is what an
+               account actually is. -->
           <p class="hint">
-            Nothing you have filled in is lost. An account is two random
-            words and a password &mdash; no email, no name, nothing about
-            you &mdash; and the report goes as it stands the moment you
-            have one.
+            An account is two random words and a password &mdash; no
+            email, no name, nothing about you. The report goes as it
+            stands the moment you have one.
           </p>
 
           <div class="account-forms">
@@ -434,7 +442,11 @@
           <input type="file" id="s-status-proof" multiple accept="image/jpeg,image/png,image/webp">
           <ul class="proof-list" id="s-status-proof-list" aria-label="Photos to send"></ul>
           <p class="note" id="s-status-proof-note" role="status"></p>
-          <p class="hint">Moderators only. Photos have their location data removed first; video is not accepted. 20 MB each at most.</p>
+          <p class="hint">
+            Photos are stripped of location and camera details in your
+            browser before upload. Video is not accepted. Seen by
+            moderators only; 20 MB each at most.
+          </p>
 
           <p class="note" id="status-draft-note" role="status"></p>
 
@@ -512,16 +524,16 @@
 
 </div>
 <script src="../lib/supabase.js"></script>
-<script src="../frontend/shared.js?v=972a6b76"></script>
-<script src="../supabase-config.js?v=972a6b76"></script>
-<script src="../frontend/picker.js?v=972a6b76"></script>
-<script src="../frontend/account.js?v=972a6b76"></script>
+<script src="../frontend/shared.js?v=83449903"></script>
+<script src="../supabase-config.js?v=83449903"></script>
+<script src="../frontend/picker.js?v=83449903"></script>
+<script src="../frontend/account.js?v=83449903"></script>
 <!-- Last, on every page, and needed by nothing: registers the service
      worker that keeps a copy of the site for a street with no signal,
      and shows the one line under the page when a newer version is
      ready. A file rather than a script written here because the
      policy above allows no inline script. sw.js says what is kept
      and what never is. -->
-<script src="../frontend/offline.js?v=972a6b76"></script>
+<script src="../frontend/offline.js?v=83449903"></script>
 </body>
 </html>
