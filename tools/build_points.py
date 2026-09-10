@@ -416,10 +416,15 @@ def read_shared():
     if not types:
         raise BuildError("CAMERA_TYPES not found in %s, or has no entries" % SHARED_FILE)
 
-    m = re.search(r'var LONDON_BOUNDS\s*=\s*\[\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*,'
-                  r'\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*\]', shared)
+    # CITY.bounds, not LONDON_BOUNDS: since KEEP-6 the second is an
+    # alias of the first, and reading the alias would go on working
+    # right up until the day a second city made it point somewhere
+    # else - which is the one day this must not silently keep
+    # building against London.
+    m = re.search(r'var CITY\s*=\s*\{.*?\bbounds:\s*\[\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*,'
+                  r'\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*\]', shared, re.S)
     if not m:
-        raise BuildError("LONDON_BOUNDS not found in %s" % SHARED_FILE)
+        raise BuildError("CITY.bounds not found in %s" % SHARED_FILE)
     south, west, north, east = (Decimal(x) for x in m.groups())
 
     return types, (south, west, north, east)

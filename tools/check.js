@@ -33,12 +33,19 @@
    expression is built from the table, stop for stop. Its shape is
    checked as MapLibre will read it.
 
-   The bounds. LONDON_BOUNDS is south-west then north-east, and the
-   database repeats the numbers in three check constraints. MapLibre
-   wants longitude first and everything else here wants latitude
-   first, so a point with its coordinates the wrong way round has to
-   fail inLondon(), not pass it; the corners, the edges and the swap
-   are all tried.
+   The city. CITY says which city this map is of - the name, the box,
+   the opening centre and zoom - and LONDON_BOUNDS and LONDON_CENTRE
+   are aliases of two of its fields. That they are aliases and not
+   copies is the whole of KEEP-6, and only an identity test tells the
+   two apart, so that is what is asserted.
+
+   The bounds. CITY.bounds is south-west then north-east, and the
+   database keeps the same four numbers in public.in_city(), which
+   three check constraints call (tools/stamp.py holds those to these).
+   MapLibre wants longitude first and everything else here wants
+   latitude first, so a point with its coordinates the wrong way round
+   has to fail inLondon(), not pass it; the corners, the edges and the
+   swap are all tried.
 
    seed_key. It is how a database row says which published entry it
    is, built in JavaScript for the map and in SQL for the seed. The
@@ -366,6 +373,46 @@ if (havePoints && haveShared) {
       site.typeLabel("unicorncam") === "unicorncam" &&
       site.typeLabel(undefined) === "" && site.typeLabel(null) === "" && site.typeLabel("") === "",
       JSON.stringify([site.typeLabel("unicorncam"), site.typeLabel(undefined), site.typeLabel(null)]));
+  });
+
+  /* CITY is what says which city this map is of - its name, its box,
+     where a map opens on it and how far in - and LONDON_BOUNDS and
+     LONDON_CENTRE are aliases of two of its fields rather than copies
+     of them. That distinction is the whole of KEEP-6: an alias cannot
+     hold an old box while CITY holds a new one, a copy can, and the
+     day somebody "tidies" the alias into a literal is the day a second
+     city half-arrives. So it is asserted by identity - the same array,
+     not an equal one - which is the only test that tells the two
+     apart. The zoom is here because map.js reads it from CITY now and
+     a map that opens at no zoom at all opens at the whole world. */
+  section("CITY", function () {
+    var c = site.CITY;
+
+    check("CITY is an object with a name, bounds, centre and zoom",
+      c && typeof c === "object" &&
+      typeof c.name === "string" && c.name !== "" &&
+      Array.isArray(c.bounds) && Array.isArray(c.centre) &&
+      typeof c.zoom === "number" && isFinite(c.zoom),
+      JSON.stringify(c));
+    if (!c || typeof c !== "object") {
+      return;
+    }
+
+    check("CITY.zoom is a zoom a map can open at", c.zoom >= 0 && c.zoom <= 22, String(c.zoom));
+    check("LONDON_BOUNDS is CITY.bounds itself, not a copy of it",
+      site.LONDON_BOUNDS === c.bounds,
+      site.LONDON_BOUNDS === c.bounds ? "" : "same value, different array - a copy can drift");
+    check("LONDON_CENTRE is CITY.centre itself, not a copy of it",
+      site.LONDON_CENTRE === c.centre,
+      site.LONDON_CENTRE === c.centre ? "" : "same value, different array - a copy can drift");
+
+    /* RECORD_SOURCES dates the record, not the city: a second city
+       would have its own forces and its own years, and folding them
+       together would make one of the two wrong the day it arrived. */
+    check("RECORD_SOURCES is beside CITY and not inside it",
+      site.RECORD_SOURCES && typeof site.RECORD_SOURCES === "object" &&
+      c.met === undefined && c.btp === undefined && c.checked === undefined,
+      JSON.stringify(site.RECORD_SOURCES));
   });
 
   section("the London box", function () {

@@ -56,13 +56,20 @@ guards a copy that has drifted, or nearly drifted, once already:
                   than one the header asks for, and it catches the
                   other case too: a CSV edited and committed without
                   the script being run.
-  the bounds      LONDON_BOUNDS in shared.js is what the browser checks
-                  a pin against; three check constraints in schema.sql
-                  are what the server checks against, kept separately
-                  so the server never has to trust a browser. Both
-                  data files are checked against the first, and the
-                  three constraints are checked to carry the same four
-                  numbers as it.
+  the bounds      CITY.bounds in shared.js is what the browser checks
+                  a pin against; public.in_city() in schema.sql is
+                  what the server checks against, kept separately so
+                  the server never has to trust a browser. SQL cannot
+                  read JavaScript, so one copy per language is as few
+                  as there can be - and this is what holds the two
+                  together. Both data files are checked against the
+                  first; the function's four numbers are checked to be
+                  the same four; the three check constraints are
+                  checked to be a call to it and nothing else; and
+                  nothing else in schema.sql may write the box out
+                  again, which is how the fourth copy that sat inside
+                  pending_near from Wave 4 to version 2.15 would be
+                  caught today.
   vancam legacy   Every van site is legacy - a van parks for a shift
                   and drives away, so no van site claims to be active,
                   and the map opens on the cameras that are fixed to
@@ -136,6 +143,13 @@ OWN = ["frontend/shared.js", "frontend/map.js", "frontend/account.js",
 # constraint is reported missing rather than silently unchecked.
 TYPE_CONSTRAINTS = ["cameras.type", "reports.type", "saved_cameras.camera_type"]
 BOUNDS_CONSTRAINTS = ["cameras_in_london", "reports_in_london", "saved_cameras_in_london"]
+
+# The one place the box is written on the SQL side (schema version
+# 2.15). The three constraints above call it, and so does
+# pending_near; the bounds check below reads its four numbers, holds
+# them to CITY.bounds in shared.js, and refuses any other test in the
+# file that writes the box out for itself.
+CITY_FUNCTION = "in_city"
 
 
 # ---- reporting ----
@@ -359,15 +373,16 @@ same_on_every_page("footer", FOOT, "footer")
 shared = read("frontend/shared.js")
 schema = read("backend/schema.sql")
 
-m = re.search(r'var LONDON_BOUNDS\s*=\s*\[\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*,'
-              r'\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*\]', shared)
+m = re.search(r'var CITY\s*=\s*\{.*?\bbounds:\s*\[\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*,'
+              r'\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*\]', shared, re.S)
 if m:
     south, west, north, east = (float(x) for x in m.groups())
     bounds = ((south, west), (north, east))
 else:
     bounds = None
-    fail("LONDON_BOUNDS not found in frontend/shared.js",
-         ["expected  var LONDON_BOUNDS = [[lat, lon], [lat, lon]];"])
+    fail("CITY.bounds not found in frontend/shared.js",
+         ["expected  var CITY = { ... bounds: [[lat, lon], [lat, lon]], ... };",
+          "LONDON_BOUNDS is an alias of it now - see \"the city this map is of\" there."])
 
 m = re.search(r'var CAMERA_TYPES\s*=\s*\[(.*?)\];', shared, re.S)
 camera_types = re.findall(r'\btype:\s*"([^"]+)"', m.group(1)) if m else []
@@ -582,22 +597,76 @@ if bounds is not None:
         fail("OUTSIDE LONDON: a camera is outside LONDON_BOUNDS [[%s, %s], [%s, %s]]" % (south, west, north, east),
              outside)
 
-    BOUNDS_SQL = re.compile(r'constraint\s+(\w+_in_london)\s+check\s*\(\s*'
-                            r'lat\s+between\s+(-?[\d.]+)\s+and\s+(-?[\d.]+)\s+and\s+'
-                            r'lon\s+between\s+(-?[\d.]+)\s+and\s+(-?[\d.]+)\s*\)', re.S)
-    sql_bounds = dict((m.group(1), tuple(float(x) for x in m.groups()[1:])) for m in BOUNDS_SQL.finditer(schema))
+    # Since schema version 2.15 the SQL side holds the box once, in
+    # public.in_city(), and the three constraints and pending_near
+    # call it. So this checks three things rather than one: that the
+    # function's four numbers are CITY.bounds; that every constraint
+    # named above is the call and nothing else; and that no other test
+    # in the file writes the box out again. The last is the one that
+    # keeps "one place" true - a fourth copy is exactly what
+    # pending_near carried, unchecked, from Wave 4 until 2.15.
     wrong = []
+
+    m = re.search(r'create or replace function public\.' + re.escape(CITY_FUNCTION) +
+                  r'\s*\([^)]*\)(.*?)\$\$\s*;', schema, re.S)
+    if not m:
+        wrong.append("public.%s(lat, lon) not found in backend/schema.sql" % CITY_FUNCTION)
+        body = ""
+    else:
+        body = m.group(1)
+        numbers = re.search(r'lat\s+between\s+(-?[\d.]+)\s+and\s+(-?[\d.]+)\s+and\s+'
+                            r'lon\s+between\s+(-?[\d.]+)\s+and\s+(-?[\d.]+)', body, re.S)
+        if not numbers:
+            wrong.append("public.%s: cannot read the box out of its body "
+                         "(expected `lat between A and B and lon between C and D`)" % CITY_FUNCTION)
+        elif tuple(float(x) for x in numbers.groups()) != (south, north, west, east):
+            wrong.append("public.%s: lat between %s and %s, lon between %s and %s"
+                         % ((CITY_FUNCTION,) + numbers.groups()))
+
+    # Every *_in_london constraint, wherever it is written - inline in
+    # a create table, or in the version 2.15 alter block - with the
+    # whole of what it checks. The parentheses are balanced by hand
+    # because the body has parentheses of its own now, and a
+    # `\(([^)]*)\)` would stop inside the call.
+    CALL = "public.%s(lat, lon)" % CITY_FUNCTION
+    seen = {}
+    for m in re.finditer(r'constraint\s+(\w+_in_london)\s+check\s*\(', schema):
+        depth = 1
+        i = m.end()
+        while i < len(schema) and depth:
+            depth += (schema[i] == "(") - (schema[i] == ")")
+            i += 1
+        checked = " ".join(schema[m.end():i - 1].split())
+        seen.setdefault(m.group(1), []).append(checked)
+
     for name in BOUNDS_CONSTRAINTS:
-        if name not in sql_bounds:
-            wrong.append("%s: not found in backend/schema.sql (or not in the form `lat between A and B and lon between C and D`)" % name)
-        elif sql_bounds[name] != (south, north, west, east):
-            wrong.append("%s: lat between %s and %s, lon between %s and %s" % ((name,) + sql_bounds[name]))
+        if name not in seen:
+            wrong.append("%s: no `constraint %s check (...)` in backend/schema.sql" % (name, name))
+            continue
+        for checked in seen[name]:
+            if checked != CALL:
+                wrong.append("%s checks `%s`, not `%s` - the box belongs in %s and nowhere else"
+                             % (name, checked, CALL, CITY_FUNCTION))
+    for name in seen:
+        if name not in BOUNDS_CONSTRAINTS:
+            wrong.append("%s: a London constraint this script did not expect - "
+                         "add it to BOUNDS_CONSTRAINTS" % name)
+
+    # Nowhere else may say where the city is. `cell_lat between` and
+    # `cell_lon between` are the report grid, not the box, and the \b
+    # before lat leaves them alone.
+    elsewhere = re.sub(re.escape(body), "", schema, count=1) if body else schema
+    for m in re.finditer(r'\b(lat|lon)\s+between\s+-?[\d.]+\s+and\s+-?[\d.]+', elsewhere):
+        wrong.append("a copy of the box outside %s: `%s` - call %s instead"
+                     % (CITY_FUNCTION, m.group(0), CALL))
+
     if wrong:
-        fail("BOUNDS DRIFT: schema.sql does not carry LONDON_BOUNDS [[%s, %s], [%s, %s]]" % (south, west, north, east),
+        fail("BOUNDS DRIFT: schema.sql does not carry CITY.bounds [[%s, %s], [%s, %s]] in one place" % (
+            south, west, north, east),
              wrong + ["shared.js says lat between %s and %s, lon between %s and %s." % (south, north, west, east)])
     if not outside and not wrong:
-        ok("bounds: %d cameras inside [[%s, %s], [%s, %s]]; %d constraints match" % (
-            len(points or []), south, west, north, east, len(BOUNDS_CONSTRAINTS)))
+        ok("bounds: %d cameras inside [[%s, %s], [%s, %s]]; %s carries it and %d constraints call it" % (
+            len(points or []), south, west, north, east, CITY_FUNCTION, len(BOUNDS_CONSTRAINTS)))
 
 
 # ---- every vancam is legacy ----

@@ -89,7 +89,7 @@ below.
 - [x] Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password. (Done: the site generates the username - two words, `copper.heron` - and the person sets a password. No email, no name. See "Anonymity" below for what "completely" honestly means.)
 - [ ] Make it so that when reporting the state of a camera, you have to upload an image
 - [ ] Get the Met's 2026 deployment record (met.police.uk blocks scripted downloads; it needs a real browser), add its sites to `data/cameras.csv`, and run `python3 tools/build_points.py`.
-- [ ] Other cities. The type identifiers and the schema carry over; the London bounds are now `LONDON_BOUNDS` in `frontend/shared.js` (one place, shared by the map and the report form), the opening centre `LONDON_CENTRE` beside it, the opening zoom in `frontend/map.js`, and three `check` constraints in `backend/schema.sql` - on `cameras`, `reports` and `saved_cameras`. Wherever the user is located, thats where the map displays by default.
+- [ ] Other cities. The type identifiers and the schema carry over, and since KEEP-6 so does everything that says *which* city: the name, the box, the opening centre and the opening zoom are one `CITY` object in `frontend/shared.js`, and the box has one SQL copy, `public.in_city()` in `backend/schema.sql`, which the three `check` constraints and `pending_near` all call. `tools/stamp.py` holds the two to each other. So a second city is a second object and a switch, not a search and replace - "Another city" below says what would still be typed by hand. Wherever the user is located, thats where the map displays by default.
 
   Worth saying plainly before that last part is built: asking every visitor for their location, to centre a map, is a real cost to a site whose whole argument is that it collects nothing. `navigator.geolocation` prompts, and a refusal has to work as well as a yes. If it is done, it should be a button the visitor presses rather than something that happens to them on arrival - which is how the report form already does it.
 
@@ -786,9 +786,111 @@ the first would exist only to hide columns, and there are none to hide.
 
 ### Another city
 
-*(Written by the Wave 6 city agent: the `CITY` object and what still has
-to be typed into SQL by hand, how a camera was given its borough, and how
-the borough pages are generated and checked.)*
+The map has always been of London and has always been meant to be of
+more than London - it is the first line of the project goals at the top
+of this file. What that ambition had against it was not the drawing or
+the schema, both of which carry over unchanged; it was that the four
+numbers saying *where London is* had quietly been written out in five
+places, and the name of the city in the prose of every page. Doing
+something about that while there is one city is an afternoon. Doing it
+with two is a migration, with a live database in the middle of it.
+
+**The `CITY` object (KEEP-6).** `frontend/shared.js` now holds one
+object with the four things that are about the city rather than about
+the cameras: its `name`, its `bounds` (south-west corner then
+north-east), the `centre` a map opens on, and the `zoom` it opens at.
+The last of those had been `OPENING_ZOOM` in `map.js`, which meant a
+second city could not open wider or closer without editing the map.
+
+`LONDON_BOUNDS` and `LONDON_CENTRE` are still there and are **aliases,
+not copies**: `var LONDON_BOUNDS = CITY.bounds;` is the same array, so
+nothing can hold an old box while `CITY` holds a new one. That is why
+`map.js`, `picker.js`, `account.js`, `press.js` and `tools/check.js`
+needed no edit at all, and why a second city repoints two lines rather
+than touching five files. `check.js` asserts the identity and not the
+value, because only an identity test tells an alias from a copy, and a
+copy is what somebody tidying the file would make.
+
+`RECORD_SOURCES` is deliberately outside `CITY`, and `check.js` asserts
+that too. It dates the record - which years of which force's returns
+have been read - which is a fact about the sources, not about the
+city; a second city would have its own forces and its own years, and
+folding the two together would make one of them wrong on the day it
+arrived.
+
+**One copy per language, and a check that holds them together.** SQL
+cannot read JavaScript, so "exactly one place to change" cannot be
+taken literally across the two: what there can be is one place *per
+language*. `public.in_city(lat, lon)` (schema version 2.15, migration
+`013_in_city.sql`) is the SQL side's one copy. The three `check`
+constraints - `cameras_in_london`, `reports_in_london`,
+`saved_cameras_in_london` - are now that call and nothing else, and so
+is the guard in `pending_near`, which was the fourth copy: it was
+written out inline when REP-2 was built, `stamp.py`'s bounds check
+could not see it, and the Wave 4 merge note flagged it for exactly
+this item.
+
+`stamp.py` now reads the four numbers out of `CITY.bounds` and out of
+`in_city`'s body and fails naming the function if they differ; requires
+each of the three constraints to be the call and nothing else, naming
+the constraint if one goes back to writing the numbers; and refuses any
+other `lat between … and lon between …` test anywhere in `schema.sql`,
+which is what would catch a fifth copy being added the way the fourth
+one was. All five were broken one at a time in a scratch copy and each
+failure named the right thing.
+
+Why the function may be called from a check constraint at all: it is
+`immutable` - its answer depends on its two arguments and nothing else,
+no table, no clock, no setting - which is PostgreSQL's condition. It is
+deliberately not `set search_path`, unlike every other function in the
+file: those all read tables and pin the path so a temporary table
+cannot shadow a real one, whereas this one names no object at all, and
+a function carrying a `search_path` cannot be inlined by the planner -
+which this must be, since it runs on every insert into three tables.
+It is not `strict` either, so a null coordinate answers null exactly as
+the four bare `between` tests it replaces did.
+
+Proved on a throwaway PostgreSQL 14, the same way migrations 004-012
+were: a fresh database from `schema.sql` (run twice) and seeded, against
+one built from the pre-KEEP-6 `schema.sql` and then upgraded with 013
+run twice; `pg_dump --schema-only` of the two, normalised, identical at
+336 statements. Both carry `CHECK (in_city(lat, lon))` on all three
+tables. A row at Manchester is refused by name on `cameras`, `reports`
+and `saved_cameras`; a row in London is still accepted; `in_city`
+answers true at both corners of the box and false a hundredth of a
+degree outside each edge; `pg_proc` says `immutable`, `parallel safe`,
+no `search_path`. `pending_near` is unchanged in what it answers:
+`(true, 2)` in the cell of a two-day-old pending report and in the eight
+cells around it, `(false, null)` elsewhere in London and outside the
+city.
+
+**What a second city would still need typed by hand.** Being honest
+about this is the point of writing it down:
+
+- **`in_city`'s four numbers.** One SQL edit, in `013`'s successor or
+  in `schema.sql`, and `stamp.py` fails until it is made - but it is a
+  second edit, not the same one. Two cities at once would need the
+  function to take a city as well, or one function per city, and that
+  is a schema decision rather than a rename.
+- **A column saying which city a row belongs to.** There is none. The
+  box is currently a validity check, not a partition: with two cities
+  in one table, `cameras`, `reports` and `saved_cameras` each need a
+  `city` column, and every read the map makes needs to filter on it.
+  That is the real migration this item exists to make cheaper, not to
+  avoid.
+- **The seed.** `seed.sql`'s `on conflict (seed_key)` matches on
+  `name|lat|lon|type`, which says nothing about a city; two cities with
+  a "High Street" at different coordinates are already distinct keys, so
+  nothing breaks, but the seed would want splitting per city so that
+  re-seeding one does not rewrite the other.
+- **The words.** The borough pages below are written in London's terms
+  - "borough", "the Met", "the City of London is the thirty-third" -
+  and their generator's templates say so. A second city's areas are
+  wards, or districts, or arrondissements, and that is prose to write
+  rather than a constant to change. So is every sentence on About, the
+  rights page and the press page.
+- **`RECORD_SOURCES`, the share card and the count line.** All three
+  are London's record; a second city brings its own.
 
 ### Roles
 

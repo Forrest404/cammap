@@ -14,10 +14,13 @@
    which is exactly the thing that should not be able to drift.
 
    The database keeps its own copies of both tables below, in the
-   `cameras_type_check` constraint and the London `check` constraints
-   in backend/schema.sql. That is deliberate: the server has to be
-   able to refuse a bad row on its own, without trusting anything a
-   browser sent. Change one and change the other.
+   `cameras_type_check` constraint and in `public.in_city()`, which
+   the three London `check` constraints in backend/schema.sql call.
+   That is deliberate: the server has to be able to refuse a bad row
+   on its own, without trusting anything a browser sent. SQL cannot
+   read JavaScript, so there is one copy per language rather than
+   one copy; tools/stamp.py reads both and fails if they differ.
+   Change one and change the other.
    ------------------------------------------------------------------ */
 
 /* One colour per kind of camera. This table is the only place the
@@ -45,15 +48,60 @@ var NONFUNCTIONAL_COLOUR = "#b58bd6";
    it, and a row with it should not show as a bare identifier. */
 var NONFUNCTIONAL_TYPE = "nonfunccam";
 
-/* South-west corner, then north-east: Heathrow across to Upminster,
-   Coulsdon up to Enfield. All 32 boroughs and the City. Moving the
-   map to another city is this, LONDON_CENTRE just below, the three
-   check constraints in schema.sql, and the opening zoom in map.js. */
-var LONDON_BOUNDS = [[51.28, -0.51], [51.70, 0.33]];
+/* ---------------- the city this map is of ----------------
 
-/* Where a map opens when it has no reason to look anywhere else.
-   Both maps use it, so it is here rather than in either of them. */
-var LONDON_CENTRE = [51.5074, -0.1278];
+   Everything that says *which city* rather than *what a camera is*:
+   its name, the box it lives in, where a map opens on it, and how
+   far in. Four values that used to be four places - the box and the
+   centre here as two separate variables, the opening zoom in map.js,
+   and the city's name typed into the prose of every page - and every
+   one of them would have to be found again the day this map is of
+   two cities.
+
+     name    as it is written on a page. The borough pages say it, and
+             so would any second city's.
+     bounds  south-west corner first, then north-east: Heathrow across
+             to Upminster, Coulsdon up to Enfield. All 32 boroughs and
+             the City. It is what inLondon() checks a pin against, what
+             the map is bounded to, and what the place search is asked
+             to look inside.
+     centre  where a map opens when it has no reason to look anywhere
+             else. The map page and both pickers use it.
+     zoom    how far in it opens. map.js reads it from here; it was a
+             constant of its own, which meant a second city could not
+             open wider or closer without editing the map.
+
+   What a second city would be: a second object like this one and a
+   switch that chooses between them - not a search and replace across
+   five files. Doing that while there is one city is an afternoon;
+   doing it with two is a migration. What it would still need typed
+   by hand is in NOTES.md, "Another city": SQL cannot read
+   JavaScript, so the box is also in one SQL function (public.in_city
+   in backend/schema.sql, which tools/stamp.py holds to the numbers
+   below), the seed's on-conflict list names columns rather than a
+   city, and the borough pages' words are London's.
+
+   RECORD_SOURCES below is deliberately NOT in here. It dates the
+   record - which years of which force's returns have been read - and
+   that is a fact about the sources, not about the city. A second
+   city's record would have its own dates and its own forces. */
+var CITY = {
+  name: "London",
+  bounds: [[51.28, -0.51], [51.70, 0.33]],   /* SW, NE */
+  centre: [51.5074, -0.1278],
+  zoom: 11
+};
+
+/* The names every other file already uses. Aliases, not copies: they
+   are the same arrays, so nothing can hold an old box while CITY
+   holds a new one, and map.js, picker.js, account.js, press.js and
+   tools/check.js needed no edit when CITY arrived. A second city
+   would repoint these two lines at whichever object is in force and
+   leave the rest of the site alone - which is the whole of why they
+   are still here rather than being replaced by CITY.bounds
+   everywhere. */
+var LONDON_BOUNDS = CITY.bounds;
+var LONDON_CENTRE = CITY.centre;
 
 /* How far the record reaches, and when somebody last looked. These
    three are typed by hand when the record is refreshed, and nothing
