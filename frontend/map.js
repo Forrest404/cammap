@@ -2012,6 +2012,38 @@ function pointById(id) {
    redraw they never asked for. Every deliberate opening leaves it
    alone: a list row or a link should land the keyboard in the popup
    it just opened. See redrawCameras(). */
+/* Putting a popup up, which three places do and all three must do the
+   same way.
+
+   The guard is the part worth having once. Only this popup's own
+   closing counts: opening a popup closes the one before it, a line
+   earlier, and a close handler that cleared `popup` unconditionally
+   would clear the one being opened rather than the one going away.
+   Written out three times, that guard was three chances to get it
+   subtly wrong.
+
+   `focus` is MapLibre's focusAfterOpen, which defaults to true and
+   moves the keyboard into the popup. `after` is whatever else the
+   closing means to the caller - for a camera, that the address bar no
+   longer names one. Both differ per caller; nothing else does. */
+function showPopup(at, content, focus, after) {
+  popup = new maplibregl.Popup({ offset: 10, closeButton: true, focusAfterOpen: focus })
+    .setLngLat(at)
+    .setDOMContent(content)
+    .addTo(map);
+
+  (function (own) {
+    own.on("close", function () {
+      if (popup === own) {
+        popup = null;
+        if (after) {
+          after();
+        }
+      }
+    });
+  })(popup);
+}
+
 function openPopup(id, quiet) {
   var point = pointById(id);
 
@@ -2021,27 +2053,15 @@ function openPopup(id, quiet) {
 
   closePopup();
 
-  popup = new maplibregl.Popup({ offset: 10, closeButton: true, focusAfterOpen: !quiet })
-    .setLngLat(lngLat(point.lat, point.lon))
-    .setDOMContent(popupFor(point))
-    .addTo(map);
-
-  popupId = point.id;
-
   /* The address bar says which camera is open, so it is written the
      moment one opens and again when it closes - the close button is
-     MapLibre's, so the closing is heard rather than done here. Only
-     this popup's own closing counts: the one being replaced closes
-     too, a line above, and must not clear what is about to be set. */
-  (function (own) {
-    own.on("close", function () {
-      if (popup === own) {
-        popup = null;
-        popupId = null;
-        writeHash();
-      }
-    });
-  })(popup);
+     MapLibre's, so the closing is heard rather than done here. */
+  showPopup(lngLat(point.lat, point.lon), popupFor(point), !quiet, function () {
+    popupId = null;
+    writeHash();
+  });
+
+  popupId = point.id;
 
   writeHash();
 }
@@ -2096,20 +2116,9 @@ function openChooser(list, at) {
     }
   };
 
-  popup = new maplibregl.Popup({ offset: 10, closeButton: true })
-    .setLngLat(at)
-    .setDOMContent(box)
-    .addTo(map);
+  showPopup(at, box, true, null);
 
   popupId = null;
-
-  (function (own) {
-    own.on("close", function () {
-      if (popup === own) {
-        popup = null;
-      }
-    });
-  })(popup);
 
   rows.firstChild.firstChild.focus();
 }
@@ -2525,21 +2534,10 @@ function offerReportAt(lngLat, point) {
   row.textContent = "Report a camera here →";
   box.appendChild(row);
 
-  popup = new maplibregl.Popup({ offset: 10, closeButton: true })
-    .setLngLat(lngLat)
-    .setDOMContent(box)
-    .addTo(map);
+  showPopup(lngLat, box, true, null);
 
   /* Not a camera, so the address bar does not name one. */
   popupId = null;
-
-  (function (own) {
-    own.on("close", function () {
-      if (popup === own) {
-        popup = null;
-      }
-    });
-  })(popup);
 }
 
 function bindReportGesture() {
@@ -4407,20 +4405,7 @@ function loadCamerasFromDatabase() {
     }, failed);
 }
 
-/* Whether a failed read says the view is not there - as against any
-   other failure, which is the seed standing. PostgREST's code for a
-   relation it cannot find was Postgres's own 42P01, and is PGRST205
-   since version 12; both come with a 404, and supabase-js passes the
-   status through, so the status is the third tell for a version that
-   words it some other way. Nothing else is taken as "missing": a
-   permission refused, say, is 42501 with a 403, and falling back on
-   that would turn a misconfigured view into a silent read of the
-   table it was made to replace. */
-function viewMissing(result) {
-  var code = result.error && result.error.code;
-
-  return code === "42P01" || code === "PGRST205" || result.status === 404;
-}
+/* viewMissing() is in shared.js. */
 
 /* ------------------------------------------------------------------
    Deep links
@@ -4858,20 +4843,7 @@ var here = null;
 var nearButton = document.getElementById("near-me");
 var nearSort = document.querySelector('#points-sort button[data-sort="near"]');
 
-/* Metres between two points on the ground - the haversine formula,
-   on a sphere of the Earth's mean radius. Across London the error
-   against the real ellipsoid is under a metre, which is less than any
-   phone knows where it is to. */
-function metresBetween(lat1, lon1, lat2, lon2) {
-  var toRad = Math.PI / 180;
-  var dLat = (lat2 - lat1) * toRad;
-  var dLon = (lon2 - lon1) * toRad;
-  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
-          Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+/* metresBetween() is in shared.js. */
 
 function distanceFromHere(point) {
   return here ? metresBetween(here.lat, here.lon, point.lat, point.lon) : 0;

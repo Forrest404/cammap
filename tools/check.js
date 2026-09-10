@@ -147,10 +147,14 @@ var HEX_COLOUR = /^#[0-9a-f]{6}$/i;
    browser asks for. Both are checked below in their own right. */
 var NOT_IN_POINTS = ["seed_key", "borough"];
 
-/* Where seedKeyOf must not be: the files that load after shared.js.
-   A second copy in any of them would shadow the shared one and could
-   drift from it without a word. */
-var LATER_FILES = ["frontend/map.js", "frontend/picker.js", "frontend/account.js"];
+/* Every file that loads after shared.js on some page, and so shares a
+   global scope with it: map.js and offline.js on index.html, picker.js
+   on the report and moderation pages, press.js on the press page,
+   account.js on all of them. A second definition of a shared name in
+   any of these does not conflict, it wins - see shadowedNames(). sw.js
+   is not here because a service worker has a scope of its own. */
+var LATER_FILES = ["frontend/map.js", "frontend/picker.js", "frontend/account.js",
+                   "frontend/press.js", "frontend/offline.js"];
 
 /* ------------------------------------------------------------------
    Loading the site's files outside a browser
@@ -294,6 +298,49 @@ function sixDecimals(v) {
    late. A row that no longer fits this shape is itself reported: it
    means the insert changed. */
 var SEED_ROW = /^\s*\('((?:[^']|'')*)',\s*'(?:[^']|'')*',\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?),\s*'([a-z]+)',.*'seed',\s*'((?:[^']|'')*)'\),?\s*$/gm;
+
+/* Every top-level function shared.js defines, and every later file
+   that defines one of them again. None of these files is wrapped -
+   that is the point of having no build step - so they all land in the
+   one global scope, and index.html loads shared.js, then account.js,
+   then map.js. A second definition of a shared name therefore does not
+   conflict, it wins: whichever file loads last quietly replaces the
+   others for the whole page, and the copies are free to drift apart
+   without a symptom, because only one of them was ever running.
+
+   This check used to name seedKeyOf alone. It was written for a real
+   hazard and then found two more: metresBetween and viewMissing had
+   each been written out twice, and on the map page both of map.js's
+   copies were the ones in force. Naming one function could not catch
+   that, so now nothing shared.js defines may be defined again. If a
+   later file genuinely needs its own version of something, the answer
+   is a different name, not a second definition of the same one. */
+function shadowedNames() {
+  var shared = {};
+  var found = [];
+  var re = /^function\s+([A-Za-z_$][\w$]*)\s*\(/gm;
+  var m;
+  var i;
+
+  while ((m = re.exec(readFile("frontend/shared.js"))) !== null) {
+    shared[m[1]] = true;
+  }
+
+  for (i = 0; i < LATER_FILES.length; i++) {
+    (function (file) {
+      var later = /^function\s+([A-Za-z_$][\w$]*)\s*\(/gm;
+      var hit;
+
+      while ((hit = later.exec(readFile(file))) !== null) {
+        if (shared[hit[1]]) {
+          found.push(hit[1] + " in " + file);
+        }
+      }
+    })(LATER_FILES[i]);
+  }
+
+  return found;
+}
 
 function seedRows() {
   var sql = readFile("backend/seed.sql");
@@ -853,12 +900,9 @@ if (havePoints && haveShared) {
       site.seedKeyOf({ name: "X", lat: 51.5, lon: -0.1, type: "fixedcam" }) + " / " +
       site.seedKeyOf({ name: "X", lat: 51.12345678, lon: -0.98765432, type: "fixedcam" }));
 
-    for (i = 0; i < LATER_FILES.length; i++) {
-      if (/function\s+seedKeyOf\s*\(/.test(readFile(LATER_FILES[i]))) {
-        copies.push(LATER_FILES[i]);
-      }
-    }
-    check("seedKeyOf is defined once, in shared.js", copies.length === 0, "also in " + listOf(copies));
+    copies = shadowedNames();
+    check("nothing shared.js defines is defined again later", copies.length === 0,
+      listOf(copies));
 
     rows = seedRows();
     check("seed.sql has rows this checker can read", rows.length > 0);

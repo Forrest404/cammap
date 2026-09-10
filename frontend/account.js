@@ -2652,6 +2652,41 @@ function setUpReceipt() {
    second press would be a second report; it comes back when they
    have gone, or when the person takes the unsent ones out, which
    settles the report as sent with what it has. */
+/* A proof picker and the attacher that watches it, which both report
+   forms want and a third would want the same way.
+
+   The order is the awkward part, and the reason this is one function
+   rather than six lines twice. Photos are prepared as they are chosen,
+   held as re-saved copies, and attached after the report is in; the
+   picker has to tell the attacher when the set changes, but the
+   attacher cannot be made until the picker exists to be handed to it.
+   So the hook is written against a variable the attacher has not
+   filled yet, and the guard inside it covers the moment in between.
+   Get that guard wrong and photos silently stop being noticed.
+
+   The forms differ only in the three element ids, which is why those
+   are the arguments. */
+function makeProofPair(input, listId, noteId, retryId, note, button) {
+  var attacher = null;
+  var proofs = makeProofPicker(input,
+    document.getElementById(listId),
+    document.getElementById(noteId),
+    function () {
+      if (attacher) {
+        attacher.changed();
+      }
+    });
+
+  attacher = makeAttacher({
+    note: note,
+    button: button,
+    retry: document.getElementById(retryId),
+    proofs: proofs
+  });
+
+  return { proofs: proofs, attacher: attacher };
+}
+
 function makeAttacher(ui) {
   var attachTo = null;   /* the report whose photos are still to go */
 
@@ -3225,11 +3260,7 @@ function setUpReportPage() {
    column a migration had not yet added. Remove publicCameraQuery's
    table branch, and the retry at each caller, once BUILD-LOG.md says
    012 has been run. */
-function viewMissing(result) {
-  var code = result && result.error && result.error.code;
-
-  return code === "42P01" || code === "PGRST205" || (result && result.status === 404);
-}
+/* viewMissing() itself is in shared.js, where map.js reads it too. */
 
 function publicCameraQuery(columns, throughTable) {
   if (throughTable) {
@@ -3421,27 +3452,11 @@ function setUpNewReport(startAt) {
     }, { enableHighAccuracy: true, timeout: 10000 });
   };
 
-  /* The photos: prepared as they are chosen, held as re-saved
-     copies, attached after the report is in. The picker tells the
-     attacher when the set changes, and the attacher is made after
-     the picker because it needs it; the guard on the hook is for
-     the moment in between. */
-  var attacher = null;
-  var proofs = makeProofPicker(proofIn,
-    document.getElementById("s-proof-list"),
-    document.getElementById("s-proof-note"),
-    function () {
-      if (attacher) {
-        attacher.changed();
-      }
-    });
-
-  attacher = makeAttacher({
-    note: note,
-    button: button,
-    retry: document.getElementById("proof-retry"),
-    proofs: proofs
-  });
+  /* The photos. See makeProofPair() for why the two are made together. */
+  var pair = makeProofPair(proofIn, "s-proof-list", "s-proof-note",
+    "proof-retry", note, button);
+  var proofs = pair.proofs;
+  var attacher = pair.attacher;
 
   button.onclick = function () {
     var lat  = parseFloat(latIn.value);
@@ -3606,23 +3621,11 @@ function setUpStatusReport(cameraId) {
 
   fetchCamera(false);
 
-  /* The same picker and attacher as the new-camera form. */
-  var attacher = null;
-  var proofs = makeProofPicker(proofIn,
-    document.getElementById("s-status-proof-list"),
-    document.getElementById("s-status-proof-note"),
-    function () {
-      if (attacher) {
-        attacher.changed();
-      }
-    });
-
-  attacher = makeAttacher({
-    note: note,
-    button: button,
-    retry: document.getElementById("status-proof-retry"),
-    proofs: proofs
-  });
+  /* The same pair as the new-camera form, on this form's own elements. */
+  var pair = makeProofPair(proofIn, "s-status-proof-list", "s-status-proof-note",
+    "status-proof-retry", note, button);
+  var proofs = pair.proofs;
+  var attacher = pair.attacher;
 
   button.onclick = function () {
     var report;
@@ -5148,19 +5151,8 @@ var queueIndex = [];     /* every pending report's light row, measured */
 var queueOrder = [];     /* the ids of the ones that pass the filter, in the sort order */
 var queueView = { kind: "all", type: "all", sort: "newest" };
 
-/* Haversine, in metres. The twin of metres_between in schema.sql -
-   the same formula and the same 6371000 m radius, so a distance the
-   queue shows is the one approve_report would measure. */
-function metresBetween(lat1, lon1, lat2, lon2) {
-  var toRad = Math.PI / 180;
-  var dLat = (lat2 - lat1) * toRad;
-  var dLon = (lon2 - lon1) * toRad;
-  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
-          Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(a)));
-}
+/* metresBetween(), which measures these, is in shared.js - map.js
+   wants it too, and a second copy here would shadow it. */
 
 /* The nearest camera on the map to a point, of any kind, and how
    far. Any kind, not the report's kind: a fixed camera reported on

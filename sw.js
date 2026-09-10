@@ -130,63 +130,63 @@
    fonts/, which are pinned by their own version numbers and carry
    none, so the browser's HTTP cache can revalidate them cheaply
    across deploys instead of downloading MapLibre again. */
-var STAMP = "66599b39";
-var SHELL = "c0b2d248";
+var STAMP = "fc1b066a";
+var SHELL = "e38d356e";
 var PRECACHE = [
-  "404.html?v=c0b2d248",
-  "index.html?v=c0b2d248",
-  "pages/about.html?v=c0b2d248",
-  "pages/account.html?v=c0b2d248",
-  "pages/blog.html?v=c0b2d248",
-  "pages/boroughs/barking-and-dagenham.html?v=c0b2d248",
-  "pages/boroughs/barnet.html?v=c0b2d248",
-  "pages/boroughs/bexley.html?v=c0b2d248",
-  "pages/boroughs/brent.html?v=c0b2d248",
-  "pages/boroughs/bromley.html?v=c0b2d248",
-  "pages/boroughs/camden.html?v=c0b2d248",
-  "pages/boroughs/city-of-london.html?v=c0b2d248",
-  "pages/boroughs/croydon.html?v=c0b2d248",
-  "pages/boroughs/ealing.html?v=c0b2d248",
-  "pages/boroughs/enfield.html?v=c0b2d248",
-  "pages/boroughs/greenwich.html?v=c0b2d248",
-  "pages/boroughs/hackney.html?v=c0b2d248",
-  "pages/boroughs/hammersmith-and-fulham.html?v=c0b2d248",
-  "pages/boroughs/haringey.html?v=c0b2d248",
-  "pages/boroughs/harrow.html?v=c0b2d248",
-  "pages/boroughs/havering.html?v=c0b2d248",
-  "pages/boroughs/hillingdon.html?v=c0b2d248",
-  "pages/boroughs/hounslow.html?v=c0b2d248",
-  "pages/boroughs/index.html?v=c0b2d248",
-  "pages/boroughs/islington.html?v=c0b2d248",
-  "pages/boroughs/kensington-and-chelsea.html?v=c0b2d248",
-  "pages/boroughs/kingston-upon-thames.html?v=c0b2d248",
-  "pages/boroughs/lambeth.html?v=c0b2d248",
-  "pages/boroughs/lewisham.html?v=c0b2d248",
-  "pages/boroughs/merton.html?v=c0b2d248",
-  "pages/boroughs/newham.html?v=c0b2d248",
-  "pages/boroughs/redbridge.html?v=c0b2d248",
-  "pages/boroughs/richmond-upon-thames.html?v=c0b2d248",
-  "pages/boroughs/southwark.html?v=c0b2d248",
-  "pages/boroughs/sutton.html?v=c0b2d248",
-  "pages/boroughs/tower-hamlets.html?v=c0b2d248",
-  "pages/boroughs/waltham-forest.html?v=c0b2d248",
-  "pages/boroughs/wandsworth.html?v=c0b2d248",
-  "pages/boroughs/westminster.html?v=c0b2d248",
-  "pages/data.html?v=c0b2d248",
-  "pages/leaderboard.html?v=c0b2d248",
-  "pages/moderate.html?v=c0b2d248",
-  "pages/press.html?v=c0b2d248",
-  "pages/report.html?v=c0b2d248",
-  "pages/rights.html?v=c0b2d248",
-  "frontend/shared.js?v=66599b39",
-  "frontend/map.js?v=66599b39",
-  "frontend/account.js?v=66599b39",
-  "frontend/picker.js?v=66599b39",
-  "frontend/press.js?v=66599b39",
-  "frontend/style.css?v=66599b39",
-  "frontend/offline.js?v=66599b39",
-  "data/points.js?v=66599b39",
-  "supabase-config.js?v=66599b39",
+  "404.html?v=e38d356e",
+  "index.html?v=e38d356e",
+  "pages/about.html?v=e38d356e",
+  "pages/account.html?v=e38d356e",
+  "pages/blog.html?v=e38d356e",
+  "pages/boroughs/barking-and-dagenham.html?v=e38d356e",
+  "pages/boroughs/barnet.html?v=e38d356e",
+  "pages/boroughs/bexley.html?v=e38d356e",
+  "pages/boroughs/brent.html?v=e38d356e",
+  "pages/boroughs/bromley.html?v=e38d356e",
+  "pages/boroughs/camden.html?v=e38d356e",
+  "pages/boroughs/city-of-london.html?v=e38d356e",
+  "pages/boroughs/croydon.html?v=e38d356e",
+  "pages/boroughs/ealing.html?v=e38d356e",
+  "pages/boroughs/enfield.html?v=e38d356e",
+  "pages/boroughs/greenwich.html?v=e38d356e",
+  "pages/boroughs/hackney.html?v=e38d356e",
+  "pages/boroughs/hammersmith-and-fulham.html?v=e38d356e",
+  "pages/boroughs/haringey.html?v=e38d356e",
+  "pages/boroughs/harrow.html?v=e38d356e",
+  "pages/boroughs/havering.html?v=e38d356e",
+  "pages/boroughs/hillingdon.html?v=e38d356e",
+  "pages/boroughs/hounslow.html?v=e38d356e",
+  "pages/boroughs/index.html?v=e38d356e",
+  "pages/boroughs/islington.html?v=e38d356e",
+  "pages/boroughs/kensington-and-chelsea.html?v=e38d356e",
+  "pages/boroughs/kingston-upon-thames.html?v=e38d356e",
+  "pages/boroughs/lambeth.html?v=e38d356e",
+  "pages/boroughs/lewisham.html?v=e38d356e",
+  "pages/boroughs/merton.html?v=e38d356e",
+  "pages/boroughs/newham.html?v=e38d356e",
+  "pages/boroughs/redbridge.html?v=e38d356e",
+  "pages/boroughs/richmond-upon-thames.html?v=e38d356e",
+  "pages/boroughs/southwark.html?v=e38d356e",
+  "pages/boroughs/sutton.html?v=e38d356e",
+  "pages/boroughs/tower-hamlets.html?v=e38d356e",
+  "pages/boroughs/waltham-forest.html?v=e38d356e",
+  "pages/boroughs/wandsworth.html?v=e38d356e",
+  "pages/boroughs/westminster.html?v=e38d356e",
+  "pages/data.html?v=e38d356e",
+  "pages/leaderboard.html?v=e38d356e",
+  "pages/moderate.html?v=e38d356e",
+  "pages/press.html?v=e38d356e",
+  "pages/report.html?v=e38d356e",
+  "pages/rights.html?v=e38d356e",
+  "frontend/shared.js?v=fc1b066a",
+  "frontend/map.js?v=fc1b066a",
+  "frontend/account.js?v=fc1b066a",
+  "frontend/picker.js?v=fc1b066a",
+  "frontend/press.js?v=fc1b066a",
+  "frontend/style.css?v=fc1b066a",
+  "frontend/offline.js?v=fc1b066a",
+  "data/points.js?v=fc1b066a",
+  "supabase-config.js?v=fc1b066a",
   "lib/maplibre-gl.js",
   "lib/maplibre-gl.css",
   "lib/supabase.js",
@@ -194,12 +194,12 @@ var PRECACHE = [
   "fonts/ibm-plex-mono-400.woff2",
   "fonts/ibm-plex-mono-500.woff2",
   "fonts/ibm-plex-mono-600.woff2",
-  "img/favicon.svg?v=c0b2d248",
-  "img/favicon.ico?v=c0b2d248",
-  "img/apple-touch-icon.png?v=c0b2d248",
-  "img/icon-192.png?v=c0b2d248",
-  "img/icon-512.png?v=c0b2d248",
-  "manifest.json?v=c0b2d248"
+  "img/favicon.svg?v=e38d356e",
+  "img/favicon.ico?v=e38d356e",
+  "img/apple-touch-icon.png?v=e38d356e",
+  "img/icon-192.png?v=e38d356e",
+  "img/icon-512.png?v=e38d356e",
+  "manifest.json?v=e38d356e"
 ];
 /* ---- end written by tools/stamp.py ---- */
 
@@ -425,17 +425,30 @@ function networkFirst(url) {
   return url.hostname === "tiles.openfreemap.org" && !TILES_CACHE_FIRST.test(url.pathname);
 }
 
+/* Ask the network for a tile and keep what comes back. Both halves of
+   fromTiles() do exactly this and differ only in what they have left
+   when it fails, which is `fallback` - the cache for a style the map
+   went to the network for first, and nothing at all for a tile the
+   cache has already been asked about. Written out twice, the two
+   copies of the abort test were two places to forget that a cancelled
+   request says nothing about the network. */
+function fetchTile(request, url, event, tiles, fallback) {
+  return fetch(request).then(function (response) {
+    if (response.ok) {
+      keep(tiles, url.href, response.clone(), event);
+    }
+    heard(event, true);
+    return response;
+  }, function (problem) {
+    heard(event, problem.name !== "AbortError" ? false : null);
+    return fallback();
+  });
+}
+
 function fromTiles(request, url, event) {
   return caches.open(TILE_CACHE).then(function (tiles) {
     if (networkFirst(url)) {
-      return fetch(request).then(function (response) {
-        if (response.ok) {
-          keep(tiles, url.href, response.clone(), event);
-        }
-        heard(event, true);
-        return response;
-      }, function (problem) {
-        heard(event, problem.name !== "AbortError" ? false : null);
+      return fetchTile(request, url, event, tiles, function () {
         return tiles.match(url.href, MATCH).then(function (hit) {
           return hit || Response.error();
         });
@@ -446,14 +459,7 @@ function fromTiles(request, url, event) {
         touched(url.href);
         return hit;
       }
-      return fetch(request).then(function (response) {
-        if (response.ok) {
-          keep(tiles, url.href, response.clone(), event);
-        }
-        heard(event, true);
-        return response;
-      }, function (problem) {
-        heard(event, problem.name !== "AbortError" ? false : null);
+      return fetchTile(request, url, event, tiles, function () {
         return Response.error();
       });
     });

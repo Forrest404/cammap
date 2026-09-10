@@ -191,6 +191,16 @@ Things that look like they would work and do not:
   grant that leaves out `approved_by`, `approved_at`, `created_at` and
   `updated_at`; PostgREST refuses a star select when any column is denied.
   Name the columns.
+- **None of the frontend files is wrapped, so a second definition wins
+  rather than conflicts.** `shared.js`, `account.js`, `map.js`,
+  `picker.js`, `press.js` and `offline.js` all load into the one global
+  scope, in that order. Defining a name in a later file that `shared.js`
+  already defines does not error — the last file loaded quietly replaces
+  the earlier copy for the whole page, and the two are then free to drift
+  with no symptom, because only one of them ever runs. `metresBetween` and
+  `viewMissing` were each written twice this way. `check.js`'s
+  `shadowedNames()` now fails on any of it; if a later file really needs
+  its own version of something, give it a different name.
 - **`localStorage` keys are in `STORAGE` in `shared.js`,** not written inline,
   and so are the two `sessionStorage` keys the report form uses. Four files
   touch the camera cache; a half-updated string does not error, it just
@@ -356,8 +366,11 @@ Things that look like they would work and do not:
   first; the GeoJSON and the seed the second. Change one, change the other.
 - **The anon key is written in two places:** `supabase-config.js` and
   `pages/data.html`, where the curl line prints it. Rotate both together.
-- **`metresBetween()` in `account.js` and `metres_between` in `schema.sql`**
-  are twins — same formula, same radius. Change one, change the other.
+- **`metresBetween()` in `shared.js` and `metres_between` in `schema.sql`**
+  are twins — same formula, same radius. Change one, change the other. It
+  lives in `shared.js` because the map wants it too; it was written out in
+  both `map.js` and `account.js`, in two different identities of the one
+  formula, and on `index.html` the map's copy silently won.
 - **The account forms' ids** (`#new-username`, `#signup-button`, `#recovery`
   and the rest) are written out on `account.html` and `report.html` and
   wired once by `setUpAccountForms()`; rename one on both pages or the other

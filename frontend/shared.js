@@ -659,3 +659,77 @@ function showSatellite(m, on, ground) {
     }
   }
 }
+
+/* ------------------------------------------------------------------
+   The two answers both pages need
+
+   map.js and account.js each had their own copy of the two functions
+   below, and on index.html both files load - account.js first, map.js
+   second - into the same global scope. Neither was wrapped, so the
+   second copy loaded silently replaced the first for the whole page,
+   and the copy that lost was never the one anybody was reading. The
+   copies had already drifted: the two distances were written to
+   different identities of the same formula, and only one of the two
+   view checks survived being handed nothing. Neither drift could
+   show up as a fault, which is why they lasted.
+
+   check.js now fails if any file loaded after this one defines a name
+   this one defines, so the pair cannot come back. That check used to
+   name seedKeyOf alone; the hazard was never about that one function.
+   ------------------------------------------------------------------ */
+
+/* Metres between two points on the ground - the haversine formula, on
+   a sphere of the Earth's mean radius. Across London the error against
+   the real ellipsoid is under a metre, which is less than any phone
+   knows where it is to.
+
+   The twin of metres_between in schema.sql: the same formula and the
+   same 6371000 m radius, so a distance the moderation queue shows is
+   the one approve_report would measure. Change one, change the other.
+
+   asin, not the atan2 form map.js carried. They are the same number -
+   asin(x) is atan2(x, sqrt(1 - x*x)) - but asin is the shorter reading
+   of what the formula says, and clamping its argument to 1 is what
+   keeps two points at the same spot from falling out of the domain on
+   a rounding error. */
+function metresBetween(lat1, lon1, lat2, lon2) {
+  var toRad = Math.PI / 180;
+  var dLat = (lat2 - lat1) * toRad;
+  var dLon = (lon2 - lon1) * toRad;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+/* Whether a failed read says cameras_public is not there - as against
+   any other failure, which is the seed standing. PostgREST's code for
+   a relation it cannot find was Postgres's own 42P01, and is PGRST205
+   since version 12; both come with a 404, and supabase-js passes the
+   status through, so the status is the third tell for a version that
+   words it some other way.
+
+   Nothing else is taken as "missing": a permission refused, say, is
+   42501 with a 403, and falling back on that would turn a
+   misconfigured view into a silent read of the table it was made to
+   replace.
+
+   The guards on result and result.error are account.js's, kept: this
+   is called on whatever a failed request left behind, and the map's
+   copy - the one that won on index.html - would have thrown on
+   nothing rather than answer false.
+
+   Boolean() so the answer is always true or false. Handed nothing, the
+   old account.js copy returned undefined - falsy, so every caller
+   behaved, but a predicate that sometimes answers neither is a thing
+   to read twice.
+
+   All of this goes when migration 012 is run; BUILD-LOG.md says
+   whether it has been. */
+function viewMissing(result) {
+  var code = result && result.error && result.error.code;
+
+  return code === "42P01" || code === "PGRST205" ||
+    Boolean(result && result.status === 404);
+}
