@@ -16,7 +16,7 @@ did that on every push would be abusing it within a week.
 Why a borough at all
 --------------------
 
-DATA-4 asks for a page per borough - "what is in Croydon" - and the
+A page per borough - "what is in Croydon" - is wanted, and the
 record has no borough column: it has a name, which is sometimes a
 borough ("Croydon", "Hackney") and more often a street ("Rye Lane,
 Peckham"), and a position. A page that said "eleven cameras in
@@ -76,7 +76,7 @@ column, where the two lists plainly share a site (35 of 36 agreed),
 and the record's own names, where a camera is called after a borough
 (30 of 30 agreed). The one disagreement - Kilburn High Road, which the
 survey itself marks uncertain because the road runs along the
-Brent/Camden boundary - is in QUESTIONS.md for the maintainer and is
+Brent/Camden boundary - is in NOTES.md "Open decisions" and is
 not resolved here: the lookup's answer stands until they settle it.
 Re-run it when a camera is added
 to the record, or when one is moved: a moved camera keeps its borough,

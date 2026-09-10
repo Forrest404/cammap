@@ -7,7 +7,7 @@
 --    types. Nothing else changes, and nothing is deleted.
 --
 --    Run this in the Supabase SQL editor, after 009. Nothing is
---    applied by the programme that wrote this; the maintainer runs
+--    applied automatically; the maintainer runs
 --    it. Safe to run again - the constraint is dropped and re-added
 --    by name, the bucket update is a plain update - and a fresh
 --    database gets the same result from schema.sql, which carries
@@ -28,7 +28,7 @@
 --    A warning would have made the promise the person's to keep for
 --    us. So the form refuses video at the moment of choosing, with
 --    the reason, and the server refuses it here whatever the form
---    does. QUESTIONS.md item 1 records the decision.
+--    does. NOTES.md "Open decisions" 1 records the decision.
 --
 --    Nothing is deleted. A video row that already exists stays, with
 --    its file: taking a person's evidence away because the rule

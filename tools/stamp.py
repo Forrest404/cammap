@@ -79,8 +79,8 @@ guards a copy that has drifted, or nearly drifted, once already:
                   checked to be a call to it and nothing else; and
                   nothing else in schema.sql may write the box out
                   again, which is how the fourth copy that sat inside
-                  pending_near from Wave 4 to version 2.15 would be
-                  caught today.
+                  pending_near until version 2.15 would be caught
+                  today.
   vancam legacy   Every van site is legacy - a van parks for a shift
                   and drives away, so no van site claims to be active,
                   and the map opens on the cameras that are fixed to
@@ -275,7 +275,7 @@ else:
 #
 # GitHub Pages serves a custom error page from /404.html and from
 # nowhere else. Anywhere else and a rotted link gets GitHub's own page
-# instead, which is the thing REACH-4 exists to stop.
+# instead, which is the whole reason 404.html sits at the root.
 #
 # This is checked because it has already happened once: the file was
 # moved into pages/ by an errant `git add -A` and nothing noticed for
@@ -640,7 +640,7 @@ if bounds is not None:
     # named above is the call and nothing else; and that no other test
     # in the file writes the box out again. The last is the one that
     # keeps "one place" true - a fourth copy is exactly what
-    # pending_near carried, unchecked, from Wave 4 until 2.15.
+    # pending_near carried, unchecked, until 2.15.
     wrong = []
 
     m = re.search(r'create or replace function public\.' + re.escape(CITY_FUNCTION) +

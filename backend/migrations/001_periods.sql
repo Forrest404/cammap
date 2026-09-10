@@ -10,7 +10,7 @@
 --    Run this in the Supabase SQL editor, then run backend/seed.sql
 --    again: the seed's on-conflict update carries periods, so the
 --    re-run fills the column on every seed row. Nothing is applied by
---    the programme that wrote this; the maintainer runs it.
+--    anything in this repository; the maintainer runs it.
 --
 --    Safe to run on a database that already has it - every statement
 --    is add-if-missing or drop-then-add - and a fresh database gets

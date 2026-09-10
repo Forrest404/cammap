@@ -9,7 +9,7 @@
 --    box it has always been.
 --
 --    Run this in the Supabase SQL editor, after 012. Nothing is
---    applied by the programme that wrote this; the maintainer runs
+--    applied automatically; the maintainer runs
 --    it. Safe to run again - the function is create-or-replace and
 --    each constraint is dropped by name and re-added - and a fresh
 --    database gets the same result from schema.sql, which carries
@@ -20,15 +20,15 @@
 --    out five times: CITY.bounds (until now LONDON_BOUNDS) in
 --    frontend/shared.js, and four times in schema.sql - a check
 --    constraint on cameras, one on reports, one on saved_cameras,
---    and a fourth inline in pending_near, which the Wave 4 merge
---    note flagged as the copy nothing was holding to the others.
+--    and a fourth inline in pending_near, the copy nothing was
+--    holding to the others.
 --    tools/stamp.py compared three of the four with shared.js and
 --    could not see the fourth. Four copies that must agree, changed
 --    by hand, in the one place where a wrong answer is a camera the
 --    server refuses to store or a corner of London the report form
 --    says nothing about.
 --
---    KEEP-6's test is "there is exactly one place to change". SQL
+--    The test is "there is exactly one place to change". SQL
 --    cannot read JavaScript, so the honest reading of that is one
 --    place per language and a check that holds the two together:
 --    CITY in shared.js, in_city here, and stamp.py reading the four

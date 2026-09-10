@@ -7,7 +7,7 @@
 --    with it false never enters them.
 --
 --    Run this in the Supabase SQL editor, after 006. Nothing is
---    applied by the programme that wrote this; the maintainer runs
+--    applied automatically; the maintainer runs
 --    it. Safe to run on a database that already has it - the column
 --    is add-if-missing, the function is create-or-replace, and the
 --    views are dropped and rebuilt exactly as schema.sql rebuilds
@@ -34,7 +34,7 @@
 --    (server-side, never the client's query) is the view definition
 --    itself: an opted-out row never enters the table the page reads,
 --    so no query the browser could write, and no future page that
---    forgets to filter, can show it. QUESTIONS.md item 6 records the
+--    forgets to filter, can show it. NOTES.md "Open decisions" 6 records the
 --    substitution.
 -- ------------------------------------------------------------------
 

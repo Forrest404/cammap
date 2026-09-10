@@ -9,7 +9,7 @@
 --    reports table does not already hold. Readable by moderators only.
 --
 --    Run this in the Supabase SQL editor, before 005 and 006, which
---    write to it. Nothing is applied by the programme that wrote
+--    write to it. Nothing here is applied automatically by what wrote
 --    this; the maintainer runs it. Safe to run on a database that
 --    already has it - the table is create-if-missing, the policy is
 --    dropped and recreated, the functions are create-or-replace, and

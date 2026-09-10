@@ -9,7 +9,7 @@
 --    created_at and updated_at. Nothing is deleted; no row changes.
 --
 --    Run this in the Supabase SQL editor, after 011. Nothing is
---    applied by the programme that wrote this; the maintainer runs
+--    applied automatically; the maintainer runs
 --    it. Safe to run again - the view is create-or-replace, the
 --    grants are revoked and re-granted by name - and a fresh database
 --    gets the same result from schema.sql, which carries this as
@@ -28,7 +28,7 @@
 --    approved_at beside the daily leaderboard, where a username's XP
 --    rose by exactly that camera's rule in the same five-minute
 --    window, which ties the username to the place and the moment
---    (BUILD-LOG.md, privacy pass, L3 and L6). Neither column was
+--    (NOTES.md "Anonymity"). Neither column was
 --    ever read by a page.
 --
 --    The view is the read API - the one thing a browser, or anyone

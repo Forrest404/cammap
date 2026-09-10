@@ -1262,8 +1262,8 @@ function redrawSaved() {
    window.print(); the print rules hide everything else while the
    class is there, and afterprint takes it off. Scoped to the class
    rather than to the page, so Ctrl-P on the account page still
-   prints the page as prose, as every other page does, and the Wave 1
-   print view of the map is untouched.
+   prints the page as prose, as every other page does, and the map's
+   own print view is untouched.
    ------------------------------------------------------------------ */
 
 var CARD_MASK = "••••••••••••";
@@ -2158,7 +2158,7 @@ function setUpAccountForms(hooks) {
    to keep for us. So the file is refused at the moment of choosing,
    with the reason, and the bucket and the report_proof check refuse
    it on the server as well (schema.sql, version 2.12). NOTES.md,
-   "The reporting loop", has the decision; QUESTIONS.md item 1 has
+   "The reporting loop", has the decision; NOTES.md "Open decisions" 1 has
    the maintainer's yes. */
 
 var VIDEO_REFUSED = "Video is not accepted: a video file carries its location and the device that " +
@@ -3256,9 +3256,9 @@ function setUpReportPage() {
    know - 42P01 from PostgreSQL, or PGRST205 from its own schema
    cache. Then the table is read as it was before, with the same
    columns and the old "visible" filter; on a database that has the
-   view the second query is never made. It is Wave 2's pattern for a
-   column a migration had not yet added. Remove publicCameraQuery's
-   table branch, and the retry at each caller, once BUILD-LOG.md says
+   view the second query is never made. It is the standing pattern for
+   a column a migration had not yet added. Remove publicCameraQuery's
+   table branch, and the retry at each caller, once backend/migrations/README.md says
    012 has been run. */
 /* viewMissing() itself is in shared.js, where map.js reads it too. */
 
@@ -3726,7 +3726,7 @@ function setUpStatusReport(cameraId) {
    it sorted itself - and the button, the empty message and the
    "Loading…" note behave the same either way.
 
-   Wave 4's "Your reports" list on the account page should be built
+   The "Your reports" list on the account page should be built
    with makePager() too, with a fetch that does
      loadPage(sb.from("reports").select(...).eq("user_id", currentUser.id)
                 .order("created_at", { ascending: false }), offset, onDone)

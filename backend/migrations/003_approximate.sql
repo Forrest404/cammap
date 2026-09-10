@@ -9,7 +9,7 @@
 --    backend/seed.sql again: the seed's on-conflict update carries
 --    approximate, so the re-run sets it on every seed row whose
 --    record gave only an area - 43 van sites at the time of writing.
---    Nothing is applied by the programme that wrote this; the
+--    Nothing here is applied automatically; the
 --    maintainer runs it.
 --
 --    Safe to run on a database that already has it, and a fresh

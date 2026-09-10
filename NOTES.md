@@ -17,8 +17,6 @@
 
     index.html          the map. Stays at the root: it is what a web server
                         hands out for the site's own address.
-    .claude/CLAUDE.md   the house rules, for anyone (or anything) picking
-                        the project up cold.
     supabase-config.js  the two public values you paste after making a
                         Supabase project.
 
@@ -99,7 +97,7 @@ below.
 - [x] Accounts should be completely anonymous - a user makes an account under a username and has to assign a strong password. (Done: the site generates the username - two words, `copper.heron` - and the person sets a password. No email, no name. See "Anonymity" below for what "completely" honestly means.)
 - [ ] Make it so that when reporting the state of a camera, you have to upload an image
 - [ ] Get the Met's 2026 deployment record (met.police.uk blocks scripted downloads; it needs a real browser), add its sites to `data/cameras.csv`, and run `python3 tools/build_points.py`.
-- [ ] Other cities. The type identifiers and the schema carry over, and since KEEP-6 so does everything that says *which* city: the name, the box, the opening centre and the opening zoom are one `CITY` object in `frontend/shared.js`, and the box has one SQL copy, `public.in_city()` in `backend/schema.sql`, which the three `check` constraints and `pending_near` all call. `tools/stamp.py` holds the two to each other. So a second city is a second object and a switch, not a search and replace - "Another city" below says what would still be typed by hand. Wherever the user is located, thats where the map displays by default.
+- [ ] Other cities. The type identifiers and the schema carry over, and so does everything that says *which* city: the name, the box, the opening centre and the opening zoom are one `CITY` object in `frontend/shared.js`, and the box has one SQL copy, `public.in_city()` in `backend/schema.sql`, which the three `check` constraints and `pending_near` all call. `tools/stamp.py` holds the two to each other. So a second city is a second object and a switch, not a search and replace - "Another city" below says what would still be typed by hand. Wherever the user is located, thats where the map displays by default.
 
   Worth saying plainly before that last part is built: asking every visitor for their location, to centre a map, is a real cost to a site whose whole argument is that it collects nothing. `navigator.geolocation` prompts, and a refusal has to work as well as a yes. If it is done, it should be a button the visitor presses rather than something that happens to them on arrival - which is how the report form already does it.
 
@@ -172,6 +170,33 @@ red run is a notice, not a lock - Pages deploys regardless - so a commit
 that reached `main` without the scripts is fixed forward. To make it a
 lock, require the `check` status in the branch protection for `main`.
 
+### The Content-Security-Policy
+
+Every page carries the same one, and `stamp.py` fails if any copy drifts. It
+is what turns "no CDN" from a rule somebody remembers into a rule the browser
+enforces: a `<script>` added from anywhere but `'self'` will not run, whoever
+added it and however it got there.
+
+What it allows out, and why:
+
+- `https://*.supabase.co` - the database, auth, and the private proof bucket.
+- `https://tiles.openfreemap.org` - the vector tiles and the sprite.
+- `https://server.arcgisonline.com` - Esri imagery, for the satellite view.
+- `https://nominatim.openstreetmap.org` - the place search, on `?edit` only.
+- `worker-src 'self' blob:` - **both halves are required, for different
+  things.** `blob:` is MapLibre's tile workers, and without it the map does not
+  draw at all. `'self'` is the service worker: this directive governs a service
+  worker's own script as well, so `register("sw.js")` is refused outright
+  without it - and the refusal names `worker-src`, not `script-src`, which is
+  the confusing part. Take either token away and one of the two stops working
+  silently.
+- `style-src 'unsafe-inline'` - the swatches and the legend are coloured from
+  `CAMERA_TYPES` by setting `style.background`, which is an inline style.
+
+Adding an outbound call means adding its host here, on every page, or it fails
+silently with only a console warning. `frame-ancestors` in a `<meta>` tag is
+ignored by browsers and logs a line saying so; that line is expected.
+
 `node tools/check.js` is the nearest thing to tests. It needs Node and
 nothing else, and it exits non-zero naming what broke - a van site claiming
 to be active, a colour that is not a colour, a seed key the SQL and the
@@ -189,7 +214,7 @@ comes from, and the rights page with its citations. None of it runs
 any JavaScript of its own; every page here reads in full with
 scripts off, which for prose is the only honest test.
 
-**Posts can be pointed at (WORD-3).** A post used to be an `<article>`
+**Posts can be pointed at.** A post used to be an `<article>`
 with a heading and a date in words, and nothing outside the page could
 name it. Now each carries an `id` on the article, a `<time datetime>`
 around the date, and a small "permalink" link in its heading. The id
@@ -212,7 +237,7 @@ browser scrolls as far as it can and stops, which is the browser
 being right and not the anchor being wrong. The template comment in
 `pages/blog.html` carries the rule so the next post copies the shape.
 
-**The feed (WORD-4).** `feed.xml` at the root, Atom, one entry per
+**The feed.** `feed.xml` at the root, Atom, one entry per
 post, written by hand - there is no generator on this site and one
 post does not need one. Atom rather than RSS because one format is one
 copy to keep in step, its dates are RFC 3339 and nothing else, and it
@@ -250,7 +275,7 @@ One more place the site's address is written: the list under
 `<link href>`, every entry's `<link>`, the author's `<uri>` and the
 `<icon>`; the tag URIs are deliberately not addresses and stay.
 
-**About (WORD-1).** One sentence inside an editing marker became five
+**About.** One sentence inside an editing marker became five
 short sections, and none of it was composed fresh: each is a public
 reading of something already written here, and the marker comment in
 `pages/about.html` says so, so that a change to the source reaches the
@@ -265,7 +290,7 @@ van site legacy), the dropped prediction under TODO (Most used as the
 honest answer), "What is not known" (the approximate pins), and the
 survey's two findings that make the map incomplete by construction:
 the Met records no coordinates, and a shop's whole disclosure is the
-sign on its door. Who runs it is QUESTIONS.md item 4 - volunteers,
+sign on its door. Who runs it is "Open decisions", item 4 - volunteers,
 donations, no organisation, no names - and "Anonymity" for what an
 account is; the hosting figure is still unknown (item 2), so the page
 says "donations pay for the hosting" and no number. The licence line
@@ -277,7 +302,7 @@ markers stay: with a page of prose they still say which lines are the
 furniture, and they cost nothing. The three description metas were
 sharpened to what the page now is.
 
-**Know your rights (WORD-2).** `pages/rights.html`: what to do when a
+**Know your rights.** `pages/rights.html`: what to do when a
 van is in front of you, which is the moment someone is most likely to
 be reading this site on a phone. Six short sections, the most urgent
 first, a contents list at the top so "if you are stopped" is one
@@ -295,7 +320,7 @@ mark as the notice). The comment at the top of the page lists, section
 by section, which document each claim rests on.
 
 Where the citations came from, and how they were checked. The survey
-in `london-lfr-cameras/results/` named the statutes, the cases and
+in `research/results/` named the statutes, the cases and
 the guidance with dates and its own uncertainty flags; each document
 was then fetched and read on the day. The Met's and BTP's web pages
 refuse scripted requests (403), so they were read through the survey,
@@ -372,7 +397,7 @@ the same commit:
     tools/share-card.html   the address in the caption, and so
                             img/share.png, which needs making again
 
-**Share cards (REACH-1).** Every page carries a `<meta name="description">`,
+**Share cards.** Every page carries a `<meta name="description">`,
 a canonical link, and the Open Graph and Twitter tags that turn a pasted
 link into a card: `og:title`, `og:description`, `og:url`, `og:image`
 with its width and height and an `alt`, and `twitter:card` set to
@@ -409,7 +434,7 @@ whenever the count changes. The platforms cache a card by its URL, so
 after a change their own debuggers (Facebook's sharing debugger,
 LinkedIn's post inspector) are how to make them fetch it afresh.
 
-**The favicon and the manifest (REACH-2).** `img/favicon.svg` is the
+**The favicon and the manifest.** `img/favicon.svg` is the
 source: a filled dot inside a hollow ring, the accent on the page
 black - the map's own vocabulary, a solid dot for a fixed camera and a
 ring for a van site. The rasters beside it are drawn from the same
@@ -440,7 +465,7 @@ every head with `img/` at the root and `../img/` under `pages/`; the
 also stops the browser probing for `/favicon.ico` at the origin root,
 which is not ours on `github.io` and was a 404 in every console.
 
-**robots.txt and sitemap.xml (REACH-3).** `robots.txt` allows
+**robots.txt and sitemap.xml.** `robots.txt` allows
 everything and names the sitemap. `sitemap.xml` is hand-written - six
 addresses do not need a generator - and each carries the date of the
 page's last commit, which is what a crawler uses to decide whether to
@@ -461,7 +486,7 @@ contradiction Search Console reports as an error. The 404 page is
 `noindex` too, though Pages serves it with a 404 status and that alone
 would do.
 
-**The 404 page (REACH-4).** GitHub Pages serves a root `404.html` for
+**The 404 page.** GitHub Pages serves a root `404.html` for
 any address it cannot find, so one page covers every rotted link. It
 is one of `stamp.py`'s pages the moment it exists, so it carries the
 same CSP, nav and footer as the rest and is checked with them. Two
@@ -478,7 +503,7 @@ a missing path, so to check this one, open `/404.html` directly - and
 serve the repository as `/cammap/` under something (a symlink in a
 temporary directory does it) if the `<base>` is to resolve locally.
 
-**The licence (REACH-7).** `LICENSE` at the root. The record -
+**The licence.** `LICENSE` at the root. The record -
 `data/cameras.csv`, `data/points.js`, `backend/seed.sql`, and any download
 of the same cameras in another format - is under the Open Database License
 1.0, with the attribution line to use. ODbL over CC BY-SA because the
@@ -494,23 +519,23 @@ links leave the site, because Pages serves a file with no extension as an
 untyped download in most browsers. `lib/` and `fonts/` are vendored under
 their own licences and are not ours to license either way.
 
-**The donate line (WORD-5).** The footer says donations pay for the
+**The donate line.** The footer says donations pay for the
 hosting and names no figure. It should: a precise small number is far
 more persuasive than an unspecified appeal, and it fits a site that
 says exactly what it knows everywhere else. The figure was not
 available when this was written, and on a site whose argument is that
 nothing on it is estimated, a hosting cost that was is worse than
 none. So the sentence stands as it was, and beside it on all eight
-pages is a `TODO (WORD-5)` comment - seen by whoever edits the footer,
+pages is a `TODO` comment - seen by whoever edits the footer,
 never by a visitor - with the exact sentence to type once the number
-is known (QUESTIONS.md, item 2). Eight copies because the footer is
+is known ("Open decisions", item 2). Eight copies because the footer is
 written out per page and `stamp.py` holds them to be the same; when
 the number goes in, it goes in everywhere at once.
 
 ### Working offline
 
 This site is meant to be opened on a street with bad signal, by someone
-standing in front of a van, and until KEEP-4 it needed the network to
+standing in front of a van, and it once needed the network to
 draw itself: the camera rows were kept in `localStorage` for five
 minutes, and nothing else was kept at all. Now the browser keeps a copy.
 `sw.js`, at the root beside `index.html`, is a service worker - plain
@@ -956,7 +981,7 @@ How the values were set, so they can be checked one by one:
 - **BTP stations (9)**: "British Transport Police LFR deployment register,
   2026" and the register PDF, also derived from the note.
 - **Everything else (10)** was set by hand in the CSV from the research
-  survey in `london-lfr-cameras/`, per QUESTIONS.md item 8, only where the
+  survey in `research/`, per "Open decisions", item 8, only where the
   survey's site and the record's entry are plainly the same place. The
   label is the publication and date as the survey gives them; the URL is
   the survey's, verbatim. The two Croydon installs share the Met's own
@@ -982,7 +1007,7 @@ How the values were set, so they can be checked one by one:
   paused for East Dulwich - agree with the notes, which is the check that
   they are the same shops and not merely the same names.
 
-None of the URLs was fetched by the programme that set them: the Met and
+None of the URLs was fetched when they were set: the Met and
 BTP sites refuse scripted requests, and the rest are cited as the survey
 cites them. A dead link is a data correction in the CSV, one cell.
 
@@ -1003,7 +1028,7 @@ from here on it is a cell: a pin the maintainer knows to be approximate for
 another reason is a cell to set, not a phrase to match. **Station Parade**
 is the case in point - its note says "this pin is a guess", which is a
 stronger admission than the phrase, and it is not flagged only because the
-import read the one phrase the brief named. Setting it is one cell.
+import read one phrase only. Setting it is one cell.
 
 The note keeps its phrase, because the prose is preserved and a reader of
 the popup should still be told. `check.js` holds the two together in one
@@ -1059,7 +1084,7 @@ places, and the name of the city in the prose of every page. Doing
 something about that while there is one city is an afternoon. Doing it
 with two is a migration, with a live database in the middle of it.
 
-**The `CITY` object (KEEP-6).** `frontend/shared.js` now holds one
+**The `CITY` object.** `frontend/shared.js` now holds one
 object with the four things that are about the city rather than about
 the cameras: its `name`, its `bounds` (south-west corner then
 north-east), the `centre` a map opens on, and the `zoom` it opens at.
@@ -1091,8 +1116,8 @@ constraints - `cameras_in_london`, `reports_in_london`,
 `saved_cameras_in_london` - are now that call and nothing else, and so
 is the guard in `pending_near`, which was the fourth copy: it was
 written out inline when REP-2 was built, `stamp.py`'s bounds check
-could not see it, and the Wave 4 merge note flagged it for exactly
-this item.
+could not see it, and it was flagged at the time as exactly this
+problem.
 
 `stamp.py` now reads the four numbers out of `CITY.bounds` and out of
 `in_city`'s body and fails naming the function if they differ; requires
@@ -1116,7 +1141,7 @@ the four bare `between` tests it replaces did.
 
 Proved on a throwaway PostgreSQL 14, the same way migrations 004-012
 were: a fresh database from `schema.sql` (run twice) and seeded, against
-one built from the pre-KEEP-6 `schema.sql` and then upgraded with 013
+one built from the older `schema.sql` and then upgraded with 013
 run twice; `pg_dump --schema-only` of the two, normalised, identical at
 336 statements. Both carry `CHECK (in_city(lat, lon))` on all three
 tables. A row at Manchester is refused by name on `cameras`, `reports`
@@ -1158,7 +1183,7 @@ about this is the point of writing it down:
 
 ### Which borough a camera is in
 
-The record had no borough column, and DATA-4's pages cannot be written
+The record had no borough column, and a page per borough cannot be written
 without one. What it had was a name - sometimes a borough ("Croydon",
 "Hackney"), more often a street ("Rye Lane, Peckham") - and a position.
 A page that said "eleven cameras in Southwark" off the back of the
@@ -1232,7 +1257,7 @@ borough anywhere landed in a different one. The single disagreement is
 **Kilburn High Road**, where the survey says "Brent / Camden
 [uncertain - Kilburn High Road runs along the Brent/Camden boundary and
 the record gives no side]" and the lookup, given the record's own pin,
-says Camden. It is in QUESTIONS.md rather than settled here: the
+says Camden. It is in "Open decisions" rather than settled here: the
 lookup's answer stands until the maintainer decides, because the pin is
 what the record holds and picking the other side would be this
 programme choosing.
@@ -1296,7 +1321,7 @@ reads.
 
 **Everything shared is copied from a template page at generation
 time,** never written out in the generator. `pages/rights.html` is the
-template - the page CLAUDE.md already tells a new page to copy - and
+template - the page a new page is told to copy - and
 these take four things from it verbatim: the prologue (`<!DOCTYPE>`
 through `</header>`, so the charset, the referrer meta, the whole
 Content-Security-Policy, the icons, the manifest, the feed link, the
@@ -1318,7 +1343,7 @@ nav or the footer on every page is followed by
 The pages sit a directory deeper than the template, so every relative
 URL in what is copied is moved down one by `deepen()`. `stamp.py`'s nav
 and footer checks strip leading `../` runs before comparing - which is
-what they were written to do in Wave 0, for pages in `pages/` - so a
+what they were written to do for pages in `pages/` - so a
 page two levels down compares equal to one at the root and needs no
 special case. Checked: the CSP, the nav and the footer are identical
 across all 45 pages.
@@ -1345,7 +1370,7 @@ labels have none that can be derived: "LFR van site" takes an s,
 "Transport police" does not, "Shop (Facewatch)" takes its s in the
 middle. A table of plurals in the generator would be a second copy of
 the legend's words, and adding a kind of camera would stop being the
-two edits CLAUDE.md promises and become three - with the third
+two edits it should be and become three - with the third
 silently producing "9 transport polices" until somebody read it. So
 the label is printed exactly as `CAMERA_TYPES` writes it, with the
 count in front, which is how a key reads.
@@ -1604,8 +1629,8 @@ fields.
 Why a cell and not a circle. The first form (version 2.11) answered
 whether a report was within the auto-approve radius of the point -
 a sharp edge exactly 100 m from the report - and its comment said
-"not its exact position". The adversarial privacy pass after Wave 4
-showed that was wrong: bisecting the edge, fourteen halvings in each
+"not its exact position". An adversarial privacy pass showed that
+was wrong: bisecting the edge, fourteen halvings in each
 of four directions, 112 anonymous calls in five milliseconds,
 recovered a pending report's coordinates to six decimals on a
 throwaway database. Any answer that changes at a distance measured
@@ -1639,8 +1664,8 @@ when each report arrived, one by one; and the exact time, rounded
 to whole days for the same reason. `days_ago` is a clock all the
 same, at a day's resolution, and that is accepted because it is
 what the sentence says. Coordinates in, two fields out, no identity
-anywhere: that is the line CLAUDE.md draws for every call the
-browser may make. The kind
+anywhere: that is the line every call the browser may make is
+held to. The kind
 is not taken either - a per-kind probe would be finer for nothing
 the sentence needs - so the sentence says "the same kind of camera"
 and leaves the kind to the person. The column is `found`, not
@@ -1704,8 +1729,7 @@ through a canvas; there is no canvas for a video, and stripping an
 MP4's atoms in plain JavaScript would take a library the
 Content-Security-Policy will not load. The two honest choices were
 to refuse video or to warn far more loudly at the moment of
-choosing the file; the maintainer took the first (QUESTIONS.md,
-item 1), and this is it. A video is refused the moment it is
+choosing the file; the maintainer took the first ("Open decisions", item 1), and this is it. A video is refused the moment it is
 chosen, by type or by extension, with the reason in full - "a video
 file carries its location and the device that made it, and this
 site cannot strip that in your browser; a photo is re-saved here
@@ -1732,7 +1756,7 @@ a person's own rows all along and the columns a decision writes -
 People who send evidence somewhere want to know it arrived and what
 was done with it, and this was the cheapest retention work the site
 had. The account page now has *Your reports* under *Saved cameras*:
-a pager, like every list that can grow (Wave 2's `makePager()`, for
+a pager, like every list that can grow (`makePager()`, for
 the reason in "Moderating at scale"), newest first, thirty a page
 with *Load more*, and the `.eq` on `user_id` the policy's comment
 asks for - without it a moderator's own page would read the whole
@@ -1789,7 +1813,7 @@ through `typeLabel()` like every other label on the site; the two
 state claims and the first-report bonus have sentences of their
 own; a key the page does not know is shown as it is, because a rule
 in the table is a rule. The page also says, in the account page's
-words, where to leave the list - Wave 3's sentence, "You can leave
+words, where to leave the list - "You can leave
 this list from your account page - On the leaderboard, under Signed
 in." Checked with the fake client that every number in the table is
 the fake's `xp_rules` value for that key and that the fetch is the
@@ -1865,7 +1889,7 @@ refuses one thing of its own: a van site marked active. Every van
 site is legacy ("What active means", above); the build script refuses
 it in the CSV and this refuses it on the row. It is not a check
 constraint on the table because the live database still carries van
-rows that say active from before the change (QUESTIONS.md, item 9)
+rows that say active from before the change ("Open decisions", item 9)
 and adding the constraint would fail on them; `approve_report` also
 still writes a reported van as active, and the one-line update above
 is still the way to bring those into line.
@@ -2098,7 +2122,7 @@ and a page to hand to the press. Each piece is under its own heading in
 why there; this is the shorter account, the numbers that were measured,
 and the reasoning that did not fit in a comment.
 
-**The source, cited (DATA-1).** The popup gains one row under the note:
+**The source, cited.** The popup gains one row under the note:
 "Source: Met Police LFR deployment record, 2023-24", the label as the
 record gives it, linked to `source_url` where the record has one, in a
 new tab with `rel="noopener noreferrer"` as the footer's external link
@@ -2115,10 +2139,10 @@ button in the order they sit on the screen. The list row's spoken text
 does not repeat the citation: the note it already reads names the record
 in prose for every Met and BTP entry, and a row's button opens the popup
 where the link is. The 34 spanning-period van sites cite the Met's
-records index, as QUESTIONS.md item 11 decided; that is the record, and
+records index, as "Open decisions", item 11 decided; that is the record, and
 the popup shows it.
 
-**An approximate pin, drawn as one (DATA-7).** The forty-three van sites
+**An approximate pin, drawn as one.** The forty-three van sites
 the Met's record gives as a borough or a district were drawn exactly like
 a pin on a known pole. Now a wider, fainter ring sits under the dot - two
 and a half times its radius, in the dot's own colour - drawn from
@@ -2137,7 +2161,7 @@ where cameras are so a pin can be placed beside them.
 
 The brightness rule, measured rather than reasoned, and the measurement
 changed the design. The first draft drew the ring in the type colour,
-translucent, and the method was the Wave 2 one: screenshot the map with
+translucent, and the method was the standing one: screenshot the map with
 and without the two halo layers, diff, take the brightest pixel the
 layers made brighter. Over the hottest glow on a road at the opening
 zoom - which already stands at about 148 with nothing new drawn, the
@@ -2162,7 +2186,7 @@ lettering, dots. `check.js` holds the two functions: every kind's colour
 dimmed to the ceiling lands at or under it with the hue kept, and a
 colour already under it comes back as it is.
 
-**When the database cannot be reached (DATA-8).** The seed stood, and
+**When the database cannot be reached.** The seed stood, and
 that was always right; what was missing was any sign of it. One dim line
 under the record line now says "Showing the published record; live
 updates unavailable." - written by `liveUpdates(false)` when the cameras
@@ -2172,7 +2196,7 @@ has answered by then, since supabase-js has no timeout of its own and a
 request that hangs is the commonest way a bad connection fails. The
 request is not abandoned: an answer that arrives late still lays its
 rows over the map and clears the line, and so does any later successful
-fetch through `liveUpdates(true)` - which since KEEP-5 is the background
+fetch through `liveUpdates(true)` - which is now the background
 revalidation that every load makes, so the line clears on the next load
 rather than on the next load after a cache happens to have expired. What
 stands under the line meanwhile is the cache where there is one and the
@@ -2184,7 +2208,7 @@ polite live region beside `#record-line` and not in `#map-note`, which
 a link or Near me clears; empty, it keeps its place in the tree at no
 height, for the reason `.map-note:empty` does.
 
-The four attempts the Wave 2 verification saw are postgrest-js's own
+The four attempts seen on the network are postgrest-js's own
 retry, and they stay. A GET that fails at the network, or answers 503
 or 520, is tried up to three more times with a backoff of one, two and
 four seconds (`retryEnabled` in the vendored `lib/supabase.js`, on by
@@ -2201,7 +2225,7 @@ which `account.js` writes whenever the project is configured, reachable
 or not, and which lead to pages that say for themselves that they
 cannot load. The map's line is about the map.
 
-**The record, to take away (DATA-2).** Two files from the footer of
+**The record, to take away.** Two files from the footer of
 every page. `data/cameras.csv` is served as it is - it is the record,
 and a file that is the record cannot drift from it. `data/cameras.geojson`
 is the third output of `tools/build_points.py`: RFC 7946, one
@@ -2229,7 +2253,7 @@ file rather than showing it; Pages serves the GeoJSON with its own
 content type, a local `http.server` as an untyped download, and the
 attribute makes both a download.
 
-**The years (MAP-4).** A range under the legend, one position per year
+**The years.** A range under the legend, one position per year
 the record covers and one before them for every year at once, its ends
 worked out from the points and never typed: 2020 to 2026 today, the BTP
 register's 2026 the end, and a record with a 2027 period moves it on its
@@ -2245,7 +2269,7 @@ places that must agree: `isShown()` for the list and the glow sources,
 `buildFeatures()` writes on each feature; `applyFilters()` moves the
 dots, the glow, the list, the count and the live region together.
 
-Two decisions the brief left open. A camera is shown for a year when any
+Two decisions that were left open. A camera is shown for a year when any
 key of its periods covers it, through `periodSpan()` and `periodYears()`
 in `shared.js`, the twins of `period_span()` in the build script, held
 together by `check.js` over every key in the record - and never for a
@@ -2281,7 +2305,7 @@ intrinsic width to any intrinsic track it crosses - and the page
 scrolled sideways by two thousand pixels. `5ch` is "YEAR" in the label's
 capitals, and nothing in the grid is intrinsic now.
 
-**The read API (DATA-6).** `pages/data.html`: what the record is, the
+**The read API.** `pages/data.html`: what the record is, the
 CSV's twelve columns and the GeoJSON's properties, the ODbL terms with
 the attribution line to copy, and the read API - the view
 `cameras_public` and its fourteen columns, the endpoint, the two headers
@@ -2294,7 +2318,7 @@ nav, which wraps on a phone already; reached from About, from the
 press page, and from the footer's Download line. Run against the live
 project on the day: the view line answers 404 with `PGRST205` "Could
 not find the table 'public.cameras_public' in the schema cache",
-because migration 012 has not been applied (QUESTIONS.md item 9 is the
+because migration 012 has not been applied ("Open decisions", item 9 is the
 same state), so the page says so under "Until the view is there" and
 prints the same request against the table, which answers rows today -
 both copied off the rendered page and run as printed. The filter, the
@@ -2304,7 +2328,7 @@ view line works as written and that section can go. The page is a
 second copy of the key: `supabase-config.js` is the first, and a project
 that rotates its key changes both.
 
-**The press page (REACH-6).** `pages/press.html`: the counts, worked out
+**The press page.** `pages/press.html`: the counts, worked out
 from the record by `frontend/press.js` through `recordCounts()` in
 `shared.js` when the page loads and never typed (the paragraph carries a
 sentence pointing at the map's own line for a reader without
@@ -2314,9 +2338,9 @@ what is approximate and what is missing; the downloads and the data
 page; the licence with the attribution line and a sentence for an
 article; the share card offered for reuse with the date it was made and
 its base map credited; the rights page; and the contact, which is the
-repository's issues page and no mailbox, with a `TODO (REACH-6)`
+repository's issues page and no mailbox, with a `TODO`
 comment beside it for an address if the maintainer wants one
-(QUESTIONS.md item 17). No person is named, on the principle the site
+("Open decisions", item 17). No person is named, on the principle the site
 applies to everyone else. `press.js` is in `OWN` and stamped like the
 rest; `check.js` holds `recordCounts()` to the record - the total, the
 kinds adding up, the approximate count, the years - rather than to a
@@ -2325,7 +2349,7 @@ number that changes.
 **How it was checked.** Headless Chrome over the DevTools protocol at
 1400 and 390: the popup's three source states read back from the DOM
 and its tab order walked; the halo shot with and without its layers on
-Dark and Satellite at two zooms and diffed with the Wave 2 method, then
+Dark and Satellite at two zooms and diffed with the same method, then
 with the dots and every label hidden; the cameras request counted with
 `Network.enable` against an unresolvable host, a stubbed request that
 never answers and a stubbed answer twelve seconds late; the scrubber
@@ -2348,7 +2372,7 @@ All of it is in `frontend/map.js`, each under its own heading, and
 each block there says why it is the way it is; this is the shorter
 account, and the reasoning that did not fit in a comment.
 
-**Deep links and the hash (MAP-1).** The address bar follows the map
+**Deep links and the hash.** The address bar follows the map
 in the form OpenStreetMap uses, `#14/51.5169/-0.0977` - zoom, latitude,
 longitude - and carries `&camera=<id>` after it while a popup is open,
 so copying the address bar and opening it elsewhere gives back the
@@ -2411,7 +2435,7 @@ for whoever makes movement a cut rather than a flight: `jumpTo`
 ignores `offset`, silently; `easeTo` with a duration of 0 is the cut
 that honours it, and `showCameraLink()` uses that.
 
-**Near me, and what it does not do (MAP-2).** Pressed, never automatic
+**Near me, and what it does not do.** Pressed, never automatic
 - the line the TODO above drew before this was built, and a privacy
 position rather than a preference. The browser is asked for a location
 only when the button under the map is pressed. The answer lives in one
@@ -2472,7 +2496,7 @@ answer. The button is not disabled while a request is out, because
 disabling a focused button drops the keyboard on the floor; a second
 press is ignored until the browser answers.
 
-**The place search, for everyone (MAP-3).** The Nominatim box was
+**The place search, for everyone.** The Nominatim box was
 edit-only for no better reason than that it was built for adding
 cameras, while the policy already allowed the host on every page. It
 now sits under the map - it moves the map, and the list's own search
@@ -2507,7 +2531,7 @@ change, and the note above about `jumpTo` and `offset` is the one
 thing to know before changing it. The hash on load is a `jumpTo` on
 purpose: there is nowhere to fly from.
 
-**Stacked cameras (MAP-5).** Two cameras on one corner drew as one dot
+**Stacked cameras.** Two cameras on one corner drew as one dot
 and `DRAW_ORDER` chose which, so the map under-reported exactly where
 it mattered most. North End, Croydon is a fixed install and, at the
 same coordinates, the van hotspot with the most deployments in the
@@ -2539,13 +2563,12 @@ two dots that close are one dot whatever the count says, and the
 chooser is the safety net, because it asks at the zoom the click was
 made. `DRAW_ORDER` stays as the tiebreak for which paints last; it was
 never meant to be a filter. One thing to know when checking this
-against the live site: until `seed.sql` is re-run (QUESTIONS.md, item
-9) the live table still carries North End's van site as active, so
+against the live site: until `seed.sql` is re-run ("Open decisions", item 9) the live table still carries North End's van site as active, so
 with Legacy off a click there opens the chooser rather than the fixed
 camera's popup - which is right for that data, and goes away with the
 re-seed. Against the record, Legacy off gives one dot and one popup.
 
-**The line under the map (REACH-5).** "182 cameras · Met records to
+**The line under the map.** "182 cameras · Met records to
 2025, BTP to 2026 · last checked September 2026", written by `render()`
 next to the count it already keeps. The count is the published
 record's, the length of `points.js`, and never a typed number, so it
@@ -2619,7 +2642,7 @@ explained in prose. Each piece is under its own heading in
 the reasoning that did not fit in a comment, and what the
 accessibility tree said when it was checked.
 
-**Reduced motion (MAP-8).** `moveMap()` still flies - a flight across
+**Reduced motion.** `moveMap()` still flies - a flight across
 London says where you came from as well as where you are going - but
 under `prefers-reduced-motion` it cuts. The cut is `easeTo` with a
 duration of 0 and not `jumpTo`, for the reason the note under "Deep
@@ -2648,7 +2671,7 @@ never called and the centre landing 0.0007 degrees north of the dot;
 the zoom button went 17 to 18 at once; back to no preference, the
 variable re-read false and the next click flew.
 
-**What a screen reader is told (MAP-9).** The dots are drawn into a
+**What a screen reader is told.** The dots are drawn into a
 canvas, and a canvas has nothing in it assistive technology can read.
 The list beside the map was always the same cameras in words, and
 nothing said so. Four things now do.
@@ -2730,7 +2753,7 @@ at load. Chrome writes names as the stylesheet transforms them, so
 "CAMERAS" and "LEGACY" are what a reader is given; that is the
 uppercase rule under FORMS, not a bug here.
 
-**Solo: only this kind (MAP-6).** "Only the shops" was four clicks
+**Solo: only this kind.** "Only the shops" was four clicks
 and could not be undone in one. Each legend key has a small `[only]`
 beside it - a second button, because a keyboard needs something it
 can land on and a modifier key is invisible - named "Only <kind>"
@@ -2751,7 +2774,7 @@ sites" with Legacy off would show nothing at all, and the person
 asked for the van sites. When the kinds narrow to one whose every
 camera is legacy - worked out from the points, not assumed of vans,
 because a database still carrying active van rows changes the answer
-(QUESTIONS.md, item 9) - Legacy is switched on for them and the line
+("Open decisions", item 9) - Legacy is switched on for them and the line
 under the map says so: "Every LFR van site in the record is legacy,
 so Legacy has been switched on to show them." Ending the solo
 switches it back off, unless the visitor has pressed Legacy
@@ -2770,7 +2793,7 @@ the top of the page. Whichever key or `[only]` had focus is noted by
 its kind and given focus again once rebuilt. `[only]` is not printed;
 the struck-through keys already say what is shown on paper.
 
-**How to read this map (WORD-6).** A `details` element under the map
+**How to read this map.** A `details` element under the map
 bar, four sentences: colour says what a camera is; a solid dot is in
 use, a hollow ring is a legacy site, the non-functional colour is one
 reported as not working; the glow is weighed by how often the record
@@ -2803,7 +2826,7 @@ click returns, so a key read in the same tick as the click is not yet
 set; and `NAV` in the harness keeps the profile, so a second load is
 a second visit.
 
-**A link that points outside London (the Wave 2 observation).**
+**A link that points outside London.**
 `#99/0/0` used to be ignored in silence, with the address left in the
 bar as if it had been honoured. `applyHash()` now says under the map
 that the link points outside London and the whole map is shown,
@@ -2814,7 +2837,7 @@ first, because a hash changed by hand while the map has not moved is
 the view `writeHash()` wrote last and it would otherwise see nothing
 to do.
 
-**The footer, off paper.** The Wave 1 check found that printing the
+**The footer, off paper.** Printing the
 nine Croydon rows put only the footer on a second sheet: its ASCII
 rule, the donations line and the licence line. None of it is for
 someone on a street with a leaflet - the appeal is for a screen, and
@@ -2828,7 +2851,7 @@ wave), and a borough's list is one side of A4 again. Measured with
 at 1400 and 390, with `Accessibility.getFullAXTree` for what a reader
 is given, `Emulation.setEmulatedMedia` for reduced motion,
 `Network.setBlockedURLs` on the Supabase host to check against the
-published record rather than the live table (QUESTIONS.md, item 9,
+published record rather than the live table ("Open decisions", item 9,
 still shows 117 of 187 there), real Tab, Space and Enter through
 `Input.dispatchKeyEvent`, `localStorage` cleared, set, and redefined
 to throw, and `Page.printToPDF` at A4 for the paper.
@@ -2939,8 +2962,8 @@ Two things the print view would be better with, and both need markup
 or JavaScript rather than a stylesheet: a text label of the kind in
 each row - it is read back off the swatch's `title` with `attr()` now,
 which works but is a stylesheet reaching for data the row should carry,
-and a screen reader would want the same words (MAP-9); and a line
-saying when the record was last checked, which is REACH-5's count line
+and a screen reader would want the same words; and a line
+saying when the record was last checked, which is the count line
 and will print with the list once it exists.
 
 ## Anonymity
@@ -2949,9 +2972,9 @@ What the site keeps about a person: a username of two random words, a password h
 
 Three honest limits. Supabase's own auth logs record request IPs for a period the project cannot turn off - that is theirs, not ours, and it should not be claimed otherwise. A photo of a camera is a photo of a street; the site strips the location and camera data out of photos before upload, but the picture itself is still the picture. Video is not accepted at all, because the same data cannot be stripped from a video in the browser, and the page says why. And when an account is deleted, its proof files are made unreachable by deleting their rows in the storage table; whether Supabase clears the bytes behind them from the bucket's store at once is theirs to promise, not ours.
 
-Seven more, found by an adversarial pass over the whole site after Wave 4 (BUILD-LOG.md, "Privacy pass") and stated here rather than closed, because each is either not closable from this repository, a decision that is not the programme's to take, or - the view, the session and the draft - closed as far as it can be and worth saying where the line now is.
+Seven more, found by an adversarial pass over the whole site ("Open decisions") and stated here rather than closed, because each is either not closable from this repository, a decision that is not the code's to take, or - the view, the session and the draft - closed as far as it can be and worth saying where the line now is.
 
-*Sign-up answers whether a username exists.* Supabase's sign-up endpoint returns `user_already_exists` for a name that is taken, and the trigger `handle_new_user` independently raises "is taken"; a stranger with a guess signs up, reads the answer, and deletes the throwaway with `delete_my_account()`. That is `username_available()` under another name - the question that function was dropped for - gated only by the dashboard's per-IP sign-up rate limit, and about 18,800 names cover both word lists. Closing it means the server drawing the username rather than the browser, which changes the recovery card and how the hidden login address is formed; that is the maintainer's decision, QUESTIONS.md item 13, and until it is taken this is stated, not closed.
+*Sign-up answers whether a username exists.* Supabase's sign-up endpoint returns `user_already_exists` for a name that is taken, and the trigger `handle_new_user` independently raises "is taken"; a stranger with a guess signs up, reads the answer, and deletes the throwaway with `delete_my_account()`. That is `username_available()` under another name - the question that function was dropped for - gated only by the dashboard's per-IP sign-up rate limit, and about 18,800 names cover both word lists. Closing it means the server drawing the username rather than the browser, which changes the recovery card and how the hidden login address is formed; that is the maintainer's decision, "Open decisions", item 13, and until it is taken this is stated, not closed.
 
 *The search box talks to another service.* What is typed into the box under the map goes to OpenStreetMap's Nominatim, with the site's address as the referrer, and the search is everyone's, not `?edit`'s. A place name is a place name; a home postcode typed there is a request to a service that is not this one. "The map as a tool" says how lightly it is called and why there is no search-as-you-type.
 
@@ -3030,7 +3053,7 @@ equivalent that meets the intent is the view definition itself, which
 is where the site's opt-out lives: `and p.show_on_leaderboard` in all
 three, so an opted-out row never enters the table the page reads, and
 no query a browser could write, and no future page that forgets to
-filter, can show it (QUESTIONS.md, item 6). The views are rebuilt every
+filter, can show it ("Open decisions", item 6). The views are rebuilt every
 five minutes, and the page says so rather than promising "now". The
 switch is set through `set_leaderboard_visibility(shown boolean)`, the
 one thing on a profile a person may change and the only way to: the
@@ -3101,7 +3124,7 @@ would take the card too), give the sheet no height so the hidden page
 does not run to a second sheet, and place the card alone at the top,
 90mm wide, password plain - a masked card on paper is no card. Scoped
 to the class, not the page, so Ctrl-P on the account page prints prose
-like every other page and the Wave 1 print view of the map is not
+like every other page and the map's own print view is not
 touched. Checked with `Page.printToPDF` at A4: one page, the card and
 nothing else. Nothing about the card is sent anywhere.
 
@@ -3138,7 +3161,7 @@ stays on the map after they have left. The delete box used to say the
 camera kept "nothing about you"; the privacy pass caught it, and now
 the box says "with the name and note you gave it" and the report form
 says under the two fields what they become. Whether deletion should
-blank those words is QUESTIONS.md item 15; the decision taken is to
+blank those words is "Open decisions", item 15; the decision taken is to
 keep them, like a letter printed in a newspaper, and say so plainly.
 The camera keeps no trace of the account that reported it - the
 report row carried the user id, and it is gone - but it keeps the
@@ -3154,6 +3177,183 @@ reports, proof rows and storage objects, XP and saved cameras gone; the
 count of cameras unchanged and their camera still visible; a plain
 `delete from auth.users` or `update profiles` by a client role refused;
 anon refused; the released username drawn again by a new account.
+
+## Open decisions
+
+Things the code cannot decide on its own, numbered so that a comment elsewhere
+can point at one. Each says what was done in the meantime and what the
+alternative costs; where something could not wait, it proceeded on the stated
+default and can be revisited without unpicking anything.
+
+### 18. One camera's borough is disputed between two sources
+`tools/boroughs.py` asked Nominatim for the borough of every camera from its own recorded
+pin. All 182 answers agree with the research survey and with the cameras' own names except
+one: **Kilburn High Road**. The survey says "Brent / Camden", marking it uncertain because
+the road runs along the boundary; the lookup says **Camden**, from the pin the record holds.
+Nothing was resolved silently: the lookup's answer stands and appears on the Camden page.
+Settling it needs someone who knows which side of the road the van parks on. If Brent is
+right, the fix is one cell in `data/cameras.csv` and a re-run of
+`python3 tools/build_boroughs.py`.
+
+### 17. The press page needs a contact address, and the site has none
+A press page wants one contact address. The site deliberately keeps no email for its users;
+the project itself has none published either — only the Ko-fi link and the GitHub
+repository. **Standing answer:** the press page names the repository's issues page
+(`https://github.com/Forrest404/cammap/issues`) as the way to reach the project, with a
+marked `TODO` comment beside it for an email address if you want one. A press contact that
+is a public issue tracker is honest about what the project is; a mailbox is your call, and
+its cost is that it exists.
+
+### 16. Two things in this file
+`NOTES.md` is public in the repository. It carried a Google search URL with session tokens
+(`sxsrf`, `mstk`) that were a browser's own artefacts; those have been stripped from the
+link, which still says what was searched for. It also names a second person's handle
+(`Laki2128`) under a working-notes heading, while item 4 decided the About page names
+nobody. That one is left as it is: it is a collaborator's own credit, not something the
+site publishes.
+
+### 15. Deleting an account leaves the reporter's own words on the map
+When a report is approved, the "Where is it?" and "Anything worth adding" fields become the
+camera's public name and note. `delete_my_account()` removes the reports but the camera keeps
+those words. The delete box once said "nothing about you" stays; that was untrue, is
+corrected, and the form now says under both fields what they become. **The decision:** should
+deletion also blank the `note` (and `name`?) on cameras whose only approved report was the
+caller's? Doing so takes detail out of the record; not doing so keeps a person's sentence on
+the map after they have left. *Standing answer: keep the words and say so plainly — the
+approved report is part of the record, like a letter printed in a newspaper.* One migration
+if you want the other.
+
+### 14. The leaderboard's refresh cadence and default
+Polling the daily board and the map every five minutes links "a username gained 15 XP" to "a
+camera appeared" in the same window. Removing `approved_at`, `approved_by`, `created_at` and
+`updated_at` from public reach (migration 012) blunts it; the residue is inherent to a public
+board beside a public map. **Two knobs are yours:** refresh the daily and weekly boards once
+a day rather than every five minutes (`refresh_leaderboards()`'s schedule), and/or default
+`show_on_leaderboard` to off so listing is a choice. *Standing answer: five-minute refresh
+kept, default-on kept.*
+
+### 13. Sign-up answers whether a username exists
+Supabase's own sign-up endpoint answers "does this username exist": a taken name returns
+`user_already_exists`, and the trigger `handle_new_user` independently raises "username x is
+taken". Someone signs up with a guess, reads the answer, and deletes the throwaway account
+with `delete_my_account()`. About 18,800 names cover both word lists; only the dashboard's
+per-IP sign-up limit slows it. This is the question `username_available()` was dropped for,
+and it was answerable before any of this was written. **Options:** (a) accept it and say so
+in "Anonymity" below, which is what the text there does; (b) have the server draw the
+username (a Supabase "before user created" hook, or the trigger ignoring client metadata),
+which closes the oracle but means the recovery card can only show the username *after*
+sign-up, and changes how the hidden login address is formed — which must never change for
+existing accounts. **Standing answer: (a), stated honestly, until you decide whether (b)'s
+cost is worth it.** Nothing in this repository can close it alone.
+
+### 12. Two claims on the rights page are marked "Not confirmed"
+`pages/rights.html` states two things it could not source to a document and marks them
+on the page. (a) Whether the Biometrics and Surveillance Camera Commissioner post currently
+has a holder: gov.uk names nobody and the research survey disagrees with itself; an
+appointment notice would settle it. (b) Whether an appeal has been lodged in *Thompson and
+Carlo v Metropolitan Police Commissioner* after the 21 April 2026 judgment: Big Brother
+Watch's post of that day says "seeking to appeal"; a Court of Appeal listing would settle
+it. The page says it was checked on 7 September 2026; re-checking it when the consultation
+response lands is ordinary maintenance.
+
+### 11. Where a van site spans more than one Met record, the citation is the Met's records page
+34 van sites carry a period that spans two or three Met deployment records (`2023-2025`,
+`2020-2025`, `2020-24`). Their `source_label` is "Met Police LFR deployment records,
+<span>" and their `source_url` is the Met's page that publishes those records
+(`…/about-the-met/facial-recognition-technology/`), which is the most specific address
+that covers all of them. *Standing answer: keep it — the label is accurate and the
+page is the publisher's own index.* The honest alternative is `null` for the URL on those
+34 rows; it is one constant in `build_points.py`.
+
+### 10. Two entries in the record disagree with themselves
+Found by the build script's import. **High Road, Haringey**: the note says `2023-24`, the
+`last` field says `2025`. One of them is wrong and only the source can say which; the script
+preserved both as they were. The count of `2025` sites is 62 by one reading and 63 by the
+notes (Station Parade's note runs on past its period). Nothing was changed. **Station
+Parade**'s note also says "this pin is a guess" while the record has `approximate: false`,
+because the flag was derived from one phrase only; that is one cell in `data/cameras.csv`
+to set if you agree it is approximate. And two theregister.com source URLs redirect (301)
+to canonical addresses; storing the final URL is a two-cell edit.
+
+### 9. The live database has not had `seed.sql` re-run since every van site went legacy
+Found on 2026-09-06 while checking the deployed site against the live Supabase project:
+the map opens on **117 of 187** cameras, with **95 van sites `active`**. The published
+record says 17 of 182. "What active means" below already says what to do, and it is
+a dashboard action, not a code change:
+
+1. run `backend/seed.sql` again in the SQL editor (the `on conflict` update rewrites
+   `status` in place for the 163 seed rows);
+2. then `update cameras set status = 'legacy' where type = 'vancam' and status = 'active';`
+   for the van sites that came from reports and carry no `seed_key`.
+
+Until that is done the deployed site contradicts its own data note, and any browser check
+will show the old split. Nothing in the code depends on it, but it is the first thing a
+visitor sees. *(The five rows beyond the seed are report- or admin-sourced cameras; leave
+them alone.)* The same re-seed also fixes the glow: the live rows still carry
+`deployments = 1` from before that column existed, so on the deployed site every spot
+weighs the same and the glow is flat.
+
+### Settled
+
+**Items 1–8 were settled on 2026-09-06** and are kept in full, because the reasoning is
+still the reason.
+
+**1. Video proof keeps its metadata.** The report form once accepted MP4/WebM and sent them
+untouched, with a hint telling the reporter to "check what yours contains". On a site whose
+promise is anonymity, and where the person filming a van is the person who can least afford
+to leak a location, that is not enough. The alternative was to keep video behind a loud
+interstitial naming what a video can carry (GPS track, device serial, timestamps).
+**Decided: refuse video.** Plain JavaScript cannot strip container metadata reliably without
+a library the CSP will not load, and a warning is a promise the reporter has to keep for us.
+The `proof` bucket's MIME allow-list and the `report_proof.mime` check were narrowed to
+match (migration 010).
+
+**2. The real monthly hosting cost.** The footer says donations pay for the hosting and names
+no figure. GitHub Pages is free; the Supabase project is presumably on the free tier; the
+`cammap.app` domain (used for the hidden login address) costs something a year if it is
+registered. **What does this actually cost per month?** Until that is answered the footer
+carries a clearly marked `TODO` rather than a number.
+
+**3. Licences for the code and the data.** Asked whether a licence is needed at all if the
+project is not open source: no licence is legally required (the default is all rights
+reserved), but the press page, the downloads and "permission to reuse" all depend on the
+*data* being licensed, and the code licence is separable. **Decided: keep the data licence,
+drop the code licence.** The record is ODbL 1.0; the code is all rights reserved; `LICENSE`
+and the footer on every page say so.
+
+**4. Who runs this, for the About page.** This file names two handles, Forrest404 and
+Laki2128, in what reads as a working-notes section. **Decided: "run by volunteers, funded by
+donations, no organisation behind it" and no handles** — on the principle the site applies
+to everyone else.
+
+**5. Per-period deployments, not per-year.** The obvious column shape is
+`{"2023":1,"2024":3,"2025":4}`. The record holds no per-calendar-year counts: its own
+vocabulary is `2023-24`, `2025`, `2023-2025`, `2020-2025`, `2020-24`, `2020-22` and "the 2026
+station trial". Splitting "3 deployments 2023-2025" into years would be estimating, which
+this project forbids. **Decided:** the column stores counts keyed by the period exactly as
+the source gives it (`{"2023-24": 1, "2025": 3}`), the check constraint validates keys
+against `^\d{4}(-\d{2}|-\d{4})?$` and positive integer values, the old total is the sum, and
+the year scrubber shows a site in any year its recorded period covers. The Met's
+deployment-record PDFs would allow a finer split later; that is data collection, not code.
+
+**6. The leaderboard opt-out is enforced in the view, not in RLS.** The natural instruction is
+"enforced by RLS, not by the query". The three leaderboards are materialized views refreshed
+by `pg_cron`, and PostgreSQL does not apply row-level security to materialized views. The
+equivalent that meets the intent — server-side, not in the client's query — is a
+`profiles.show_on_leaderboard` column read by the view definitions, so an opted-out account
+never enters the table the page reads.
+
+**7. Canonical site URL.** GitHub reports the site at `https://forrest404.github.io/cammap/`
+with no custom domain, and the sitemap, Open Graph tags, manifest and feed use that.
+**If a custom domain is planned, say so before it is** — every one of those files carries the
+absolute URL, and "Sharing the site" below lists them.
+
+**8. The research survey in `research/`.** It carries a `source_url` for every one of its 43
+sites, which is exactly what the fixed and shop cameras needed, and it disagrees with the
+record in places (10 BTP stations to the record's 9; casinos the map does not carry; East
+Dulwich paused). **Decided: take its `source_url` values for the sites the two lists agree
+on, and do not otherwise refresh the record from it** — adding the tenth station and the
+casinos is a separate data task, not a silent one.
 
 ## Forrest404
 
@@ -3182,7 +3382,7 @@ https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/
 https://www.instagram.com/jared_krauss/reels/
 https://surfshark.com/facial-recognition-map
 https://www.btp.police.uk/police-forces/british-transport-police/areas/about-us/about-us/facial-recognition-technology/?ref=ed_direct
-https://www.google.com/search?q=is+there+a+project+mapping+out+all+london+facial+recognition+camera&client=firefox-b-d&hs=96DB&sxsrf=APpeQnsGjz1cBU2pBPccTpziHPlJMXNubw%3A1788370446786&vsint=&aep=1&ntc=1&cs=1&dpr=1.33&atvm=2&mstk=AUtExfAKoTorR-OWR0S-9UlIn5PwCIawdaxqFnYGBmQ-neUkdTBABiLUCakauTopSQ_O33OAc5cDAL7kh_3IjwfrAoSV396qpc3cyqK2bfy4-026BPh2NBaq43aaiRQ1YCDsRtN7gloDvm8GKcPpPntE1jBG4NnpiZsSiDKyTDRkyf0_1KBIrUhAZI5JPskEaXiydnAMbNCk9-7j5nGcqeGjfISuHWVy1j8XIw2od1YFxaaRbO4oqq7FidClMQ&csuir=1&udm=50
+https://www.google.com/search?q=is+there+a+project+mapping+out+all+london+facial+recognition+camera
 
 ## NAME IDEAS
 - LFR Watch

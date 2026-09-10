@@ -1556,8 +1556,8 @@ button.toggle.on:focus-visible {
    MAP TOOLS
 
    The controls that turn the map from a picture into a tool: the
-   place search under the map, and what else Wave 2 adds to the map
-   page. Each is a few rules; the reasoning for the thing itself is in
+   place search under the map, and the rest of what sits around the
+   map page. Each is a few rules; the reasoning for the thing itself is in
    map.js and NOTES.md ("The map as a tool"), and this block only says
    where it sits and what paper does with it.
    ------------------------------------------------------------------ */
@@ -2182,7 +2182,7 @@ article.post {
 }
 
 /* ------------------------------------------------------------------
-   THE RECORD (Wave 5: the record agent writes this block)
+   THE RECORD
 
    What makes the record legible on the page: the popup's source line,
    the approximate marker's legend entry, the published-record notice,
@@ -2530,7 +2530,7 @@ article.post {
 }
 
 /* The documents a borough's entries rest on. Labels only - the link
-   is on each camera's own popup, where DATA-1 put it - so this is a
+   is on each camera's own popup - so this is a
    plain list and wants nothing but its bullets taken off and a little
    air. */
 .borough ul.sources {

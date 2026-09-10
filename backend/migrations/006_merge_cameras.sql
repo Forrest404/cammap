@@ -8,7 +8,7 @@
 --    which row survived and how many reports moved.
 --
 --    Run this in the Supabase SQL editor, after 004, which makes the
---    log it writes to. Nothing is applied by the programme that wrote
+--    log it writes to. Nothing here is applied automatically by what wrote
 --    this; the maintainer runs it. Safe to run again - both functions
 --    are create-or-replace - and a fresh database gets the same result
 --    from schema.sql, which carries this as "version 2.8". The two

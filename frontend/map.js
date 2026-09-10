@@ -152,7 +152,7 @@ var DOT    = "cammap-dot";
    the note's phrase: the field is the record's, one cell per camera,
    and a pin the maintainer knows to be approximate for another
    reason is that cell set, not a sentence to match (Station Parade,
-   QUESTIONS.md item 10). It obeys the same filter as the dots - a
+   NOTES.md "Open decisions" 10). It obeys the same filter as the dots - a
    halo under a dot that is not shown would be a hint at a camera the
    list does not admit to - and, like every other layer here, the
    brightness rule: nothing drawn under the cameras may be brighter
@@ -3666,7 +3666,7 @@ render();
    overlays: it is for the file, not the table.
    ------------------------------------------------------------------ */
 
-/* ---------------- fresh data (KEEP-5) ----------------
+/* ---------------- fresh data ----------------
 
    What this used to do: if the cache was less than five minutes old,
    draw it and ask nothing. That is one behaviour with two bad ends.
@@ -3998,8 +3998,8 @@ function rowsSignature(rows) {
    themselves that they cannot load. The map's line is about the map.
 
    Four attempts, on purpose. Watching the network with the host
-   unreachable shows the cameras request go out four times - the
-   Wave 2 observation. That is postgrest-js, not this page: a GET
+   unreachable shows the cameras request go out four times. That is
+   postgrest-js, not this page: a GET
    that fails at the network, or answers 503 or 520, is retried up
    to three times with a backoff of one, two and four seconds
    (`retryEnabled` in the vendored lib/supabase.js, on by default for
@@ -4248,7 +4248,7 @@ function redrawCameras(rows) {
        And where the keyboard was inside that popup it has nowhere to
        go, so it is handed to the map, which is focusable and is where
        the chooser hands it back on Escape. Dropping it on the body
-       is the thing CLAUDE.md warns about, and a redraw nobody asked
+       is the thing to avoid, and a redraw nobody asked
        for is the worst moment to do it. */
     sayUnderMap("The camera whose details were open is no longer on the map: it may have been taken off since this page was loaded.");
     writeHash();

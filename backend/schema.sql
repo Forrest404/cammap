@@ -49,8 +49,8 @@
 --
 -- The box was written out four times in this file - a check
 -- constraint on cameras, one on reports, one on saved_cameras, and a
--- fourth inline in pending_near, which the Wave 4 merge note flagged
--- as a copy nothing was holding to the others. Four copies of four
+-- fourth inline in pending_near, which nothing was holding to the
+-- others. Four copies of four
 -- numbers, all of which have to agree with LONDON_BOUNDS in
 -- frontend/shared.js, and none of which could be changed with any
 -- confidence that the other three had been. That is the shape of
@@ -306,7 +306,7 @@ grant select on public.profiles to authenticated;
 -- intent (server-side, never the client's query) is the view
 -- definition itself: an opted-out row never enters the table the
 -- page reads, so no query the browser could write, and no future
--- page that forgets to filter, can show it. QUESTIONS.md item 6
+-- page that forgets to filter, can show it. NOTES.md "Open decisions" 6
 -- records the substitution. (backend/migrations/007_leaderboard_opt_out.sql
 -- is this block and the rebuilt views on their own.)
 alter table public.profiles
@@ -619,7 +619,7 @@ create policy "cameras: read visible or moderator"
 -- camera's approved_at beside the daily leaderboard, where a
 -- username's XP rose by exactly that camera's rule in the same
 -- five-minute window, which ties the username to the place and the
--- moment (BUILD-LOG.md, privacy pass, L3 and L6). Neither column was
+-- moment (NOTES.md "Anonymity"). Neither column was
 -- ever read by a page.
 --
 -- cameras_public is the read API - the one thing a browser, or
@@ -855,7 +855,7 @@ grant select, insert, delete on public.report_proof to authenticated;
 -- places the server decides: the check on report_proof.mime here,
 -- and the bucket's allowed_mime_types, below, in the insert that
 -- creates it. Migration 010 is the same statements; if you change
--- one, change the other. QUESTIONS.md item 1 records the decision.
+-- one, change the other. NOTES.md "Open decisions" 1 records the decision.
 --
 -- Nothing is deleted. A video row that already exists stays, with
 -- its file: taking a person's evidence away because the rule changed
@@ -1252,8 +1252,8 @@ grant execute on function public.cluster_of_report(bigint) to service_role;
 -- Why not a circle. The first form tested metres_between(caller,
 -- report) <= the auto-approve radius: a sharp edge exactly 100 m
 -- from the report, which a stranger can walk. Its comment said "not
--- its exact position"; that was wrong. An adversarial pass after
--- Wave 4 bisected the edge - fourteen halvings in each of four
+-- its exact position"; that was wrong. An adversarial pass
+-- bisected the edge - fourteen halvings in each of four
 -- directions, 112 anonymous calls, five milliseconds - and recovered
 -- a pending report's coordinates to six decimals on a throwaway
 -- database. Any answer that changes at a distance measured from the
@@ -1285,7 +1285,7 @@ grant execute on function public.cluster_of_report(bigint) to service_role;
 -- clock all the same, at a day's resolution, and that is accepted
 -- because it is what the sentence under the pin says. Coordinates
 -- in, two fields out, no identity anywhere: that is the line, and it
--- is the one CLAUDE.md draws for every call the browser may make.
+-- is the line every call the browser may make is held to.
 --
 -- Three by three rather than one, because a report a metre over the
 -- cell line is still "this corner" and the auto-approve radius
@@ -1838,7 +1838,7 @@ grant execute on function public.moderate_move_camera(bigint, double precision, 
 --     build script refuses it in the CSV; this refuses it here. It is
 --     not a check constraint on the table because a live database
 --     seeded before every van went legacy still carries van rows that
---     say active (QUESTIONS.md, item 9), and adding the constraint
+--     say active (NOTES.md "Open decisions" 9), and adding the constraint
 --     would fail on them; approve_report also still writes a
 --     reported van as active, which is left for the maintainer's
 --     one-line update in NOTES.md and not changed here.
@@ -2395,7 +2395,7 @@ drop function if exists public.username_available(text);
 -- report's picture, which was the person's. Its name and note are
 -- not lost: approve_report copied them onto the camera as its own
 -- name and note, and nothing copies them back, so they stay on the
--- map after the person has left. QUESTIONS.md item 15 keeps them;
+-- map after the person has left. NOTES.md "Open decisions" 15 keeps them;
 -- the report form and the delete box say so.
 --
 -- The username is released with the profile row - the unique index

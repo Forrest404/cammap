@@ -145,8 +145,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # The page whose head, nav and footer every borough page copies. Any
 # of the site's pages would do; this one is named because it is the
-# one CLAUDE.md already tells a new page to copy, so there is one
-# answer to "which page is the pattern" rather than two.
+# one a new page is told to copy, so there is one answer to "which
+# page is the pattern" rather than two.
 TEMPLATE = "pages/rights.html"
 
 BOROUGHS_FILE = "data/boroughs.txt"
@@ -302,7 +302,7 @@ def kinds_list(rows, types):
     the middle, and "Private" takes one only if it is short for
     something. A table of plurals here would be a second copy of the
     legend's words, and adding a kind of camera would stop being the
-    two edits CLAUDE.md promises - shared.js and schema.sql - and
+    two edits it should be - shared.js and schema.sql - and
     become three, with the third silently producing "9 transport
     polices" until somebody read it.
 
@@ -491,7 +491,7 @@ def busiest(rows):
 def sources_of(rows):
     """The documents this borough's entries rest on, each once, in the
     order the record first names them. Labels only: the link is on the
-    camera's own popup, where DATA-1 put it, and a page of bare
+    camera's own popup, and a page of bare
     citations repeated eleven times would be a bibliography rather than
     a paragraph."""
     out = []

@@ -7,7 +7,7 @@
 --    name was permanent.
 --
 --    Run this in the Supabase SQL editor, after 004, which makes the
---    log it writes to. Nothing is applied by the programme that wrote
+--    log it writes to. Nothing here is applied automatically by what wrote
 --    this; the maintainer runs it. Safe to run again - both functions
 --    are create-or-replace - and a fresh database gets the same result
 --    from schema.sql, which carries this as "version 2.7". The two
@@ -35,7 +35,7 @@
 --     build script refuses it in the CSV; this refuses it here. It is
 --     not a check constraint on the table because a live database
 --     seeded before every van went legacy still carries van rows that
---     say active (QUESTIONS.md, item 9), and adding the constraint
+--     say active (NOTES.md "Open decisions" 9), and adding the constraint
 --     would fail on them; approve_report also still writes a
 --     reported van as active, which is left for the maintainer's
 --     one-line update in NOTES.md and not changed here.

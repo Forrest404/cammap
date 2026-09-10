@@ -11,7 +11,7 @@
 --    Run this in the Supabase SQL editor, after 001_periods.sql, then
 --    run backend/seed.sql again: the seed's on-conflict update carries
 --    both columns, so the re-run fills them on every seed row that
---    has a source. Nothing is applied by the programme that wrote
+--    has a source. Nothing here is applied automatically by what wrote
 --    this; the maintainer runs it.
 --
 --    Safe to run on a database that already has it - every statement

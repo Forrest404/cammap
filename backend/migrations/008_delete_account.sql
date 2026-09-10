@@ -6,7 +6,7 @@
 --    about them, in one statement. Nothing else changes.
 --
 --    Run this in the Supabase SQL editor, after 007. Nothing is
---    applied by the programme that wrote this; the maintainer runs
+--    applied automatically; the maintainer runs
 --    it. Safe to run again - the function is create-or-replace - and
 --    a fresh database gets the same result from schema.sql, which
 --    carries this as "version 2.10". The two must say the same

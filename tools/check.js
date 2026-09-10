@@ -36,8 +36,8 @@
    The city. CITY says which city this map is of - the name, the box,
    the opening centre and zoom - and LONDON_BOUNDS and LONDON_CENTRE
    are aliases of two of its fields. That they are aliases and not
-   copies is the whole of KEEP-6, and only an identity test tells the
-   two apart, so that is what is asserted.
+   copies is the whole point of the single-source rule, and only an
+   identity test tells the two apart, so that is what is asserted.
 
    The bounds. CITY.bounds is south-west then north-east, and the
    database keeps the same four numbers in public.in_city(), which
@@ -478,7 +478,7 @@ if (havePoints && haveShared) {
   /* CITY is what says which city this map is of - its name, its box,
      where a map opens on it and how far in - and LONDON_BOUNDS and
      LONDON_CENTRE are aliases of two of its fields rather than copies
-     of them. That distinction is the whole of KEEP-6: an alias cannot
+     of them. That distinction is the whole point: an alias cannot
      hold an old box while CITY holds a new one, a copy can, and the
      day somebody "tidies" the alias into a literal is the day a second
      city half-arrives. So it is asserted by identity - the same array,

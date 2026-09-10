@@ -231,9 +231,9 @@ note states outright:
                the fixed installs and the King's Cross estate get null
                for both from the import: their notes name no document.
                Each was then given its source by hand in the CSV from
-               the research survey in london-lfr-cameras/, one site at
+               the research survey in research/, one site at
                a time, only where the survey's site and the record's
-               entry are plainly the same place (QUESTIONS.md, item 8),
+               entry are plainly the same place (NOTES.md "Open decisions" 8),
                and each is listed in NOTES.md. That is what the CSV is
                for; a table of camera names in this script would be
                data hiding in code.
@@ -468,7 +468,7 @@ def read_shared():
     if not types:
         raise BuildError("CAMERA_TYPES not found in %s, or has no entries" % SHARED_FILE)
 
-    # CITY.bounds, not LONDON_BOUNDS: since KEEP-6 the second is an
+    # CITY.bounds, not LONDON_BOUNDS: the second is an
     # alias of the first, and reading the alias would go on working
     # right up until the day a second city made it point somewhere
     # else - which is the one day this must not silently keep

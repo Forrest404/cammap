@@ -9,7 +9,7 @@
 --    changes.
 --
 --    Run this in the Supabase SQL editor, after 008. Nothing is
---    applied by the programme that wrote this; the maintainer runs
+--    applied automatically; the maintainer runs
 --    it. Safe to run again - the function is create-or-replace - and
 --    a fresh database gets the same result from schema.sql, which
 --    carries this as "version 2.11". The two must say the same
@@ -39,7 +39,7 @@
 --    when each report arrived, one by one; and the exact time,
 --    rounded to whole days for the same reason. Coordinates in, two
 --    fields out, no identity anywhere: that is the line, and it is
---    the one CLAUDE.md draws for every call the browser may make.
+--    the line every call the browser may make is held to.
 --    It is rate-limited by its own cheapness - one probe of
 --    reports_pending_cell_idx, the same grid walk cluster_of_report
 --    makes - and returns for a point outside London without looking.

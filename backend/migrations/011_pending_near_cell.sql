@@ -9,7 +9,7 @@
 --    nothing is deleted.
 --
 --    Run this in the Supabase SQL editor, after 010. Nothing is
---    applied by the programme that wrote this; the maintainer runs
+--    applied automatically; the maintainer runs
 --    it. Safe to run again - the function is create-or-replace - and
 --    a fresh database gets the same result from schema.sql, which
 --    carries this as "version 2.13" (migration 009 was the first
@@ -20,7 +20,8 @@
 --    the auto-approve radius: a sharp edge exactly 100 m from the
 --    report, which a stranger can walk. Its comment said "not its
 --    exact position"; that was wrong. An adversarial pass after
---    Wave 4 bisected the edge - fourteen halvings in each of four
+--    An adversarial pass bisected the edge - fourteen halvings in
+--    each of four
 --    directions, 112 anonymous calls, five milliseconds - and
 --    recovered a pending report's coordinates to six decimals on a
 --    throwaway database. Any answer that changes at a distance
@@ -60,7 +61,7 @@
 --
 --    The London bounds are written out here as well as in the check
 --    constraints; a point outside them is answered without looking.
---    KEEP-6 (the second city) folds every copy of those four numbers
+--    A second city folds every copy of those four numbers
 --    into one place; until then this is one of the copies.
 -- ------------------------------------------------------------------
 

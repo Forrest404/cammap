@@ -19,7 +19,7 @@
      makes the no-CDN rule something the browser enforces rather than
      something we remember. tools/stamp.py fails if they drift. Why
      each source is listed, and what breaks without worker-src, is in
-     CLAUDE.md under "The Content-Security-Policy". -->
+     NOTES.md under "The Content-Security-Policy". -->
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
   script-src 'self';
@@ -85,7 +85,7 @@
 <meta name="apple-mobile-web-app-title" content="cammap">
 <meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="../../fonts/fonts.css">
-<link rel="stylesheet" href="../../frontend/style.css?v=fc1b066a">
+<link rel="stylesheet" href="../../frontend/style.css?v=972a6b76">
 </head>
 <body>
 <div class="sheet">
@@ -192,11 +192,11 @@
 
 <footer class="foot">
   <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
-  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+  <!-- TODO: name the real monthly cost. "Donations pay for the
        hosting" is true and says nothing - a precise small number is
        far more persuasive than an unspecified appeal, and it fits a
        site that says exactly what it knows everywhere else. The figure
-       was not available when this was written (QUESTIONS.md, item 2:
+       was not available when this was written (NOTES.md "Open decisions" 2:
        what the Supabase project and the cammap.app domain come to per
        month; the Pages hosting itself is free). When it is known, make
        the line below read, on all eight pages at once or stamp.py
@@ -232,15 +232,15 @@
 <!-- The account controls live in the nav, so every page needs these
      three. All local files; nothing is fetched from a CDN. -->
 <script src="../../lib/supabase.js"></script>
-<script src="../../frontend/shared.js?v=fc1b066a"></script>
-<script src="../../supabase-config.js?v=fc1b066a"></script>
-<script src="../../frontend/account.js?v=fc1b066a"></script>
+<script src="../../frontend/shared.js?v=972a6b76"></script>
+<script src="../../supabase-config.js?v=972a6b76"></script>
+<script src="../../frontend/account.js?v=972a6b76"></script>
 <!-- Last, on every page, and needed by nothing: registers the service
      worker that keeps a copy of the site for a street with no signal,
      and shows the one line under the page when a newer version is
      ready. A file rather than a script written here because the
      policy above allows no inline script. sw.js says what is kept
      and what never is. -->
-<script src="../../frontend/offline.js?v=fc1b066a"></script>
+<script src="../../frontend/offline.js?v=972a6b76"></script>
 </body>
 </html>

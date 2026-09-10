@@ -725,7 +725,7 @@ function metresBetween(lat1, lon1, lat2, lon2) {
    behaved, but a predicate that sometimes answers neither is a thing
    to read twice.
 
-   All of this goes when migration 012 is run; BUILD-LOG.md says
+   All of this goes when migration 012 is run; backend/migrations/README.md says
    whether it has been. */
 function viewMissing(result) {
   var code = result && result.error && result.error.code;
