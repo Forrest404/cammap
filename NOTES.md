@@ -499,9 +499,162 @@ the number goes in, it goes in everywhere at once.
 
 ### Working offline
 
-*(Written by the Wave 6 offline agent: what the service worker caches,
-how a deploy reaches a client that already has the old one, and how the
-update path was tested.)*
+This site is meant to be opened on a street with bad signal, by someone
+standing in front of a van, and until KEEP-4 it needed the network to
+draw itself: the camera rows were kept in `localStorage` for five
+minutes, and nothing else was kept at all. Now the browser keeps a copy.
+`sw.js`, at the root beside `index.html`, is a service worker - plain
+JavaScript, `var` and named functions, no dependency, registered by
+`frontend/offline.js` from every page - and what it keeps, what it never
+keeps, and how a new version reaches a browser that has the old one are
+the whole of what it does. Its header says all of this at length; this
+is the short version, plus the parts that live outside the file.
+
+**What is kept.** Two caches, under two rules.
+
+- *The shell:* every file a page needs to render without the network -
+  the eleven pages, the site's own scripts and stylesheet, `points.js`
+  (so the published record is on the map offline), MapLibre and
+  supabase-js from `lib/`, the fonts, the icons, the manifest. Thirty-
+  three files, about 2 MB, fetched in full when the worker installs and
+  answered from the cache ever after, never updated in place. Not the
+  downloads, not `share.png`, not the feed or the sitemap: none of them
+  draws a page, and the first two are large.
+- *The last tiles seen:* every response from `tiles.openfreemap.org`
+  and `server.arcgisonline.com`, answered cache first, bounded to the
+  newest 300 by last use (a pan can carry it to 302 or 303 for a moment
+  while a trim runs). The two index documents - the style JSON and the
+  TileJSON at `/planet` - go network first with the cache as fallback,
+  because OpenFreeMap rotates its tileset under a dated path and a
+  client that kept the old index for ever would ask for tiles that had
+  been withdrawn. The tile cache is not versioned with the shell: a
+  deploy of this site has nothing to do with what London looks like.
+
+**What is never kept, and why.** Nothing from `*.supabase.co`: the
+database's answers have to be live or absent (the map already says
+"Showing the published record; live updates unavailable" when they are
+absent, and a cached answer would be a third state the page could not
+tell from live), and an auth response carries a session token that has
+no business outliving Log out in a cache. Nothing from Nominatim: what
+is typed into the search box is a person's place. The worker does not
+answer those requests at all - no `respondWith` - so they reach the
+network exactly as they would with no worker. `caches.match` on a
+Supabase REST address, a Supabase auth address and a Nominatim address
+after a full visit is `undefined` for all three, and that is checked
+every time the offline path is tested.
+
+One honest addition to "Anonymity" above: the tile cache is a record,
+on the device and nowhere else, of which parts of London the map has
+shown - and after Near me that is where the person was. Nothing reads
+it but the worker and nothing sends it, but it is there, in the
+browser's site data for the site, until it is evicted or the browser
+clears it. Clearing the site's data in the browser removes it, and the
+worker and the shell with it.
+
+**How a deploy reaches a client that has the old one.** This is the
+part that had to be tested, because a worker that answers from a cache
+it never updates is a worker that can strand every returning visitor on
+the version they first saw. The mechanism is the stamp. `tools/stamp.py`
+already put a content hash over the site's own scripts and stylesheet
+into every page's tags; it now also writes three marked lines into
+`sw.js` - that stamp, a second hash over every file of the shell (the
+pages included, because a blog post or a sentence on About is a deploy
+too and the first hash does not see it), and the list of files, each
+carrying its hash in the query so that a fetch at install can never be
+answered by a ten-minute-old copy at the edge of Pages' cache. So a
+deploy that changes any file of the shell changes `sw.js` byte for
+byte, and that is what a browser looks for: it fetches `sw.js` on every
+navigation (registered with `updateViaCache: "none"`, so the ten-minute
+HTTP cache never hides a deploy), and a byte's difference installs a
+new worker with a new shell cache, `cammap-shell-<stamp>-<shell>`,
+copying from the old cache any file whose URL - hash and all - it
+already holds and fetching the rest, so that a deploy which changes one
+page costs a returning visitor that page and not MapLibre again.
+
+Then the new worker *waits*. It does not take over the pages that are
+open: a page that loaded under one version and is suddenly answered by
+another mid-session is exactly the failure this is for. Instead the
+page shows one line at the foot of the window - "A newer version is
+ready." with a Reload button - and pressing it posts `{type: "skip"}`
+to the waiting worker, which calls `skipWaiting()`, takes over, deletes
+every shell cache but its own, and the page reloads under the new
+version. Any other tab open on the old version is shown the same line
+on the same event and left to choose, because that tab may be halfway
+through a report. A tab that presses nothing keeps the old worker and
+the old cache, whole, until the last old tab is closed, and then the
+new one takes over on the next visit. Nobody is ever on a stale shell
+without being told, and nobody is moved off one without asking.
+
+`stamp.py --check` compares the three lines with what the tree computes
+and fails on a difference the way it fails on a page's stale `?v=`, so
+a commit that skipped the script is red in CI before it is a deploy.
+`sw.js` is not in `OWN`, and must not be: it carries the hash, so it
+cannot feed it.
+
+**How it was tested,** with headless Chrome over the DevTools protocol
+against a local server, a profile that persisted between launches so a
+worker and its caches survived from one "visit" to the next, every
+hostname mapped to NOTFOUND and the server stopped for the offline
+runs (a service worker needs a secure context; `127.0.0.1` is one):
+
+- *Cold offline.* One online visit, then the server down and every
+  host unresolvable: `index.html` renders from the shell, the map draws
+  from the cached tiles on Dark and on Satellite, the 182 cameras of
+  the record are on it with the glow, About loads, and the line says
+  "Working from a saved copy." Same again served under `/cammap/`
+  through a symlink, at the folder address, which the worker maps to
+  `index.html`.
+- *The update.* A visit under stamp A; one byte appended to `style.css`
+  in a scratch copy, `stamp.py` run there (stamp B, `sw.js` rewritten),
+  the copy served at the same origin; a second visit shows "A newer
+  version is ready." while the page's own tags still say A and
+  `caches.keys()` lists both shells; Reload, and the page's tags say B,
+  `caches.keys()` lists exactly one shell - B's - and the tile cache
+  survived. A client that stayed on A and went offline kept working on
+  A. A fresh visitor on B saw no line.
+- *The check.* On scratch copies: `style.css` edited without the script
+  fails on the pages and on `sw.js`; a page edited alone fails on
+  `sw.js` only (the second hash); a hand-edited `STAMP` line, a deleted
+  list entry, a lost marker line and a missing `sw.js` each fail by
+  name; the script run without the flag repairs all of it.
+- *The bound.* Forty-two Satellite views at street zoom put about 900
+  tiles through the cache; it held at 300 to 303 throughout, and the
+  first view, revisited, was fetched again because it had been evicted.
+
+**Working on the site locally.** The worker answers from a cache that
+changes only when `stamp.py` is run, which would make the ordinary
+check - edit a file, reload, look - show the old file, silently. So on
+`localhost` and `127.0.0.1` the worker is registered only while the
+page's address carries `?offline`, and a page opened there without it
+removes the worker and both caches, so the next reload is the file on
+disk. To try the offline behaviour by hand: open
+`http://localhost:8000/?offline`, wait a few seconds, stop the server,
+reload. To try an update: run `stamp.py` after a change and reload
+twice - the first visit installs the new worker and offers Reload. On
+the deployed site the flag means nothing and the worker is always
+registered.
+
+**If it ever misbehaves.** A worker cannot be turned off from the
+server: once a browser has one it keeps answering until it is replaced
+or unregistered. The remedy is a deploy of a `sw.js` whose `install`
+does nothing and whose `activate` deletes every `cammap-*` cache and
+calls `self.registration.unregister()` - one visit later every client
+is back to plain pages; the stamp changes because `stamp.py` is run, so
+every client fetches it. For one browser, DevTools → Application →
+Service workers → Unregister, or clear the site's data. And the worker
+never touches a request it was not written for: anything the site
+talks to over the network that is not the site itself or a tile host
+goes past it untouched, so a bug in the worker cannot reach Supabase.
+
+**What the CSP needed.** `worker-src` governs a service worker's script
+as well as a Worker's, and the policy said `worker-src blob:` - the
+blob for MapLibre's tile workers, and nothing else. `register("sw.js")`
+was refused by the browser with "violates the following Content
+Security Policy directive: worker-src blob:" until `'self'` was added,
+on every page at once, so `stamp.py`'s CSP check still passes. The
+registration itself is a file, `frontend/offline.js`, because
+`script-src 'self'` allows no inline script; it is in `OWN`, stamped
+like the rest, and the last tag on every page.
 
 ### Fresh data
 

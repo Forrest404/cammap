@@ -29,7 +29,7 @@
           https://tiles.openfreemap.org https://*.openfreemap.org
           https://*.supabase.co;
   media-src 'self' blob: https://*.supabase.co;
-  worker-src blob:;
+  worker-src 'self' blob:;
   child-src blob:;
   connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
               https://tiles.openfreemap.org https://*.openfreemap.org
@@ -86,7 +86,7 @@
 <meta name="apple-mobile-web-app-title" content="cammap">
 <meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="fonts/fonts.css">
-<link rel="stylesheet" href="frontend/style.css?v=b9e113b3">
+<link rel="stylesheet" href="frontend/style.css?v=c7f24583">
 </head>
 <body>
 <div class="sheet">
@@ -159,5 +159,12 @@
 </footer>
 
 </div>
+<!-- Last, on every page, and needed by nothing: registers the service
+     worker that keeps a copy of the site for a street with no signal,
+     and shows the one line under the page when a newer version is
+     ready. A file rather than a script written here because the
+     policy above allows no inline script. sw.js says what is kept
+     and what never is. -->
+<script src="frontend/offline.js?v=c7f24583"></script>
 </body>
 </html>

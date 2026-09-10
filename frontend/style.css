@@ -2467,12 +2467,56 @@ article.post {
    ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------
-   OFFLINE (Wave 6: the offline agent writes this block)
+   OFFLINE
 
-   Rules for the one line that says the site is working from its cache
-   or that a newer version is ready. If the agent needs no rule here,
-   this block is removed rather than left empty.
+   The one line frontend/offline.js puts at the foot of the window:
+   "Working from a saved copy." while the page is being answered from
+   the service worker's cache with no network behind it, or "A newer
+   version is ready." with a Reload button when a new sw.js has
+   installed and is waiting to be let in. Fixed to the bottom of the
+   viewport rather than set in the page, because on the map page the
+   footer is under 660px of map and a line about the page's own state
+   has to be seen without scrolling to find it. The record line's
+   size and colour - 12px, --dim - because it is a status and not a
+   headline; the page's own background and the site's one rule colour
+   along its top edge, so it reads as the edge of the page and not as
+   a banner laid over it. The button is the quiet one, dim on the rule
+   colour, for the same reason. Nothing here is drawn on the map, so
+   the brightness rule has nothing to say about it. Not printed: what
+   is on paper is the record, and whether the browser had a network
+   when it printed is not part of it. The element is made only when
+   there is something to say, so there is no empty strip to hide.
    ------------------------------------------------------------------ */
+
+.offline-line {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;   /* over the map's own controls, which MapLibre puts at 2 */
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 5px 20px;
+  border-top: 1px solid var(--rule);
+  background: var(--bg);
+  color: var(--dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.offline-line button {
+  padding: 1px 10px;
+  font-size: 11px;
+}
+
+@media print {
+  .offline-line {
+    display: none;
+  }
+}
 
 /* ------------------------------------------------------------------
    FRESHNESS (Wave 6: the freshness agent writes this block)

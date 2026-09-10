@@ -128,6 +128,7 @@ PAGES = sorted(glob.glob("*.html")) + sorted(glob.glob("pages/**/*.html", recurs
 # "unstamped" check further down will tell you if you forget.
 OWN = ["frontend/shared.js", "frontend/map.js", "frontend/account.js",
        "frontend/picker.js", "frontend/press.js", "frontend/style.css",
+       "frontend/offline.js",
        "data/points.js", "supabase-config.js"]
 
 # The tables schema.sql must carry a type constraint and a London
@@ -711,6 +712,109 @@ if build_points is not None:
                   "points.js, seed.sql and cameras.geojson are never edited by hand."])
         else:
             ok("generated: points.js, seed.sql and cameras.geojson are what cameras.csv builds, %d cameras" % count)
+
+
+# ---- service worker ----
+#
+# sw.js keeps a copy of the site for a street with no signal: the
+# pages, the scripts, the record, MapLibre, the fonts, the icons,
+# fetched when the worker installs and answered from a cache named
+# for the version it holds, never updated in place. The browser
+# fetches sw.js on every visit and installs a new worker only if the
+# file has changed byte for byte - so the file has to change whenever
+# any of those files does, or a returning visitor keeps the old copy
+# for ever. This block is what makes it change: it writes the stamp,
+# a second hash over every file of the shell, and the list of those
+# files into three marked lines of sw.js, the way the pass above
+# writes the stamp into the pages. The second hash covers the pages
+# themselves, which the stamp does not: a blog post or a sentence on
+# About is a deploy too, and the worker has to hear of it. Under
+# --check the three are compared and a difference is a stale worker,
+# failed the way a stale page is. sw.js is not in OWN and must not
+# be: it carries the hash, so it cannot feed it. What is in the shell
+# and what never is, and why, is in the header of sw.js and in
+# NOTES.md under "Working offline".
+
+SW = "sw.js"
+
+# Beside the pages and OWN: what a page loads that is not stamped,
+# because it is pinned by its own version (lib/ and fonts/) or is
+# asked for by the browser rather than by a tag (the icons, the
+# manifest). Not the downloads, the share card, the feed or the
+# sitemap - none of them is needed to draw a page, and the first two
+# are large.
+SHELL_STATIC = (["lib/maplibre-gl.js", "lib/maplibre-gl.css", "lib/supabase.js",
+                 "fonts/fonts.css"] + sorted(glob.glob("fonts/*.woff2")) +
+                ["img/favicon.svg", "img/favicon.ico", "img/apple-touch-icon.png",
+                 "img/icon-192.png", "img/icon-512.png", "manifest.json"])
+
+SW_STAMP = re.compile(r'^var STAMP = "[0-9a-f]*";$', re.M)
+SW_SHELL = re.compile(r'^var SHELL = "[0-9a-f]*";$', re.M)
+SW_LIST = re.compile(r'^var PRECACHE = \[\n.*?^\];$', re.M | re.S)
+
+
+def shell_files():
+    """Every file of the shell in a fixed order: the pages as found,
+    then OWN, then the static list. The order is the hash's, so it
+    must not depend on anything but the tree."""
+    return list(PAGES) + [f for f in OWN if f not in missing_own] + list(SHELL_STATIC)
+
+
+def service_worker_text(text, files):
+    """sw.js with its three marked lines written for this tree. Each
+    entry carries the hash that names its version in the query - the
+    stamp on an OWN file, the shell hash on a page or an icon - so a
+    fetch at install can never be answered by a stale copy at the
+    edge of Pages' ten-minute cache, the same reason the pages' own
+    tags carry it. lib/ and fonts/ carry none: pinned by their own
+    version, and a bare URL lets the browser's HTTP cache revalidate
+    MapLibre across deploys rather than download it again."""
+    h = hashlib.sha256()
+    for f in files:
+        h.update(io.open(f, "rb").read())
+    shell = h.hexdigest()[:8]
+    entries = []
+    for f in files:
+        if f.startswith("lib/") or f.startswith("fonts/"):
+            entries.append(f)
+        elif f in OWN:
+            entries.append("%s?v=%s" % (f, stamp))
+        else:
+            entries.append("%s?v=%s" % (f, shell))
+    listing = "var PRECACHE = [\n" + ",\n".join('  "%s"' % e for e in entries) + "\n];"
+    text, n_stamp = SW_STAMP.subn(lambda m: 'var STAMP = "%s";' % stamp, text)
+    text, n_shell = SW_SHELL.subn(lambda m: 'var SHELL = "%s";' % shell, text)
+    text, n_list = SW_LIST.subn(lambda m: listing, text)
+    return text, shell, (n_stamp, n_shell, n_list)
+
+
+missing_static = [f for f in SHELL_STATIC if not os.path.exists(f)]
+if not os.path.exists(SW):
+    fail("sw.js is MISSING",
+         ["The service worker is served from the root beside index.html. Put it back."])
+elif missing_static:
+    fail("the SHELL names a file that does not exist", missing_static +
+         ["Fix SHELL_STATIC in tools/stamp.py, or put the file back."])
+else:
+    sw_files = shell_files()
+    sw_old = read(SW)
+    sw_new, sw_shell, sw_found = service_worker_text(sw_old, sw_files)
+    if sw_found != (1, 1, 1):
+        fail("sw.js has lost a line tools/stamp.py writes",
+             ["expected exactly one each of  var STAMP = \"...\";  var SHELL = \"...\";  var PRECACHE = [ ... ];",
+              "found %d, %d and %d" % sw_found])
+    elif sw_new != sw_old:
+        if CHECK_ONLY:
+            fail("STALE SERVICE WORKER: sw.js does not carry this tree's stamp, shell hash and file list "
+                 "- somebody committed without running tools/stamp.py",
+                 [SW, "Run python3 tools/stamp.py (no flag) and commit what it writes."])
+        else:
+            io.open(SW, "w", encoding="utf-8").write(sw_new)
+            ok("service worker: sw.js written; shell %s over %d files" % (sw_shell, len(sw_files)))
+    else:
+        ok("service worker: sw.js current; shell %s over %d files" % (sw_shell, len(sw_files)))
+
+# ---- end service worker ----
 
 
 # ---- verdict ----
