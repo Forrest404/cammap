@@ -38,7 +38,13 @@
                         that every copy of what this repository writes out
                         twice still agrees; the second checks the record
                         and the pure functions in bare Node (see
-                        "Deploying a change" below).
+                        "Deploying a change" below). build_points.py
+                        writes the three data files from cameras.csv.
+                        boroughs.py fills the record's borough column
+                        from Nominatim, by hand and never by CI, and
+                        build_boroughs.py writes the thirty-three
+                        borough pages and their index from the record -
+                        both under "Another city" below.
     .github/workflows/  check.yml - GitHub runs stamp.py --check and
                         check.js on every push and pull request. Not
                         served by Pages.
@@ -891,6 +897,125 @@ about this is the point of writing it down:
   rights page and the press page.
 - **`RECORD_SOURCES`, the share card and the count line.** All three
   are London's record; a second city brings its own.
+
+### Which borough a camera is in
+
+The record had no borough column, and DATA-4's pages cannot be written
+without one. What it had was a name - sometimes a borough ("Croydon",
+"Hackney"), more often a street ("Rye Lane, Peckham") - and a position.
+A page that said "eleven cameras in Southwark" off the back of the
+names would be making a claim, and this project's promise is that
+nothing on it is estimated. So the borough is looked up, once, from a
+named source, and written into `data/cameras.csv` as a column like any
+other fact. From then on it is a cell the maintainer can correct rather
+than something a page works out on the fly and might work out
+differently tomorrow.
+
+**The list.** `data/boroughs.txt`: the 32 London boroughs of the London
+Government Act 1963 and the City of London, which is not a borough and
+is the thirty-third all the same - it has its own authority, its own
+police force, and Liverpool Street. One name per line, `#` for the
+file's own comments, alphabetical. It is the only copy: `boroughs.py`
+checks an answer against it, `build_points.py` refuses a value that is
+not on it, `build_boroughs.py` writes one page per line, and `check.js`
+holds every camera to it. The names are the short forms a heading
+wants, not the councils' legal titles.
+
+**The lookup (`tools/boroughs.py`).** OpenStreetMap's Nominatim,
+reverse geocode at zoom 10, one request per camera, run by hand and
+never by CI or `stamp.py` - it is the one tool here that talks to the
+network, and it talks to somebody else's free service. Nominatim's
+policy is honoured by construction: at most one request a second (1.1,
+waited *before* each request so a slow answer is not followed
+instantly), a `User-Agent` naming the project and its address, no
+autocomplete, and no repeat work - a row that already has a borough is
+skipped, so a second run makes no requests at all. The site's CSP
+already names the host for the place search; this runs outside a
+browser and the CSP has nothing to do with it.
+
+The alternative was the ONS borough boundary polygons under the Open
+Government Licence, committed under `data/` and a point-in-polygon in
+plain Python: no network, and reproducible by anyone at any time, which
+is the better property. It was not taken because it means vendoring a
+*simplified* copy of a boundary file, and simplifying a polygon is
+itself a decision about where a boundary is - a camera thirty metres
+off the Brent/Camden line could land either side of it depending on how
+hard the file was squeezed. Nominatim answers from the full geometry.
+If its naming ever stops being unambiguous, the polygons are the
+fallback, and the argument for switching is in the tool's docstring.
+
+**Reading the answer.** At zoom 10 a London point comes back in one of
+four shapes: `address.city_district` as "London Borough of Croydon" or
+"Royal Borough of Kensington and Chelsea"; `address.borough` as "London
+Borough of Tower Hamlets", where OpenStreetMap has tagged the area a
+level down; or neither, with `address.city` as "City of London" or
+"City of Westminster". So: the first of `city_district`, `borough`,
+`city` that is there, then the council's title reduced to the area's
+name by taking off "London Borough of " or "Royal Borough of ", with
+"City of Westminster" read as Westminster and "City of London" left
+whole - that is the area's name, not a title in front of one. Anything
+that does not then match the list is **refused**, naming the camera and
+printing what Nominatim actually said. The fourth shape is in that list
+because the first real run met it at the fifth camera and refused it
+rather than picking something close.
+
+**The run.** 2026-09-10, 182 cameras, 186 requests (the first four were
+asked twice - the run stopped at the fifth on the shape above, before
+anything had been written; it now writes what it has before it raises,
+so a re-run resumes). Every request answered; every camera has a
+borough; all 33 have at least one camera, from Barnet's and Sutton's
+one to Westminster's 25 and Croydon's 13.
+
+**Cross-checked, not resolved.** Against the research survey's own
+`borough` column, for the 36 sites the two lists plainly share: **35
+agree**. Against the record's own names, for the 30 cameras called
+after a borough: **30 agree**, and no camera whose name mentions a
+borough anywhere landed in a different one. The single disagreement is
+**Kilburn High Road**, where the survey says "Brent / Camden
+[uncertain - Kilburn High Road runs along the Brent/Camden boundary and
+the record gives no side]" and the lookup, given the record's own pin,
+says Camden. It is in QUESTIONS.md rather than settled here: the
+lookup's answer stands until the maintainer decides, because the pin is
+what the record holds and picking the other side would be this
+programme choosing.
+
+**Where the column goes, and where it does not.** Into
+`data/cameras.csv`, beside `approximate`, because it is a fact about
+the position and it is the position that decides it. Into
+`data/cameras.geojson`'s properties, because a download is for somebody
+counting cameras per borough in QGIS and making them repeat a lookup
+the record has already done would be unkind. **Not** into
+`data/points.js`, because the map draws no boroughs. **Not** into the
+database, and there is no migration for it: the borough pages are
+static files this repository generates, not something a browser asks
+for. Which is also why `stamp.py`'s row-for-row DATA DRIFT check needed
+no change at all - it compares `points.js` with `seed.sql`, and neither
+carries the column - while the generated check covers the GeoJSON byte
+for byte as it always did. `check.js` asserts the borough on the
+GeoJSON rather than on the CSV for the same division of labour: the CSV
+is `stamp.py`'s, which regenerates all three outputs from it on every
+run, so a borough in the GeoJSON is the borough in the CSV, and a
+second CSV parser in Node would only be a second thing to get wrong.
+
+Blank is allowed by the build and refused by `check.js`. A camera added
+to the record has no borough until `boroughs.py` has been run, and the
+build should not stand in the way of that half-hour; but a record with
+a blank in it cannot be committed, because CI runs both.
+
+**`--import` keeps them.** `build_points.py --import` reads a
+`points.js` back into the CSV, and `points.js` carries no borough - so
+without care an import would blank all 182 and the three and a half
+minutes on somebody else's service would have to be spent again. The
+import carries each borough over from the CSV it is replacing, matched
+on `seed_key`. A camera whose position moved has a different key and
+comes back blank, which is right: it may have moved across a boundary.
+Run `boroughs.py` afterwards and it fills exactly those. The round trip
+was checked - import the committed `points.js` and the CSV is
+byte-identical.
+
+**When to run it again.** When a camera is added to the record, and
+when a moderator's Move is copied back into the CSV: a moved camera
+keeps its old borough, so clear that cell and run the tool.
 
 ### Roles
 
