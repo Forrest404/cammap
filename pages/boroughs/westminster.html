@@ -84,6 +84,15 @@
 <link rel="manifest" href="../../manifest.json">
 <meta name="apple-mobile-web-app-title" content="cammap">
 <meta name="theme-color" content="#0d0d0d">
+<!-- The 400 face, asked for before the stylesheet that names it.
+     Without this the browser cannot know it needs a font until it
+     has fetched and parsed fonts.css, which it cannot do until it
+     has parsed this head: three round trips before the first word
+     is drawn in the face it is meant to be. Only the 400 - it is
+     the body text, and 500 and 600 are headings and labels that
+     can arrive a moment later. crossorigin is required on a font
+     preload even same-origin, or the fetch is made twice. -->
+<link rel="preload" href="../../fonts/ibm-plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="../../fonts/fonts.css">
 <link rel="stylesheet" href="../../frontend/style.css?v=83449903">
 </head>
@@ -332,16 +341,16 @@
 </div>
 <!-- The account controls live in the nav, so every page needs these
      three. All local files; nothing is fetched from a CDN. -->
-<script src="../../lib/supabase.js"></script>
-<script src="../../frontend/shared.js?v=83449903"></script>
-<script src="../../supabase-config.js?v=83449903"></script>
-<script src="../../frontend/account.js?v=83449903"></script>
+<script defer src="../../lib/supabase.js"></script>
+<script defer src="../../frontend/shared.js?v=83449903"></script>
+<script defer src="../../supabase-config.js?v=83449903"></script>
+<script defer src="../../frontend/account.js?v=83449903"></script>
 <!-- Last, on every page, and needed by nothing: registers the service
      worker that keeps a copy of the site for a street with no signal,
      and shows the one line under the page when a newer version is
      ready. A file rather than a script written here because the
      policy above allows no inline script. sw.js says what is kept
      and what never is. -->
-<script src="../../frontend/offline.js?v=83449903"></script>
+<script defer src="../../frontend/offline.js?v=83449903"></script>
 </body>
 </html>
