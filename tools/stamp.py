@@ -56,6 +56,17 @@ guards a copy that has drifted, or nearly drifted, once already:
                   than one the header asks for, and it catches the
                   other case too: a CSV edited and committed without
                   the script being run.
+  the borough     The same, for pages. tools/build_boroughs.py writes
+  pages           thirty-three borough pages, their index and the
+                  borough block of sitemap.xml from the record and
+                  from a template page, whose head, nav, footer and
+                  script tags they copy. All thirty-five files are
+                  regenerated in memory and compared. It catches a
+                  hand edit to a page whose counts must be right, and
+                  the case that would otherwise go unnoticed for
+                  months: a link added to the nav, or a script tag
+                  added to every head, reaches eleven pages by hand
+                  and thirty-four only by regeneration.
   the bounds      CITY.bounds in shared.js is what the browser checks
                   a pin against; public.in_city() in schema.sql is
                   what the server checks against, kept separately so
@@ -780,6 +791,63 @@ if build_points is not None:
                   "points.js, seed.sql and cameras.geojson are never edited by hand."])
         else:
             ok("generated: points.js, seed.sql and cameras.geojson are what cameras.csv builds, %d cameras" % count)
+
+
+# ---- the borough pages are what the record and the template produce ----
+#
+# The same argument as the block above, applied to pages rather than
+# data files. tools/build_boroughs.py writes thirty-three borough
+# pages, their index and the borough block of sitemap.xml from
+# data/cameras.csv and from pages/rights.html, whose head, nav, footer
+# and script tags every one of them copies. Regenerated here in memory
+# and compared byte for byte, so a hand edit to a borough page fails
+# the run - and so does a record, or a template head, that changed
+# without the pages being rebuilt, which is the case that would
+# otherwise go unnoticed for months: a link added to the nav reaches
+# eleven pages by hand and thirty-four by regeneration.
+#
+# It runs after the stamp, deliberately. The generator copies the
+# template's script tags with whatever ?v= they carry, so on a run
+# that writes, the template on disk has just been re-stamped and the
+# committed borough pages have been re-stamped with it; under --check
+# nothing has been written and both still carry the old stamp. Either
+# way the two agree, and a stale stamp is reported by the stamp check
+# above rather than as a phantom difference here.
+
+if build_points is not None:
+    try:
+        import build_boroughs
+    except Exception as e:
+        build_boroughs = None
+        fail("cannot import tools/build_boroughs.py", [repr(e)])
+
+    if build_boroughs is not None:
+        pages_out = None
+        try:
+            pages_out, boroughs_n, cameras_n = build_boroughs.regenerate()
+        except (build_boroughs.BuildError, build_points.BuildError) as e:
+            fail("the borough pages WILL NOT BUILD", [str(e)])
+        except Exception as e:
+            fail("tools/build_boroughs.py FAILED", [repr(e)])
+        if pages_out is not None:
+            lines = []
+            for rel in sorted(pages_out):
+                if not os.path.exists(rel):
+                    lines.append("%s: missing" % rel)
+                    continue
+                diff = build_points.first_difference(pages_out[rel], read(rel))
+                if diff:
+                    line, ours, theirs = diff
+                    lines.append("%s: first difference at line %d" % (rel, line))
+                    lines.append("    generated: %s" % ("<end of file>" if ours is None else ours.rstrip()))
+                    lines.append("    committed: %s" % ("<end of file>" if theirs is None else theirs.rstrip()))
+            if lines:
+                fail("BOROUGH DRIFT: a borough page, or the sitemap's borough block, is not "
+                     "what the record and %s produce" % build_boroughs.TEMPLATE, lines +
+                     ["Run python3 tools/build_boroughs.py; a borough page is never edited by hand."])
+            else:
+                ok("boroughs: %d pages, an index and the sitemap block are what the record "
+                   "and %s build, %d cameras" % (boroughs_n, build_boroughs.TEMPLATE, cameras_n))
 
 
 # ---- verdict ----
