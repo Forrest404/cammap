@@ -130,29 +130,29 @@
    fonts/, which are pinned by their own version numbers and carry
    none, so the browser's HTTP cache can revalidate them cheaply
    across deploys instead of downloading MapLibre again. */
-var STAMP = "c7f24583";
-var SHELL = "3b46ca21";
+var STAMP = "055a615a";
+var SHELL = "4f815732";
 var PRECACHE = [
-  "404.html?v=3b46ca21",
-  "index.html?v=3b46ca21",
-  "pages/about.html?v=3b46ca21",
-  "pages/account.html?v=3b46ca21",
-  "pages/blog.html?v=3b46ca21",
-  "pages/data.html?v=3b46ca21",
-  "pages/leaderboard.html?v=3b46ca21",
-  "pages/moderate.html?v=3b46ca21",
-  "pages/press.html?v=3b46ca21",
-  "pages/report.html?v=3b46ca21",
-  "pages/rights.html?v=3b46ca21",
-  "frontend/shared.js?v=c7f24583",
-  "frontend/map.js?v=c7f24583",
-  "frontend/account.js?v=c7f24583",
-  "frontend/picker.js?v=c7f24583",
-  "frontend/press.js?v=c7f24583",
-  "frontend/style.css?v=c7f24583",
-  "frontend/offline.js?v=c7f24583",
-  "data/points.js?v=c7f24583",
-  "supabase-config.js?v=c7f24583",
+  "404.html?v=4f815732",
+  "index.html?v=4f815732",
+  "pages/about.html?v=4f815732",
+  "pages/account.html?v=4f815732",
+  "pages/blog.html?v=4f815732",
+  "pages/data.html?v=4f815732",
+  "pages/leaderboard.html?v=4f815732",
+  "pages/moderate.html?v=4f815732",
+  "pages/press.html?v=4f815732",
+  "pages/report.html?v=4f815732",
+  "pages/rights.html?v=4f815732",
+  "frontend/shared.js?v=055a615a",
+  "frontend/map.js?v=055a615a",
+  "frontend/account.js?v=055a615a",
+  "frontend/picker.js?v=055a615a",
+  "frontend/press.js?v=055a615a",
+  "frontend/style.css?v=055a615a",
+  "frontend/offline.js?v=055a615a",
+  "data/points.js?v=055a615a",
+  "supabase-config.js?v=055a615a",
   "lib/maplibre-gl.js",
   "lib/maplibre-gl.css",
   "lib/supabase.js",
@@ -160,12 +160,12 @@ var PRECACHE = [
   "fonts/ibm-plex-mono-400.woff2",
   "fonts/ibm-plex-mono-500.woff2",
   "fonts/ibm-plex-mono-600.woff2",
-  "img/favicon.svg?v=3b46ca21",
-  "img/favicon.ico?v=3b46ca21",
-  "img/apple-touch-icon.png?v=3b46ca21",
-  "img/icon-192.png?v=3b46ca21",
-  "img/icon-512.png?v=3b46ca21",
-  "manifest.json?v=3b46ca21"
+  "img/favicon.svg?v=4f815732",
+  "img/favicon.ico?v=4f815732",
+  "img/apple-touch-icon.png?v=4f815732",
+  "img/icon-192.png?v=4f815732",
+  "img/icon-512.png?v=4f815732",
+  "manifest.json?v=4f815732"
 ];
 /* ---- end written by tools/stamp.py ---- */
 

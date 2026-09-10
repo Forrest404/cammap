@@ -241,6 +241,13 @@ Things that look like they would work and do not:
 - **`body.printing-card` prints the recovery card alone.** Set only around a
   *Print this card* button — on the account page and the report page, which
   carries the same card with the same ids.
+- **A materialized view does not keep the order its definition gives.** The
+  three leaderboards are built `order by xp_total desc, username`, and
+  `refresh materialized view concurrently` merges changes into the rows
+  already there rather than rewriting the table — so a row whose XP just
+  changed comes back wherever it now physically sits, usually last. Read
+  them with that same `order by`, on both keys, or the top scorer lands at
+  the bottom of the page. `loadBoard()` in `account.js` is the one reader.
 
 ## Things that must not drift apart
 

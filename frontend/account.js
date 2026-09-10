@@ -6163,39 +6163,101 @@ function showXpTable() {
   });
 }
 
-function loadBoard(view) {
+/* Each board as it last came back, so returning to a tab already
+   looked at draws at once instead of going to the database again.
+   It lives as long as the page does and no longer: these boards are
+   rebuilt every five minutes, and one read an hour ago and drawn as
+   current would be a worse answer than the moment's wait it saved.
+   That is also why a cached board is still re-read below - the rows
+   on screen are the last answer, not the final one. */
+var boardCache = {};
+
+/* Which board the page is currently showing. Three tabs a click
+   apart put three reads in the air at once, and they need not come
+   back in the order they were sent; without this the slowest answer
+   wins the table, which may not be the tab that is lit. */
+var boardWanted = null;
+
+function drawBoard(rows) {
   var body  = document.getElementById("board-body");
-  var note  = document.getElementById("board-note");
   var empty = document.getElementById("board-empty");
+  var me = usernameOf(currentUser);
+  var i;
+
+  body.innerHTML = "";
+
+  for (i = 0; i < rows.length; i++) {
+    body.appendChild(boardRow(i + 1, rows[i], rows[i].username === me));
+  }
+
+  empty.style.display = rows.length === 0 ? "block" : "none";
+}
+
+function loadBoard(view) {
+  var note = document.getElementById("board-note");
+  var known = boardCache[view];
 
   if (!configured) {
     note.textContent = "The leaderboard is not available on this copy of the site.";
     return;
   }
 
-  note.textContent = "Loading…";
-  body.innerHTML = "";
+  boardWanted = view;
 
-  sb.from(view).select("username,xp_total,reports_approved").limit(100)
+  /* A tab that has been read once this visit is drawn from what it
+     returned, so the table never blanks and waits on the network for
+     an answer it already has. A tab being opened for the first time
+     has nothing to show and says so. */
+  if (known) {
+    drawBoard(known);
+    note.textContent = "";
+  } else {
+    document.getElementById("board-body").innerHTML = "";
+    note.textContent = "Loading…";
+  }
+
+  sb.from(view).select("username,xp_total,reports_approved")
+    /* The order is this reader's to ask for, not the table's to keep.
+       These three are materialized views, and `refresh materialized
+       view concurrently` merges the changes into the rows already
+       there rather than writing the table out afresh in the order the
+       definition gives - so a row whose XP has just changed comes
+       back wherever it now physically sits, which is usually last.
+       The rank shown is a row's place in this list, so reading with
+       no order of our own put whoever scored most recently, and
+       therefore most, at the bottom. The view definitions in
+       schema.sql say to read them exactly this way, on both keys, so
+       that ties break here as they do there. */
+    .order("xp_total", { ascending: false })
+    .order("username", { ascending: true })
+    .limit(100)
     .then(function (result) {
-      var i;
-      var me = usernameOf(currentUser);
-
-      note.textContent = "";
-
-      if (result.error) {
-        note.textContent = "Could not load the leaderboard.";
+      /* A later tab has been asked for since; that read owns the
+         table now. */
+      if (boardWanted !== view) {
         return;
       }
 
-      empty.style.display = result.data.length === 0 ? "block" : "none";
-
-      for (i = 0; i < result.data.length; i++) {
-        body.appendChild(boardRow(i + 1, result.data[i], result.data[i].username === me));
+      if (result.error) {
+        note.textContent = known
+          ? "Could not refresh the leaderboard."
+          : "Could not load the leaderboard.";
+        return;
       }
+
+      note.textContent = "";
+      boardCache[view] = result.data;
+      drawBoard(result.data);
     })
     .catch(function () {
-      note.textContent = "Could not load the leaderboard.";
+      if (boardWanted !== view) {
+        return;
+      }
+      /* Rows already on screen are the last good answer and are worth
+         more than an empty table, so they stay. */
+      note.textContent = known
+        ? "Could not refresh the leaderboard."
+        : "Could not load the leaderboard.";
     });
 }
 
