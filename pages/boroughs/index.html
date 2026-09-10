@@ -94,7 +94,7 @@
      preload even same-origin, or the fetch is made twice. -->
 <link rel="preload" href="../../fonts/ibm-plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="../../fonts/fonts.css">
-<link rel="stylesheet" href="../../frontend/style.css?v=83449903">
+<link rel="stylesheet" href="../../frontend/style.css?v=ffa0b8d2">
 </head>
 <body>
 <div class="sheet">
@@ -331,16 +331,15 @@
 </div>
 <!-- The account controls live in the nav, so every page needs these
      three. All local files; nothing is fetched from a CDN. -->
-<script defer src="../../lib/supabase.js"></script>
-<script defer src="../../frontend/shared.js?v=83449903"></script>
-<script defer src="../../supabase-config.js?v=83449903"></script>
-<script defer src="../../frontend/account.js?v=83449903"></script>
+<script defer src="../../frontend/shared.js?v=ffa0b8d2"></script>
+<script defer src="../../supabase-config.js?v=ffa0b8d2"></script>
+<script defer src="../../frontend/account.js?v=ffa0b8d2"></script>
 <!-- Last, on every page, and needed by nothing: registers the service
      worker that keeps a copy of the site for a street with no signal,
      and shows the one line under the page when a newer version is
      ready. A file rather than a script written here because the
      policy above allows no inline script. sw.js says what is kept
      and what never is. -->
-<script defer src="../../frontend/offline.js?v=83449903"></script>
+<script defer src="../../frontend/offline.js?v=ffa0b8d2"></script>
 </body>
 </html>

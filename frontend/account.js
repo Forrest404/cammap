@@ -205,6 +205,26 @@ var NO_PASSPHRASE = "This browser cannot make a safe one; choose a password of y
 
 var sb = null;            /* the Supabase client, once created */
 var configured = false;   /* true once sb exists and looks usable */
+
+/* Whether this copy of the site has a Supabase project behind it at
+   all. Deliberately separate from `configured` above, which means
+   "the client object exists" - and since supabase-js is now fetched
+   only when there is a session to read, a page can have a backend and
+   no client at the moment the nav is drawn.
+
+   Conflating the two took Leaderboard, Report a camera and Account
+   out of the nav on every page that does not carry the library: the
+   links are links, and need no client to be followed. Only the
+   signed-in half of the nav needs one, and that is already gated on
+   currentUser.
+
+   This reads the two values supabase-config.js sets, which is 0.5 KB
+   and on every page. A fork with no project of its own still gets the
+   old behaviour: no account links, because an Account tab that cannot
+   work is worse than none. */
+var backendConfigured =
+  typeof SUPABASE_URL === "string" && SUPABASE_URL.indexOf("https://") === 0 &&
+  typeof SUPABASE_ANON_KEY === "string" && SUPABASE_ANON_KEY.length > 20;
 var currentUser = null;   /* the signed-in user, or null */
 var currentRole = "user"; /* from profiles, once signed in; the server re-checks */
 var currentXp = 0;        /* likewise, and shown on the account page */
@@ -244,16 +264,100 @@ function recover(button, note, message) {
    undefined here, which the checks below catch without an exception.
    ------------------------------------------------------------------ */
 
-try {
-  if (typeof supabase !== "undefined" &&
-      typeof SUPABASE_URL === "string" && SUPABASE_URL.indexOf("https://") === 0 &&
-      typeof SUPABASE_ANON_KEY === "string" && SUPABASE_ANON_KEY.length > 20) {
-    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    configured = true;
+function makeClient() {
+  try {
+    if (typeof supabase !== "undefined" &&
+        typeof SUPABASE_URL === "string" && SUPABASE_URL.indexOf("https://") === 0 &&
+        typeof SUPABASE_ANON_KEY === "string" && SUPABASE_ANON_KEY.length > 20) {
+      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      configured = true;
+    }
+  } catch (err) {
+    sb = null;
+    configured = false;
   }
-} catch (err) {
-  sb = null;
-  configured = false;
+}
+
+/* ------------------------------------------------------------------
+   Fetching supabase-js only when there is something for it to read
+
+   This file runs on every page because the nav does, and it used to
+   bring supabase-js with it: 54 KB, gzipped, on all forty-five. On a
+   borough page that library's entire job is to answer "is anyone
+   signed in", and for a signed-out visitor - almost everyone, almost
+   always - the answer comes from a key that is not in localStorage.
+   getSession() reads storage and returns null, loadRole() sees no
+   user and returns at once. No request is made. 54 KB to read a
+   null.
+
+   So the pages that only need the nav no longer carry the tag, and
+   this looks for the session first. supabase-js v2 keeps it under
+   sb-<project ref>-auth-token; the test is deliberately for the
+   shape rather than the exact ref, so a rotated project or a change
+   of ref does not quietly start reporting everyone as signed out.
+
+   If storage itself refuses - a locked-down browser, private mode in
+   some versions - the answer is "load it", because being wrong the
+   other way signs a person out of their own nav.
+
+   The pages that do more than the nav still carry the tag and are
+   unaffected: the map reads cameras, the report form writes one, and
+   the account, moderation and leaderboard pages are the account. */
+function hasStoredSession() {
+  var i;
+  var key;
+
+  try {
+    for (i = 0; i < window.localStorage.length; i++) {
+      key = window.localStorage.key(i);
+      if (key && key.indexOf("sb-") === 0 && key.indexOf("-auth-token") !== -1) {
+        return true;
+      }
+    }
+  } catch (err) {
+    return true;
+  }
+
+  return false;
+}
+
+/* Where lib/ is from here. Not pageHref(), which answers "where is
+   another page" and knows only two depths - the root and pages/. The
+   borough pages are a level below that, and a guess of "../" got
+   /pages/boroughs/lib/supabase.js, a 404 that would have signed a
+   person out of their own nav on 33 pages.
+
+   So it is not guessed at all. This page already loads account.js by
+   a path that is correct by construction, whatever depth it sits at;
+   lib/ is that path with frontend/account.js taken off the end. The
+   stamp goes with it - lib/ is pinned by version and never stamped. */
+function libHref(file) {
+  var tags = document.getElementsByTagName("script");
+  var i;
+  var src;
+
+  for (i = 0; i < tags.length; i++) {
+    src = tags[i].getAttribute("src") || "";
+    if (src.indexOf("frontend/account.js") !== -1) {
+      return src.replace(/frontend\/account\.js.*$/, "lib/" + file);
+    }
+  }
+
+  return "lib/" + file;
+}
+
+/* Injected rather than written into the page, so a page that never
+   needs it never asks for it. script-src is 'self' and this is a
+   file of ours, so the CSP allows it. A failure is not fatal: sb
+   stays null, configured stays false, and the nav renders signed
+   out, which is what a page with no library has always done. */
+function fetchSupabase(done) {
+  var tag = document.createElement("script");
+
+  tag.src = libHref("supabase.js");
+  tag.onload = done;
+  tag.onerror = done;
+  document.head.appendChild(tag);
 }
 
 /* Which page we are on, by file name. Works from a file:// path and
@@ -313,9 +417,12 @@ function renderNav() {
 
   navAccount.innerHTML = "";
 
-  /* Nothing at all if there is no Supabase to talk to. An Account tab
-     that cannot work is worse than no Account tab. */
-  if (!configured) {
+  /* Nothing at all if there is no Supabase project behind this copy of
+     the site. An Account tab that cannot work is worse than no Account
+     tab. backendConfigured, not configured: the links below are links,
+     and a page that has not fetched supabase-js still has somewhere to
+     send people. */
+  if (!backendConfigured) {
     return;
   }
 
@@ -6296,8 +6403,31 @@ function start() {
   }
 }
 
-if (configured) {
-  restoreSession(start);
+/* Deferred scripts all run before DOMContentLoaded, so waiting for it
+   means every file that registers something has registered it, and
+   the injected library above has had its chance to arrive. */
+function whenReady(fn) {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", fn);
+  } else {
+    fn();
+  }
+}
+
+function boot() {
+  makeClient();
+
+  if (configured) {
+    restoreSession(start);
+  } else {
+    start();
+  }
+}
+
+if (typeof supabase !== "undefined" || !hasStoredSession()) {
+  whenReady(boot);
 } else {
-  start();
+  fetchSupabase(function () {
+    whenReady(boot);
+  });
 }
