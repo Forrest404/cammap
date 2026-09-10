@@ -3,6 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- What a request from this page says about where it came from.
+     Cross-origin hosts - OpenFreeMap, Esri, Supabase, Nominatim - get
+     the origin only: Nominatim's usage policy asks for a referrer
+     that identifies the application, and the origin does. Same-origin
+     requests get the full URL, which is why a position must never be
+     in a query string on this site - it would reach the host with
+     the page request and ride in the Referer of every script, style
+     and font the page loads; a fragment is never sent at all. This
+     is the browser's default in Chrome and Firefox, declared so it
+     does not depend on a default. Nine copies, one per page;
+     stamp.py does not police this tag. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <!-- Identical on all seven pages, and must stay that way: it is what
      makes the no-CDN rule something the browser enforces rather than
      something we remember. tools/stamp.py fails if they drift. Why
@@ -17,7 +29,7 @@
           https://tiles.openfreemap.org https://*.openfreemap.org
           https://*.supabase.co;
   media-src 'self' blob: https://*.supabase.co;
-  worker-src blob:;
+  worker-src 'self' blob:;
   child-src blob:;
   connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
               https://tiles.openfreemap.org https://*.openfreemap.org
@@ -28,8 +40,52 @@
   form-action 'none';
   frame-ancestors 'none'">
 <title>Leaderboard &mdash; cammap</title>
+<meta name="description" content="Who has confirmed the most cameras on cammap: points for reports that put a camera on the map or changed one. Only a username is shown; there is nothing else to show.">
+<link rel="canonical" href="https://forrest404.github.io/cammap/pages/leaderboard.html">
+<!-- What a shared link turns into. Each page has its own title and
+     description - one shared across the site would be the failure
+     mode - and all of them show the same card, img/share.png, which
+     is the map itself photographed by tools/share-card.html and
+     committed, because a static site has nothing to draw one with on
+     request. The addresses are absolute because a card scraper has no
+     base to resolve against; they name the site's home on Pages, and
+     NOTES.md ("Sharing the site") lists every file that does. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cammap">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://forrest404.github.io/cammap/pages/leaderboard.html">
+<meta property="og:title" content="Leaderboard — cammap">
+<meta property="og:description" content="Who has confirmed the most cameras on cammap: points for reports that put a camera on the map or changed one. Only a username is shown; there is nothing else to show.">
+<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Leaderboard — cammap">
+<meta name="twitter:description" content="Who has confirmed the most cameras on cammap: points for reports that put a camera on the map or changed one. Only a username is shown; there is nothing else to show.">
+<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../feed.xml">
+<!-- The icon, in the forms the browsers between them ask for: SVG
+     for the tab in Chrome and Firefox, .ico for Safari and anything
+     older, a 180px PNG for an iOS home screen. manifest.json is what
+     makes "Add to Home Screen" on Android an icon rather than a
+     screenshot; theme-color is what the browser paints its own frame
+     around the page. All are drawn from img/favicon.svg - NOTES.md,
+     "Sharing the site", says how the raster ones are made from it. -->
+<link rel="icon" href="../img/favicon.ico" sizes="32x32">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<meta name="apple-mobile-web-app-title" content="cammap">
+<meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=9f8635fe">
+<link rel="stylesheet" href="../frontend/style.css?v=fc1b066a">
 </head>
 <body>
 <div class="sheet">
@@ -42,6 +98,8 @@
     <a href="about.html">About</a>
     <span class="sep">&middot;</span>
     <a href="blog.html">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="rights.html">Rights</a>
     <!-- account.js fills this in once it knows whether anyone is
          signed in. Empty until then, so the nav never flickers. -->
     <span id="nav-account"></span>
@@ -76,18 +134,90 @@
       </table>
     </div>
     <p class="empty" id="board-empty" style="display:none">Nobody yet.</p>
+
+    <!-- The leaderboard opt-out lives on the account page; a person
+         looking at this list should be told where, in the words the
+         account page uses. -->
+    <p class="hint" id="leave-hint">
+      You can leave this list from your account page &mdash; <em>On the
+      leaderboard</em>, under <em>Signed in</em>. The points still count.
+    </p>
+
+    <!-- What a report is worth, from the xp_rules table, which anyone
+         may read. The form says the worth of the one report being
+         written; nothing said that a transport camera is worth ten
+         van sites, which is what tells a contributor where the gaps
+         are. account.js fills the rows from the table and never from
+         a number typed here, so a change in the dashboard shows the
+         next time the page loads. -->
+    <h3 id="xp-title">What a report is worth</h3>
+    <p class="hint">
+      Points are given when a report is confirmed &mdash; by a
+      moderator, or by enough other people reporting the same thing.
+      The rarer the kind of camera, the more it is worth; a report
+      that a camera is not working is worth as much as finding one,
+      because it changes what the map says.
+    </p>
+    <div class="table-box">
+      <table class="board xp" aria-labelledby="xp-title">
+        <thead>
+          <tr><th>A confirmed report of</th><th>XP</th></tr>
+        </thead>
+        <tbody id="xp-body"></tbody>
+      </table>
+    </div>
+    <p class="note" id="xp-note"></p>
   </div>
 </main>
 
 <footer class="foot">
   <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+       hosting" is true and says nothing - a precise small number is
+       far more persuasive than an unspecified appeal, and it fits a
+       site that says exactly what it knows everywhere else. The figure
+       was not available when this was written (QUESTIONS.md, item 2:
+       what the Supabase project and the cammap.app domain come to per
+       month; the Pages hosting itself is free). When it is known, make
+       the line below read, on all eight pages at once or stamp.py
+       fails:
+
+         cammap is free and has no advertising. Donations pay for the
+         hosting, which costs about £N a month.
+
+       Until then the sentence stays as it is: a number that has not
+       been checked is worse than none on a site whose whole argument
+       is that nothing on it is estimated. -->
   <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+  <!-- One licence, for the record only. The cameras are ODbL 1.0 so
+       that the record can be cited, plotted and built on, which is
+       what the site is for; the code is not licensed for reuse, and
+       LICENSE at the root says both. The link leaves the site: LICENSE
+       is served without a content type by Pages, which most browsers
+       download rather than show, so it points at the licence itself. -->
+  <span class="foot-note">Data <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> &middot; <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a></span>
+  <!-- The record, to take away. The CSV is the record itself, served
+       as it is - the one file the maintainer edits, so a download of
+       it cannot drift from what the map draws. The GeoJSON is written
+       from it by tools/build_points.py beside points.js and seed.sql,
+       never by hand; stamp.py fails if it is not what the CSV
+       produces. Both are ODbL like the line above says. The download
+       attribute saves the file rather than showing it, since a CSV
+       in a browser tab is no use to anyone. -->
+  <span class="foot-note">Download the data: <a href="../data/cameras.csv" download>CSV</a> &middot; <a href="../data/cameras.geojson" download>GeoJSON</a> &middot; <a href="data.html">about the data</a></span>
 </footer>
 
 </div>
 <script src="../lib/supabase.js"></script>
-<script src="../frontend/shared.js?v=9f8635fe"></script>
-<script src="../supabase-config.js?v=9f8635fe"></script>
-<script src="../frontend/account.js?v=9f8635fe"></script>
+<script src="../frontend/shared.js?v=fc1b066a"></script>
+<script src="../supabase-config.js?v=fc1b066a"></script>
+<script src="../frontend/account.js?v=fc1b066a"></script>
+<!-- Last, on every page, and needed by nothing: registers the service
+     worker that keeps a copy of the site for a street with no signal,
+     and shows the one line under the page when a newer version is
+     ready. A file rather than a script written here because the
+     policy above allows no inline script. sw.js says what is kept
+     and what never is. -->
+<script src="../frontend/offline.js?v=fc1b066a"></script>
 </body>
 </html>

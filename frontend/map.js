@@ -11,15 +11,19 @@
                      circles in crowded places pool into a glow, so the
                      shape of the thing is visible from above.
 
-     index.html?edit How you add points. The form, the place search,
-                     clicking the map and the delete buttons all come
-                     back, and a button writes out a new points.js for
-                     you to paste in and republish.
+     index.html?edit How you add points. The form, clicking the map
+                     and the delete buttons all come back, and a
+                     button writes out the rows of data/cameras.csv
+                     for you to paste in, build and republish. (The
+                     place search used to be edit-only as well; it is
+                     everyone's now - see "Finding a place" below.)
 
    Edit mode is a convenience, not a lock. Anyone may open ?edit on the
    live site, and it will do them no good: their changes live in their
    own browser, disappear when they clear it, and can never reach the
-   published map. The only way onto this map is to commit points.js.
+   published map. The only way onto this map is to commit the record -
+   data/cameras.csv, and the two files tools/build_points.py writes
+   from it.
    ------------------------------------------------------------------ */
 
 var EDITING = window.location.search.indexOf("edit") !== -1;
@@ -35,7 +39,14 @@ var DRAFT_KEY = STORAGE.draft;
    report form validates against the same box, and the picker opens on
    the same spot. Only the zooms below are the map's own. */
 
-var OPENING_ZOOM = 11;
+/* The opening zoom comes from CITY in shared.js, which is where the
+   city this map is of is named once - its box, its centre and how
+   close the map opens on it - so that a second city is one object to
+   change rather than a number here and a box there. The fallback is
+   for a shared.js older than that object: a page that loads the two
+   files from different deploys, or a copy of this file dropped beside
+   an earlier one, opens on London's 11 rather than on nothing. */
+var OPENING_ZOOM = (typeof CITY !== "undefined" && CITY.zoom) || 11;
 var CLOSEST_ZOOM = 19;   /* street and building level */
 var WIDEST_ZOOM  = 10;   /* the whole of London at once */
 
@@ -114,6 +125,47 @@ function isLight() {
 var SOURCE = "cameras";
 var DOT    = "cammap-dot";
 
+/* ---------------- what is not known ----------------
+
+   The Met's record gives some van sites as a borough or a district
+   rather than a street, and the pin for those sits at the middle of
+   the area. The note has always said so - "(pin marks the surrounding
+   area, not an exact spot)", forty-three sites - and the map drew
+   them exactly like a pin on a known pole, which was a claim the
+   record does not make. Since the record grew the `approximate`
+   field the difference can be drawn from a field, and it is: a wider,
+   fainter ring under the dot, in the dot's own colour, that says "in
+   here somewhere" the way the Near me accuracy ring says how far the
+   browser might be wrong. Showing what is not known is more
+   persuasive than hiding it, on a map whose argument is that nothing
+   on it is estimated.
+
+   The ring is a fixed number of pixels wide, not a number of metres.
+   The record gives no radius - "Acton", "Barnet" - and a ring drawn
+   in metres would be this page deciding how big a borough is, which
+   is exactly the guess the field exists to avoid. So the halo is a
+   mark on the pin, like the hollow ring is a mark on a legacy site,
+   and not a measurement; the legend says "approximate position" and
+   nothing more precise.
+
+   It is drawn from ["get", "approximate"] on the feature, never from
+   the note's phrase: the field is the record's, one cell per camera,
+   and a pin the maintainer knows to be approximate for another
+   reason is that cell set, not a sentence to match (Station Parade,
+   QUESTIONS.md item 10). It obeys the same filter as the dots - a
+   halo under a dot that is not shown would be a hint at a camera the
+   list does not admit to - and, like every other layer here, the
+   brightness rule: nothing drawn under the cameras may be brighter
+   than the dimmest dot. It is drawn in the dot's colour dimmed to
+   that ceiling, which is what makes the rule hold wherever the ring
+   lands; approxPaint() says how that was arrived at, and the numbers
+   measured are in NOTES.md ("Provenance and the record on the page").
+
+   The picker's context dots on the report form and the ?edit tool
+   do not draw it. They show where cameras are so a pin can be placed
+   beside them, and a halo there would say nothing a reporter needs. */
+var APPROX = "cammap-approx";   /* the halo, and APPROX-casing under it over imagery */
+
 /* The glow is not one heatmap but one per camera colour - a heatmap
    can only carry a single colour ramp, and the glow should match the
    point - so the heatmap layers are not separate. heatLayers records
@@ -130,8 +182,48 @@ var heatLayers = [];
 var TYPES = CAMERA_TYPES;
 
 /* Which dot wins when two share a spot. Croydon is both a fixed
-   install and a van hotspot, and the fixed one should be on top. */
+   install and a van hotspot, and the fixed one should be on top.
+
+   On top, not instead of: this is the tiebreak for which paints last,
+   never a filter. What tells you there are two is the count beside
+   the dot and the chooser a click opens - see "Stacked cameras". */
 var DRAW_ORDER = { fixedcam: 5, transportcam: 4, facewatchcam: 3, vancam: 2, privatecam: 1 };
+
+/* ---------------- stacked cameras ----------------
+
+   Two cameras on one corner used to draw as one dot, and DRAW_ORDER
+   chose which. The map then under-reported exactly where it mattered
+   most: North End, Croydon is a fixed install and, at the very same
+   coordinates, the van hotspot with the most deployments in the
+   record, and the map showed one red dot. Nothing is estimated here,
+   but a count of one where the record says two is a claim as well.
+
+   Two things fix it, and both are needed. A count beside any dot
+   that has others under it, at street zooms, so the map says "2"
+   where there are two. And a chooser on click: a click that lands on
+   more than one camera opens a small list of them - swatch, name,
+   kind - and the one chosen opens as usual, so each is reachable from
+   the map and not only from the list.
+
+   "Stacked" is within STACK_METRES of one another. Fifteen metres
+   is the width of a road: it takes the two Croydon pairs, which are
+   exact, and Coventry Street and Piccadilly Circus, eleven metres
+   apart, which draw as one dot at any zoom below eighteen, and it
+   leaves Tooting and Tooting Broadway, twenty-four metres apart,
+   which separate by zoom sixteen. Below that zoom two dots that
+   close are one dot whatever the count says, and the chooser is the
+   safety net there: it asks the map what is drawn within a few
+   pixels of the click, at whatever zoom the click was made.
+
+   No clustering library. The counting is a sorted sweep over the
+   shown points, a few hundred distance sums, done again whenever the
+   shown set changes. */
+var STACK = "cammap-stack";           /* the badge layer, and its source */
+var STACK_METRES = 15;
+
+/* How far the count sits from the dot, in ems of its own size: up
+   and to the right, clear of the dot at every zoom the badge shows. */
+var STACK_OFFSET = [0.55, -0.55];
 
 /* The colour a point glows with is the colour its dot is drawn with:
    a non-functional one in its own colour whatever its type, otherwise
@@ -221,10 +313,14 @@ function sameColours(a, b) {
                 cameras that are actually fixed to something and the
                 van record is a thing you ask for.
    hiddenTypes  kinds switched off in the legend. Empty means all.
-   sortBy       "name" or "used" - see listed(). */
+   sortBy       "name", "used" or - only while Near me holds a
+                position - "near". See listed().
+   sortBefore   the order in force when Near me was pressed, so that
+                clearing it puts the list back as it was. */
 var showLegacy = false;
 var hiddenTypes = {};
 var sortBy = "name";
+var sortBefore = "name";
 
 /* ---------------- satellite ----------------
 
@@ -269,10 +365,19 @@ function loadView() {
 function saveView() {
   try {
     window.localStorage.setItem(VIEW_KEY, JSON.stringify({
-      legacy: showLegacy,
+      /* Not a Legacy the year scrubber switched on: the year is not
+         remembered, so the switch it made is not either, or the next
+         visit would open on every van site with no year to explain
+         it. A press on Legacy itself makes it the visitor's, and
+         legacyByYear is cleared then. */
+      legacy: legacyByYear ? false : showLegacy,
       view: view,
       hidden: hiddenTypes,
-      sort: sortBy
+
+      /* Never "near": that order exists only while Near me holds a
+         position, which is never kept past the visit, so what is
+         remembered is the order in force before it was pressed. */
+      sort: sortBy === "near" ? sortBefore : sortBy
     }));
   } catch (err) {
     /* storage refused - the toggles still work for this visit */
@@ -303,6 +408,129 @@ map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-le
 /* The tile source carries its own attribution, so none is added here:
    passing our own as well printed it twice. */
 map.addControl(new maplibregl.AttributionControl({ compact: false }));
+
+/* ---------------- what the canvas says it is ----------------
+
+   The dots are drawn into a canvas, and a canvas has nothing in it
+   that assistive technology can read: the cameras exist for a screen
+   reader only as the list beside the map. MapLibre names the canvas
+   "Map", a region, and puts it in the tab order so the arrow keys pan
+   and + and - zoom. It is left in the tab order, on purpose: those
+   keys work, a sighted person steering by keyboard uses them, and
+   hiding a focusable thing from assistive technology (aria-hidden on
+   something Tab still reaches) is the one arrangement every checker
+   flags, because a reader then lands on a thing it has been told
+   does not exist.
+
+   So instead the canvas says what it is and where the words are.
+   role="application" is the honest role for a widget that takes the
+   arrow keys for itself - it tells a screen reader to pass the keys
+   through rather than read the page with them - and the role
+   description "map" is what is said in its place. The label sends
+   the reader to the list by the heading it can find with one key.
+   Set once; the canvas outlives every style swap. */
+function nameTheCanvas() {
+  var canvas = map.getCanvas();
+
+  canvas.setAttribute("role", "application");
+  canvas.setAttribute("aria-roledescription", "map");
+  canvas.setAttribute("aria-label",
+    "Map of London with the recorded facial recognition cameras drawn on it. " +
+    "The same cameras are listed in words under the heading Cameras, after the map. " +
+    "Arrow keys pan; plus and minus zoom.");
+}
+
+nameTheCanvas();
+
+/* ---------------- moving the map ----------------
+
+   Every deliberate move the page makes - a list row, a search result,
+   Near me, the reset in edit mode - goes through this one function,
+   so that how the map moves is decided in one place. It flies: a
+   flight across London says where you came from as well as where you
+   are going, which a cut does not. Unless the visitor has asked their
+   system for less motion, in which case it cuts - see "reduced
+   motion" just below - and nothing else on the page has to know.
+
+   Not for the hash on load: that is a jumpTo, on purpose - the page
+   has not drawn yet, so there is nowhere to fly from.
+
+   `below` is for a move that is about to open a popup: the point
+   lands that many pixels below the middle of the map instead of on
+   it, so the popup has room to stand above its dot. Without it, on a
+   phone - where the map is 460 pixels tall and a popup with a note in
+   it is half that - MapLibre finds no room above the dot, hangs the
+   popup below it instead, and the bottom rows are cut off by the
+   map's edge. popupRoom() is the number to pass. That is why the cut
+   is easeTo with a duration of 0 and not jumpTo: jumpTo ignores
+   `offset`, silently, and the popup would land at the map's centre
+   with nowhere to stand.
+
+   Worth knowing before believing a flight is broken: MapLibre advances
+   a flight on requestAnimationFrame, which a hidden or headless tab
+   never runs, so in a harness the map appears not to move. It has;
+   it is waiting for a frame. */
+function moveMap(lat, lon, zoom, below) {
+  var to = { center: lngLat(lat, lon), zoom: zoom, offset: [0, below || 0] };
+
+  if (reduceMotion) {
+    to.duration = 0;
+    map.easeTo(to);
+    return;
+  }
+
+  to.speed = 1.6;
+  map.flyTo(to);
+}
+
+/* ---------------- reduced motion ----------------
+
+   A person who has asked their system for less motion - a setting on
+   every phone and desktop, kept by people for whom a map sweeping
+   across London is a physical thing, not a flourish - is asked once
+   here, and asked again whenever the answer changes: the media query
+   fires "change" when the setting is flipped with the page open, and
+   a page that only looked at load would keep flying for the rest of
+   the visit. addEventListener is the standard call; the older
+   addListener is kept as the fallback, because this is plain browser
+   JavaScript for old browsers too and Safari before 14 knows only
+   the old name. Without matchMedia at all there is no way to ask,
+   and the answer is no.
+
+   Why this exists when MapLibre reads the same query itself: it
+   does, live, and under it turns every flyTo into a jumpTo - which
+   is the one call that drops `offset` (see moveMap above), so under
+   reduced motion the popup a list row opens would be cut off at the
+   bottom of a phone's map. The variable here is what moveMap checks
+   before MapLibre gets the chance, and it chooses the cut that keeps
+   the offset. MapLibre's own reading still covers what it animates
+   on its own account - the zoom buttons, which go through easeTo and
+   get a duration of 0 from it - so that side needs nothing here. */
+var motionQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+var reduceMotion = motionQuery ? motionQuery.matches === true : false;
+
+function readMotion() {
+  reduceMotion = motionQuery.matches === true;
+}
+
+if (motionQuery) {
+  if (typeof motionQuery.addEventListener === "function") {
+    motionQuery.addEventListener("change", readMotion);
+  } else if (typeof motionQuery.addListener === "function") {
+    motionQuery.addListener(readMotion);
+  }
+}
+
+/* How far below the middle a dot should sit for its popup to fit
+   above it: three tenths of the map's height. On the tall desktop map
+   that is a little; on the short phone map it is the difference
+   between a popup you can read and one cut off at the knees. Three
+   tenths and not a fifth because the popup grows when the copy box
+   opens under "Copy link", and at a fifth the title of a grown popup
+   went off the top of the phone map. */
+function popupRoom() {
+  return Math.round((map.getCanvas().clientHeight || 600) * 0.3);
+}
 
 /* The LIFT table, lift() and its cache are in frontend/shared.js.
    They moved there when the report page grew a map of its own: the
@@ -387,7 +615,8 @@ function clearOurLayersAndSources() {
 
   for (i = 0; i < layers.length; i++) {
     id = layers[i].id;
-    if (id === DOT || id === SATELLITE || id.indexOf(HEAT) === 0) {
+    if (id === DOT || id === SATELLITE || id === STACK ||
+        id.indexOf(HEAT) === 0 || id.indexOf(HERE) === 0 || id.indexOf(APPROX) === 0) {
       ours.push(id);
     }
   }
@@ -398,7 +627,8 @@ function clearOurLayersAndSources() {
 
   for (id in sources) {
     if (sources.hasOwnProperty(id) &&
-        (id === SOURCE || id === SATELLITE || id.indexOf(SOURCE + "-heat-") === 0)) {
+        (id === SOURCE || id === SATELLITE || id === HERE || id === STACK ||
+         id.indexOf(SOURCE + "-heat-") === 0)) {
       map.removeSource(id);
     }
   }
@@ -453,6 +683,11 @@ function buildOverStyle() {
   addSatellite(map);
 
   addCameras(firstLabel);
+
+  /* Where you are, if Near me was pressed before the style changed:
+     setStyle threw the ring away with everything else of ours. */
+  drawHere();
+
   applyView();
 }
 
@@ -611,6 +846,98 @@ function dotPaint() {
   };
 }
 
+/* The halo under an approximate pin - see "what is not known" at
+   the top. Same source as the dots, filtered to approximate: true
+   (and to whatever the dots are filtered to, by applyLegacyFilter),
+   drawn under them so the dot sits in the middle of its ring.
+
+   The colour answers to the brightness rule by construction, not by
+   opacity. The first version drew the ring in the dot's own colour,
+   translucent - the van colour is 173 on the perceived scale against
+   the rule's 134 - and measured it: on the black it was 69, over a
+   road 120, and over the hottest glow at the opening zoom, where a
+   road under the Piccadilly glow already stands at about 148 with
+   nothing new drawn, it came out at 155. Any lighter colour laid over
+   a pixel that bright can only lighten it, however thin. So the halo
+   is drawn in the dot's colour dimmed to HALO_BRIGHTNESS (dimTo() in
+   shared.js, hue kept): over anything darker than itself it
+   brightens to no more than that, and over anything brighter it
+   darkens. Measured again, the brightest pixel it adds is then under
+   the ceiling on every view, at every zoom, whatever it lands on.
+
+   Within that, the opacities are for the eye. On the dark map the
+   ring is 0.6 and the fill 0.12 - a quiet ring, a breath of colour
+   inside it. Over imagery the fill is off, since a wash on a
+   photograph says nothing, and the ring wears the black casing the
+   Near me ring does so it reads as a line and not a smear. On the
+   light map, which the rule does not govern, the ring is firmer
+   still so a dark orange holds on pale ground.
+
+   Two and a half times the dot's radius at every zoom - wide enough
+   to read as "around here" beside the dot, narrow enough that two
+   approximate boroughs an inch apart at the widest zoom do not
+   overlap into a smear. Fixed pixels, not metres: see the note at
+   the top. */
+
+/* Under the rule's 134 with room for anti-aliasing and rounding: a
+   pixel on a ring's edge is a blend of the ring and what is under it,
+   and lands between the two, never above either. */
+var HALO_BRIGHTNESS = 128;
+
+/* typeColourExpression(), with every colour dimmed to the ceiling.
+   Built from CAMERA_TYPES like the dots' own paint, so a halo can
+   never be a hue the legend does not show; the non-functional colour
+   first, as there. */
+function haloColourExpression() {
+  var match = ["match", ["get", "type"]];
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    match.push(TYPES[i].type, dimTo(TYPES[i].colour, HALO_BRIGHTNESS));
+  }
+  match.push(dimTo(TYPES[1].colour, HALO_BRIGHTNESS));   /* fallback: the van colour */
+
+  return ["case", ["==", ["get", "status"], "nonfunctional"],
+          dimTo(NONFUNCTIONAL_COLOUR, HALO_BRIGHTNESS), match];
+}
+
+function approxPaint() {
+  var colour = haloColourExpression();
+  var imagery = view === "satellite";
+
+  return {
+    "circle-radius": ["interpolate", ["linear"], ["zoom"],
+      WIDEST_ZOOM, 6,
+      14, 10,
+      CLOSEST_ZOOM, 17],
+
+    "circle-color": colour,
+    "circle-opacity": imagery ? 0 : (isLight() ? 0.14 : 0.12),
+
+    "circle-stroke-color": colour,
+    "circle-stroke-width": isLight() || imagery ? 1.2 : 1,
+    "circle-stroke-opacity": imagery ? 0.85 : (isLight() ? 0.7 : 0.6)
+  };
+}
+
+/* The casing under the ring, for imagery only - the page's own black
+   round the colour, as the style's labels wear a dark halo over a
+   photograph. Off everywhere else: black on the dark map is black on
+   black, and on the light map it would turn a quiet ring into a
+   heavy one. Same recipe as the Near me ring's casing. */
+function approxCasingPaint() {
+  return {
+    "circle-radius": ["interpolate", ["linear"], ["zoom"],
+      WIDEST_ZOOM, 6,
+      14, 10,
+      CLOSEST_ZOOM, 17],
+    "circle-opacity": 0,
+    "circle-stroke-color": "#0d0d0d",
+    "circle-stroke-width": 3.5,
+    "circle-stroke-opacity": view === "satellite" ? 0.85 : 0
+  };
+}
+
 function addCameras(beneath) {
   var built = buildFeatures();
 
@@ -619,6 +946,29 @@ function addCameras(beneath) {
   map.addSource(SOURCE, { type: "geojson", data: collection(built.all) });
 
   addGlow(built, beneath);
+
+  /* Over the glow and under the map's own lettering, like the glow
+     itself: the casing, then the ring, each slid in beneath the
+     first label. The dots go over everything, labels included,
+     because the cameras are the point; the halo is a mark on the
+     backdrop, and a place name is allowed to write over it. That is
+     also what keeps the rule honest - measured over the labels, a
+     translucent ring on a lifted place name came out brighter than
+     the name was, and the answer was not a fainter ring but the
+     right place in the stack. */
+  map.addLayer({
+    id: APPROX + "-casing",
+    type: "circle",
+    source: SOURCE,
+    paint: approxCasingPaint()
+  }, beneath);
+
+  map.addLayer({
+    id: APPROX,
+    type: "circle",
+    source: SOURCE,
+    paint: approxPaint()
+  }, beneath);
 
   map.addLayer({
     id: DOT,
@@ -631,9 +981,49 @@ function addCameras(beneath) {
     }
   });
 
+  /* The count beside a stacked dot, over the dots. From zoom 13,
+     which is where the dots stop pooling into the glow and start to
+     be read one by one; wider than that the glow is the density map
+     and a "2" would be noise. The font is the one both OpenFreeMap
+     styles set their own labels in, from the same glyph server: a
+     symbol layer in a font the style does not serve draws nothing,
+     silently. Overlap is allowed both ways, because the whole point
+     is to draw where the map is crowded. */
+  map.addSource(STACK, { type: "geojson", data: collection(built.stacks) });
+
+  map.addLayer({
+    id: STACK,
+    type: "symbol",
+    source: STACK,
+    minzoom: 13,
+    layout: {
+      "text-field": ["to-string", ["get", "count"]],
+      "text-font": ["Noto Sans Regular"],
+      "text-size": 11,
+      "text-offset": STACK_OFFSET,
+      "text-anchor": "bottom-left",
+      "text-allow-overlap": true,
+      "text-ignore-placement": true
+    },
+    paint: stackPaint()
+  });
+
   applyLegacyFilter();
 
   bindCameraHandlers();
+}
+
+/* The count's colour, by view. It answers to the brightness rule
+   like everything drawn here: #7f7f7f is 127 against the rule's 134,
+   and 4.9:1 against the page black it sits on through its halo. On
+   the light map it is the dark ring colour the dots there wear, with
+   the map's own pale ground for a halo, as that style's labels do. */
+function stackPaint() {
+  return {
+    "text-color": isLight() ? "#3a3632" : "#7f7f7f",
+    "text-halo-color": isLight() ? "#f8f4f0" : "#0d0d0d",
+    "text-halo-width": 1.2
+  };
 }
 
 /* Bound once and only once. addCameras runs again after every style
@@ -650,8 +1040,35 @@ function bindCameraHandlers() {
   }
   cameraHandlersBound = true;
 
+  /* A click on a dot asks what is drawn within a few pixels of it,
+     not only what was hit: two dots on one corner are one hit, and
+     the one underneath would otherwise never open from the map. One
+     camera opens as it always has; more than one opens the chooser.
+     The same feature can come back more than once from a query that
+     spans a tile boundary, so the ids are collected, not the hits. */
   map.on("click", DOT, function (event) {
-    openPopup(event.features[0].properties.id);
+    var box = [[event.point.x - 6, event.point.y - 6], [event.point.x + 6, event.point.y + 6]];
+    var hits = map.queryRenderedFeatures(box, { layers: [DOT] });
+    var seen = {};
+    var found = [];
+    var point;
+    var i;
+
+    for (i = 0; i < hits.length; i++) {
+      if (!seen[hits[i].properties.id]) {
+        seen[hits[i].properties.id] = true;
+        point = pointById(hits[i].properties.id);
+        if (point) {
+          found.push(point);
+        }
+      }
+    }
+
+    if (found.length > 1) {
+      openChooser(found, event.lngLat);
+    } else {
+      openPopup(event.features[0].properties.id);
+    }
   });
 
   map.on("mouseenter", DOT, function () {
@@ -672,6 +1089,7 @@ var memoInput     = document.getElementById("memo");
 var addButton     = document.getElementById("add-button");
 var addNote       = document.getElementById("add-note");
 
+var searchBox     = document.getElementById("place-search");
 var searchText    = document.getElementById("search-text");
 var searchButton  = document.getElementById("search-button");
 var searchNote    = document.getElementById("search-note");
@@ -681,6 +1099,7 @@ var pointsList    = document.getElementById("points-list");
 var pointsEmpty   = document.getElementById("points-empty");
 var pointsSearch  = document.getElementById("points-search");
 var pointsCount   = document.getElementById("points-count");
+var recordLine    = document.getElementById("record-line");
 var sortButtons   = document.querySelectorAll("#points-sort button");
 
 var legacyToggle  = document.getElementById("legacy-toggle");
@@ -720,6 +1139,24 @@ function tidy(list) {
 
     clean.push({
       id: nextId++,
+
+      /* The entry's identity in the published record, fixed here
+         before anything can move it: name, position and type as
+         points.js gives them, which is what seed.sql wrote into the
+         row's seed_key. Two things read it. The database overlay
+         matches rows by it, and has to keep matching after a
+         moderator's Move has changed the point's position - so it
+         cannot be worked out from the point later. And a link to a
+         camera that the database has not given an id carries it, so
+         that "here is the camera outside my station" is a link that
+         works for anyone, whether or not the database answers. */
+      seedKey: seedKeyOf({
+        name: entry.name,
+        lat: parseFloat(entry.lat),
+        lon: parseFloat(entry.lon),
+        type: kind
+      }),
+
       name: entry.name,
       note: typeof entry.note === "string" ? entry.note : "",
       lat: parseFloat(entry.lat),
@@ -741,7 +1178,30 @@ function tidy(list) {
          reads hotter than one it visited once. Anything without a
          count - a shop, a fixed camera, a hand-typed entry - is one. */
       deployments: typeof entry.deployments === "number" && entry.deployments > 0
-        ? entry.deployments : 1
+        ? entry.deployments : 1,
+
+      /* The four fields the record grew after the eight above, carried
+         through as they are so that nothing between the file and the
+         page loses them: the ?edit export writes them back out, the
+         popup cites the source (sourceRow()), and an approximate pin
+         is drawn with a halo (approxPaint()). A draft saved before
+         the fields existed, or a hand-typed entry, has none, and
+         gets the same defaults the build script gives a blank cell -
+         null, null, null, false - never a plausible value.
+
+         periods       the deployments counted by the period the source
+                       gives them in - {"2023-24": 1} - or null where
+                       it names none. Kept as the object it came as.
+         source_label  the record or report the entry rests on, named,
+         source_url    and where it is; null where none is known, and
+                       null is what the page should show as nothing.
+         approximate   true where the pin marks the surrounding area
+                       rather than a spot. A field, so the map never
+                       has to search the note for the phrase. */
+      periods: entry.periods && typeof entry.periods === "object" ? entry.periods : null,
+      source_label: typeof entry.source_label === "string" ? entry.source_label : null,
+      source_url: typeof entry.source_url === "string" ? entry.source_url : null,
+      approximate: entry.approximate === true
     });
   }
 
@@ -794,6 +1254,7 @@ function saveDraft() {
 function addPoint(lat, lon, name, note, type) {
   var point = {
     id: nextId++,
+    seedKey: seedKeyOf({ name: name, lat: lat, lon: lon, type: type || "vancam" }),
     name: name,
     note: note,
     lat: lat,
@@ -804,7 +1265,15 @@ function addPoint(lat, lon, name, note, type) {
 
     /* One, the same default tidy() gives a hand-typed entry: a spot
        nobody has counted deployments at has been used once. */
-    deployments: 1
+    deployments: 1,
+
+    /* And the same blanks tidy() gives it: this form has no boxes for
+       a period, a source or an approximate pin, and the CSV is where
+       those are filled in. */
+    periods: null,
+    source_label: null,
+    source_url: null,
+    approximate: false
   };
 
   points.push(point);
@@ -851,17 +1320,31 @@ function removePoint(id) {
 /* hiddenTypes and sortBy are declared up with showLegacy, above
    loadView(), so a remembered setting is not overwritten on the way
    past. The search term is not remembered: it is a question you are
-   asking now, not a setting. */
+   asking now, not a setting. Neither is the year - see "the years". */
 var searchTerm = "";
+var yearShown = null;
 
 function typeShown(type) {
   return !hiddenTypes[type];
 }
 
+/* Whether a camera is shown for the year chosen on the scrubber. No
+   year chosen shows everything. A camera whose record names no period
+   - a shop, a fixed install, the King's Cross estate - is shown in
+   every year: the record does not say when it was not there, and
+   hiding it for a year would be a claim the record does not make.
+   Otherwise, shown for every year any of its periods covers, through
+   periodYears() in shared.js, which is the one reading of a period
+   the site has. */
+function coversYear(point) {
+  return yearShown === null || !point.periods ||
+         periodYears(point.periods).indexOf(yearShown) !== -1;
+}
+
 /* The rule the map obeys. The search term is not in here on purpose -
    see above. */
 function isShown(point) {
-  return (showLegacy || point.status !== "legacy") && typeShown(point.type);
+  return (showLegacy || point.status !== "legacy") && typeShown(point.type) && coversYear(point);
 }
 
 /* And the rule the list obeys: the same, and then the search. */
@@ -881,8 +1364,9 @@ function isListed(point) {
          (point.note || "").toLowerCase().indexOf(term) !== -1;
 }
 
-/* The same rule again, as something MapLibre can evaluate per dot. */
-function applyLegacyFilter() {
+/* The same rule again, as something MapLibre can evaluate per dot:
+   the clauses of isShown(), as an expression. */
+function shownFilter() {
   var filter = ["all"];
   var type;
 
@@ -896,24 +1380,57 @@ function applyLegacyFilter() {
     }
   }
 
+  /* coversYear() as an expression: a feature with no `years` - the
+     record names no period - passes; one with them passes when the
+     chosen year is among them. */
+  if (yearShown !== null) {
+    filter.push(["any", ["!", ["has", "years"]], ["in", yearShown, ["get", "years"]]]);
+  }
+
+  return filter;
+}
+
+/* Applied to the dots, and to the halo under an approximate pin with
+   one clause more - the halo is only ever under a dot that is shown,
+   and only under one the record says is approximate. Keyed on the
+   field, never on the note's phrase: see "what is not known". */
+function applyLegacyFilter() {
+  var filter = shownFilter();
+  var approx = filter.concat([["==", ["get", "approximate"], true]]);
+
   if (map.getLayer(DOT)) {
     map.setFilter(DOT, filter.length > 1 ? filter : null);
+  }
+  if (map.getLayer(APPROX)) {
+    map.setFilter(APPROX, approx);
+    map.setFilter(APPROX + "-casing", approx);
   }
 }
 
 /* Anything that changes which cameras count ends here: the dot filter,
-   the glow sources and the list are all brought back into step. */
+   the glow sources and the list are all brought back into step - and
+   the new count is read out, see "what a screen reader is told". */
 function applyFilters() {
   applyLegacyFilter();
   refreshCameras();
   render();
+  announceCount();
 }
 
 function setLegacy(on) {
   showLegacy = on;
+
+  /* The visitor's own press: whatever a solo or the year scrubber
+     switched on is theirs now, and ending either will not switch it
+     back. */
+  legacyBySolo = false;
+  legacyByYear = false;
+  clearSoloNote();
+
   applyFilters();
   saveView();
   markLegacy();
+  sayYear();
 }
 
 function markLegacy() {
@@ -924,12 +1441,161 @@ function markLegacy() {
 }
 
 /* Clicking a kind in the legend takes it off the map and out of the
-   list. Clicking it again puts it back. */
+   list. Clicking it again puts it back. Clicking the one kind that
+   is on its own - a solo, below - puts every kind back instead: the
+   alternative is a map with nothing on it. */
 function toggleType(type) {
-  hiddenTypes[type] = !hiddenTypes[type];
+  if (soloType() === type) {
+    hiddenTypes = {};
+  } else {
+    hiddenTypes[type] = !hiddenTypes[type];
+  }
+  kindsChanged();
+}
+
+/* ---------------- solo: only this kind ----------------
+
+   "Only the shops" was four clicks in the legend and could not be
+   undone in one. Each key now has a small "only" beside it: a press
+   shows that kind and hides the rest; a press on it again, or on the
+   soloed key itself, shows every kind again.
+
+   The solo is not a state of its own. It is the legend showing one
+   kind and hiding the others, read back from hiddenTypes - so it is
+   remembered between visits through the same `hidden` map the view
+   has always saved, an older saved view loads exactly as before, and
+   the two cannot disagree about what is shown. The price is small
+   and deliberate: hiding four kinds one at a time arrives at the
+   same place as pressing "only" on the fifth, and the legend says so.
+
+   Every van site is legacy ("What active means" in NOTES.md), so
+   "only the van sites" with Legacy off would show nothing at all.
+   The person asked for the van sites; showing them is the answer.
+   So when the kinds narrow to one whose every camera is legacy -
+   worked out from the points, not assumed of vans, because a
+   database that still carries active van rows changes the answer -
+   Legacy is switched on for them and the line under the map says
+   so. It is switched back off when the solo ends, unless the
+   visitor has pressed Legacy themselves in between, which makes it
+   theirs. This is saved with the view like any other press: the
+   visitor asked, which is the difference from a deep link's
+   unsaved switch. */
+
+/* The one kind shown when every other kind is hidden; null when two
+   or more are shown, and null when none is. */
+function soloType() {
+  var shown = null;
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    if (typeShown(TYPES[i].type)) {
+      if (shown !== null) {
+        return null;
+      }
+      shown = TYPES[i].type;
+    }
+  }
+
+  return shown;
+}
+
+/* Whether a kind has cameras and every one of them is legacy. */
+function allLegacy(type) {
+  var any = false;
+  var i;
+
+  for (i = 0; i < points.length; i++) {
+    if (points[i].type === type) {
+      if (points[i].status !== "legacy") {
+        return false;
+      }
+      any = true;
+    }
+  }
+
+  return any;
+}
+
+/* Whether the Legacy switch was turned on by a solo rather than by
+   a press on it, and what the line under the map was told when it
+   was - so that only that sentence is taken back, and not whatever
+   Near me or a link has said there since. */
+var legacyBySolo = false;
+var soloNote = null;
+
+function clearSoloNote() {
+  if (soloNote !== null && mapNote && mapNote.textContent === soloNote) {
+    sayUnderMap("");
+  }
+  soloNote = null;
+}
+
+/* A press on a key's "only". */
+function soloKind(type) {
+  var i;
+
+  if (soloType() === type) {
+    hiddenTypes = {};
+  } else {
+    for (i = 0; i < TYPES.length; i++) {
+      hiddenTypes[TYPES[i].type] = TYPES[i].type !== type;
+    }
+  }
+  kindsChanged();
+}
+
+/* After any change to which kinds are shown, by key or by "only":
+   the Legacy rule above, the map and the list, the saved view, the
+   legend redrawn with its pressed states, and a word for a screen
+   reader before the count. */
+function kindsChanged() {
+  var solo = soloType();
+  var prefix = "";
+
+  if (solo !== null && !showLegacy && allLegacy(solo)) {
+    showLegacy = true;
+    legacyBySolo = true;
+    markLegacy();
+    soloNote = "Every " + (typeLabel(solo) || solo) +
+      " in the record is legacy, so Legacy has been switched on to show them.";
+    sayUnderMap(soloNote);
+  } else if (solo === null && legacyBySolo) {
+    legacyBySolo = false;
+    clearSoloNote();
+    /* Unless a year is chosen, in which case the year still wants
+       it: the van sites are what the record dates, and the scrubber
+       takes the switch over rather than letting it drop. */
+    if (yearShown !== null) {
+      legacyByYear = true;
+      sayYear();
+    } else {
+      showLegacy = false;
+      markLegacy();
+    }
+  }
+
+  if (solo !== null) {
+    prefix = "Only one kind, " + (typeLabel(solo) || solo);
+  } else if (isEveryKindShown()) {
+    prefix = "Every kind";
+  }
+
   applyFilters();
   saveView();
   drawLegend();
+  announceThenCount(prefix);
+}
+
+function isEveryKindShown() {
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    if (!typeShown(TYPES[i].type)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /* Imagery on: show the raster, hide the ground, ring every dot in the
@@ -962,6 +1628,29 @@ function applyView() {
     for (i = 0; i < VIEW_PAINT.length; i++) {
       map.setPaintProperty(DOT, VIEW_PAINT[i], paint[VIEW_PAINT[i]]);
     }
+  }
+
+  /* The halo under an approximate pin changes with the ground too:
+     fainter or firmer, and its casing on only over imagery. */
+  if (map.getLayer(APPROX)) {
+    paint = approxPaint();
+    for (i = 0; i < VIEW_PAINT.length; i++) {
+      map.setPaintProperty(APPROX, VIEW_PAINT[i], paint[VIEW_PAINT[i]]);
+    }
+    map.setPaintProperty(APPROX + "-casing", "circle-stroke-opacity",
+      approxCasingPaint()["circle-stroke-opacity"]);
+  }
+
+  /* Where you are wears a dark casing over imagery and none
+     elsewhere - see drawHere(), under "Near me". */
+  applyHereView();
+
+  /* And the count beside a stacked dot changes colour with the
+     ground it sits on. */
+  if (map.getLayer(STACK)) {
+    paint = stackPaint();
+    map.setPaintProperty(STACK, "text-color", paint["text-color"]);
+    map.setPaintProperty(STACK, "text-halo-color", paint["text-halo-color"]);
   }
 
   markView();
@@ -1000,15 +1689,19 @@ function setView(next) {
 }
 
 /* A plain legend row: a swatch and a name, and nothing to press. Used
-   for the two entries that are states rather than kinds. */
-function legendNote(colour, text, hollow) {
+   for the entries that are states rather than kinds. `drawn` says
+   how the swatch is filled, the way the marker it stands for is:
+   "hollow" is the legacy ring, "approx" the wider faint ring under an
+   approximate pin, and anything else a solid dot. */
+function legendNote(colour, text, drawn) {
   var item = document.createElement("li");
   var swatch = document.createElement("span");
 
-  swatch.className = hollow ? "swatch hollow" : "swatch";
-  if (hollow) {
+  if (drawn === "hollow" || drawn === "approx") {
+    swatch.className = "swatch " + drawn;
     swatch.style.borderColor = colour;
   } else {
+    swatch.className = "swatch";
     swatch.style.background = colour;
   }
 
@@ -1023,14 +1716,31 @@ function legendNote(colour, text, hollow) {
    place to say "just these". A kind that is switched off dims here and
    goes from both the map and the list. */
 function drawLegend() {
+  var solo;
   var item;
   var button;
+  var only;
   var swatch;
+  var had;
+  var again;
   var i;
 
   if (!legend) {
     return;
   }
+
+  solo = soloType();
+
+  /* The legend is built afresh after every press, and the button
+     that was pressed goes with it - so a keyboard that had pressed
+     Space on a key found itself back at the top of the page, with
+     the legend somewhere below. Whichever key or "only" had focus is
+     noted by its kind and given focus again once rebuilt. */
+  had = document.activeElement;
+  had = had && legend.contains(had) ? {
+    type: had.getAttribute("data-type"),
+    only: had.className.indexOf("legend-only") !== -1
+  } : null;
 
   legend.innerHTML = "";
 
@@ -1039,10 +1749,11 @@ function drawLegend() {
 
     button = document.createElement("button");
     button.className = typeShown(TYPES[i].type) ? "legend-key" : "legend-key off";
+    button.setAttribute("data-type", TYPES[i].type);
     button.setAttribute("aria-pressed", typeShown(TYPES[i].type) ? "true" : "false");
-    button.title = typeShown(TYPES[i].type)
-      ? "Hide these"
-      : "Show these again";
+    button.title = solo === TYPES[i].type
+      ? "Show every kind again"
+      : (typeShown(TYPES[i].type) ? "Hide these" : "Show these again");
 
     swatch = document.createElement("span");
     swatch.className = "swatch";
@@ -1057,13 +1768,46 @@ function drawLegend() {
     })(TYPES[i].type);
 
     item.appendChild(button);
+
+    /* "only", beside the key: a second button, because a keyboard
+       needs something it can reach and a modifier key is invisible.
+       Its name says which kind, since "only" five times over says
+       nothing on its own; its pressed state is the solo. */
+    only = document.createElement("button");
+    only.type = "button";
+    only.className = solo === TYPES[i].type ? "legend-only on" : "legend-only";
+    only.setAttribute("data-type", TYPES[i].type);
+    only.textContent = "only";
+    only.setAttribute("aria-label", "Only " + TYPES[i].label);
+    only.setAttribute("aria-pressed", solo === TYPES[i].type ? "true" : "false");
+    only.title = solo === TYPES[i].type ? "Show every kind again" : "Show only these";
+
+    only.onclick = (function (type) {
+      return function () {
+        soloKind(type);
+      };
+    })(TYPES[i].type);
+
+    item.appendChild(only);
     legend.appendChild(item);
   }
 
-  /* Not kinds but states, and both are said by the fill rather than
-     the colour, so there is nothing here to switch off. */
-  legend.appendChild(legendNote(NONFUNCTIONAL_COLOUR, "Non-functional", false));
-  legend.appendChild(legendNote(TYPES[1].colour, "Legacy (no longer in use)", true));
+  /* Not kinds but states, and all three are said by the fill rather
+     than the colour, so there is nothing here to switch off. The
+     third is the halo under a pin the record gives as an area, drawn
+     in the van colour because every such pin is a van site today;
+     the halo on the map takes its dot's own colour whatever the kind. */
+  legend.appendChild(legendNote(NONFUNCTIONAL_COLOUR, "Non-functional", "solid"));
+  legend.appendChild(legendNote(TYPES[1].colour, "Legacy (no longer in use)", "hollow"));
+  legend.appendChild(legendNote(dimTo(TYPES[1].colour, HALO_BRIGHTNESS), "Approximate position", "approx"));
+
+  if (had && had.type) {
+    again = legend.querySelector((had.only ? "button.legend-only" : "button.legend-key") +
+                                 "[data-type=\"" + had.type + "\"]");
+    if (again) {
+      again.focus();
+    }
+  }
 }
 
 /* Everything the layers need, worked out in one walk of the list.
@@ -1080,6 +1824,7 @@ function drawLegend() {
 function buildFeatures() {
   var all = [];
   var byColour = {};
+  var shown = [];
   var point;
   var feature;
   var colour;
@@ -1095,13 +1840,24 @@ function buildFeatures() {
         type: point.type,
         status: point.status,
         deployments: point.deployments || 1,
-        order: DRAW_ORDER[point.type] || 0
+        order: DRAW_ORDER[point.type] || 0,
+
+        /* The halo layer is filtered on this. A boolean from the
+           field and never from the note - see "what is not known". */
+        approximate: point.approximate === true
       },
       geometry: {
         type: "Point",
         coordinates: lngLat(point.lat, point.lon)
       }
     };
+
+    /* The years the record covers for it, for the scrubber's filter
+       - left off altogether where the record names no period, which
+       is what the filter reads as "shown in every year". */
+    if (point.periods) {
+      feature.properties.years = periodYears(point.periods);
+    }
 
     all.push(feature);
 
@@ -1111,10 +1867,79 @@ function buildFeatures() {
         byColour[colour] = [];
       }
       byColour[colour].push(feature);
+      shown.push(point);
     }
   }
 
-  return { all: all, byColour: byColour };
+  return { all: all, byColour: byColour, stacks: stackFeatures(shown) };
+}
+
+/* One feature per place where two or more shown cameras sit within
+   STACK_METRES of one another, carrying the count, placed at their
+   mean position - which for the Croydon pairs is the point itself.
+
+   A sweep, not a grid and not a library: the points are sorted by
+   latitude, and each is compared only with those that follow it
+   within STACK_METRES of latitude, which is a handful. A point that
+   is already in a group is left in it; a chain of three that only
+   touch pairwise would need a merge this does not do, and the record
+   holds no such chain, so the simpler thing is the right thing until
+   it does. */
+function stackFeatures(shown) {
+  var order = shown.slice();
+  var group = [];
+  var groups = [];
+  var features = [];
+  var span = STACK_METRES / 111320;   /* metres of latitude, in degrees */
+  var i;
+  var j;
+  var g;
+  var lat;
+  var lon;
+
+  order.sort(function (a, b) {
+    return a.lat - b.lat;
+  });
+
+  for (i = 0; i < order.length; i++) {
+    group.push(-1);
+  }
+
+  for (i = 0; i < order.length; i++) {
+    if (group[i] === -1) {
+      group[i] = groups.length;
+      groups.push([order[i]]);
+    }
+    for (j = i + 1; j < order.length && order[j].lat - order[i].lat <= span; j++) {
+      if (group[j] === -1 &&
+          metresBetween(order[i].lat, order[i].lon, order[j].lat, order[j].lon) <= STACK_METRES) {
+        group[j] = group[i];
+        groups[group[i]].push(order[j]);
+      }
+    }
+  }
+
+  for (g = 0; g < groups.length; g++) {
+    if (groups[g].length < 2) {
+      continue;
+    }
+    lat = 0;
+    lon = 0;
+    for (i = 0; i < groups[g].length; i++) {
+      lat += groups[g][i].lat;
+      lon += groups[g][i].lon;
+    }
+    features.push({
+      type: "Feature",
+      properties: { count: groups[g].length },
+      geometry: {
+        type: "Point",
+        coordinates: lngLat(lat / groups[g].length, lon / groups[g].length)
+      }
+    });
+  }
+
+  return features;
 }
 
 function collection(features) {
@@ -1139,13 +1964,20 @@ function refreshCameras() {
   built = buildFeatures();
   source.setData(collection(built.all));
 
+  if (map.getSource(STACK)) {
+    map.getSource(STACK).setData(collection(built.stacks));
+  }
+
   /* The database overlay can bring in a kind of camera the seed had
      too few of to be worth a layer. Rather than leave those cameras
      with no glow, the set is built again - which only happens when
      the colours actually changed, not on every refresh. */
   if (!sameColours(glowGroups(), glowColoursNow())) {
     removeGlow();
-    addGlow(built, glowAnchor);
+    /* Under the approximate halo when that is standing, so the stack
+       stays glow, halo, lettering, dots however many times the glow
+       is made again; the halo's casing is the lowest of its layers. */
+    addGlow(built, map.getLayer(APPROX + "-casing") ? APPROX + "-casing" : glowAnchor);
     return;
   }
 
@@ -1172,7 +2004,47 @@ function pointById(id) {
 /* One popup, moved from camera to camera. Circles are not elements, so
    there is nothing for a popup to hang off; it is placed by coordinate
    instead, and the previous one is taken down first. */
-function openPopup(id) {
+/* `quiet` is for a popup being put back rather than opened: the
+   background revalidation rebuilds the one that was already open, and
+   MapLibre focuses a popup's first control as it opens (focusAfterOpen
+   defaults to true), which would take the keyboard off whatever the
+   visitor was actually using - the search box, a legend key - for a
+   redraw they never asked for. Every deliberate opening leaves it
+   alone: a list row or a link should land the keyboard in the popup
+   it just opened. See redrawCameras(). */
+/* Putting a popup up, which three places do and all three must do the
+   same way.
+
+   The guard is the part worth having once. Only this popup's own
+   closing counts: opening a popup closes the one before it, a line
+   earlier, and a close handler that cleared `popup` unconditionally
+   would clear the one being opened rather than the one going away.
+   Written out three times, that guard was three chances to get it
+   subtly wrong.
+
+   `focus` is MapLibre's focusAfterOpen, which defaults to true and
+   moves the keyboard into the popup. `after` is whatever else the
+   closing means to the caller - for a camera, that the address bar no
+   longer names one. Both differ per caller; nothing else does. */
+function showPopup(at, content, focus, after) {
+  popup = new maplibregl.Popup({ offset: 10, closeButton: true, focusAfterOpen: focus })
+    .setLngLat(at)
+    .setDOMContent(content)
+    .addTo(map);
+
+  (function (own) {
+    own.on("close", function () {
+      if (popup === own) {
+        popup = null;
+        if (after) {
+          after();
+        }
+      }
+    });
+  })(popup);
+}
+
+function openPopup(id, quiet) {
   var point = pointById(id);
 
   if (!point) {
@@ -1181,12 +2053,17 @@ function openPopup(id) {
 
   closePopup();
 
-  popup = new maplibregl.Popup({ offset: 10, closeButton: true })
-    .setLngLat(lngLat(point.lat, point.lon))
-    .setDOMContent(popupFor(point))
-    .addTo(map);
+  /* The address bar says which camera is open, so it is written the
+     moment one opens and again when it closes - the close button is
+     MapLibre's, so the closing is heard rather than done here. */
+  showPopup(lngLat(point.lat, point.lon), popupFor(point), !quiet, function () {
+    popupId = null;
+    writeHash();
+  });
 
   popupId = point.id;
+
+  writeHash();
 }
 
 function closePopup() {
@@ -1197,7 +2074,93 @@ function closePopup() {
   popupId = null;
 }
 
-/* "LFR van site · legacy · last seen 2024" and the like. */
+/* The chooser: what a click opens when it lands on more than one
+   camera. The same one popup, at the spot that was clicked, holding a
+   button per camera in the order the dots are painted - DRAW_ORDER,
+   the one on top first - each a swatch, the name and the kind, the
+   way the list writes a row. Choosing one opens its popup in the
+   ordinary way. popupId stays null while the chooser is up: it is
+   not a camera, so the address bar does not name one.
+
+   Reachable by keyboard: the buttons are buttons, the first takes
+   focus when the chooser opens, and Escape closes it and hands focus
+   back to the map. The keyboard's own way to any camera is still the
+   list, where a stacked pair is two rows. */
+function openChooser(list, at) {
+  var box = document.createElement("div");
+  var title = document.createElement("strong");
+  var rows = document.createElement("ul");
+  var sorted = list.slice();
+  var i;
+
+  closePopup();
+
+  sorted.sort(function (a, b) {
+    return (DRAW_ORDER[b.type] || 0) - (DRAW_ORDER[a.type] || 0);
+  });
+
+  title.textContent = sorted.length + " cameras here";
+  box.appendChild(title);
+
+  rows.className = "stack";
+  for (i = 0; i < sorted.length; i++) {
+    rows.appendChild(chooserRow(sorted[i]));
+  }
+  box.appendChild(rows);
+
+  box.onkeydown = function (event) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closePopup();
+      map.getCanvas().focus();
+    }
+  };
+
+  showPopup(at, box, true, null);
+
+  popupId = null;
+
+  rows.firstChild.firstChild.focus();
+}
+
+function chooserRow(point) {
+  var item = document.createElement("li");
+  var pick = document.createElement("button");
+  var swatch = document.createElement("span");
+  var name = document.createElement("span");
+  var kind = document.createElement("span");
+
+  pick.className = "pick-camera";
+  pick.type = "button";
+
+  swatch.className = point.status === "legacy" ? "swatch hollow" : "swatch";
+  if (point.status === "legacy") {
+    swatch.style.borderColor = colourOf(point.type);
+  } else {
+    swatch.style.background = point.status === "nonfunctional" ? NONFUNCTIONAL_COLOUR : colourOf(point.type);
+  }
+  pick.appendChild(swatch);
+
+  name.className = "name";
+  name.textContent = point.name;
+  pick.appendChild(name);
+
+  kind.className = "kind";
+  kind.textContent = labelOf(point);
+  pick.appendChild(kind);
+
+  pick.onclick = function () {
+    openPopup(point.id);
+  };
+
+  item.appendChild(pick);
+  return item;
+}
+
+/* "LFR van site · legacy · last seen 2024" and the like - and, where
+   the record gives the pin as an area, "· approximate position" on
+   the end, so the kind line in the popup, the list row's spoken text
+   and the swatch's title on paper all say what the halo draws. */
 function labelOf(point) {
   var label = typeLabel(point.type) || "Camera";
 
@@ -1208,6 +2171,10 @@ function labelOf(point) {
     }
   } else if (point.status === "nonfunctional") {
     label += " · non-functional";
+  }
+
+  if (point.approximate) {
+    label += " · approximate position";
   }
 
   return label;
@@ -1233,10 +2200,19 @@ function popupFor(point) {
     box.appendChild(document.createTextNode(point.note));
   }
 
+  /* Where the entry comes from, when the record says. Absent
+     otherwise - see sourceRow(). */
+  if (point.source_label) {
+    box.appendChild(sourceRow(point));
+  }
+
   box.appendChild(document.createElement("br"));
   var coords = document.createElement("span");
   coords.textContent = point.lat.toFixed(4) + ", " + point.lon.toFixed(4);
   box.appendChild(coords);
+
+  box.appendChild(document.createElement("br"));
+  box.appendChild(copyLinkRow(point));
 
   /* Only a camera that lives in the database can have its state
      reported on; a seed-only entry has nothing to attach a report to
@@ -1285,6 +2261,349 @@ function popupFor(point) {
   return box;
 }
 
+/* ---------------- where an entry comes from ----------------
+
+   "Source: Met Police LFR deployment record, 2025", under the note,
+   with the label linked to the document where the record has one.
+   This is the line that turns a dot from a claim into a citation: a
+   visitor who doubts a van site can open the Met's own PDF and find
+   the row. The label is source_label as the record gives it and the
+   link is source_url, both carried from data/cameras.csv through
+   points.js (tidy()) or, once the database has answered through the
+   view, from the row (takeRecordFields()).
+
+   Where the record has no source the row is not drawn. Not "Source:
+   unknown", not "official records" - nothing. A vague line would be
+   worse than none on a map whose argument is that nothing on it is
+   estimated; a null in the record is the record saying it does not
+   know, and the popup says the same by saying nothing. Today every
+   row of the published record carries a label, so the absent case is
+   a camera that came from a report (the database's row has no
+   source_label) or a hand-typed entry in ?edit, and those say
+   nothing, correctly. A label with no URL - none in the record
+   today, but the CSV allows it - is shown as text: the record names
+   the document without saying where it is.
+
+   The link opens in a new tab, as the footer's Donate link does: a
+   PDF from the Met in the map's own tab would take the visitor away
+   from the popup they were reading, and the back button would land
+   them on a map that has forgotten it. rel="noopener noreferrer" for
+   the reason every external link here carries it. Plain text and a
+   plain link, and the first focusable thing in the popup: MapLibre
+   builds the close button after the content it is given and appends
+   it to the same box, so it is last in the DOM and last in the tab
+   order, not first. Tab therefore runs source link, Copy link,
+   Report its state, close button - the order they sit in on the
+   screen, with the close button in the corner. Walked with real Tab
+   presses; an earlier version of this comment said the close button
+   came first, which is not what the popup does.
+
+   The list row does not repeat it. Its spoken text says the kind and
+   the state after the name (rowFor()), and the note it reads next
+   already names the record in prose for every Met and BTP entry -
+   "Met Police LFR van - 3 deployments 2023-2025" - so a citation on
+   every row would read the same words twice to a screen reader
+   skimming a hundred and eighty rows. The popup is where the link
+   is, and a row's button opens the popup. */
+function sourceRow(point) {
+  var row = document.createElement("span");
+  var link;
+
+  row.className = "kind source";
+  row.appendChild(document.createTextNode("Source: "));
+
+  if (point.source_url) {
+    link = document.createElement("a");
+    link.href = point.source_url;
+    link.textContent = point.source_label;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.title = "The record this entry rests on, in a new tab";
+    row.appendChild(link);
+  } else {
+    row.appendChild(document.createTextNode(point.source_label));
+  }
+
+  return row;
+}
+
+/* The address a link to this page starts with: what is in the bar,
+   less any query and any hash. The query goes because ?edit is not
+   something to send anyone. */
+function pageAddress() {
+  return window.location.href.split("#")[0].split("?")[0];
+}
+
+/* A link to a camera: the camera's own spot, at the zoom the map is
+   at, and the camera - never the map's centre. This and the address
+   bar were once the same string on purpose, so the two could not
+   disagree about what a link to a camera is; but the centre is
+   wherever the visitor is looking from, and a popup opened by
+   clicking a dot does not move the map, so a link made from the
+   centre was a link to the visitor with a camera named after it -
+   and after Near me, the visitor is where they are standing. The
+   camera's coordinates are the same for everyone and say nothing
+   about who copied them. Worked out when the link is asked for, not
+   when the popup was built, because the zoom may have changed since. */
+function linkTo(point) {
+  var zoom = Math.round(map.getZoom() * 100) / 100;
+
+  return pageAddress() + "#" + zoom + "/" + point.lat.toFixed(5) + "/" +
+         point.lon.toFixed(5) + "&camera=" + cameraLinkId(point);
+}
+
+/* "Copy link" in the popup. An <a> and not a <button>, because it is
+   the link: its href is the address, so a right-click and "copy link
+   address" works before any script does, and so does dragging it to
+   an address bar. A left click copies it instead of following it.
+
+   Three ways to copy, tried in turn, because none is everywhere. The
+   clipboard API is refused on a page opened off the disk and on a
+   plain http address, and a browser may refuse it for a page that is
+   not focused; execCommand is deprecated but is what works on
+   file://; and where both fail the address is put in a box, selected,
+   so that one keystroke finishes the job the page could not. */
+function copyLinkRow(point) {
+  var link = document.createElement("a");
+  var box = null;
+  var said = null;
+  var resetTimer = null;
+
+  link.className = "report-link copy-link";
+  link.href = linkTo(point);
+  link.textContent = "Copy link →";
+  link.title = "A link to this camera, to send or keep";
+
+  function say(text) {
+    link.textContent = text;
+    window.clearTimeout(resetTimer);
+    resetTimer = window.setTimeout(function () {
+      link.textContent = "Copy link →";
+    }, 2500);
+  }
+
+  function showBox(url) {
+    if (!box) {
+      box = document.createElement("input");
+      box.type = "text";
+      box.readOnly = true;
+      box.className = "copy-box";
+      box.setAttribute("aria-label", "Link to this camera");
+      said = document.createElement("span");
+      said.className = "kind";
+      link.parentNode.insertBefore(box, link.nextSibling);
+      box.parentNode.insertBefore(said, box.nextSibling);
+    }
+    box.value = url;
+    box.focus();
+    box.select();
+  }
+
+  function byCommand(url) {
+    var copied = false;
+
+    showBox(url);
+    try {
+      copied = document.execCommand("copy");
+    } catch (err) {
+      copied = false;
+    }
+
+    if (copied) {
+      said.textContent = "Copied.";
+      say("Copied ✓");
+    } else {
+      said.textContent = "Selected — press Ctrl-C, or Cmd-C on a Mac, to copy.";
+    }
+  }
+
+  link.onclick = function (event) {
+    var url = linkTo(point);
+
+    event.preventDefault();
+    link.href = url;
+
+    if (window.navigator.clipboard && window.navigator.clipboard.writeText) {
+      window.navigator.clipboard.writeText(url).then(function () {
+        say("Copied ✓");
+      }, function () {
+        byCommand(url);
+      });
+      return;
+    }
+
+    byCommand(url);
+  };
+
+  return link;
+}
+
+/* ------------------------------------------------------------------
+   Reporting from the map
+
+   The popup on a camera offers "Report its state"; a gap on the map
+   offered nothing, and a gap is exactly where a camera the map does
+   not have would be. So a right-click on the map, or a long press on
+   a phone, opens a small popup at that spot with one row, "Report a
+   camera here", which opens the report form with the pin already
+   placed there - report.html#<lat>/<lon>, to six decimals, which is
+   the precision the map writes everywhere else. In the fragment and
+   never the query string: a query string is part of the page
+   request, so it goes to the host, into the server's log, and into
+   the Referer of every stylesheet, script and font the page then
+   loads from the same origin - and the spot a person right-clicked
+   is very often where they are standing. A fragment is never sent
+   anywhere by the browser. The privacy pass watched the query form
+   arrive in the Referer of nine same-origin requests; that is L4.
+
+   Right-click. MapLibre already keeps the browser's own menu off the
+   canvas: its mouse handlers call preventDefault on contextmenu there
+   so that a right-drag can rotate the map, and it fires its own
+   "contextmenu" map event on mouseup, and only if the mouse did not
+   drag in between. So the map event is the thing to listen to. It
+   comes with the spot under the pointer, it never fires for a
+   right-drag, and it is the canvas's alone - nothing here touches
+   contextmenu anywhere else on the page, so the browser's menu on a
+   link or a paragraph is what it always was. The preventDefault
+   below is on that same canvas event, belt and braces.
+
+   Long press. iOS Safari fires no contextmenu for a touch, so a
+   press is timed here: one finger down that stays within a few
+   pixels for LONG_PRESS_MS is a press; one that drifts further is a
+   pan, and the timer is cancelled, so a long press that turns into a
+   drag is a pan and nothing else - MapLibre's own drag is not
+   interfered with at all. Android Chrome does fire contextmenu on a
+   long press, a little before this timer, and the map event above
+   handles it; offerReportAt() declines to open a second popup for
+   the same spot within a second, so the two paths cannot both fire
+   for one press. After a press, the touchend is preventDefault-ed so
+   the browser does not make a click out of it: a popup closes on a
+   map click by default, and the one just opened would close under
+   the finger that opened it.
+   ------------------------------------------------------------------ */
+
+var LONG_PRESS_MS = 600;
+var LONG_PRESS_SLOP = 8;   /* pixels a finger may drift and still be pressing */
+
+/* The last spot offered, so one press is one popup whichever way it
+   arrived (see "Long press" above). */
+var lastOffer = { at: 0, x: 0, y: 0 };
+
+/* map.js only runs on the map, which is the page at the root, so the
+   report page is one folder down from here - as the popup's "Report
+   its state" link already assumes.
+
+   The fragment is exactly  #<lat>/<lon>  - latitude first, a slash
+   between, six decimals each, no zoom, nothing else - which is what
+   the report page's reader in account.js parses, so the two must be
+   changed together. It cannot be mistaken for the report page's
+   other fragment, #report-<n>, and it is the map's own lat/lon order.
+   The old form - the pair as query parameters - is not written
+   anywhere, on purpose, and must not come back: see the heading
+   above. */
+function reportHereHref(lngLat) {
+  return "pages/report.html#" + lngLat.lat.toFixed(6) + "/" + lngLat.lng.toFixed(6);
+}
+
+function offerReportAt(lngLat, point) {
+  var box = document.createElement("div");
+  var title = document.createElement("strong");
+  var coords = document.createElement("span");
+  var row = document.createElement("a");
+  var now = Date.now();
+
+  if (now - lastOffer.at < 1000 &&
+      Math.abs(point.x - lastOffer.x) < 20 && Math.abs(point.y - lastOffer.y) < 20) {
+    return;
+  }
+  lastOffer = { at: now, x: point.x, y: point.y };
+
+  closePopup();
+
+  title.textContent = "Seen a camera here?";
+  box.appendChild(title);
+
+  box.appendChild(document.createElement("br"));
+  coords.className = "kind";
+  coords.textContent = lngLat.lat.toFixed(4) + ", " + lngLat.lng.toFixed(4);
+  box.appendChild(coords);
+
+  box.appendChild(document.createElement("br"));
+  row.className = "report-link";
+  row.href = reportHereHref(lngLat);
+  row.textContent = "Report a camera here →";
+  box.appendChild(row);
+
+  showPopup(lngLat, box, true, null);
+
+  /* Not a camera, so the address bar does not name one. */
+  popupId = null;
+}
+
+function bindReportGesture() {
+  var holder = map.getContainer();
+  var timer = null;
+  var press = null;   /* where the finger went down, while it is down */
+
+  function cancelPress() {
+    if (timer) {
+      window.clearTimeout(timer);
+      timer = null;
+    }
+    press = null;
+  }
+
+  map.on("contextmenu", function (event) {
+    if (event.originalEvent && event.originalEvent.preventDefault) {
+      event.originalEvent.preventDefault();
+    }
+    cancelPress();
+    offerReportAt(event.lngLat, event.point);
+  });
+
+  /* Plain third arguments rather than an options object: this is
+     written for old browsers too, and one that predates the object
+     form would read it as "capture". Nothing in touchstart or
+     touchmove calls preventDefault, so nothing is lost by their not
+     being marked passive. */
+  holder.addEventListener("touchstart", function (event) {
+    if (event.touches.length !== 1) {
+      cancelPress();
+      return;
+    }
+    press = { x: event.touches[0].clientX, y: event.touches[0].clientY, done: false };
+    timer = window.setTimeout(function () {
+      var rect = holder.getBoundingClientRect();
+      var point = { x: press.x - rect.left, y: press.y - rect.top };
+
+      timer = null;
+      press.done = true;
+      offerReportAt(map.unproject([point.x, point.y]), point);
+    }, LONG_PRESS_MS);
+  }, false);
+
+  holder.addEventListener("touchmove", function (event) {
+    if (!press || press.done || !event.touches.length) {
+      return;
+    }
+    if (Math.abs(event.touches[0].clientX - press.x) > LONG_PRESS_SLOP ||
+        Math.abs(event.touches[0].clientY - press.y) > LONG_PRESS_SLOP) {
+      cancelPress();
+    }
+  }, false);
+
+  holder.addEventListener("touchend", function (event) {
+    if (press && press.done && event.cancelable) {
+      event.preventDefault();
+    }
+    cancelPress();
+  }, false);
+
+  holder.addEventListener("touchcancel", cancelPress, false);
+}
+
+bindReportGesture();
+
 /* ------------------------------------------------------------------
    The list of points
 
@@ -1314,6 +2633,11 @@ function listed() {
     out.sort(function (a, b) {
       return (b.deployments || 1) - (a.deployments || 1);
     });
+  } else if (sortBy === "near" && here) {
+    /* Closest first, from where Near me found you. */
+    out.sort(function (a, b) {
+      return distanceFromHere(a) - distanceFromHere(b);
+    });
   }
 
   return out;
@@ -1331,11 +2655,113 @@ function render() {
 
   pointsEmpty.style.display = rows.length === 0 ? "block" : "none";
 
+  listedCount = rows.length;
+
   if (pointsCount) {
     pointsCount.textContent = rows.length === points.length
       ? String(points.length) + " cameras"
       : String(rows.length) + " of " + String(points.length);
   }
+
+  if (recordLine) {
+    recordLine.textContent = recordLineText();
+  }
+}
+
+/* ---------------- what a screen reader is told ----------------
+
+   The count beside the heading changes silently: it is a span, and a
+   screen reader that is somewhere else on the page hears nothing when
+   it does. So when the list is narrowed the count is read out through
+   #list-status, a live region in the list's head that is hidden from
+   the eye - the visible count already says it there - and written
+   here and nowhere else.
+
+   Written from the two places a visitor narrows the list - a filter
+   (the legend, Legacy, a solo) and the search box - and deliberately
+   not from render(), which also runs on load and again when the
+   database answers: a count read out before anyone has touched
+   anything is noise over the page's own title. Held back a little,
+   so that typing "croy" is one sentence and not four, and read out
+   only when the sentence has changed. Then cleared, so that a reader
+   browsing the head later finds the count once, beside the heading,
+   and not twice; a live region's clearing is not announced.
+
+   announceThenCount() is for a filter that has something to say
+   before the number - "Showing only LFR van sites" - and is what the
+   legend's solo uses; anything that changes the list and wants a
+   word first should go through it too. */
+var listStatus = document.getElementById("list-status");
+var listedCount = 0;
+
+var ANNOUNCE_AFTER = 600;   /* milliseconds of quiet before it is read */
+var ANNOUNCE_CLEAR = 4000;  /* how long it stays, for a reader who asks again */
+var announceTimer = null;
+var clearTimer = null;
+var lastAnnounced = "";
+var announcePrefix = "";
+
+function countSentence() {
+  return listedCount === points.length
+    ? String(points.length) + " cameras shown"
+    : String(listedCount) + " of " + String(points.length) + " cameras shown";
+}
+
+function announceCount() {
+  if (!listStatus) {
+    return;
+  }
+
+  window.clearTimeout(announceTimer);
+  announceTimer = window.setTimeout(function () {
+    var text = (announcePrefix ? announcePrefix + ". " : "") + countSentence();
+
+    announcePrefix = "";
+    announceTimer = null;
+
+    if (text === lastAnnounced) {
+      return;
+    }
+    lastAnnounced = text;
+
+    listStatus.textContent = text;
+    window.clearTimeout(clearTimer);
+    clearTimer = window.setTimeout(function () {
+      listStatus.textContent = "";
+    }, ANNOUNCE_CLEAR);
+  }, ANNOUNCE_AFTER);
+}
+
+function announceThenCount(prefix) {
+  announcePrefix = prefix || "";
+  announceCount();
+}
+
+/* "182 cameras · Met records to 2025, BTP to 2026 · last checked
+   September 2026": what the map is a map of, and how old it is.
+
+   The count is the published record's - the length of points.js,
+   which is what data/cameras.csv builds - and never a typed number,
+   so it cannot go stale. Cameras the database has beyond the record
+   are reports moderators approved and are not in the CSV; they are
+   said separately, "5 more from reports", rather than folded into
+   one figure, because a reader who opens the CSV to check should
+   find the number this line gave them. Edit mode counts nothing
+   beyond the record: a draft's additions are not reports. The dates
+   are RECORD_SOURCES in shared.js, and the comment there says who
+   changes them and when. */
+function recordLineText() {
+  var record = published().length;
+  var extra = EDITING ? 0 : Math.max(0, points.length - record);
+  var text = String(record) + " cameras";
+
+  if (extra > 0) {
+    text += " in the record, " + String(extra) + " more from reports";
+  }
+
+  return text +
+    " · Met records to " + RECORD_SOURCES.met + ", BTP to " + RECORD_SOURCES.btp +
+    " · last checked " + RECORD_SOURCES.checked;
 }
 
 function rowFor(point) {
@@ -1361,6 +2787,21 @@ function rowFor(point) {
   name.textContent = point.name;
   go.appendChild(name);
 
+  /* The kind and the state, in words, for a screen reader. The swatch
+     carries them as its title, which a pointer sees as a tooltip and
+     paper reads back with attr() - but a title on a span with no text
+     in it reaches no one else: the row's spoken name was the camera's
+     name, its note and its coordinates, and nothing said it was a van
+     site or that it is legacy. Hidden from the eye, since the swatch
+     already says it there; after the name, so a reader skimming the
+     list by first words still hears the name first. The middle dots
+     the label uses are commas here, because a synthetic voice reads
+     "·" as "middle dot" or not at all. */
+  var spoken = document.createElement("span");
+  spoken.className = "sr-only";
+  spoken.textContent = ", " + labelOf(point).replace(/ · /g, ", ") + ".";
+  go.appendChild(spoken);
+
   if (point.note) {
     var memo = document.createElement("span");
     memo.className = "memo";
@@ -1381,10 +2822,18 @@ function rowFor(point) {
       coords.textContent;
   }
 
+  /* How far it is from you, whatever the order, for as long as Near
+     me holds a position: "is there one near my station" is answered
+     by the number, and the number is as useful on an A-Z list as on
+     the one sorted by it. */
+  if (here) {
+    coords.textContent = distanceText(distanceFromHere(point)) + " · " + coords.textContent;
+  }
+
   go.appendChild(coords);
 
   go.onclick = function () {
-    map.flyTo({ center: lngLat(point.lat, point.lon), zoom: 17, speed: 1.6 });
+    moveMap(point.lat, point.lon, 17, popupRoom());
     openPopup(point.id);
   };
 
@@ -1414,6 +2863,238 @@ function rowFor(point) {
 
   return row;
 }
+
+/* ------------------------------------------------------------------
+   Finding a place
+
+   "Is there one near my station" is the question this map exists to
+   answer, and until now the only way to ask it was to know where the
+   station is on a dark map of London. The box under the map takes a
+   place name or a postcode and moves the map there. It moves the map
+   and nothing else - the cameras are not filtered by it - and it is
+   everyone's: it was edit-only for a long time for no better reason
+   than that it was built for adding cameras, while the policy that
+   lets the browser talk to the geocoder allowed it on every page.
+
+   The geocoder is Nominatim, OpenStreetMap's free one. Its usage
+   policy asks for no more than one request a second, an identifying
+   header, and no autocomplete. A browser will not let a page set the
+   header, but it does send the site's own address as the referer,
+   which identifies the caller as well. The rest is honoured by being
+   a light caller: a search happens when you press the button or hit
+   Enter, never as you type - which is why there is no search-as-you-
+   type here and must not be; requests are held at least a second
+   apart, with a press inside that second queued rather than dropped;
+   the same words asked twice are answered from the last reply; and no
+   more than five results are asked for. The search is confined to the
+   London bounding box, so it will not offer you a Richmond in
+   Yorkshire, and what comes back is checked against inLondon() too,
+   because a promise the site makes should not rest on a parameter
+   another service honours.
+
+   If you would like the requests to be attributable to you rather
+   than to the site, uncomment the email line in search() and put your
+   own address in it.
+   ------------------------------------------------------------------ */
+
+var SEARCH_URL = "https://nominatim.openstreetmap.org/search";
+var MINIMUM_GAP = 1000;   /* milliseconds between requests */
+var lastSearchAt = 0;
+
+/* The last words sent and what came back, so that pressing Search
+   again on the same words - the commonest second press - costs the
+   geocoder nothing. */
+var lastQuery = null;
+var lastFound = null;
+
+function search() {
+  var query = searchText.value.trim();
+  var waited = Date.now() - lastSearchAt;
+  var viewbox;
+  var url;
+
+  searchResults.innerHTML = "";
+
+  if (query === "") {
+    searchNote.textContent = "Type a place name or a postcode first.";
+    return;
+  }
+
+  if (query === lastQuery && lastFound) {
+    showResults(lastFound, query);
+    return;
+  }
+
+  if (waited < MINIMUM_GAP) {
+    searchNote.textContent = "One moment — searching again shortly.";
+    searchButton.disabled = true;
+    window.setTimeout(function () {
+      searchButton.disabled = false;
+      search();
+    }, MINIMUM_GAP - waited);
+    return;
+  }
+
+  lastSearchAt = Date.now();
+  searchNote.textContent = "Searching…";
+  searchButton.disabled = true;
+
+  /* viewbox is west,north,east,south. bounded=1 makes it a hard
+     restriction rather than a preference. */
+  viewbox = LONDON_BOUNDS[0][1] + "," + LONDON_BOUNDS[1][0] + "," +
+            LONDON_BOUNDS[1][1] + "," + LONDON_BOUNDS[0][0];
+
+  url = SEARCH_URL +
+        "?format=json" +
+        "&limit=5" +
+        "&bounded=1" +
+        "&viewbox=" + encodeURIComponent(viewbox) +
+        "&q=" + encodeURIComponent(query);
+  /* url = url + "&email=you@example.com"; */
+
+  window.fetch(url)
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error("The search service answered with " + response.status);
+      }
+      return response.json();
+    })
+    .then(function (found) {
+      var kept = [];
+      var i;
+
+      for (i = 0; i < (found || []).length; i++) {
+        if (inLondon(parseFloat(found[i].lat), parseFloat(found[i].lon))) {
+          kept.push(found[i]);
+        }
+      }
+
+      lastQuery = query;
+      lastFound = kept;
+      searchButton.disabled = false;
+      showResults(kept, query);
+    })
+    .catch(function (err) {
+      searchButton.disabled = false;
+      searchNote.textContent = "The search could not be completed. Check the connection and try again.";
+    });
+}
+
+function showResults(found, query) {
+  var i;
+
+  if (!found || found.length === 0) {
+    searchNote.textContent = "Nothing found in London for “" + query + "”. Try the name of the road, or the postcode.";
+    return;
+  }
+
+  searchNote.textContent = found.length === 1
+    ? "One place found. Choose it to go there."
+    : "Choose one to go there.";
+
+  for (i = 0; i < found.length; i++) {
+    searchResults.appendChild(resultRow(found[i]));
+  }
+}
+
+/* How close to look at what was found. Nominatim gives every result a
+   bounding box - a few metres for an address, a few miles for a
+   borough - and the zoom is the closest one that fits it on the map,
+   so "Croydon" shows Croydon and "Croydon Road" shows the road. Not
+   fitBounds(), which is a second kind of movement: this way the move
+   is still moveMap(), and the one place that decides how the map
+   moves stays one place. The sums are the web-mercator ones - 512
+   pixels across the world at zoom 0, doubling with each level, and a
+   degree of latitude stretched by the secant of the latitude. */
+function zoomToFit(box) {
+  var canvas = map.getCanvas();
+  var width = canvas.clientWidth || 800;
+  var height = canvas.clientHeight || 600;
+  var south;
+  var north;
+  var west;
+  var east;
+  var spanLon;
+  var spanLat;
+  var zoom;
+
+  if (!box || box.length !== 4) {
+    return 15;
+  }
+
+  south = parseFloat(box[0]);
+  north = parseFloat(box[1]);
+  west = parseFloat(box[2]);
+  east = parseFloat(box[3]);
+
+  spanLon = Math.max(east - west, 0.0005);
+  spanLat = Math.max(north - south, 0.0005) / Math.cos((north + south) / 2 * Math.PI / 180);
+
+  zoom = Math.min(
+    Math.log(width * 360 / (512 * spanLon)) / Math.LN2,
+    Math.log(height * 360 / (512 * spanLat)) / Math.LN2
+  ) - 0.3;   /* a little room round the edges */
+
+  return Math.max(WIDEST_ZOOM, Math.min(17, Math.floor(zoom * 2) / 2));
+}
+
+function resultRow(result) {
+  var row = document.createElement("li");
+  var pick = document.createElement("button");
+
+  pick.className = "pick";
+  pick.textContent = result.display_name;
+
+  pick.onclick = function () {
+    var lat = parseFloat(result.lat);
+    var lon = parseFloat(result.lon);
+    var shortName = result.display_name.split(",")[0];
+
+    moveMap(lat, lon, zoomToFit(result.boundingbox));
+
+    searchResults.innerHTML = "";
+    searchNote.textContent = "Showing " + shortName + ".";
+
+    /* In edit mode a result also fills the coordinate boxes, rather
+       than saving straight away, so you can name the camera yourself
+       before it is recorded. */
+    if (EDITING) {
+      latInput.value = lat.toFixed(6);
+      lonInput.value = lon.toFixed(6);
+      if (nameInput.value.trim() === "") {
+        nameInput.value = shortName;
+      }
+      nameInput.focus();
+    }
+  };
+
+  row.appendChild(pick);
+  return row;
+}
+
+/* The box is hidden in the markup until this runs, so a page without
+   JavaScript - or one where map.js never got this far - shows no
+   search box that does nothing. */
+function setUpPlaceSearch() {
+  if (!searchText || !searchButton || !searchNote || !searchResults) {
+    return;
+  }
+
+  if (searchBox) {
+    searchBox.hidden = false;
+  }
+
+  searchButton.onclick = search;
+
+  searchText.onkeydown = function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      search();
+    }
+  };
+}
+
+setUpPlaceSearch();
 
 /* ------------------------------------------------------------------
    Everything below here only runs in edit mode.
@@ -1463,135 +3144,11 @@ function startEditing() {
 
   /* -------- Way 2: searching by place name
 
-     This uses Nominatim, OpenStreetMap's free geocoder. Its usage
-     policy asks callers for an identifying User-Agent header, but a
-     browser will not let a page set that header, so it cannot be
-     honoured literally from a static file. Instead the page is a light
-     caller: a search only ever happens when you press the button or hit
-     Enter, never as you type; requests are held at least a second
-     apart; and no more than five results are asked for. The search is
-     also confined to the London bounding box, so it will not offer you
-     a Richmond in Yorkshire.
-
-     If you would like your requests to be attributable, uncomment the
-     email line below and put your own address in it.
+     The search box is everyone's now and is set up further down, in
+     "Finding a place". In edit mode a picked result fills the
+     coordinate boxes as well as moving the map; that branch is in
+     resultRow(), guarded on EDITING.
      -------- */
-
-  var SEARCH_URL = "https://nominatim.openstreetmap.org/search";
-  var MINIMUM_GAP = 1000;   /* milliseconds between requests */
-  var lastSearchAt = 0;
-
-  function search() {
-    var query = searchText.value.trim();
-    var waited = Date.now() - lastSearchAt;
-
-    searchResults.innerHTML = "";
-
-    if (query === "") {
-      searchNote.textContent = "Type a place name first.";
-      return;
-    }
-
-    if (waited < MINIMUM_GAP) {
-      searchNote.textContent = "One moment — searching again shortly.";
-      searchButton.disabled = true;
-      window.setTimeout(function () {
-        searchButton.disabled = false;
-        search();
-      }, MINIMUM_GAP - waited);
-      return;
-    }
-
-    lastSearchAt = Date.now();
-    searchNote.textContent = "Searching…";
-    searchButton.disabled = true;
-
-    /* viewbox is west,north,east,south. bounded=1 makes it a hard
-       restriction rather than a preference. */
-    var viewbox = LONDON_BOUNDS[0][1] + "," + LONDON_BOUNDS[1][0] + "," +
-                  LONDON_BOUNDS[1][1] + "," + LONDON_BOUNDS[0][0];
-
-    var url = SEARCH_URL +
-              "?format=json" +
-              "&limit=5" +
-              "&bounded=1" +
-              "&viewbox=" + encodeURIComponent(viewbox) +
-              "&q=" + encodeURIComponent(query);
-    /* url = url + "&email=you@example.com"; */
-
-    window.fetch(url)
-      .then(function (response) {
-        if (!response.ok) {
-          throw new Error("The search service answered with " + response.status);
-        }
-        return response.json();
-      })
-      .then(function (found) {
-        searchButton.disabled = false;
-        showResults(found, query);
-      })
-      .catch(function (err) {
-        searchButton.disabled = false;
-        searchNote.textContent = "The search could not be completed.";
-      });
-  }
-
-  function showResults(found, query) {
-    var i;
-
-    if (!found || found.length === 0) {
-      searchNote.textContent = "Nothing found in London for “" + query + "”.";
-      return;
-    }
-
-    searchNote.textContent = "Choose one to fill in the form below.";
-
-    for (i = 0; i < found.length; i++) {
-      searchResults.appendChild(resultRow(found[i]));
-    }
-  }
-
-  function resultRow(result) {
-    var row = document.createElement("li");
-    var pick = document.createElement("button");
-
-    pick.className = "pick";
-    pick.textContent = result.display_name;
-
-    /* Picking a result fills the form rather than saving straight away,
-       so you can name the camera yourself before it is recorded. */
-    pick.onclick = function () {
-      var shortName = result.display_name.split(",")[0];
-
-      latInput.value = parseFloat(result.lat).toFixed(6);
-      lonInput.value = parseFloat(result.lon).toFixed(6);
-      if (nameInput.value.trim() === "") {
-        nameInput.value = shortName;
-      }
-
-      map.flyTo({
-      center: lngLat(parseFloat(result.lat), parseFloat(result.lon)),
-      zoom: 15,
-      speed: 1.6
-    });
-
-      searchResults.innerHTML = "";
-      searchNote.textContent = "";
-      nameInput.focus();
-    };
-
-    row.appendChild(pick);
-    return row;
-  }
-
-  searchButton.onclick = search;
-
-  searchText.onkeydown = function (event) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      search();
-    }
-  };
 
   /* -------- Way 3: clicking the map
 
@@ -1614,51 +3171,112 @@ function startEditing() {
     nameInput.focus();
   });
 
-  /* -------- Writing points.js back out -------- */
+  /* -------- Writing the record back out --------
 
-  function fileText() {
-    var lines = [];
+     This used to write a points.js to paste over the committed one.
+     It cannot any more, and should not: points.js is written by
+     tools/build_points.py from data/cameras.csv, and a points.js the
+     CSV did not produce fails stamp.py by design (NOTES.md, "The
+     build script and the record"). So what comes out of here now is
+     the CSV itself - one header, one camera per line, in the column
+     order the script documents - to paste over data/cameras.csv. Then
+     run the script and commit the CSV with the two files it writes.
+
+     Every field is written, the four this page never edits included.
+     The glow is weighed by deployments and the popup will cite
+     source_label, so an export that dropped either would quietly
+     flatten the map or strip its citations the moment anyone
+     published from here. And the round trip is exact: export the
+     published record untouched, paste it over the CSV, run the
+     script, and git reports nothing changed - which is the check
+     that this writes what the script reads.
+     -------- */
+
+  /* The columns of data/cameras.csv, in the order build_points.py
+     writes them and checks the header against. The prose is last
+     because it is the long one. */
+  var CSV_COLUMNS = ["name", "type", "status", "lat", "lon", "approximate", "last",
+                     "periods", "deployments", "source_label", "source_url", "note"];
+
+  /* RFC 4180, the way Python's csv module writes it, because that is
+     what reads the file back: a field is quoted only if it holds a
+     comma, a quote or a line break, and a quote inside is doubled. A
+     field quoted when it need not be would still read, but the CSV
+     would then differ from what the script itself writes, and the
+     round trip above is the point. */
+  function csvField(value) {
+    var text = value === null || value === undefined ? "" : String(value);
+
+    if (/[",\r\n]/.test(text)) {
+      return "\"" + text.replace(/"/g, "\"\"") + "\"";
+    }
+
+    return text;
+  }
+
+  /* {"2023-24": 1, "2025": 3} as the CSV writes it: 2023-24:1;2025:3,
+     earliest period first. Not Object.keys() as it comes: JavaScript
+     puts a key that looks like a whole number - "2025" - ahead of
+     every other key whatever order it was written in, so the object
+     iterates 2025 before 2023-24. The script sorts by the year a
+     period starts and then by the key, and this does the same. */
+  function periodsText(periods) {
+    var keys;
+    var items = [];
+    var i;
+
+    if (!periods) {
+      return "";
+    }
+
+    keys = Object.keys(periods).sort(function (a, b) {
+      var ya = parseInt(a.slice(0, 4), 10);
+      var yb = parseInt(b.slice(0, 4), 10);
+
+      if (ya !== yb) {
+        return ya - yb;
+      }
+      return a < b ? -1 : (a > b ? 1 : 0);
+    });
+
+    for (i = 0; i < keys.length; i++) {
+      items.push(keys[i] + ":" + String(periods[keys[i]]));
+    }
+
+    return items.join(";");
+  }
+
+  function csvText() {
+    var lines = [CSV_COLUMNS.join(",")];
     var i;
     var point;
-
-    lines.push("/* ------------------------------------------------------------------");
-    lines.push("   cammap - the cameras on the published map");
-    lines.push("");
-    lines.push("   Written out by index.html?edit. Paste this over everything in");
-    lines.push("   points.js, then commit and push to publish it.");
-    lines.push("   ------------------------------------------------------------------ */");
-    lines.push("");
-    lines.push("var POINTS = [");
 
     for (i = 0; i < points.length; i++) {
       point = points[i];
 
-      lines.push("");
-      lines.push("  {");
-      lines.push("    name: " + JSON.stringify(point.name) + ",");
-      lines.push("    note: " + JSON.stringify(point.note) + ",");
-      lines.push("    lat: " + point.lat.toFixed(6) + ",");
-      lines.push("    lon: " + point.lon.toFixed(6) + ",");
-      lines.push("    type: " + JSON.stringify(point.type) + ",");
-      lines.push("    status: " + JSON.stringify(point.status) + ",");
-      lines.push("    last: " + (point.last === null ? "null" : String(point.last)) + ",");
-
-      /* Written out even though nothing on this page edits it. The glow
-         is weighed by it, so leaving it off here would quietly flatten
-         the map the moment anyone published from ?edit. */
-      lines.push("    deployments: " + String(point.deployments || 1));
-      lines.push(i === points.length - 1 ? "  }" : "  },");
+      lines.push([
+        csvField(point.name),
+        csvField(point.type),
+        csvField(point.status),
+        csvField(point.lat.toFixed(6)),
+        csvField(point.lon.toFixed(6)),
+        csvField(point.approximate ? "true" : "false"),
+        csvField(point.last === null ? "" : String(point.last)),
+        csvField(periodsText(point.periods)),
+        csvField(String(point.deployments || 1)),
+        csvField(point.source_label),
+        csvField(point.source_url),
+        csvField(point.note)
+      ].join(","));
     }
 
-    lines.push("");
-    lines.push("];");
-    lines.push("");
-
-    return lines.join("\n");
+    /* A newline after the last row: the script writes one, and a diff
+       that ends "no newline at end of file" is a change. */
+    return lines.join("\n") + "\n";
   }
 
   copyButton.onclick = function () {
-    exportText.value = fileText();
+    exportText.value = csvText();
     exportText.style.display = "block";
     exportText.focus();
     exportText.select();
@@ -1675,9 +3293,9 @@ function startEditing() {
     }
 
     if (copied) {
-      exportNote.textContent = "Copied. Paste it over everything in points.js.";
+      exportNote.textContent = "Copied. Paste it over everything in data/cameras.csv, then run python3 tools/build_points.py.";
     } else {
-      exportNote.textContent = "Selected below — press Cmd-C, then paste over points.js.";
+      exportNote.textContent = "Selected below — press Cmd-C, paste over data/cameras.csv, then run python3 tools/build_points.py.";
     }
   };
 
@@ -1693,11 +3311,309 @@ function startEditing() {
     refreshCameras();
 
     render();
-    map.flyTo({ center: lngLat(LONDON_CENTRE[0], LONDON_CENTRE[1]), zoom: OPENING_ZOOM, speed: 1.6 });
+    moveMap(LONDON_CENTRE[0], LONDON_CENTRE[1], OPENING_ZOOM);
 
     exportText.style.display = "none";
     exportNote.textContent = "";
     addNote.textContent = "Back to the published cameras.";
+  };
+}
+
+/* ------------------------------------------------------------------
+   How to read this map
+
+   The block under the legend, in index.html. Two things are done to
+   it here. The first sentence's list of kinds is written from
+   CAMERA_TYPES, the one table the key and the dots are painted from,
+   so the prose cannot name a kind the key does not have or miss one
+   it does; the labels are lowered into the sentence where they start
+   with an ordinary word, and left alone where they start with an
+   acronym ("LFR van site"). And it is open by default on the first
+   visit only: the markup says open, so a page without JavaScript
+   shows it, and a visit that finds STORAGE.explained set closes it.
+   The key is set when it has been shown open once and again when it
+   is closed - a visitor who read it and moved on and one who shut it
+   both get one summary line next time. Where storage is refused the
+   key is never found and it is open on every visit, which is the
+   harmless way round. Opening it again on a later visit is not
+   remembered: it is there to be looked at, not to stay open.
+   ------------------------------------------------------------------ */
+
+var explainBox   = document.getElementById("explain");
+var explainKinds = document.getElementById("explain-kinds");
+
+function kindInSentence(label) {
+  /* "Fixed LFR camera" -> "fixed LFR camera"; "LFR van site" stays. */
+  return /^[A-Z][a-z]/.test(label) ? label.charAt(0).toLowerCase() + label.slice(1) : label;
+}
+
+function kindsSentence() {
+  var names = [];
+  var i;
+
+  for (i = 0; i < TYPES.length; i++) {
+    names.push(kindInSentence(TYPES[i].label));
+  }
+
+  if (names.length < 2) {
+    return names.length ? ": " + names[0] : "";
+  }
+
+  return ": " + names.slice(0, -1).join(", ") + " or " + names[names.length - 1];
+}
+
+function rememberExplained() {
+  try {
+    window.localStorage.setItem(STORAGE.explained, "1");
+  } catch (err) {
+    /* storage refused - it will be open next time too, and that is fine */
+  }
+}
+
+function setUpExplain() {
+  var seen = false;
+
+  if (explainKinds) {
+    explainKinds.textContent = kindsSentence();
+  }
+
+  if (!explainBox) {
+    return;
+  }
+
+  try {
+    seen = window.localStorage.getItem(STORAGE.explained) === "1";
+  } catch (err) {
+    seen = false;
+  }
+
+  if (seen) {
+    explainBox.removeAttribute("open");
+  } else {
+    rememberExplained();
+  }
+
+  explainBox.addEventListener("toggle", function () {
+    if (!explainBox.open) {
+      rememberExplained();
+    }
+  });
+}
+
+/* ------------------------------------------------------------------
+   The years
+
+   A scrubber under the map: one position per year the record covers,
+   and one before them for every year at once. Move it to 2024 and
+   the map, the list and the count show the cameras whose recorded
+   period covers 2024; move it back and everything returns. Watching
+   the glow spread across London year by year is the most persuasive
+   thing this record can do, and it is done here with the record
+   alone.
+
+   What it filters by, and what it does not. A camera is shown for a
+   year when any key of its periods covers it - "2023-24" is 2023 and
+   2024, "2020-2025" is six years - through periodYears() in shared.js,
+   the one reading of a period the site has. It never picks a year
+   inside a span: the Met publishes "3 deployments 2023-2025" and not
+   which year each fell in, so a site with that period is shown in
+   all three, which is exactly what the record supports and no more.
+   And a camera whose record names no period - the shops, the two
+   fixed installs, the King's Cross estate - is shown in every year.
+   The record does not say when it was not there; a scrubber that hid
+   it for 2021 would be claiming it was not there in 2021, which is a
+   guess. The hint under the scrubber says so, so a visitor who sees a
+   shop that opened in 2026 standing at 2020 knows why.
+
+   The range runs from the earliest year any period covers to the
+   latest, worked out from the points and never typed: today that is
+   2020 to 2026, with the BTP register's 2026 the end, and a record
+   refreshed with a 2027 period moves the end on its own. It ends at
+   the newest period in the record, not at this year, because a
+   scrubber that offered 2028 would be offering a prediction. The
+   position before the first year is "All years"; a range cannot hold
+   a null, so the leftmost step stands for it, the readout says so,
+   and aria-valuetext says it to a screen reader. Arrow keys move it,
+   as they do any range, and the KEYBOARD FOCUS ring covers it.
+
+   Legacy. Every van site is legacy, and the van sites are 163 of the
+   172 cameras the record dates, so a year chosen with Legacy off
+   would show nine stations and the undated shops and look like a
+   broken map. So choosing a year switches Legacy on, as a solo of an
+   all-legacy kind does, and the hint says it has; returning to every
+   year switches it back off unless the visitor pressed Legacy
+   themselves in between, which makes it theirs. Not saved with the
+   view: a year is a question, not a setting, and neither it nor the
+   switch it made is remembered - see saveView().
+
+   The filter is one rule in three places that must agree: isShown()
+   for the list and the glow sources, shownFilter() for the dot and
+   halo layers, and the `years` property buildFeatures() writes for
+   the expression to read. applyFilters() brings all three into step
+   and the count is read out through announceThenCount(), so the
+   dots, the list, the count line and the live region change
+   together. Not in the hash: a link carries a view and a camera, and
+   a camera link to a site the chosen year does not cover puts the
+   scrubber back to every year, the way it switches Legacy on.
+   ------------------------------------------------------------------ */
+
+var yearsBox   = document.getElementById("years");
+var yearRange  = document.getElementById("year-range");
+var yearOut    = document.getElementById("year-out");
+var yearMarks  = document.getElementById("year-marks");
+var yearHint   = document.getElementById("year-hint");
+
+/* Whether the Legacy switch was turned on by the scrubber rather
+   than by a press on it, like legacyBySolo for the solo. */
+var legacyByYear = false;
+
+/* The years the record covers, from the points: [first, last], or
+   null where no point carries a period. */
+function recordYearRange() {
+  var from = null;
+  var to = null;
+  var i;
+  var years;
+
+  for (i = 0; i < points.length; i++) {
+    years = periodYears(points[i].periods);
+    if (years && years.length) {
+      from = from === null ? years[0] : Math.min(from, years[0]);
+      to = to === null ? years[years.length - 1] : Math.max(to, years[years.length - 1]);
+    }
+  }
+
+  return from === null ? null : { from: from, to: to };
+}
+
+/* Set the range's ends from the record, and draw the marks under it.
+   Called at start-up and again after the database has answered; a
+   chosen year is kept, since a range can only widen. The "All"
+   position is one step before the first year. */
+function fitYearRange() {
+  var range = recordYearRange();
+  var mark;
+  var y;
+
+  if (!yearsBox || !yearRange || !range) {
+    return;
+  }
+
+  if (String(yearRange.min) === String(range.from - 1) && String(yearRange.max) === String(range.to)) {
+    return;   /* nothing has moved */
+  }
+
+  yearRange.min = range.from - 1;
+  yearRange.max = range.to;
+  yearRange.step = 1;
+  yearRange.value = yearShown === null ? range.from - 1 : yearShown;
+
+  if (yearMarks) {
+    yearMarks.innerHTML = "";
+    for (y = range.from - 1; y <= range.to; y++) {
+      mark = document.createElement("span");
+      mark.textContent = y === range.from - 1 ? "All" : String(y);
+      mark.setAttribute("data-year", y === range.from - 1 ? "all" : String(y));
+      yearMarks.appendChild(mark);
+    }
+  }
+
+  sayYear();
+}
+
+/* The state alone - the year and the Legacy switch that comes with
+   it - for a caller that will apply the filters itself. */
+function chooseYear(year) {
+  var solo;
+
+  yearShown = year;
+
+  if (year !== null && !showLegacy) {
+    showLegacy = true;
+    legacyByYear = true;
+    markLegacy();
+  } else if (year === null && legacyByYear) {
+    legacyByYear = false;
+    /* Unless a solo of an all-legacy kind still wants it, in which
+       case the solo takes the switch over, with its own sentence. */
+    solo = soloType();
+    if (solo !== null && allLegacy(solo)) {
+      legacyBySolo = true;
+      soloNote = "Every " + (typeLabel(solo) || solo) +
+        " in the record is legacy, so Legacy has been switched on to show them.";
+      sayUnderMap(soloNote);
+    } else {
+      showLegacy = false;
+    }
+    markLegacy();
+  }
+
+  if (yearRange && yearRange.min !== "") {
+    yearRange.value = year === null ? yearRange.min : year;
+  }
+}
+
+/* A move of the scrubber. */
+function setYear(year) {
+  chooseYear(year);
+  applyFilters();
+  sayYear();
+  announceThenCount(year === null ? "All years" : "Year " + year);
+}
+
+/* The readout beside the scrubber, the value a screen reader is
+   given, the mark that is lit, and the hint under it. */
+function sayYear() {
+  var range;
+  var marks;
+  var i;
+  var text;
+
+  if (!yearRange || !yearOut || yearRange.min === "") {
+    return;
+  }
+
+  range = { from: Number(yearRange.min) + 1, to: Number(yearRange.max) };
+  text = yearShown === null ? "All years" : String(yearShown);
+  yearOut.textContent = text;
+  yearRange.setAttribute("aria-valuetext", text);
+
+  if (yearMarks) {
+    marks = yearMarks.children;
+    for (i = 0; i < marks.length; i++) {
+      marks[i].className = marks[i].getAttribute("data-year") === (yearShown === null ? "all" : String(yearShown)) ? "on" : "";
+    }
+  }
+
+  if (yearHint) {
+    if (yearShown === null) {
+      yearHint.textContent = "Every year the record covers, " + range.from + " to " + range.to +
+        ". Move the slider to see the cameras whose recorded period covers one year.";
+    } else {
+      yearHint.textContent = "Cameras whose recorded period covers " + yearShown +
+        ". A site recorded as a span, 2023-2025 say, is shown in every year of it, because the " +
+        "record does not say which year each visit fell in; a camera the record gives no period " +
+        "for - a shop, a fixed camera - is shown in every year, because hiding it would be a guess." +
+        (legacyByYear ? " Legacy has been switched on: the van sites are what the record dates." : "");
+    }
+  }
+}
+
+/* The block is hidden in the markup until this runs, so a page
+   without JavaScript shows no slider that does nothing. */
+function setUpYears() {
+  if (!yearsBox || !yearRange || !recordYearRange()) {
+    return;
+  }
+
+  fitYearRange();
+  yearsBox.hidden = false;
+
+  /* input, not change: a range fires input on every step of a drag
+     and on every arrow key, and the map should follow the thumb. */
+  yearRange.oninput = function () {
+    var value = Number(yearRange.value);
+    setYear(value === Number(yearRange.min) ? null : value);
   };
 }
 
@@ -1715,6 +3631,8 @@ if (EDITING) {
 /* The layers are made when the style finishes loading, and take the
    list as it stands then, so there is nothing to draw here. */
 drawLegend();
+setUpExplain();
+setUpYears();
 render();
 
 /* ------------------------------------------------------------------
@@ -1722,27 +3640,102 @@ render();
 
    points.js is drawn first and at once, so the map is never blank
    waiting on a network. Then, if there is a Supabase project behind
-   the site, the cameras table is fetched and laid over it: a row
-   that came from the seed replaces its seed entry (so a camera the
+   the site, the cameras are fetched and laid over it: a row that
+   came from the seed replaces its seed entry (so a camera the
    moderators have since marked non-functional shows as such), and a
    row that came from a report is added. If the fetch fails for any
    reason the seed simply stands.
 
-   The result is kept in the browser for a few minutes. A busy day is
-   many people opening the map, not many changes to it, so most of
-   those visits should be answered from storage rather than the
-   database. Edit mode never overlays: it is for the file, not the
-   table.
+   Fetched from a view, cameras_public, and not from the table. The
+   table carries approved_by, approved_at and updated_at, and anyone
+   could select them: a moderator's uuid against every camera they
+   approved, and the hour they did it, which beside the leaderboard
+   is a name against a time (the privacy pass's L3 and L6). The view
+   carries only what the map may read - the columns named below and
+   nothing else - and only visible rows, and the table is revoked
+   from the anonymous role by the same migration. The view is the
+   map's read; the table is the moderators'. A column the map comes
+   to need is added to the view, on purpose, and never by widening
+   what the table lets out.
+
+   The result is kept in the browser, and the map is drawn from it at
+   once. A busy day is many people opening the map, not many changes
+   to it, so the cache is what nearly every visit is answered from -
+   but it is drawn *and then checked*, rather than trusted for a fixed
+   span, for the reason under "Fresh data" below. Edit mode never
+   overlays: it is for the file, not the table.
+   ------------------------------------------------------------------ */
+
+/* ---------------- fresh data (KEEP-5) ----------------
+
+   What this used to do: if the cache was less than five minutes old,
+   draw it and ask nothing. That is one behaviour with two bad ends.
+   A moderator who hides a camera saw it gone at once (every
+   moderating action calls forgetCameraCache()) but nobody else did,
+   for up to five minutes - and it is everyone else the correction is
+   for. And a visitor arriving cold, with no cache, watched the seed
+   sit there while a request they could not see went out; the seed is
+   right to be drawn first, but the five minutes were doing nothing
+   for that visit at all.
+
+   What it does now is the pattern a browser's own cache calls
+   stale-while-revalidate: draw whatever is in storage immediately,
+   whatever its age, and then ask the database anyway, in the
+   background, and redraw only if the answer is not what is already
+   on the screen. One request per page load against a table of a few
+   hundred rows is cheap - it is one request either way, when the
+   cache expires - and it buys the thing the five minutes cost: a
+   moderator's change appears on everybody's *next load*, rather than
+   on their next load after the cache happens to have expired.
+
+   The floor is the one thing the old TTL was genuinely doing. A
+   cache younger than CACHE_FLOOR is drawn and not revalidated,
+   because a reload inside half a minute is not a new visit: it is
+   somebody pressing reload, or stepping from the map to the report
+   page and back, or a page restored from the browser's own
+   back-forward cache. Thirty seconds is long enough that none of
+   those puts a second request on the database and short enough that
+   it is never what a person notices - the worst a moderator waits is
+   thirty seconds rather than five minutes, and only if they reload
+   that fast. It is not a correctness rule; it is a rate limit on
+   ourselves.
+
+   Same or different, and why the rows and not a timestamp. The
+   obvious cheap check would be "has anything been updated since",
+   and the view cannot answer it: updated_at was taken off
+   cameras_public by the privacy pass (a moderator's uuid against the
+   hour they acted, beside the daily leaderboard, is a name against a
+   time - L3 and L6), so there is deliberately no column that says
+   when. So the comparison is on the rows themselves: every row
+   serialised with its own keys sorted, the rows then sorted by id,
+   the whole thing joined into one string. Sorting both ends means
+   the answer does not depend on the order PostgREST happened to
+   return, and sorting the keys means it does not depend on the
+   column order either - which differs between the view and the
+   table fallback, and so between a cache written by one and an
+   answer from the other. A few hundred rows is well under a
+   millisecond, and the only thing it is used for is deciding whether
+   to redraw.
+
+   What the redraw keeps, and why each thing: see redrawCameras().
    ------------------------------------------------------------------ */
 
 var CAMERAS_KEY = STORAGE.cameras;
-var CAMERAS_TTL = 5 * 60 * 1000;   /* five minutes */
 
-/* seed_key is how a database row says which seed entry it is. It is
-   built the same way here as in the build script, so they agree. */
-function seedKeyOf(point) {
-  return point.name + "|" + point.lat.toFixed(6) + "|" + point.lon.toFixed(6) + "|" + point.type;
-}
+/* How recently the cache must have been written for the revalidation
+   to be skipped altogether. Not a time-to-live: an older cache is
+   still drawn, it is only also checked. */
+var CACHE_FLOOR = 30 * 1000;   /* thirty seconds */
+
+/* The signature of the rows the map is drawn from, so a background
+   answer can be compared against what is actually on the screen
+   rather than against what was last fetched. Null until something
+   has been laid over the seed. */
+var drawnSignature = null;
+
+/* Set while redrawCameras() is taking the map apart and putting it
+   back: writeHash() reads it, because a redraw is not a move. */
+var redrawing = false;
 
 /* A row's deployment count, or the fallback if it has none. A camera
    that came from a report has never been counted, so it stands at one
@@ -1770,13 +3763,16 @@ function overlayCameras(rows) {
 
   /* Seed entries, each replaced by its database row if there is one.
 
-     The key is worked out once, before anything is copied over: it is
-     built from the entry's own name, position and type, and the
-     position is about to be overwritten by the row's. Asking for it
-     again afterwards would be asking a different question. */
+     The key is the one tidy() fixed on the point when it was read from
+     points.js, not one worked out here: it is built from the entry's
+     own name, position and type, and the position is about to be
+     overwritten by the row's - and may already have been, if this is
+     a second overlay. Asking the moved point for its key would be
+     asking a different question, and a moved camera would then come
+     up as two. */
   for (i = 0; i < points.length; i++) {
     point = points[i];
-    key = seedKeyOf(point);
+    key = point.seedKey || seedKeyOf(point);
     row = bySeed[key];
     if (row) {
       point.name = row.name;
@@ -1795,6 +3791,7 @@ function overlayCameras(rows) {
 
       point.last = typeof row.last_seen === "number" ? row.last_seen : point.last;
       point.deployments = deploymentsOf(row, point.deployments);
+      takeRecordFields(point, row);
       point.cameraId = row.id;
       delete bySeed[key];
     }
@@ -1819,9 +3816,15 @@ function overlayCameras(rows) {
     if (row.seed_key && !bySeed[row.seed_key]) {
       continue;   /* a seed row that found its entry */
     }
-    merged.push({
+    merged.push(takeRecordFields({
       id: nextId++,
       cameraId: row.id,
+
+      /* A seed row the record no longer lists under that key - an
+         entry since renamed or moved in the CSV - still carries the
+         key it was written with, and a link made from the old record
+         should still find it. */
+      seedKey: typeof row.seed_key === "string" ? row.seed_key : null,
       name: row.name,
       note: row.note || "",
       lat: Number(row.lat),
@@ -1829,21 +3832,79 @@ function overlayCameras(rows) {
       type: row.type,
       status: row.status,
       last: typeof row.last_seen === "number" ? row.last_seen : null,
-      deployments: deploymentsOf(row, 1)
-    });
+      deployments: deploymentsOf(row, 1),
+      periods: null,
+      source_label: null,
+      source_url: null,
+      approximate: false
+    }, row));
   }
 
   points = merged;
   refreshCameras();
   render();
+
+  /* The rows may carry a period the seed did not reach - the record
+     refreshed in the database ahead of the file - so the scrubber's
+     range is asked again. */
+  fitYearRange();
+
+  /* A popup that was open before the database answered - a link
+     opened it - is made again: its camera may now stand where the
+     row says rather than where the seed did, and has an id to hang
+     "Report its state" on. */
+  if (popupId !== null) {
+    openPopup(popupId);
+  }
+
+  /* A link to a camera by its database id could not be answered until
+     now - see "Deep links" below. */
+  cameraLinkSettled();
 }
 
+/* The four newer record fields, from a database row onto a point -
+   but only when the row actually carries them. The columns arrived in
+   migrations 001 to 003, and the view the map reads names them; the
+   table it falls back to, on a database with no migrations applied,
+   does not, because PostgREST refuses the whole query if one named
+   column is missing, and the map would rather draw the seed's values
+   than nothing. So a row without the columns leaves the point's own
+   values standing, whether those came from points.js or from the
+   defaults above; a row with them wins, the way the row wins on
+   name, note and state. periods is the tell: it is the first of the
+   three migrations, so a row that has it has been through all of
+   them. The cache holds rows from whichever query answered, and
+   either shape overlays: the names are the same, and this is the
+   only place the difference is felt. */
+function takeRecordFields(point, row) {
+  if (row.periods === undefined) {
+    return point;
+  }
+
+  point.periods = row.periods && typeof row.periods === "object" ? row.periods : null;
+  point.source_label = typeof row.source_label === "string" ? row.source_label : null;
+  point.source_url = typeof row.source_url === "string" ? row.source_url : null;
+  point.approximate = row.approximate === true;
+
+  return point;
+}
+
+/* What is in storage, whatever its age, with the time it was written
+   - the caller decides what an age means now, since the age no longer
+   decides whether the rows may be drawn. Null where there is nothing
+   usable, which is also what a browser that refuses storage gives:
+   no cache, so the request goes first and the map works exactly as it
+   did before any of this.
+
+   The shape written here is read by account.js as well (the report
+   form's context dots, which have a TTL of their own and are welcome
+   to), so { at, rows } is not ours alone to change. */
 function readCachedCameras() {
   try {
     var raw = window.localStorage.getItem(CAMERAS_KEY);
     var saved = raw ? JSON.parse(raw) : null;
-    if (saved && saved.at && Date.now() - saved.at < CAMERAS_TTL && Array.isArray(saved.rows)) {
-      return saved.rows;
+    if (saved && saved.at && Array.isArray(saved.rows)) {
+      return { at: saved.at, rows: saved.rows };
     }
   } catch (err) {
     /* nothing usable in storage */
@@ -1859,57 +3920,1265 @@ function cacheCameras(rows) {
   }
 }
 
-function loadCamerasFromDatabase() {
-  var cached;
+/* One row, as a string that does not depend on the order its columns
+   came in. JSON.stringify on the object itself would: it writes keys
+   in insertion order, which is the select's order, and the view and
+   the table fallback name their columns differently - so a cache
+   written by one and an answer from the other would differ as
+   strings while saying the same thing, and every load would redraw
+   for nothing. */
+function rowSignature(row) {
+  var keys = Object.keys(row).sort();
+  var parts = [];
+  var i;
 
-  if (EDITING || typeof configured === "undefined" || !configured || !sb) {
-    return;
+  for (i = 0; i < keys.length; i++) {
+    parts.push(keys[i] + "=" + JSON.stringify(row[keys[i]]));
   }
 
-  cached = readCachedCameras();
-  if (cached) {
-    overlayCameras(cached);
-    return;
-  }
-
-  /* Only the columns the map needs, only visible rows, and a hard
-     ceiling on how many. The ceiling is well above what one city
-     will hold; it is there so a runaway table cannot ship megabytes
-     to every visitor. */
-  sb.from("cameras")
-    .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key")
-    .eq("visible", true)
-    .limit(5000)
-    .then(function (result) {
-      if (result.error || !Array.isArray(result.data)) {
-        return;
-      }
-      cacheCameras(result.data);
-      overlayCameras(result.data);
-    });
+  /* Newline-separated, and every value goes through JSON.stringify,
+     which escapes a newline inside a string - so no two different
+     rows can run together into one indistinguishable string. */
+  return parts.join("\n");
 }
 
-loadCamerasFromDatabase();
+/* The whole answer, as one string. Sorted by id, so the order
+   PostgREST returned them in is not part of the comparison either;
+   the id is put in front of each row's own signature and the strings
+   are sorted, which is a total order whether or not it is numeric
+   (it is not: "10" sorts before "9"), and a signature only has to be
+   the same for the same rows. */
+function rowsSignature(rows) {
+  var sigs = [];
+  var i;
 
-/* index.html#51.51234,-0.12345 opens on that spot, close in. The
-   moderation queue links here so a report can be checked against
-   the map without leaving the queue. */
-(function () {
-  var m = /^#(-?\d+\.\d+),(-?\d+\.\d+)$/.exec(window.location.hash);
-  var lat;
-  var lon;
+  for (i = 0; i < rows.length; i++) {
+    sigs.push(String(rows[i].id) + "\n" + rowSignature(rows[i]));
+  }
+  sigs.sort();
 
-  if (!m) {
+  return sigs.join("\n");
+}
+
+/* ---------------- when the database cannot be reached ----------------
+
+   The seed stands - that was always the behaviour, and it is the
+   right one: a map drawn at once from the published record is better
+   than a blank one waiting on a network. What was missing was any
+   sign of it. A visitor on a train with no signal, or on the day the
+   project's database is down, saw a map that looked exactly like the
+   live one and had no way to know that a camera a moderator took off
+   yesterday was still on it. So one dim line under the record line,
+   in the record line's own voice: "Showing the published record;
+   live updates unavailable." It says what is shown - the record, which
+   is exact - and what is not, and nothing more.
+
+   When it appears: on any failure of the read that is not the view
+   being missing (viewMissing(), which is the fallback's business, not
+   a failure), and after LIVE_TIMEOUT if nothing has answered by then.
+   supabase-js has no timeout of its own, and a request that hangs is
+   the commonest way a bad connection fails; so a timer runs beside the
+   request and speaks at eight seconds. The request is not abandoned:
+   an answer that arrives late is still an answer, the rows are laid
+   over the map as they would have been, and the line clears - which
+   is also what a later successful fetch does, when the cache has
+   expired and the next load asks again, or when a revalidation asks
+   in the background. liveUpdates(true) is the call that clears it;
+   anything that fetches the cameras and succeeds should make it.
+
+   The line sits beside the record line and not in #map-note, which is
+   for what the map has to say about a link or Near me and is cleared
+   by them; this is a standing fact about the page until it is not.
+   It is its own polite live region, so a screen reader hears it once
+   when it arrives, and a live region's clearing is not read out.
+
+   What is not said: the nav. account.js writes the Leaderboard and
+   Account links whenever the project is configured, reachable or not,
+   so those links are there and lead to pages that will say for
+   themselves that they cannot load. The map's line is about the map.
+
+   Four attempts, on purpose. Watching the network with the host
+   unreachable shows the cameras request go out four times - the
+   Wave 2 observation. That is postgrest-js, not this page: a GET
+   that fails at the network, or answers 503 or 520, is retried up
+   to three times with a backoff of one, two and four seconds
+   (`retryEnabled` in the vendored lib/supabase.js, on by default for
+   idempotent methods). On a street with bad signal a request that
+   fails once and succeeds a second later is exactly the case a map
+   like this meets, the seed is already drawn while it waits, and the
+   three retries take about as long as the timer here - so the line
+   speaks at eight seconds either way, and a fourth attempt that
+   succeeds clears it. Turning the retry off would trade that for
+   nothing. */
+var LIVE_TIMEOUT = 8000;   /* milliseconds before the line speaks */
+var recordNotice = document.getElementById("record-notice");
+
+function liveUpdates(available) {
+  if (recordNotice) {
+    recordNotice.textContent = available ? "" : "Showing the published record; live updates unavailable.";
+  }
+}
+
+/* ---------------- the redraw, and what it keeps ----------------
+
+   The background answer differs from what is on the screen, so the
+   map has to be built again. The difficulty is that the visitor has
+   been using it for the second or two the request took, and none of
+   what they have done is in the answer: they have panned, zoomed,
+   narrowed the legend, typed in the search box, scrolled the list,
+   opened a popup, pressed Near me. A redraw that threw any of that
+   away would be worse than the stale data it fixed - a map that
+   jumps back to the middle of London on its own is a broken map,
+   however fresh.
+
+   So the rows are laid over a fresh reading of the seed rather than
+   over the points already standing. points is rebuilt with tidy()
+   and overlayCameras() runs on it exactly as it does on a first
+   load, which is what makes a camera the answer no longer carries
+   actually leave the map: overlaying a second time on top of the
+   first would only ever add and update, never remove, and a camera a
+   moderator hid would sit there until the page was reloaded.
+
+   What is deliberately not touched, and why each one:
+
+     the map        No moveMap(), no fitBounds(), no setCenter. The
+                    view is the visitor's; the answer is about the
+                    cameras, not about where to look.
+     the filters    Legacy, the hidden kinds, the solo, the year, the
+                    search term and the sort all live in variables
+                    that overlayCameras() and render() only read.
+                    Checked rather than assumed: the only thing in
+                    that path that touches a control is fitYearRange(),
+                    which moves the scrubber's ends when the record
+                    has grown and puts the chosen year back on it.
+     the popup      Remembered by what it is of and not by point id,
+                    because tidy() hands out fresh ids: its database
+                    id and its seed key, both - see cameraIdentity(),
+                    which says why both and not one. Put back on the
+                    same camera where either still answers, closed
+                    with a sentence under the map where neither does,
+                    since a popup left standing over a camera that is
+                    no longer on the map is the map lying.
+     its focus      A popup is put back without taking the keyboard
+                    (openPopup's `quiet`): the visitor may have been
+                    typing in the search box, and a request they did
+                    not make must not move their cursor. Where the
+                    keyboard was in the popup itself the element is
+                    gone with it, so the rebuilt popup takes focus as
+                    it would on any opening - and where there is no
+                    popup to rebuild, the map takes it, rather than
+                    the body taking it by default.
+     the list       render() rebuilds every row, which drops the
+                    scroll to the top and drops a focused row on the
+                    floor. Both are put back: the scroll by pixels,
+                    the focus by the row's place in the list and the
+                    kind of button it was, the way drawLegend() hands
+                    focus back after it rebuilds the legend. By place
+                    and not by camera because the rows carry no id in
+                    the markup; the order is the same sort of nearly
+                    the same set, so it is the same row bar the rare
+                    case where the row that changed is above it.
+     Near me        `here` is a variable, so the ring, the distances
+                    on every row and the Nearest sort survive without
+                    anything being done. The ring is drawn on the
+                    style, which the redraw does not touch at all.
+     the address    writeHash() is held off for the whole redraw -
+                    see the note there. The one exception is a popup
+                    that could not be put back: the bar then names a
+                    camera that has gone, and one write takes it off.
+                    That write can only ever remove the camera from a
+                    hash the page itself wrote, since the hash only
+                    ever names a camera the page opened.
+
+   And the count is read out only if it changed, through the same
+   live region a filter uses: a screen reader hearing "187 cameras
+   shown" for a redraw that showed the same 187 is noise.
+   ------------------------------------------------------------------ */
+
+/* What a camera is, across a rebuild that gives every point a fresh
+   id: its database id and its seed key, both, since a camera may
+   carry either or both. The same two cameraLinkId() picks between,
+   and for the same reason - one of them is always there and neither
+   is disturbed by a rename or a Move.
+
+   Both rather than a preference, because they can come apart in the
+   one case this is for. A moderator hides a seed camera: its row
+   leaves cameras_public, so the database id it was open under
+   resolves to nothing - but the camera is still on the map, drawn
+   from points.js as the fallback it has always been, and a popup
+   that shut on it would be saying it had gone when it has not. So
+   the seed key answers where the id no longer does, and only a
+   camera with neither - a report a moderator approved and has since
+   taken off, which lives in the database alone - is really gone. */
+function cameraIdentity(point) {
+  return {
+    id: point.cameraId || null,
+    seed: point.seedKey || seedKeyOf(point) || null
+  };
+}
+
+function pointByIdentity(want) {
+  var i;
+
+  for (i = 0; i < points.length; i++) {
+    if (want.id !== null && points[i].cameraId === want.id) {
+      return points[i];
+    }
+  }
+
+  for (i = 0; i < points.length; i++) {
+    if (want.seed !== null && points[i].seedKey === want.seed) {
+      return points[i];
+    }
+  }
+
+  return null;
+}
+
+/* Which row of the list holds the keyboard, if any: its place and the
+   button it was on. Null when the focus is anywhere else, which is
+   nearly always - and then nothing is done to it. */
+function focusedListRow() {
+  var active = document.activeElement;
+  var rows;
+  var i;
+
+  if (!pointsList || !active || !pointsList.contains(active)) {
+    return null;
+  }
+
+  rows = pointsList.children;
+  for (i = 0; i < rows.length; i++) {
+    if (rows[i].contains(active)) {
+      return { index: i, className: active.className };
+    }
+  }
+
+  return null;
+}
+
+function restoreListFocus(had) {
+  var rows;
+  var row;
+  var again;
+
+  if (!had || !pointsList) {
     return;
   }
 
-  lat = parseFloat(m[1]);
-  lon = parseFloat(m[2]);
-
-  if (inLondon(lat, lon)) {
-    map.jumpTo({ center: lngLat(lat, lon), zoom: 17 });
+  rows = pointsList.children;
+  if (!rows.length) {
+    return;
   }
-})();
+
+  /* A button with no class at all would make this "querySelector('.')",
+     which throws; every button a row holds has one, but a row is not
+     this function's to assume. */
+  if (!had.className) {
+    return;
+  }
+
+  row = rows[Math.min(had.index, rows.length - 1)];
+  again = row.querySelector("." + had.className.split(" ").join("."));
+
+  if (again && again.focus) {
+    again.focus();
+  }
+}
+
+function redrawCameras(rows) {
+  var openIdentity = null;
+  var scroller = pointsList;
+  var scrolled = scroller ? scroller.scrollTop : 0;
+  var parentScrolled = scroller && scroller.parentNode ? scroller.parentNode.scrollTop : 0;
+  var focusInPopup = false;
+  var hadRow = focusedListRow();
+  var countBefore = listedCount;
+  var open;
+  var again;
+
+  if (popupId !== null) {
+    open = pointById(popupId);
+    if (open) {
+      openIdentity = cameraIdentity(open);
+      focusInPopup = !!(popup && popup.getElement && popup.getElement() &&
+                        document.activeElement &&
+                        popup.getElement().contains(document.activeElement));
+    }
+  }
+
+  redrawing = true;
+
+  /* The popup holds a point that is about to be replaced by a new
+     object, so it comes down before the rebuild rather than after. */
+  closePopup();
+
+  points = tidy(published());
+  overlayCameras(rows);
+
+  if (openIdentity !== null) {
+    again = pointByIdentity(openIdentity);
+    if (again) {
+      openPopup(again.id, !focusInPopup);
+    }
+  }
+
+  /* The list is a fresh set of rows, so the scroll and the keyboard
+     are put back onto them. Both offsets, because which box actually
+     scrolls is a stylesheet decision (ul.points carries overflow-y
+     today) and a redraw should not depend on which one it is. */
+  if (scroller) {
+    scroller.scrollTop = scrolled;
+    if (scroller.parentNode && parentScrolled) {
+      scroller.parentNode.scrollTop = parentScrolled;
+    }
+  }
+  restoreListFocus(hadRow);
+
+  redrawing = false;
+
+  if (openIdentity !== null && !again) {
+    /* The camera whose popup was open is not in the answer under
+       either name: a report a moderator has taken off, since a seed
+       camera is still drawn from points.js whatever the database
+       says. Say so, rather than let a popup vanish with no account of
+       itself - and take its name out of the address bar, which is the
+       only write this whole redraw makes.
+
+       And where the keyboard was inside that popup it has nowhere to
+       go, so it is handed to the map, which is focusable and is where
+       the chooser hands it back on Escape. Dropping it on the body
+       is the thing CLAUDE.md warns about, and a redraw nobody asked
+       for is the worst moment to do it. */
+    sayUnderMap("The camera whose details were open is no longer on the map: it may have been taken off since this page was loaded.");
+    writeHash();
+    if (focusInPopup) {
+      map.getCanvas().focus();
+    }
+  }
+
+  /* Only when it actually moved: a redraw that shows the same number
+     of cameras has nothing to tell a screen reader. */
+  if (listedCount !== countBefore) {
+    announceCount();
+  }
+}
+
+function loadCamerasFromDatabase() {
+  var cached;
+  var slow;
+
+  if (EDITING || typeof configured === "undefined" || !configured || !sb) {
+    /* No database on this page, so no camera will ever get an id: a
+       link that names one can be answered now. */
+    cameraLinkSettled();
+    return;
+  }
+
+  /* Whatever is in storage is drawn at once, whatever its age - see
+     "fresh data" above. Only a cache younger than the floor stops the
+     page asking again; anything older is drawn and then checked. */
+  cached = readCachedCameras();
+  if (cached) {
+    overlayCameras(cached.rows);
+    drawnSignature = rowsSignature(cached.rows);
+
+    if (Date.now() - cached.at < CACHE_FLOOR) {
+      return;
+    }
+  }
+
+  /* The timer beside the request - see above. Cleared by whichever
+     answer comes first; a late answer still lands through settle().
+     A camera link by database id is not given up here: the answer
+     may still come, and if it does the link is followed then. The
+     line under the map says why the camera has not opened, in a
+     sentence cameraLinkSettled() takes back if it can answer. */
+  slow = window.setTimeout(function () {
+    slow = null;
+    liveUpdates(false);
+    if (pendingCameraLink) {
+      linkWaitNote = "The database has not answered yet, so the camera this link points to cannot be shown; it will open if it does.";
+      sayUnderMap(linkWaitNote);
+    }
+  }, LIVE_TIMEOUT);
+
+  function answered() {
+    if (slow !== null) {
+      window.clearTimeout(slow);
+      slow = null;
+    }
+  }
+
+  /* The view first. It has exactly the columns the map may read -
+     the fourteen named here, and the select names them all so that
+     a column added to the view is a deliberate addition here too -
+     and only visible rows, so it needs no filter of its own (it has
+     no `visible` column to filter on). A hard ceiling on how many,
+     well above what one city will hold, so a runaway table cannot
+     ship megabytes to every visitor.
+
+     Then, if the view is not there, the table. The live database has
+     none of the migrations applied, so until migration 012 is run
+     the view does not exist and PostgREST answers 404 - code 42P01
+     from older versions, PGRST205 from newer ones, "could not find
+     the table in the schema cache". That one answer, and only that
+     one, sends the map to the table for the ten columns it has
+     always had: the four newer record fields are left out there,
+     because PostgREST refuses a whole query for one column it does
+     not know, and takeRecordFields() above leaves the seed's values
+     standing for a row without them. Any other error is the seed
+     standing, as it always was.
+
+     When the fallback can go: once migration 012 has been applied
+     and the view seen to answer. It should go then, not merely may:
+     the same migration revokes the table from the anonymous role,
+     so a fallback to it would only fail slower, and the branch would
+     be a second query to keep honest for nothing. */
+  function settle(result) {
+    var signature;
+
+    answered();
+    if (result.error || !Array.isArray(result.data)) {
+      /* The seed stands - or the cache, where one was drawn, which is
+         nearer the truth than the seed and stays exactly as it is -
+         and the line says so. A camera link by database id has no
+         answer here, so say that rather than wait for one. */
+      liveUpdates(false);
+      cameraLinkSettled();
+      return;
+    }
+
+    liveUpdates(true);
+    cacheCameras(result.data);
+
+    /* Nothing has been laid over the seed yet: this is the first
+       draw, on a visit with no cache or with storage refused, and it
+       is the overlay it always was. */
+    if (drawnSignature === null) {
+      drawnSignature = rowsSignature(result.data);
+      overlayCameras(result.data);
+      return;
+    }
+
+    /* Otherwise the cache is already on the screen and this is the
+       revalidation. Same rows means there is nothing to do beyond
+       what has been done: the notice is clear and the cache has a
+       fresh timestamp, so the next load inside the floor asks
+       nothing. Different rows means a redraw that keeps the view. */
+    signature = rowsSignature(result.data);
+    if (signature === drawnSignature) {
+      return;
+    }
+
+    drawnSignature = signature;
+    redrawCameras(result.data);
+  }
+
+  /* The request itself failed to complete - a network error the
+     retries did not get past, or an exception - as against the
+     server answering with an error, which settle() sees. */
+  function failed() {
+    answered();
+    liveUpdates(false);
+    cameraLinkSettled();
+  }
+
+  function fromTheTable() {
+    sb.from("cameras")
+      .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key")
+      .eq("visible", true)
+      .limit(5000)
+      .then(settle, failed);
+  }
+
+  sb.from("cameras_public")
+    .select("id,name,note,lat,lon,type,status,last_seen,deployments,seed_key," +
+            "periods,source_label,source_url,approximate")
+    .limit(5000)
+    .then(function (result) {
+      if (result.error && viewMissing(result)) {
+        fromTheTable();
+        return;
+      }
+      settle(result);
+    }, failed);
+}
+
+/* viewMissing() is in shared.js. */
+
+/* ------------------------------------------------------------------
+   Deep links
+
+   "Here is the camera outside my station" is the sentence this map
+   exists to let people say, and a sentence needs a link. The address
+   bar carries the view, and the popup carries a link to itself.
+
+   What the hash can say, and in what order it is read:
+
+     #camera=<id>            open that camera's popup, and centre on it
+                             close in unless a view is given as well.
+     #14/51.5169/-0.0977     zoom, latitude, longitude - the form
+                             OpenStreetMap uses, which people already
+                             know how to read and edit by hand. The
+                             zoom may be fractional.
+     #51.51234,-0.12345      the old form, kept exactly as it was: a
+                             spot, close in. The moderation queue
+                             writes it - cameraMapHref() in account.js
+                             - so a report can be checked against the
+                             map without leaving the queue.
+
+   The page writes the second form as the map moves, and adds the
+   first after it - #14/51.5169/-0.0977&camera=42 - while a popup is
+   open, so that copying the address bar and opening it elsewhere
+   gives back the view and the popup both. It writes with
+   replaceState, never pushState: every pan as a history entry would
+   turn the back button into a tour of everywhere you have been, and
+   a throttle holds the writes to one every quarter of a second so a
+   drag does not flood the browser's own bookkeeping either. The
+   hash is written only once the map has moved; a page that was
+   opened plain keeps a plain address. And it is not written at all
+   while Near me holds a fix - the view is then the visitor's own
+   position, and the bar is blanked instead; see "Near me" below.
+
+   Which id a camera carries. A row from the database has an id that
+   is the same for everyone and survives a rename, so a camera that
+   came from the database links by that. A camera the database has
+   not given an id - the seed, when the database is unreachable or
+   not configured - links by its seed_key, URL-encoded, which is its
+   identity in the published record and is what the row carries too.
+   Either resolves on load: a number against cameraId, anything else
+   against seedKey. A numeric id cannot be answered until the database
+   has, so it waits for the overlay and is answered then - or, if the
+   database does not answer, says so under the map.
+
+   A link is allowed to change what the map is showing - a legacy van
+   site while Legacy is off, a kind switched off in the legend - because
+   a link to a camera that then does not appear is a broken link. It
+   switches the filter for this visit and does not save it: the link
+   asked, the visitor did not.
+   ------------------------------------------------------------------ */
+
+var HASH_VIEW   = /^(\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)$/;
+var HASH_CAMERA = /^camera=(.+)$/;
+var HASH_SPOT   = /^(-?\d+\.\d+),(-?\d+\.\d+)$/;
+
+var HASH_GAP = 250;   /* milliseconds between writes, at most one */
+var hashTimer = null;
+var lastWrittenHash = null;
+
+/* A camera link the page could not answer yet, and whether answering
+   it should also centre the map. linkWaitNote is what the line under
+   the map was told while the database was slow to answer, so that
+   only that sentence is taken back when it does. */
+var pendingCameraLink = null;
+var pendingCameraCentre = false;
+var linkWaitNote = null;
+
+var mapNote = document.getElementById("map-note");
+
+/* The one line under the map for what the map has to say: a link it
+   could not follow, and later what Near me found or did not. Empty is
+   hidden by the stylesheet, so it costs no room until it speaks. */
+function sayUnderMap(text) {
+  if (mapNote) {
+    mapNote.textContent = text || "";
+  }
+}
+
+/* What the link to a camera calls it: the database id if it has one,
+   the seed key otherwise. */
+function cameraLinkId(point) {
+  if (point.cameraId) {
+    return String(point.cameraId);
+  }
+  return encodeURIComponent(point.seedKey || seedKeyOf(point));
+}
+
+function pointByLinkId(value) {
+  var wanted;
+  var i;
+
+  if (/^\d+$/.test(value)) {
+    wanted = Number(value);
+    for (i = 0; i < points.length; i++) {
+      if (points[i].cameraId === wanted) {
+        return points[i];
+      }
+    }
+    return null;
+  }
+
+  try {
+    wanted = decodeURIComponent(value);
+  } catch (err) {
+    return null;   /* not a seed key, and not a number either */
+  }
+
+  for (i = 0; i < points.length; i++) {
+    if (points[i].seedKey === wanted) {
+      return points[i];
+    }
+  }
+
+  return null;
+}
+
+/* The hash as the map stands: the view, and the open camera if one is
+   open. Five decimals is about a metre; the zoom to two places so a
+   fractional zoom survives the trip and a whole one reads whole. */
+function currentHash() {
+  var centre = map.getCenter();
+  var zoom = Math.round(map.getZoom() * 100) / 100;
+  var open = popupId !== null ? pointById(popupId) : null;
+  var hash = "#" + zoom + "/" + centre.lat.toFixed(5) + "/" + centre.lng.toFixed(5);
+
+  if (open) {
+    hash += "&camera=" + cameraLinkId(open);
+  }
+
+  return hash;
+}
+
+function writeHash() {
+  var hash;
+
+  /* Not while Near me holds a fix. The map is then looking at where
+     the visitor is standing, and the bar following it would put
+     their position, to about a metre, in the one place that is
+     copied without thinking and kept in the browser's history -
+     written by the page, not by them. So from the fix arriving
+     until the second press clears it, nothing is written here;
+     blankHash() took the old view out when the fix arrived, and the
+     first move after clearing writes as usual. `here` is declared
+     under "Near me" further down; a var is hoisted, so before that
+     line runs it is simply undefined, and no fix is held. */
+  if (here) {
+    return;
+  }
+
+  /* Nor while the background revalidation is putting the map back
+     together. A redraw is not a move: the visitor did not pan, did
+     not zoom and did not open anything, so the address bar has
+     nothing new to say. Without this the redraw would write twice
+     for no change - the open popup closes, which writes the view
+     without its camera, and then opens again, which writes the
+     camera back - and a page that was opened plain, and so has a
+     plain address, would find a view written into it by a request
+     it never made. redrawCameras() is the one place this is set,
+     and it writes once itself if the camera in the bar has gone. */
+  if (redrawing) {
+    return;
+  }
+
+  hash = currentHash();
+
+  if (hash === lastWrittenHash) {
+    return;
+  }
+  lastWrittenHash = hash;
+
+  try {
+    window.history.replaceState(null, "", hash);
+  } catch (err) {
+    /* A browser that refuses replaceState here - some do on file://
+       - still takes a fragment through location.replace, which does
+       not reload or add a history entry either. It does fire
+       hashchange, which the listener below knows to ignore. */
+    try {
+      window.location.replace(hash);
+    } catch (err2) {
+      /* then the address bar simply does not follow the map */
+    }
+  }
+}
+
+/* Take the view out of the bar: the plain address, as a page opened
+   plain has. For Near me, which must not leave the view it just
+   replaced in the bar - a stale view is read as the current one, and
+   it may name a camera whose popup has since closed - and must not
+   write the one it moved to. A bare "#" rather than the address
+   with its fragment taken off: replacing the address with one that
+   has no fragment is a navigation, and in the location.replace
+   fallback a reload, while "#" is a fragment change in both, and
+   location.hash reads as empty for it. The last write is remembered
+   as empty for the same reason, so the hashchange listener below
+   ignores the fallback's own event and the first write afterwards
+   sees something to do. */
+function blankHash() {
+  lastWrittenHash = "";
+  try {
+    window.history.replaceState(null, "", "#");
+  } catch (err) {
+    try {
+      window.location.replace("#");
+    } catch (err2) {
+      /* then the old view stays in the bar; nothing new is written */
+    }
+  }
+}
+
+/* One write per quarter second at most, taken at the end of the
+   interval so a drag that is still going writes where it got to, not
+   where it started. */
+function scheduleHashWrite() {
+  if (hashTimer !== null) {
+    return;
+  }
+  hashTimer = window.setTimeout(function () {
+    hashTimer = null;
+    writeHash();
+  }, HASH_GAP);
+}
+
+/* What the hash asks for: a view, a camera, or both. */
+function readHash() {
+  var raw = window.location.hash.replace(/^#/, "");
+  var parts = raw.split("&");
+  var wanted = { view: null, camera: null };
+  var m;
+  var i;
+
+  for (i = 0; i < parts.length; i++) {
+    if ((m = HASH_VIEW.exec(parts[i]))) {
+      wanted.view = { zoom: parseFloat(m[1]), lat: parseFloat(m[2]), lon: parseFloat(m[3]) };
+    } else if ((m = HASH_CAMERA.exec(parts[i]))) {
+      wanted.camera = m[1];
+    } else if ((m = HASH_SPOT.exec(parts[i]))) {
+      wanted.view = { zoom: 17, lat: parseFloat(m[1]), lon: parseFloat(m[2]) };
+    }
+  }
+
+  return wanted;
+}
+
+/* Bring a camera into view for a link: the filter that hides it is
+   switched off for this visit, unsaved, and its popup opens. `centre`
+   says whether to go there as well - not when the link gave a view of
+   its own, which is the visitor's to keep. */
+function showCameraLink(point, centre) {
+  var changed = false;
+
+  if (point.status === "legacy" && !showLegacy) {
+    showLegacy = true;
+    markLegacy();
+    changed = true;
+  }
+  if (hiddenTypes[point.type]) {
+    hiddenTypes[point.type] = false;
+    drawLegend();
+    changed = true;
+  }
+  /* A year the camera's record does not cover is put back to every
+     year, for the same reason: the link asked for the camera. */
+  if (!coversYear(point)) {
+    chooseYear(null);
+    changed = true;
+  }
+  if (changed) {
+    applyFilters();
+  }
+
+  if (centre) {
+    /* easeTo with no duration, not jumpTo: it is the same cut, but
+       jumpTo ignores `offset`, and the popup needs its room. */
+    map.easeTo({ center: lngLat(point.lat, point.lon), zoom: 17, offset: [0, popupRoom()], duration: 0 });
+  }
+
+  openPopup(point.id);
+}
+
+function followCameraLink(value, centre) {
+  var point = pointByLinkId(value);
+
+  if (!point) {
+    pendingCameraLink = value;
+    pendingCameraCentre = centre;
+    return;
+  }
+
+  pendingCameraLink = null;
+  sayUnderMap("");
+  showCameraLink(point, centre);
+}
+
+/* Called once the database has answered, or once it is known that it
+   will not: the moment a camera link by database id can be resolved,
+   or given up on. */
+function cameraLinkSettled() {
+  var point;
+
+  if (!pendingCameraLink) {
+    return;
+  }
+
+  /* Only the waiting sentence is taken back, not whatever Near me or
+     a bad view in the same link has said there since. */
+  if (linkWaitNote !== null && mapNote && mapNote.textContent === linkWaitNote) {
+    sayUnderMap("");
+  }
+  linkWaitNote = null;
+
+  point = pointByLinkId(pendingCameraLink);
+  if (point) {
+    pendingCameraLink = null;
+    showCameraLink(point, pendingCameraCentre);
+    return;
+  }
+
+  pendingCameraLink = null;
+  sayUnderMap("The camera this link points to is not on the map: it may have been taken off, or the database could not be reached.");
+}
+
+function applyHash() {
+  var wanted = readHash();
+
+  /* A view outside London - #99/0/0, a link edited by hand, a link
+     made for another city's copy of this map - used to be ignored in
+     silence, and the address it asked for stayed in the bar as if it
+     had been honoured. The map cannot go there (maxBounds would hold
+     it at the edge anyway), so it says so, treats the link as having
+     asked for no view - a camera named in the same link is still
+     followed, and centred on, as if the link had named only it - and
+     writes the view as it stands over the address that was not, so
+     what is in the bar is once again what is on the map. The last
+     write is forgotten first: a hash edited by hand while the map
+     has not moved is the view writeHash() wrote last, and it would
+     otherwise see nothing to do and leave the bad address standing. */
+  if (wanted.view && !inLondon(wanted.view.lat, wanted.view.lon)) {
+    sayUnderMap("That link points outside London, which is all this map covers; showing the whole map.");
+    wanted.view = null;
+    lastWrittenHash = null;
+    writeHash();
+  }
+
+  if (wanted.view) {
+    /* jumpTo, not moveMap(): on load there is nothing to fly from,
+       and a change to the hash by hand is a request for a place, not
+       a journey. */
+    map.jumpTo({
+      center: lngLat(wanted.view.lat, wanted.view.lon),
+      zoom: Math.max(WIDEST_ZOOM, Math.min(CLOSEST_ZOOM, wanted.view.zoom))
+    });
+  }
+
+  if (wanted.camera) {
+    followCameraLink(wanted.camera, !wanted.view);
+  }
+}
+
+applyHash();
+
+map.on("moveend", scheduleHashWrite);
+
+/* A hash changed by hand, or by a link within the page, is followed
+   like one the page opened with. The page's own writes do not fire
+   this in most browsers, and are known by their text where they do. */
+window.addEventListener("hashchange", function () {
+  if (window.location.hash !== lastWrittenHash) {
+    applyHash();
+  }
+});
+
+/* After the hash, not before: a camera link by database id is left
+   pending by applyHash() and answered the moment the database has
+   spoken - which, from the cache, is inside this call. */
+loadCamerasFromDatabase();
+
+/* ------------------------------------------------------------------
+   Near me
+
+   Pressed, never automatic. NOTES.md drew the line before this was
+   built: asking every visitor for their location, to centre a map,
+   is a real cost to a site whose whole argument is that it collects
+   nothing, and a refusal has to work as well as a yes. So the browser
+   is asked only when the button is pressed, the answer lives in one
+   variable for this visit, and it is written nowhere - not to
+   storage, not to the database, and not to the address bar. That
+   last was not always so: the hash follows the map, and after Near
+   me the map is looking at where you are, so the bar used to carry
+   your position to about a metre - written by the page, not by you,
+   into the one place that is copied without thinking and kept in
+   the browser's history. So while a fix is held the bar is blanked
+   to the plain address and writeHash() writes nothing; the first
+   move after the second press clears the fix writes as usual. And a
+   link copied from a popup centres on the camera, never on the map's
+   centre - linkTo() - because a dot clicked while the map is looking
+   at your street does not move the map.
+
+   What a press does: centres the map on the fix, close in or less so
+   according to how good the fix is; draws where you are as a small
+   ring with a dot in it and the browser's stated accuracy as a larger
+   ring round that; and sorts the list by distance, with the distance
+   on every row. A second press clears all of it and puts the list
+   back in the order it was in.
+
+   The rings answer to the brightness rule like everything else drawn
+   on the map: nothing may be brighter than the dimmest camera dot,
+   which is the fixed-camera red at 134. They are drawn in #5c5c5c,
+   the dark map's own brightest grey, at 92 - the same grey on all
+   three views, because it reads as a quiet outline on the dark map,
+   a plain one on the light, and a neutral one over imagery, and a
+   colour that changed with the view would be a fourth thing to keep
+   in step. The fill is all but transparent: the ring says how far the
+   browser might be wrong, and a filled disc would say "here" with a
+   confidence the browser did not offer.
+
+   What can go wrong, and what the page says: the browser has no
+   geolocation, or the page is not on https, and the button is shown
+   disabled with the reason in its title and label; the person says
+   no, and the map says it works without; the fix does not come in
+   ten seconds, or cannot be made at all, and the map says which.
+   Every path leaves the map exactly as usable as before. A fix
+   outside London is said to be, and the distances are shown all the
+   same - "the nearest is 40 km away" is an answer.
+   ------------------------------------------------------------------ */
+
+var HERE = "cammap-here";   /* the source, and the prefix of its layers */
+var HERE_COLOUR = "#5c5c5c";   /* perceived brightness 92; the rule is 134 */
+
+/* Where Near me found you, or null. Never written anywhere else. */
+var here = null;
+
+var nearButton = document.getElementById("near-me");
+var nearSort = document.querySelector('#points-sort button[data-sort="near"]');
+
+/* metresBetween() is in shared.js. */
+
+function distanceFromHere(point) {
+  return here ? metresBetween(here.lat, here.lon, point.lat, point.lon) : 0;
+}
+
+/* "120 m", "1.4 km", "12 km". Rounded to what a phone can actually
+   know: the nearest ten metres close in, a tenth of a kilometre
+   further out, a whole kilometre beyond ten. */
+function distanceText(metres) {
+  if (metres < 1000) {
+    return String(Math.max(10, Math.round(metres / 10) * 10)) + " m";
+  }
+  if (metres < 10000) {
+    return (metres / 1000).toFixed(1) + " km";
+  }
+  return String(Math.round(metres / 1000)) + " km";
+}
+
+/* A circle of so many metres round a point, as a polygon: 64 sides,
+   which at any zoom the map allows is a circle to the eye. Degrees of
+   latitude are a fixed length; degrees of longitude shrink with the
+   cosine of the latitude. */
+function circleAround(lat, lon, metres) {
+  var ring = [];
+  var dLat = metres / 111320;
+  var dLon = metres / (111320 * Math.cos(lat * Math.PI / 180));
+  var i;
+  var angle;
+
+  for (i = 0; i <= 64; i++) {
+    angle = (i % 64) * 2 * Math.PI / 64;
+    ring.push([lon + dLon * Math.cos(angle), lat + dLat * Math.sin(angle)]);
+  }
+
+  return { type: "Polygon", coordinates: [ring] };
+}
+
+function hereFeatures() {
+  if (!here) {
+    return collection([]);
+  }
+
+  return collection([
+    {
+      type: "Feature",
+      properties: { kind: "accuracy" },
+      geometry: circleAround(here.lat, here.lon, Math.max(here.accuracy || 0, 10))
+    },
+    {
+      type: "Feature",
+      properties: { kind: "you" },
+      geometry: { type: "Point", coordinates: lngLat(here.lat, here.lon) }
+    }
+  ]);
+}
+
+/* Draw, or redraw, where you are. Under the camera dots and over the
+   glow: the cameras are the point, and a ring round you must never
+   cover one. Safe before the style has loaded - there is no layer to
+   put it under, and buildOverStyle() calls this again when there is. */
+function drawHere() {
+  var beneath = DOT;
+
+  /* Nothing to draw until Near me has been pressed, and nothing to
+     draw it under until the cameras are there. */
+  if (!here || !map.getLayer(DOT)) {
+    return;
+  }
+
+  if (!map.getSource(HERE)) {
+    map.addSource(HERE, { type: "geojson", data: hereFeatures() });
+  } else {
+    map.getSource(HERE).setData(hereFeatures());
+  }
+
+  if (map.getLayer(HERE + "-fill")) {
+    return;   /* layers standing; the source above carries the change */
+  }
+
+  /* The accuracy: a faint disc and a thin ring. */
+  map.addLayer({
+    id: HERE + "-fill",
+    type: "fill",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "accuracy"],
+    paint: { "fill-color": HERE_COLOUR, "fill-opacity": 0.08 }
+  }, beneath);
+
+  /* A dark casing under the ring, for the satellite view only: over
+     a photograph a thin mid-grey line is lost, and the rule allows
+     nothing brighter, so the answer is darker - the page's own black
+     round the grey, the way the style's own labels wear a dark halo
+     over imagery. Its opacity is set by applyView(): on the dark map
+     it would be black on black, and on the light map it would turn a
+     quiet grey ring into a heavy dark one. */
+  map.addLayer({
+    id: HERE + "-ring-casing",
+    type: "line",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "accuracy"],
+    paint: { "line-color": "#0d0d0d", "line-width": 3.5, "line-opacity": hereCasingOpacity() }
+  }, beneath);
+
+  map.addLayer({
+    id: HERE + "-ring",
+    type: "line",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "accuracy"],
+    paint: { "line-color": HERE_COLOUR, "line-width": 1.2, "line-opacity": 0.9 }
+  }, beneath);
+
+  /* You: a small ring with a dot in it. Not a plain dot, because a
+     plain grey dot is what a private camera looks like, and a hollow
+     ring is what a legacy site looks like; a ring with a dot in it is
+     neither. The same casing under it as under the accuracy ring. */
+  map.addLayer({
+    id: HERE + "-you-casing",
+    type: "circle",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "you"],
+    paint: {
+      "circle-radius": 7,
+      "circle-opacity": 0,
+      "circle-stroke-color": "#0d0d0d",
+      "circle-stroke-width": 3.5,
+      "circle-stroke-opacity": hereCasingOpacity()
+    }
+  }, beneath);
+
+  map.addLayer({
+    id: HERE + "-you-ring",
+    type: "circle",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "you"],
+    paint: {
+      "circle-radius": 7,
+      "circle-opacity": 0,
+      "circle-stroke-color": HERE_COLOUR,
+      "circle-stroke-width": 1.5,
+      "circle-stroke-opacity": 0.95
+    }
+  }, beneath);
+
+  map.addLayer({
+    id: HERE + "-you-dot",
+    type: "circle",
+    source: HERE,
+    filter: ["==", ["get", "kind"], "you"],
+    paint: { "circle-radius": 2, "circle-color": HERE_COLOUR, "circle-opacity": 0.95 }
+  }, beneath);
+}
+
+/* The casing is for imagery only; see drawHere(). */
+function hereCasingOpacity() {
+  return view === "satellite" ? 0.85 : 0;
+}
+
+/* Called from applyView(), which runs on every change of view and
+   again after every style build, so the casing follows the view. */
+function applyHereView() {
+  if (map.getLayer(HERE + "-ring-casing")) {
+    map.setPaintProperty(HERE + "-ring-casing", "line-opacity", hereCasingOpacity());
+  }
+  if (map.getLayer(HERE + "-you-casing")) {
+    map.setPaintProperty(HERE + "-you-casing", "circle-stroke-opacity", hereCasingOpacity());
+  }
+}
+
+function removeHere() {
+  var ids = [HERE + "-fill", HERE + "-ring-casing", HERE + "-ring",
+             HERE + "-you-casing", HERE + "-you-ring", HERE + "-you-dot"];
+  var i;
+
+  for (i = 0; i < ids.length; i++) {
+    if (map.getLayer(ids[i])) {
+      map.removeLayer(ids[i]);
+    }
+  }
+  if (map.getSource(HERE)) {
+    map.removeSource(HERE);
+  }
+}
+
+/* How close to look, from how sure the browser is: a fix good to
+   fifty metres earns a street, one good to two kilometres earns a
+   district. The zoom is chosen so the accuracy ring is a ring on the
+   map and not the whole of it. */
+function zoomForAccuracy(metres) {
+  if (metres <= 60) { return 16; }
+  if (metres <= 250) { return 15; }
+  if (metres <= 800) { return 14; }
+  if (metres <= 2500) { return 13; }
+  return 12;
+}
+
+function markNear() {
+  if (nearButton) {
+    nearButton.className = here ? "toggle on" : "toggle";
+    nearButton.setAttribute("aria-pressed", here ? "true" : "false");
+  }
+  if (nearSort) {
+    nearSort.hidden = !here;
+  }
+}
+
+function gotHere(lat, lon, accuracy) {
+  var inside = inLondon(lat, lon);
+
+  here = { lat: lat, lon: lon, accuracy: accuracy };
+
+  /* The bar first, before the map moves: from here until the fix is
+     cleared, writeHash() writes nothing, and the view that was in
+     the bar goes too, so what is copied from it is the plain address
+     and not a stale view read as the current one. */
+  blankHash();
+
+  drawHere();
+
+  if (inside) {
+    moveMap(lat, lon, zoomForAccuracy(accuracy));
+  }
+
+  /* The list: distance first, and the order it was in remembered for
+     when this is cleared. */
+  if (sortBy !== "near") {
+    sortBefore = sortBy;
+  }
+  sortBy = "near";
+  markNear();
+  markSort();
+  render();
+
+  sayUnderMap(inside
+    ? "Centred on where you are, to within about " + distanceText(accuracy) +
+      ". Nothing is stored or sent, and nothing is written to the address bar. " +
+      "Press Near me again to clear it."
+    : "You are outside London, which is all this map covers, so there is nothing to centre on; " +
+      "the list is in order of distance from you all the same. Nothing is stored or sent, " +
+      "and nothing is written to the address bar. Press Near me again to clear it.");
+}
+
+/* The second press. The bar stays blank until the map next moves:
+   writing it here would put back the view as it stands, which is
+   still where you are if you have not panned away, and the point of
+   the blank was that the page never writes that on its own. */
+function clearHere() {
+  here = null;
+  removeHere();
+
+  if (sortBy === "near") {
+    sortBy = sortBefore;
+  }
+  markNear();
+  markSort();
+  render();
+  sayUnderMap("");
+}
+
+/* Whether a request is out. The button is not disabled while it is -
+   disabling a focused button drops the keyboard's focus on the floor,
+   and a person who pressed Enter would find themselves nowhere - so a
+   second press while waiting is simply ignored. */
+var askingHere = false;
+
+function askForHere() {
+  if (askingHere) {
+    return;
+  }
+  askingHere = true;
+  nearButton.setAttribute("aria-busy", "true");
+  sayUnderMap("Asking your browser where you are…");
+
+  window.navigator.geolocation.getCurrentPosition(function (position) {
+    askingHere = false;
+    nearButton.removeAttribute("aria-busy");
+    gotHere(position.coords.latitude, position.coords.longitude, position.coords.accuracy || 0);
+  }, function (err) {
+    askingHere = false;
+    nearButton.removeAttribute("aria-busy");
+
+    /* 1 is refused, 2 is could not be worked out, 3 is took too
+       long; anything else is a browser being inventive. */
+    if (err && err.code === 1) {
+      sayUnderMap("Location refused - that is fine. The map works without it: search for a place instead, or pan to it.");
+    } else if (err && err.code === 3) {
+      sayUnderMap("No fix after ten seconds. Try again in a moment, or search for a place instead.");
+    } else {
+      sayUnderMap("Your browser could not work out where you are. The map works without it: search for a place instead.");
+    }
+  }, {
+    /* A rough fix is enough to say which street, arrives sooner, and
+       costs a phone less; ten seconds is as long as anyone waits; and
+       a fix a few minutes old is the same street. */
+    enableHighAccuracy: false,
+    timeout: 10000,
+    maximumAge: 180000
+  });
+}
+
+/* The button is hidden in the markup until this has looked. Without
+   geolocation, or off https - browsers refuse to ask for a location
+   on a plain http page - it is shown disabled, with the reason where
+   a pointer and a screen reader will each find it. */
+function setUpNearMe() {
+  var reason = null;
+
+  if (!nearButton) {
+    return;
+  }
+
+  if (!window.navigator.geolocation) {
+    reason = "this browser will not share a location";
+  } else if (window.isSecureContext === false) {
+    reason = "a location can only be asked for over https";
+  }
+
+  nearButton.hidden = false;
+
+  if (reason) {
+    nearButton.disabled = true;
+    nearButton.title = "Near me is not available: " + reason + ".";
+    nearButton.setAttribute("aria-label", "Near me, not available: " + reason);
+    return;
+  }
+
+  nearButton.onclick = function () {
+    if (here) {
+      clearHere();
+    } else {
+      askForHere();
+    }
+  };
+}
+
+setUpNearMe();
 
 /* A remembered legacy setting has to show on the button straight away;
    the map side of it is applied when the layers are built. */
@@ -1930,6 +5199,7 @@ if (pointsSearch) {
   pointsSearch.oninput = function () {
     searchTerm = pointsSearch.value.trim().toLowerCase();
     render();
+    announceCount();   /* held back until the typing pauses */
   };
 }
 

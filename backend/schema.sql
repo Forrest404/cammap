@@ -2,9 +2,11 @@
 --    cammap - supabase schema, version 2
 --
 --    Backs the whole site now, not just the accounts page. The map
---    reads its pins from the cameras table; points.js is the seed for
---    that table (see seed.sql, written out by build_points.py) and the
---    offline fallback if the database cannot be reached.
+--    reads its pins from the cameras table; seed.sql fills that table
+--    from the published record, and points.js is the same record as
+--    the offline fallback if the database cannot be reached. Both are
+--    written out by tools/build_points.py from data/cameras.csv and
+--    are never edited by hand.
 --
 --    What a signed-in person can do through the anon key:
 --      - save cameras to a private list (as before)
@@ -39,6 +41,73 @@
 --    it. Each function is revoked from anon and authenticated first
 --    and then granted only to whoever is meant to call it.
 -- ------------------------------------------------------------------
+
+-- ---------------- the city this map is of ----------------
+
+-- version 2.15: one place, on this side of the wire, that says where
+-- the map is.
+--
+-- The box was written out four times in this file - a check
+-- constraint on cameras, one on reports, one on saved_cameras, and a
+-- fourth inline in pending_near, which the Wave 4 merge note flagged
+-- as a copy nothing was holding to the others. Four copies of four
+-- numbers, all of which have to agree with LONDON_BOUNDS in
+-- frontend/shared.js, and none of which could be changed with any
+-- confidence that the other three had been. That is the shape of
+-- every bug this repository's checks exist to catch, and it was
+-- waiting in the one place a wrong answer is a camera the server
+-- refuses to store.
+--
+-- SQL cannot read JavaScript, so there is no making this literally
+-- the same copy as CITY.bounds in shared.js: what there can be is
+-- one copy per language, and a check that holds them together.
+-- tools/stamp.py reads the four numbers out of this function's body
+-- and out of CITY.bounds and fails, naming the function, if they
+-- differ; it also fails if any of the three constraints, or
+-- pending_near, has gone back to writing the numbers itself instead
+-- of calling this. So a second city is two edits - the object in
+-- shared.js and the function here - and the commit that makes only
+-- one of them does not pass.
+--
+-- immutable because a check constraint may only call a function that
+-- is: the answer depends on the two arguments and on nothing else,
+-- no table, no clock, no setting. parallel safe for the same reason.
+-- Deliberately not "set search_path": the body names no object at
+-- all, so there is nothing for a search path to resolve, and a
+-- function with one set on it cannot be inlined by the planner -
+-- which this must be, because it runs on every insert into three
+-- tables and inside a function anyone may call.
+--
+-- Not strict, so that a null coordinate answers null rather than
+-- false, which is what the four bare "between" tests it replaces
+-- did: a check constraint passes on null and the columns are all
+-- "not null" anyway, so nothing about a stored row changes.
+--
+-- Named in_city rather than in_london on purpose. The name is the
+-- one thing that does not change when the city does.
+-- (backend/migrations/013_in_city.sql is this block, the three
+-- constraints and pending_near's body on their own.)
+create or replace function public.in_city(lat double precision, lon double precision)
+returns boolean
+language sql
+immutable
+parallel safe
+as $$
+  select lat between 51.28 and 51.70
+     and lon between -0.51 and 0.33;
+$$;
+
+comment on function public.in_city(double precision, double precision) is
+  'True where a point is inside the city this map is of. The one copy of the box on the SQL side; CITY.bounds in frontend/shared.js is the other, and tools/stamp.py holds the two together.';
+
+-- Granted to everyone who can insert a row that is checked against it
+-- and to anon, which calls pending_near. It answers a question whose
+-- answer is already published in shared.js and drawn on every page,
+-- so there is nothing here to withhold; the revoke is only so that
+-- the grant is written down rather than inherited from PUBLIC.
+revoke all on function public.in_city(double precision, double precision) from public;
+grant execute on function public.in_city(double precision, double precision) to anon, authenticated, service_role;
+
 
 -- ---------------- helpers used inside policies ----------------
 
@@ -137,7 +206,11 @@ grant execute on function public.proof_path_pending(text) to authenticated, serv
 -- which are left as they are. role is user, moderator or admin and
 -- only the service role can change it - see the column grant below.
 -- xp_total is a running total kept in step by a trigger on xp_events,
--- so the leaderboard never has to add anything up.
+-- so the leaderboard never has to add anything up. show_on_leaderboard
+-- (version 2.9, added below rather than here so that a fresh database
+-- and an upgraded one lay the columns out the same) is the one thing
+-- a person may change themselves, and only through
+-- set_leaderboard_visibility().
 create table if not exists public.profiles (
   id         uuid primary key references auth.users(id) on delete cascade,
   username   text,
@@ -211,6 +284,67 @@ drop policy if exists "profiles: update own" on public.profiles;
 -- their own row; this makes sure there is no way to try.
 revoke all on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
+
+-- version 2.9: a way off the leaderboard. Every contributor's
+-- username, XP and count of approved reports were public and
+-- enumerable, a hundred at a time, to anyone at all. The names carry
+-- nothing personal - two random words - but what someone has
+-- reported, and how much, is itself a pattern, and on this site that
+-- can be enough. A person should be able to keep their name off the
+-- list without giving up the account or the points.
+--
+-- Default true: the list is the reward the site offers, and a new
+-- account expects to appear on it. Not null, because a view
+-- definition that has to handle "unknown" is a view definition that
+-- will one day handle it wrong.
+--
+-- Where it is enforced, and why not in row-level security: the
+-- three leaderboards further down are materialized views, and
+-- PostgreSQL does not apply RLS to a materialized view - a policy on
+-- profiles is never consulted when the view is refreshed, and a view
+-- cannot carry a policy of its own. The equivalent that meets the
+-- intent (server-side, never the client's query) is the view
+-- definition itself: an opted-out row never enters the table the
+-- page reads, so no query the browser could write, and no future
+-- page that forgets to filter, can show it. QUESTIONS.md item 6
+-- records the substitution. (backend/migrations/007_leaderboard_opt_out.sql
+-- is this block and the rebuilt views on their own.)
+alter table public.profiles
+  add column if not exists show_on_leaderboard boolean not null default true;
+
+comment on column public.profiles.show_on_leaderboard is
+  'false keeps the account off leaderboard_all, _daily and _weekly; enforced in the view definitions, since RLS does not reach a materialized view. Set only through set_leaderboard_visibility().';
+
+-- The one thing on a profile a person may change themselves, and
+-- the only way they may change it: the client roles have no update
+-- privilege on profiles at all (the revoke above), on purpose, so a
+-- column-level grant is not the door. This is. It takes a boolean
+-- and nothing else, and writes it to the caller's own row, found by
+-- auth.uid(); there is no parameter that could name another account,
+-- and nothing comes back.
+--
+-- The anonymity test: what does a stranger learn by calling this
+-- repeatedly with guesses? Nothing. It carries no username, no id,
+-- answers nothing, and acts only on the account whose token made
+-- the call. Signed out, auth.uid() is null and it refuses.
+create or replace function public.set_leaderboard_visibility(shown boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  if auth.uid() is null then
+    raise exception 'not signed in' using errcode = '42501';
+  end if;
+  update public.profiles
+     set show_on_leaderboard = coalesce(shown, true)
+   where id = auth.uid();
+end;
+$fn$;
+
+revoke all on function public.set_leaderboard_visibility(boolean) from public, anon, authenticated;
+grant execute on function public.set_leaderboard_visibility(boolean) to authenticated, service_role;
 
 -- ---------------- settings ----------------
 
@@ -306,6 +440,10 @@ create table if not exists public.cameras (
                 check (status in ('active', 'legacy', 'nonfunctional')),
   last_seen   integer,                     -- the last year a source records it, or null
   deployments integer not null default 1,  -- how many times a source records it being used
+  periods     jsonb,                       -- those uses by the period the source gives, {"2023-24": 1}; null when it gives none
+  source_label text,                       -- the record or report the row rests on, named; null when none is known
+  source_url  text,                        -- where that record or report is, https; null when unknown, never without a label
+  approximate boolean not null default false,  -- the pin marks the surrounding area, not an exact spot
 
   source      text not null check (source in ('seed', 'report', 'admin')),
   seed_key    text unique,                 -- name|lat|lon|type, seed rows only
@@ -315,11 +453,9 @@ create table if not exists public.cameras (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
 
-  -- same bounds as LONDON_BOUNDS in frontend/shared.js
-  constraint cameras_in_london check (
-    lat between 51.28 and 51.70 and
-    lon between -0.51 and 0.33
-  )
+  -- the same box as CITY.bounds in frontend/shared.js, through the
+  -- one SQL copy of it (in_city, at the top of this file)
+  constraint cameras_in_london check (public.in_city(lat, lon))
 );
 
 -- version 2.1 widened source to allow 'admin'; on an older table the
@@ -332,6 +468,122 @@ alter table public.cameras
 alter table public.cameras drop constraint if exists cameras_source_check;
 alter table public.cameras add constraint cameras_source_check
   check (source in ('seed', 'report', 'admin'));
+
+-- version 2.3 added periods: the deployments count broken down by the
+-- period the source gives it in - {"2023-24": 1}, {"2023-2025": 3},
+-- {"2026": 4}. The key is the period exactly as the record states it.
+-- The Met publishes "3 deployments 2023-2025" and not which year each
+-- fell in, so a column keyed by year would hold an estimate, and this
+-- project does not estimate; a reader who wants years goes back to the
+-- deployment-record PDFs, which carry dates. null means the source
+-- names no period - a shop, a fixed install, a camera from a report -
+-- and never an empty object. deployments stays, because the glow and
+-- the Most-used sort read it and a report's camera has no history to
+-- break down, and where periods is given it is its sum. Both facts are
+-- checked here, not only in the build script: the server refuses a
+-- malformed breakdown, or one whose total disagrees with the count,
+-- without trusting whatever wrote the row.
+--
+-- The two helpers are plain SQL and immutable, which is what lets a
+-- check constraint call them. The key pattern is the same one
+-- build_points.py and check.js use; change one, change the three.
+-- (backend/migrations/001_periods.sql is this block on its own, for a
+-- database that already has the table.)
+create or replace function public.periods_valid(p jsonb)
+returns boolean
+language sql
+immutable
+as $$
+  select p is null
+      or (jsonb_typeof(p) = 'object'
+          and p <> '{}'::jsonb
+          and not exists (
+            select 1
+              from jsonb_each(p) as kv(key, value)
+             where kv.key !~ '^\d{4}(-\d{2}|-\d{4})?$'
+                or jsonb_typeof(kv.value) <> 'number'
+                or kv.value::text !~ '^[1-9]\d*$'));
+$$;
+
+-- The sum of a valid breakdown, or null for anything else - so that
+-- the constraint below compares deployments with a number, or with
+-- null, and never raises a cast error on a value periods_valid would
+-- already have refused.
+create or replace function public.periods_total(p jsonb)
+returns integer
+language sql
+immutable
+as $$
+  select case
+           when p is not null and public.periods_valid(p)
+           then (select sum((kv.value::text)::integer)::integer
+                   from jsonb_each(p) as kv(key, value))
+         end;
+$$;
+
+alter table public.cameras
+  add column if not exists periods jsonb;
+
+alter table public.cameras drop constraint if exists cameras_periods_check;
+alter table public.cameras add constraint cameras_periods_check
+  check (public.periods_valid(periods));
+
+alter table public.cameras drop constraint if exists cameras_periods_total_check;
+alter table public.cameras add constraint cameras_periods_total_check
+  check (periods is null or deployments = public.periods_total(periods));
+
+comment on column public.cameras.periods is
+  'Deployments counted by the period the source gives them in, {"2023-24": 1}; null where the source names no period. deployments is the sum.';
+
+-- version 2.4 added source_label and source_url: where a row comes
+-- from, named and linked. Until now provenance was prose inside note
+-- with nothing to click - "Met Police LFR van - 3 deployments
+-- 2023-2025" says which record without saying where it is. The label
+-- names the document ("Met Police LFR deployment record, 2025", "The
+-- Register, 6 February 2026") and the URL is the document itself, or
+-- the page a multi-document record is published on. Both are null
+-- where none is known, and a null is what the map should show as
+-- nothing at all: a camera without a source says nothing rather than
+-- something vague. Two rules the server holds whatever wrote the row:
+-- a URL is https with no whitespace, and a URL needs a label, because
+-- a link with no name is not a citation. The same two rules are in
+-- build_points.py and check.js. (backend/migrations/002_source.sql is
+-- this block on its own.)
+alter table public.cameras
+  add column if not exists source_label text,
+  add column if not exists source_url text;
+
+alter table public.cameras drop constraint if exists cameras_source_label_check;
+alter table public.cameras add constraint cameras_source_label_check
+  check (source_label is null or source_label = btrim(source_label) and source_label <> '');
+
+alter table public.cameras drop constraint if exists cameras_source_url_check;
+alter table public.cameras add constraint cameras_source_url_check
+  check (source_url is null or (source_url ~ '^https://\S+$' and source_label is not null));
+
+comment on column public.cameras.source_label is
+  'The record or report the row rests on, named. null where none is known; the map then says nothing.';
+comment on column public.cameras.source_url is
+  'Where the record or report named in source_label is, as an https URL. null where unknown; never set without a label.';
+
+-- version 2.5 added approximate: true where the pin marks the
+-- surrounding area rather than an exact spot. The Met's record gives
+-- some van sites as a borough or a district, not a street, and the
+-- pin for those sits at the middle of the area; 43 sites at the time
+-- of writing. The note has always said so in prose - "(pin marks the
+-- surrounding area, not an exact spot)" - and the map drew those pins
+-- exactly like a pin on a known pole. A column, so that the map can
+-- draw the difference from a field rather than by searching the note
+-- for a phrase, and so that a moderator's Move, which corrects the
+-- position, can be followed by clearing the flag rather than editing
+-- prose. Not null, default false: a camera from a report is where the
+-- reporter dropped the pin, and that is a claim about a spot.
+-- (backend/migrations/003_approximate.sql is this block on its own.)
+alter table public.cameras
+  add column if not exists approximate boolean not null default false;
+
+comment on column public.cameras.approximate is
+  'true where the pin marks the surrounding area rather than an exact spot - the record gave a borough or district, not a street.';
 
 create index if not exists cameras_visible_idx on public.cameras (visible);
 
@@ -353,12 +605,66 @@ create policy "cameras: read visible or moderator"
   on public.cameras for select
   using (visible or public.is_moderator());
 
--- Read only, for everyone. Nothing a browser sends can create, move,
--- rename or hide a camera - only approve_report and the service role
--- can, and the revoke makes an attempt fail loudly rather than
--- quietly doing nothing.
+-- Read only, and since version 2.14 read through a view. Nothing a
+-- browser sends can create, move, rename or hide a camera - only
+-- approve_report and the service role can, and the revoke makes an
+-- attempt fail loudly rather than quietly doing nothing.
+--
+-- version 2.14: a public view of the cameras. Every browser held the
+-- anon key, and the anon key had select on the whole table: the read
+-- policy hid the rows that are not visible and nothing hid a column.
+-- So anyone could group the map by approved_by - a moderator's uuid,
+-- one per row they approved - with approved_at and updated_at to the
+-- microsecond, which is a moderator's working hours; and could set a
+-- camera's approved_at beside the daily leaderboard, where a
+-- username's XP rose by exactly that camera's rule in the same
+-- five-minute window, which ties the username to the place and the
+-- moment (BUILD-LOG.md, privacy pass, L3 and L6). Neither column was
+-- ever read by a page.
+--
+-- cameras_public is the read API - the one thing a browser, or
+-- anyone with the anon key, may select cameras from - and the map's
+-- source. It is not security_invoker: it is owned by the role that
+-- runs this file, reads the table on that role's behalf, and applies
+-- its own "where visible", so the table's grant to anon can go
+-- entirely and the row policy above is no longer what stands between
+-- a stranger and a hidden row - the view's filter is. The
+-- dashboard's Security Advisor will list it as a "security definer
+-- view"; that is this, on purpose. A column added to cameras is not
+-- public until it is added here, at the end of the list so that
+-- create-or-replace still applies.
+--
+-- A moderator's browser keeps reading the table, because the
+-- moderation page needs hidden rows and source, which the view does
+-- not carry, under the row policy above. What it reads was checked
+-- column by column - the Cameras tab, Move, Edit, Merge, the history,
+-- the queue and the activity log - and none of it names the four
+-- withheld columns, so authenticated's grant is exactly the columns
+-- it does read plus the public ones. One consequence to keep:
+-- PostgREST refuses a star select when any column is denied, so a
+-- read of cameras from account.js must always name its columns, and
+-- does. (backend/migrations/012_cameras_public.sql is this block on
+-- its own.)
+create or replace view public.cameras_public as
+  select id, name, note, lat, lon, type, status, last_seen, deployments,
+         seed_key, periods, source_label, source_url, approximate
+    from public.cameras
+   where visible;
+
+comment on view public.cameras_public is
+  'The read API and the map''s source: every visible camera, and only the columns that are public. A column added to cameras is not public until it is added here.';
+
+revoke all on public.cameras_public from anon, authenticated;
+grant select on public.cameras_public to anon, authenticated, service_role;
+
+-- The table itself: nothing for anon; for authenticated, the columns
+-- the moderation page reads and no others. A revoke of a table-level
+-- privilege takes its column-level privileges with it, so this is
+-- the same on a second run.
 revoke all on public.cameras from anon, authenticated;
-grant select on public.cameras to anon, authenticated;
+grant select (id, name, note, lat, lon, type, status, last_seen, deployments,
+              source, seed_key, visible, periods, source_label, source_url, approximate)
+  on public.cameras to authenticated;
 
 -- ---------------- reports ----------------
 
@@ -393,10 +699,9 @@ create table if not exists public.reports (
   resolution_note text,
   created_at      timestamptz not null default now(),
 
-  constraint reports_in_london check (
-    lat between 51.28 and 51.70 and
-    lon between -0.51 and 0.33
-  ),
+  -- the same box as CITY.bounds in frontend/shared.js, through
+  -- in_city at the top of this file
+  constraint reports_in_london check (public.in_city(lat, lon)),
 
   -- a new-camera report needs a type and a name and makes no claim; a
   -- status report needs a camera and a claim (its type is the
@@ -487,19 +792,21 @@ grant select, insert on public.reports to authenticated;
 
 -- ---------------- report_proof ----------------
 
--- One row per photo or video attached to a report. The file itself
--- sits in the private "proof" storage bucket (set up further down) at
+-- One row per photo attached to a report. The file itself sits in
+-- the private "proof" storage bucket (set up further down) at
 -- storage_path, which must be <user id>/<report id>/<file name>. A
 -- moderator sees the file through a signed URL the client asks for;
--- nobody else can reach it.
+-- nobody else can reach it. Photos only since version 2.12 (the
+-- block just below the grants says why); the constraint is named so
+-- that block can replace it on an older table.
 create table if not exists public.report_proof (
   id           bigint generated always as identity primary key,
   report_id    bigint not null references public.reports(id) on delete cascade,
   user_id      uuid not null references public.profiles(id) on delete cascade,
   storage_path text not null unique,
   mime         text not null
-                 check (mime in ('image/jpeg', 'image/png', 'image/webp',
-                                 'video/mp4', 'video/webm')),
+                 constraint report_proof_mime_check
+                 check (mime in ('image/jpeg', 'image/png', 'image/webp')),
   bytes        bigint not null check (bytes > 0 and bytes <= 20971520),   -- 20 MB, same as the bucket
   created_at   timestamptz not null default now()
 );
@@ -533,6 +840,48 @@ create policy "report_proof: delete own pending"
 
 revoke all on public.report_proof from anon, authenticated;
 grant select, insert, delete on public.report_proof to authenticated;
+
+-- version 2.12: video is refused. The form used to take MP4 and WebM
+-- and send them as they were, with a hint asking the person to check
+-- what theirs contained - on a site whose promise is anonymity, and
+-- to the one person who can least afford to leak a position: someone
+-- standing in front of a van, filming it. A video carries the same
+-- things a photo does - a GPS track, the device, the time - in a
+-- container the browser cannot rebuild the way it re-saves a photo
+-- through a canvas, and stripping it in plain JavaScript would take a
+-- library the Content-Security-Policy will not load. A warning would
+-- have made the promise the person's to keep for us. So the form
+-- refuses video at the moment of choosing, and this narrows the two
+-- places the server decides: the check on report_proof.mime here,
+-- and the bucket's allowed_mime_types, below, in the insert that
+-- creates it. Migration 010 is the same statements; if you change
+-- one, change the other. QUESTIONS.md item 1 records the decision.
+--
+-- Nothing is deleted. A video row that already exists stays, with
+-- its file: taking a person's evidence away because the rule changed
+-- is not this schema's to do. The new check is therefore added NOT
+-- VALID - checked on every new row, not on old ones - and validated
+-- only if no video row exists, so that on a database with none the
+-- constraint ends up exactly as a fresh database's does. On one that
+-- has some, the notice below says so, and the constraint stays not
+-- valid until the maintainer decides what to do with those rows and
+-- runs "alter table public.report_proof validate constraint
+-- report_proof_mime_check" by hand.
+alter table public.report_proof drop constraint if exists report_proof_mime_check;
+alter table public.report_proof add constraint report_proof_mime_check
+  check (mime in ('image/jpeg', 'image/png', 'image/webp')) not valid;
+
+do $$
+declare
+  videos integer;
+begin
+  select count(*) into videos from public.report_proof where mime like 'video/%';
+  if videos = 0 then
+    alter table public.report_proof validate constraint report_proof_mime_check;
+  else
+    raise notice 'report_proof has % video row(s) from before version 2.12. They are kept; report_proof_mime_check stays NOT VALID (new rows are still checked) until you decide about them and run: alter table public.report_proof validate constraint report_proof_mime_check', videos;
+  end if;
+end $$;
 
 -- ---------------- xp_events ----------------
 
@@ -580,13 +929,11 @@ create table if not exists public.saved_cameras (
   camera_type text not null default 'vancam',
   created_at  timestamptz default now(),
 
-  -- same bounds as LONDON_BOUNDS in frontend/shared.js - a save outside Greater
-  -- London means something is wrong upstream, so reject it here too
-  -- rather than only in the browser.
-  constraint saved_cameras_in_london check (
-    lat between 51.28 and 51.70 and
-    lon between -0.51 and 0.33
-  ),
+  -- the same box as CITY.bounds in frontend/shared.js, through
+  -- in_city at the top of this file - a save outside Greater London
+  -- means something is wrong upstream, so reject it here too rather
+  -- than only in the browser.
+  constraint saved_cameras_in_london check (public.in_city(lat, lon)),
 
   constraint saved_cameras_unique_per_user_v2
     unique (user_id, camera_name, lat, lon, camera_type)
@@ -617,6 +964,37 @@ begin
   end if;
 end $$;
 
+-- version 2.15: the three London constraints call in_city.
+--
+-- On a fresh database the create-table statements above already
+-- wrote them this way and these three statements only replace them
+-- with themselves. On a database made before this version they carry
+-- the four numbers written out, and this is what moves them onto the
+-- one copy - which is why it is here rather than only in the create
+-- tables, and why migration 013 is these three statements plus the
+-- function and pending_near's body.
+--
+-- Nothing about a stored row changes. The box is the same box, so
+-- every existing row satisfies the new constraint exactly as it
+-- satisfied the old one, and "add constraint ... check" validates
+-- them all as it goes rather than being taken on trust. Dropped by
+-- name first, because a constraint cannot be redefined in place and
+-- a second one under a new name would be a second copy again.
+-- Written out per table rather than in a loop: three names, and a
+-- loop over them would hide which tables carry it from anyone
+-- reading this file for that answer.
+alter table public.cameras drop constraint if exists cameras_in_london;
+alter table public.cameras add constraint cameras_in_london
+  check (public.in_city(lat, lon));
+
+alter table public.reports drop constraint if exists reports_in_london;
+alter table public.reports add constraint reports_in_london
+  check (public.in_city(lat, lon));
+
+alter table public.saved_cameras drop constraint if exists saved_cameras_in_london;
+alter table public.saved_cameras add constraint saved_cameras_in_london
+  check (public.in_city(lat, lon));
+
 create index if not exists saved_cameras_user_id_idx on public.saved_cameras(user_id);
 
 alter table public.saved_cameras enable row level security;
@@ -644,6 +1022,85 @@ create policy "saved_cameras: delete own"
 
 revoke all on public.saved_cameras from anon, authenticated;
 grant select, insert, update, delete on public.saved_cameras to authenticated;
+
+-- ---------------- moderation_log ----------------
+
+-- version 2.6 added this: one row per thing a moderator does to a
+-- camera by hand - adding one, editing one, moving one, hiding or
+-- unhiding one, merging two. Moderator id, action, camera, a note, a
+-- time; nothing more, and nothing about a reporter that the reports
+-- table does not already hold.
+--
+-- A report's decision has always been recorded on the report -
+-- resolved_by, resolved_at, resolution_note - but a camera's had
+-- nowhere to go. Hiding one left a note on its approved reports, if
+-- it had any; moving one, unhiding one, or editing one left only
+-- updated_at, which says when and not who or what. On a project that
+-- publishes accusations about surveillance, being able to audit its
+-- own moderators is not optional, and "the row was touched at 14:02"
+-- is not an audit. Report decisions are deliberately not copied in
+-- here: the reports table already records them, in columns the
+-- functions that make them already write, and two records of one
+-- decision would be two things to keep in step. The Activity tab on
+-- the moderation page reads both.
+--
+-- actor is null for something done without a moderator behind it -
+-- a script run with the service role - and becomes null if the
+-- moderator's account is ever deleted, so the row outlives the
+-- person, which an audit record must. camera_id likewise: cameras
+-- are never deleted, but if one ever were the log should not go
+-- with it. (backend/migrations/004_moderation_log.sql is this block,
+-- and the functions it teaches to write it, on their own.)
+create table if not exists public.moderation_log (
+  id         bigint generated always as identity primary key,
+  actor      uuid references public.profiles(id) on delete set null,
+  action     text not null
+               check (action in ('add_camera', 'edit_camera', 'move_camera',
+                                 'hide_camera', 'unhide_camera', 'merge_cameras')),
+  camera_id  bigint references public.cameras(id) on delete set null,
+  note       text,
+  created_at timestamptz not null default now()
+);
+
+-- The Activity tab reads it newest first, a page at a time.
+create index if not exists moderation_log_created_idx
+  on public.moderation_log (created_at desc);
+
+alter table public.moderation_log enable row level security;
+
+-- Moderators read it; nobody writes it from a browser. The rows are
+-- inserted by the functions further down, which run as the table's
+-- owner and are not subject to this policy; withholding insert,
+-- update and delete from the client roles altogether is what makes
+-- the log a record rather than a notebook.
+drop policy if exists "moderation_log: read moderator" on public.moderation_log;
+create policy "moderation_log: read moderator"
+  on public.moderation_log for select
+  using (public.is_moderator());
+
+revoke all on public.moderation_log from anon, authenticated;
+grant select on public.moderation_log to authenticated;
+
+-- One place the insert is written, so a function that acts on a
+-- camera records itself in one line. service_role only: it is
+-- called from inside the security definer functions, never from a
+-- browser, and a client that could call it directly could write
+-- history that did not happen.
+create or replace function public.log_moderation(
+  actor uuid, action text, cid bigint, note text default null)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  insert into public.moderation_log (actor, action, camera_id, note)
+  values (actor, action, cid, note);
+end;
+$fn$;
+
+revoke all on function public.log_moderation(uuid, text, bigint, text) from public, anon, authenticated;
+grant execute on function public.log_moderation(uuid, text, bigint, text) to service_role;
 
 -- ---------------- upgrade from version 1 ----------------
 
@@ -766,6 +1223,118 @@ $$;
 
 revoke all on function public.cluster_of_report(bigint) from public, anon, authenticated;
 grant execute on function public.cluster_of_report(bigint) to service_role;
+
+-- version 2.11 added this; version 2.13 changed what it answers.
+-- Is a report already waiting here? The one question the report
+-- form may ask before Send, so a person placing a pin hears "someone
+-- reported this corner two days ago" while they are still placing it
+-- rather than "refused" after they have typed everything and
+-- attached a photograph. Migration 011 is the same statements (009
+-- was the first form); if you change one, change the other.
+--
+-- Why a function and not a select: the reports read policy shows a
+-- person their own rows and a moderator everyone's, and that is
+-- right - it is the policy that keeps who-reported-what from anyone
+-- else. A plain select from the form could therefore never see
+-- another person's pending report, which is exactly the one the
+-- question is about. So the answer comes through one narrow window,
+-- security definer, that reads across the policy and hands back two
+-- fields.
+--
+-- What it answers, and at what resolution. The caller's point is
+-- snapped to the 0.001 degree cell - round(lat, 3), round(lon, 3),
+-- the grid reports.cell_lat and cell_lon already sit on - and the
+-- answer is whether a pending new-camera report is in that cell or
+-- one of the eight around it, and how many days ago the newest of
+-- those was sent. Nothing in the body compares the caller's exact
+-- position with a report's exact position.
+--
+-- Why not a circle. The first form tested metres_between(caller,
+-- report) <= the auto-approve radius: a sharp edge exactly 100 m
+-- from the report, which a stranger can walk. Its comment said "not
+-- its exact position"; that was wrong. An adversarial pass after
+-- Wave 4 bisected the edge - fourteen halvings in each of four
+-- directions, 112 anonymous calls, five milliseconds - and recovered
+-- a pending report's coordinates to six decimals on a throwaway
+-- database. Any answer that changes at a distance measured from the
+-- report's own position gives that position away, given enough
+-- calls; the circle was the leak. A cell is not measured from the
+-- report: every point in a cell gets the same answer, so the only
+-- edge left to find is a cell edge, and the finest thing the whole
+-- grid of answers gives away is which cell a report is in - one
+-- block of about 111 m by 69 m, which is what "someone reported this
+-- corner" means anyway. The same bisection, run against this body,
+-- stops at cell resolution: the box it recovers is the whole cell,
+-- and a report anywhere in that cell gives the same box.
+--
+-- The anonymity test - what does a stranger learn by calling this
+-- repeatedly? That a new-camera report is waiting somewhere in a
+-- three-by-three block of cells around the point - about 330 m by
+-- 210 m - and how many days ago the newest of those was sent. Not
+-- where in the cell, not who sent it, not how many people, not its
+-- kind or note. Walked over all of London, the answers give the set
+-- of cells with a pending report in them and the day each arrived,
+-- which is what the map will show once those reports are approved,
+-- coarsened to the cell, and it names no account; that is why it is
+-- acceptable, and why the function is granted to anon as well - the
+-- signed-out visitor is filling the form now. What is withheld and
+-- why: the count of reports, because the sentence has no use for it
+-- and a count is a finer instrument than a flag - watched over time
+-- it would say when each report arrived, one by one; and the exact
+-- time, rounded to whole days for the same reason. days_ago is a
+-- clock all the same, at a day's resolution, and that is accepted
+-- because it is what the sentence under the pin says. Coordinates
+-- in, two fields out, no identity anywhere: that is the line, and it
+-- is the one CLAUDE.md draws for every call the browser may make.
+--
+-- Three by three rather than one, because a report a metre over the
+-- cell line is still "this corner" and the auto-approve radius
+-- reaches into the neighbouring cells. The block is fixed, not
+-- derived from the radius the way the first form's search window
+-- was, so the resolution of the answer never follows a setting:
+-- raising the radius in the dashboard must not widen what this
+-- gives away. It is rate-limited by its own cheapness - one probe of
+-- reports_pending_cell_idx, nine cells wide.
+--
+-- A point outside the city is answered without looking. That test
+-- used to write the four numbers out here, which made this the
+-- fourth copy of the box in this file and the one nothing was
+-- holding to the other three; since version 2.15 it calls in_city
+-- at the top, which is the SQL side's one copy. It is a cost guard
+-- rather than a lock - a caller outside London learns nothing
+-- either way - but a guard that disagreed with the constraints
+-- would answer "nothing here" for a corner of London where a report
+-- can perfectly well be waiting.
+--
+-- The column is `found`, not `exists`: exists is a keyword, and a
+-- column that has to be quoted everywhere it is read is a trap laid
+-- for whoever reads it next.
+create or replace function public.pending_near(lat double precision, lon double precision)
+returns table (found boolean, days_ago integer)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with here as (
+    select round(pending_near.lat::numeric, 3) as clat,
+           round(pending_near.lon::numeric, 3) as clon),
+  newest as (
+    select max(r.created_at) as at
+      from public.reports r, here
+     where public.in_city(pending_near.lat, pending_near.lon)
+       and r.kind = 'new'
+       and r.state = 'pending'
+       and r.cell_lat between here.clat - 0.001 and here.clat + 0.001
+       and r.cell_lon between here.clon - 0.001 and here.clon + 0.001)
+  select at is not null,
+         case when at is null then null
+              else floor(extract(epoch from (now() - at)) / 86400)::integer end
+    from newest;
+$$;
+
+revoke all on function public.pending_near(double precision, double precision) from public, anon, authenticated;
+grant execute on function public.pending_near(double precision, double precision) to anon, authenticated, service_role;
 
 -- ---------------- approving and rejecting ----------------
 
@@ -962,7 +1531,9 @@ grant execute on function public.moderate_report(bigint, text, text) to authenti
 -- the person's total on delete, so nothing here adds up anything.
 
 -- Take a camera off the map. It stays in the table, invisible, with
--- its reports intact. Idempotent.
+-- its reports intact. Idempotent. Since version 2.6 it also writes a
+-- moderation_log row with the reason; the note on the approved
+-- reports stays too - it is what the reporter reads.
 create or replace function public.hide_camera(cid bigint, why text default null, actor uuid default null)
 returns void
 language plpgsql
@@ -982,6 +1553,7 @@ begin
          resolved_by = coalesce(actor, resolved_by),
          resolved_at = now()
    where camera_id = cid and state = 'approved';
+  perform public.log_moderation(actor, 'hide_camera', cid, why);
 end;
 $fn$;
 
@@ -989,7 +1561,9 @@ revoke all on function public.hide_camera(bigint, text, uuid) from public, anon,
 grant execute on function public.hide_camera(bigint, text, uuid) to service_role;
 
 -- Put a hidden camera back. The reverse of hide_camera, for a removal
--- that turned out to be wrong.
+-- that turned out to be wrong. Logged since version 2.6, but only
+-- when something happened - a second call on a camera already on
+-- the map is nothing to record.
 create or replace function public.unhide_camera(cid bigint, actor uuid default null)
 returns void
 language plpgsql
@@ -998,6 +1572,10 @@ set search_path = public, pg_temp
 as $fn$
 begin
   update public.cameras set visible = true where id = cid and not visible;
+  if not found then
+    return;
+  end if;
+  perform public.log_moderation(actor, 'unhide_camera', cid, null);
 end;
 $fn$;
 
@@ -1095,7 +1673,10 @@ grant execute on function public.reapprove_report(bigint, uuid) to service_role;
 -- Put a camera on the map by hand, without a report. For the things a
 -- moderator knows about that nobody has reported - a published record,
 -- a site visit. Goes straight on, visible, attributed to whoever added
--- it, with no XP for anyone. Same London box as everything else.
+-- it, with no XP for anyone. Same London box as everything else. The
+-- row's own approved_by already says who; the moderation_log row it
+-- writes as well (version 2.6) is so the Activity tab has one list
+-- of camera actions rather than one per kind.
 create or replace function public.add_camera(
   cam_name text, cam_note text, cam_lat double precision, cam_lon double precision,
   cam_type text, cam_status text default 'active', actor uuid default null)
@@ -1114,6 +1695,7 @@ begin
   values (btrim(cam_name), coalesce(cam_note, ''), cam_lat, cam_lon, cam_type,
           coalesce(cam_status, 'active'), 'admin', now(), actor)
   returning id into cid;
+  perform public.log_moderation(actor, 'add_camera', cid, null);
   return cid;
 end;
 $fn$;
@@ -1168,38 +1750,55 @@ grant execute on function public.moderate_add_camera(text, text, double precisio
 -- before sending, so a third copy of the numbers in this function
 -- would be one more thing to drift. Out-of-bounds arrives as a
 -- constraint violation, which is the honest answer.
+--
+-- version 2.6 gave it an actor, so the moderation_log can say who
+-- moved it, and it records where the pin was: the row carries where
+-- it is now, and an audit of a move that cannot say where from is
+-- half an audit. A new parameter is a new signature, and
+-- create-or-replace would leave the old three-argument function
+-- standing beside the new one on a database that has it, so the old
+-- one is dropped by name first - a no-op on a fresh database.
+drop function if exists public.move_camera(bigint, double precision, double precision);
+
 create or replace function public.move_camera(
-  cid bigint, new_lat double precision, new_lon double precision)
+  cid bigint, new_lat double precision, new_lon double precision, actor uuid default null)
 returns void
 language plpgsql
 security definer
 set search_path = public, pg_temp
 as $fn$
+declare
+  old public.cameras%rowtype;
 begin
   if new_lat is null or new_lon is null then
     raise exception 'a camera needs both coordinates';
+  end if;
+
+  -- Silence here would look like success to the moderator watching,
+  -- and the camera would not have moved. A wrong id is worth hearing
+  -- about, unlike hide_camera's second call on an already hidden
+  -- camera, which is genuinely nothing to do.
+  select * into old from public.cameras where id = cid;
+  if not found then
+    raise exception 'no camera with id %', cid;
   end if;
 
   update public.cameras
      set lat = new_lat, lon = new_lon
    where id = cid;
 
-  -- Silence here would look like success to the moderator watching,
-  -- and the camera would not have moved. A wrong id is worth hearing
-  -- about, unlike hide_camera's second call on an already hidden
-  -- camera, which is genuinely nothing to do.
-  if not found then
-    raise exception 'no camera with id %', cid;
-  end if;
+  perform public.log_moderation(actor, 'move_camera', cid,
+    format('was at %s, %s', round(old.lat::numeric, 5), round(old.lon::numeric, 5)));
 end;
 $fn$;
 
-revoke all on function public.move_camera(bigint, double precision, double precision)
+revoke all on function public.move_camera(bigint, double precision, double precision, uuid)
   from public, anon, authenticated;
-grant execute on function public.move_camera(bigint, double precision, double precision)
+grant execute on function public.move_camera(bigint, double precision, double precision, uuid)
   to service_role;
 
--- The browser's way in for a moderator. Checks the role, then moves.
+-- The browser's way in for a moderator. Checks the role, then moves,
+-- passing the moderator through for the log.
 create or replace function public.moderate_move_camera(
   cam_id bigint, cam_lat double precision, cam_lon double precision)
 returns void
@@ -1211,7 +1810,7 @@ begin
   if not public.is_moderator() then
     raise exception 'moderators only' using errcode = '42501';
   end if;
-  perform public.move_camera(cam_id, cam_lat, cam_lon);
+  perform public.move_camera(cam_id, cam_lat, cam_lon, auth.uid());
 end;
 $fn$;
 
@@ -1220,11 +1819,275 @@ revoke all on function public.moderate_move_camera(bigint, double precision, dou
 grant execute on function public.moderate_move_camera(bigint, double precision, double precision)
   to authenticated, service_role;
 
+-- version 2.7: edit a camera. Everything on the row a moderator might
+-- have a reason to correct and that nothing else corrects: the name,
+-- the note, the kind, the state. Not the position (move_camera), not
+-- visibility (hide_camera), not the counts or the source columns,
+-- which are the record's and change in data/cameras.csv. Until this
+-- a moderator could add, hide, unhide and move a camera, and a typo
+-- in a name was permanent. Same pattern as move_camera: this for the
+-- service role, moderate_edit_camera below for the browser.
+--
+-- What it refuses:
+--   - a blank name, as add_camera does;
+--   - an id that is not a camera, aloud, as move_camera does;
+--   - a van site marked active. Every vancam is legacy - a van parks
+--     for a shift and drives away, so no van site claims to be there
+--     today - and that is the one invariant of the record this map
+--     is most careful about (NOTES.md, "What active means"). The
+--     build script refuses it in the CSV; this refuses it here. It is
+--     not a check constraint on the table because a live database
+--     seeded before every van went legacy still carries van rows that
+--     say active (QUESTIONS.md, item 9), and adding the constraint
+--     would fail on them; approve_report also still writes a
+--     reported van as active, which is left for the maintainer's
+--     one-line update in NOTES.md and not changed here.
+-- A bad type or state is refused by the table's own check
+-- constraints, the same reasoning move_camera gives for the bounds:
+-- the constraint is the lock, and a copy of the list here would be
+-- one more thing to drift.
+--
+-- seed_key is not touched, for the reason move_camera does not
+-- touch it: it is how seed.sql finds a row it has already written,
+-- and rewriting it would make the next seed run insert a second
+-- camera. The consequence is worth saying plainly, because it is
+-- the opposite of Move's: the seed's on-conflict update rewrites
+-- name, note and status from the record, so an edit to a seed
+-- camera's name, note or state holds only until the next re-run of
+-- seed.sql. A correction to a seed camera is made in
+-- data/cameras.csv as well, or it will be undone. (The type is part
+-- of the key and not in the update list, so a corrected type
+-- survives - and orphans the row from its CSV line the day the
+-- record is next built with the old type, which is the same reason
+-- to fix the CSV.) The panel on the moderation page says this above
+-- the Save button for any camera that came from the seed.
+--
+-- The log row records which fields changed and what they were, so
+-- the previous value is never lost: "name was 'Croydon'; status was
+-- active". Nothing is logged, and nothing written, when nothing
+-- changed. (backend/migrations/005_edit_camera.sql is this and the
+-- wrapper on their own.)
+create or replace function public.edit_camera(
+  cid bigint, new_name text, new_note text, new_type text, new_status text,
+  actor uuid default null)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+declare
+  old     public.cameras%rowtype;
+  changed text[] := '{}';
+  want_name   text;
+  want_note   text;
+  want_type   text;
+  want_status text;
+begin
+  if new_name is null or btrim(new_name) = '' then
+    raise exception 'a camera needs a name';
+  end if;
+
+  select * into old from public.cameras where id = cid;
+  if not found then
+    raise exception 'no camera with id %', cid;
+  end if;
+
+  want_name   := btrim(new_name);
+  want_note   := coalesce(new_note, '');
+  want_type   := coalesce(new_type, old.type);
+  want_status := coalesce(new_status, old.status);
+
+  if want_type = 'vancam' and want_status = 'active' then
+    raise exception 'a van site cannot be active: a van parks for a shift and drives away, so no van site claims to be there today';
+  end if;
+
+  if want_name <> old.name then
+    changed := changed || format('name was %L', old.name);
+  end if;
+  if want_note <> old.note then
+    changed := changed || format('note was %L', old.note);
+  end if;
+  if want_type <> old.type then
+    changed := changed || format('type was %s', old.type);
+  end if;
+  if want_status <> old.status then
+    changed := changed || format('status was %s', old.status);
+  end if;
+
+  if cardinality(changed) = 0 then
+    return;
+  end if;
+
+  update public.cameras
+     set name = want_name, note = want_note, type = want_type, status = want_status
+   where id = cid;
+
+  perform public.log_moderation(actor, 'edit_camera', cid, array_to_string(changed, '; '));
+end;
+$fn$;
+
+revoke all on function public.edit_camera(bigint, text, text, text, text, uuid)
+  from public, anon, authenticated;
+grant execute on function public.edit_camera(bigint, text, text, text, text, uuid)
+  to service_role;
+
+-- The browser's way in for a moderator. Checks the role, then edits.
+create or replace function public.moderate_edit_camera(
+  cam_id bigint, cam_name text, cam_note text, cam_type text, cam_status text)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  if not public.is_moderator() then
+    raise exception 'moderators only' using errcode = '42501';
+  end if;
+  perform public.edit_camera(cam_id, cam_name, cam_note, cam_type, cam_status, auth.uid());
+end;
+$fn$;
+
+revoke all on function public.moderate_edit_camera(bigint, text, text, text, text)
+  from public, anon, authenticated;
+grant execute on function public.moderate_edit_camera(bigint, text, text, text, text)
+  to authenticated, service_role;
+
+-- version 2.8: merge two cameras. approve_report clusters and merges
+-- incoming reports, so two people reporting one van site make one
+-- camera. But two rows that are already on the map - a seed entry
+-- and a reported one at the same spot, or two reports approved a
+-- month apart at 150 m - had no way to become one. A moderator could
+-- hide one, and lose its reports to a hidden row nobody would look
+-- at again. Merging keeps the reports where they can be seen, on the
+-- row that stays, and keeps the loser too, hidden, with a note
+-- saying where it went. Nothing is deleted. Same pattern as
+-- move_camera: this for the service role, moderate_merge_cameras
+-- below for the browser. (backend/migrations/006_merge_cameras.sql
+-- is this and the wrapper on their own.)
+--
+-- What it refuses, and why:
+--   - the same id twice: there is nothing to merge;
+--   - an id that is not a camera, aloud, as move_camera does;
+--   - a loser that is already off the map. A hidden camera's reports
+--     belong to whatever took it off - a merge already done, a
+--     "removed" claim that was approved - and moving them now would
+--     put them under a camera they may never have been about. If it
+--     really is a duplicate, put it back first and then merge it,
+--     so the act is visible for what it is;
+--   - a survivor that is off the map. Merging into a hidden camera
+--     would take the loser off the map too and leave the reports
+--     under a row nobody sees: two cameras lost for one. Merge into
+--     one that is on the map, or put the survivor back first.
+--
+-- What it moves, and what it does not. Every report that pointed at
+-- the loser now points at the survivor, with one exception: a state
+-- report by someone who has also reported the survivor's state
+-- stays where it is, because reports_one_status_per_camera_idx
+-- allows one such report per person per camera, and it is still that
+-- person's evidence about the loser. The result counts those as
+-- "kept". Proof files go with their report; XP was awarded per
+-- report and does not change. saved_cameras holds no camera id by
+-- design (a position and a name, copied), so nothing there points
+-- at either row and nothing there is touched. The survivor's own
+-- columns are not touched either: its deployments, periods and
+-- source are the record's and the loser's are not added to them,
+-- because a sum of two records of the same site would be a count
+-- the source never gave.
+--
+-- The kinds may differ - a shop entered as a fixed install and
+-- again as a shop - and the survivor's stands. The panel says which
+-- row survives before the moderator confirms.
+--
+-- The same two advisory locks approve_report takes: an approval
+-- racing this could otherwise find the loser still visible, point a
+-- fresh report at it, and commit after the loser has gone.
+--
+-- Returns what the browser needs to say what happened, in one
+-- value: which row survived, which was hidden, how many reports
+-- moved and how many stayed.
+create or replace function public.merge_cameras(loser bigint, survivor bigint, actor uuid default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+declare
+  l     public.cameras%rowtype;
+  s     public.cameras%rowtype;
+  moved integer;
+  kept  integer;
+begin
+  if loser is null or survivor is null then
+    raise exception 'a merge needs two cameras';
+  end if;
+  if loser = survivor then
+    raise exception 'a camera cannot be merged into itself';
+  end if;
+
+  select * into l from public.cameras where id = loser;
+  if not found then
+    raise exception 'no camera with id %', loser;
+  end if;
+  select * into s from public.cameras where id = survivor;
+  if not found then
+    raise exception 'no camera with id %', survivor;
+  end if;
+
+  if not l.visible then
+    raise exception 'camera % is already off the map: its reports belong to whatever took it off. Put it back first if it is a duplicate', loser;
+  end if;
+  if not s.visible then
+    raise exception 'camera % is off the map: merge into a camera that is on it, or put it back first', survivor;
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('cammap.approve.' || l.type));
+  perform pg_advisory_xact_lock(hashtext('cammap.status.' || loser::text));
+
+  update public.reports r
+     set camera_id = survivor
+   where r.camera_id = loser
+     and not (r.kind = 'status' and exists (
+           select 1 from public.reports o
+            where o.user_id = r.user_id and o.camera_id = survivor and o.kind = 'status'));
+  get diagnostics moved = row_count;
+
+  select count(*) into kept from public.reports where camera_id = loser;
+
+  perform public.hide_camera(loser, format('merged into camera #%s', survivor), actor);
+
+  perform public.log_moderation(actor, 'merge_cameras', loser,
+    format('merged into camera #%s: %s report(s) moved, %s kept', survivor, moved, kept));
+
+  return jsonb_build_object('survivor', survivor, 'loser', loser, 'moved', moved, 'kept', kept);
+end;
+$fn$;
+
+revoke all on function public.merge_cameras(bigint, bigint, uuid) from public, anon, authenticated;
+grant execute on function public.merge_cameras(bigint, bigint, uuid) to service_role;
+
+-- The browser's way in for a moderator. Checks the role, then merges.
+create or replace function public.moderate_merge_cameras(loser bigint, survivor bigint)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+begin
+  if not public.is_moderator() then
+    raise exception 'moderators only' using errcode = '42501';
+  end if;
+  return public.merge_cameras(loser, survivor, auth.uid());
+end;
+$fn$;
+
+revoke all on function public.moderate_merge_cameras(bigint, bigint) from public, anon, authenticated;
+grant execute on function public.moderate_merge_cameras(bigint, bigint) to authenticated, service_role;
+
 -- What the moderator's browser calls to undo a decision. Same gate as
 -- moderate_report. Actions: hide_camera and unhide_camera take a
--- camera id; retract and reapprove take a report id. Adding and
--- moving a camera are not here - they carry arguments of their own,
--- so each has its own moderate_ function above.
+-- camera id; retract and reapprove take a report id. Adding, moving,
+-- editing and merging cameras are not here - they carry arguments of
+-- their own, so each has its own moderate_ function above.
 create or replace function public.moderate_undo(target bigint, action text, note text default null)
 returns bigint
 language plpgsql
@@ -1483,6 +2346,94 @@ create trigger on_auth_user_created
 -- re-exposed by a later change to the grants.
 drop function if exists public.username_available(text);
 
+-- ---------------- leaving ----------------
+
+-- version 2.10: delete your own account. There was no way out but
+-- abandonment. A site built on collecting nothing should let a
+-- person take back the little it holds, and be honest about what it
+-- cannot take back. What it cannot: a camera that is on the map
+-- because of that person's report stays on the map. It is part of
+-- the record now, and deleting a person does not un-see a camera.
+--
+-- What goes, and by what route, is the cascade the tables above
+-- already declare: profiles.id references auth.users on delete
+-- cascade, and reports, report_proof, xp_events and saved_cameras
+-- all reference profiles on delete cascade. So this deletes the
+-- auth.users row and the rest follows - the profile, every report
+-- the person sent, the proof rows attached to them, the XP awards
+-- and the saved list. Three columns elsewhere point at a person and
+-- are set null rather than cascading, as they were already declared:
+-- cameras.approved_by, reports.resolved_by and moderation_log.actor,
+-- so a camera a moderator approved, a decision they made and a
+-- change they logged all outlive the moderator, which an audit
+-- record must.
+--
+-- The proof files go by their own route. report_proof rows cascade
+-- with the reports, but the files themselves are rows of
+-- storage.objects, which references nothing of ours; the storage
+-- policies keep them under <user id>/<report id>/<file>, so the
+-- caller's are the ones under their own prefix. Deleting the object
+-- row is what makes a file unreachable through the storage API - no
+-- signed URL can be made for a row that is not there. Whether the
+-- bytes behind it are cleared from the bucket's store at once is
+-- Supabase's to promise, not this schema's; NOTES.md says so. On
+-- Supabase the function's owner is the postgres role, which may
+-- delete from auth.users (the housekeeping lines in NOTES.md already
+-- do) and, with bypassrls, from storage.objects; if a run ever
+-- raises "permission denied for table objects", grant delete on
+-- storage.objects to postgres. It is not written to swallow that: a
+-- deletion that silently left the photos behind would be a lie to
+-- the person who asked for it.
+--
+-- Why the reports go with the person rather than staying with
+-- user_id set null: they are the little the site holds about a
+-- person - what they reported, where, when, with what photograph -
+-- and taking that back is the point of leaving. What provenance
+-- needs of an approved report survives on the camera it made:
+-- source = 'report', approved_at, approved_by if a moderator did it,
+-- and the camera's rows in moderation_log. What is lost is the
+-- report's picture, which was the person's. Its name and note are
+-- not lost: approve_report copied them onto the camera as its own
+-- name and note, and nothing copies them back, so they stay on the
+-- map after the person has left. QUESTIONS.md item 15 keeps them;
+-- the report form and the delete box say so.
+--
+-- The username is released with the profile row - the unique index
+-- on lower(username) no longer holds it - so the two words may one
+-- day be drawn again for someone else. Nothing would connect them:
+-- the reports, the XP and the saved list are gone, and a leaderboard
+-- row up to five minutes old names an account that no longer exists.
+--
+-- The anonymity test: what does a stranger learn by calling this
+-- repeatedly with guesses? Nothing. It takes no argument, answers
+-- nothing, and deletes the account whose token made the call - the
+-- caller and nobody else. Signed out, auth.uid() is null and it
+-- refuses. Called twice, the second call finds no session to act on.
+-- (backend/migrations/008_delete_account.sql is this on its own.)
+create or replace function public.delete_my_account()
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $fn$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then
+    raise exception 'not signed in' using errcode = '42501';
+  end if;
+
+  delete from storage.objects
+   where bucket_id = 'proof'
+     and split_part(name, '/', 1) = me::text;
+
+  delete from auth.users where id = me;
+end;
+$fn$;
+
+revoke all on function public.delete_my_account() from public, anon, authenticated;
+grant execute on function public.delete_my_account() to authenticated, service_role;
+
 -- ---------------- proof bucket ----------------
 
 -- A private bucket for report proof. Rows in storage.objects are what
@@ -1492,10 +2443,14 @@ drop function if exists public.username_available(text);
 -- report is pending; never overwrite. The size and type limits are
 -- enforced by the bucket itself before a byte is stored. The insert
 -- below is what creates the bucket - it appears in the dashboard on
--- its own, and re-running keeps the limits as written here.
+-- its own, and re-running keeps the limits as written here. Photos
+-- only since version 2.12 (see report_proof above for why): the
+-- on-conflict update is what narrows the list on a bucket that
+-- already exists, and the dashboard shows the same list under
+-- Storage -> proof -> settings, where it should read the same.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('proof', 'proof', false, 20971520,
-        array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm'])
+        array['image/jpeg', 'image/png', 'image/webp'])
 on conflict (id) do update
   set public             = excluded.public,
       file_size_limit    = excluded.file_size_limit,
@@ -1531,6 +2486,12 @@ create policy "proof: delete own while pending"
 -- derived data, so nothing is lost) so that a change to a definition
 -- here always takes. Read them with "order by xp_total desc" - a
 -- concurrent refresh does not promise to keep rows in order.
+--
+-- "and p.show_on_leaderboard" (version 2.9) is where the opt-out is
+-- enforced, in all three: a row that has switched it off never
+-- enters the table the page reads. It is here and not in a policy
+-- because PostgreSQL applies no row-level security to a materialized
+-- view - see the column's comment under profiles.
 
 drop materialized view if exists public.leaderboard_all;
 create materialized view public.leaderboard_all as
@@ -1544,6 +2505,7 @@ create materialized view public.leaderboard_all as
                 group by user_id) a on a.user_id = p.id
    where p.username is not null
      and p.xp_total > 0
+     and p.show_on_leaderboard
    order by p.xp_total desc, p.username
    limit 100;
 
@@ -1561,6 +2523,7 @@ create materialized view public.leaderboard_daily as
     join public.profiles p on p.id = e.user_id
    where e.created_at > now() - interval '1 day'
      and p.username is not null
+     and p.show_on_leaderboard
    group by p.username
    order by xp_total desc, p.username
    limit 100;
@@ -1574,6 +2537,7 @@ create materialized view public.leaderboard_weekly as
     join public.profiles p on p.id = e.user_id
    where e.created_at > now() - interval '7 days'
      and p.username is not null
+     and p.show_on_leaderboard
    group by p.username
    order by xp_total desc, p.username
    limit 100;

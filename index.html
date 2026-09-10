@@ -3,6 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- What a request from this page says about where it came from.
+     Cross-origin hosts - OpenFreeMap, Esri, Supabase, Nominatim - get
+     the origin only: Nominatim's usage policy asks for a referrer
+     that identifies the application, and the origin does. Same-origin
+     requests get the full URL, which is why a position must never be
+     in a query string on this site - it would reach the host with
+     the page request and ride in the Referer of every script, style
+     and font the page loads; a fragment is never sent at all. This
+     is the browser's default in Chrome and Firefox, declared so it
+     does not depend on a default. Nine copies, one per page;
+     stamp.py does not police this tag. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <!-- Identical on all seven pages, and must stay that way: it is what
      makes the no-CDN rule something the browser enforces rather than
      something we remember. tools/stamp.py fails if they drift. Why
@@ -17,7 +29,7 @@
           https://tiles.openfreemap.org https://*.openfreemap.org
           https://*.supabase.co;
   media-src 'self' blob: https://*.supabase.co;
-  worker-src blob:;
+  worker-src 'self' blob:;
   child-src blob:;
   connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
               https://tiles.openfreemap.org https://*.openfreemap.org
@@ -27,7 +39,32 @@
   base-uri 'self';
   form-action 'none';
   frame-ancestors 'none'">
-<title>Map &mdash; cammap</title>
+<title>cammap &mdash; facial recognition cameras in London</title>
+<meta name="description" content="A map of the facial recognition camera sites in London that the public record supports: the Met's LFR van deployments, the fixed cameras, the British Transport Police stations and the shops. Nothing here is estimated.">
+<link rel="canonical" href="https://forrest404.github.io/cammap/">
+<!-- What a shared link turns into. Each page has its own title and
+     description - one shared across the site would be the failure
+     mode - and all of them show the same card, img/share.png, which
+     is the map itself photographed by tools/share-card.html and
+     committed, because a static site has nothing to draw one with on
+     request. The addresses are absolute because a card scraper has no
+     base to resolve against; they name the site's home on Pages, and
+     NOTES.md ("Sharing the site") lists every file that does. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cammap">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://forrest404.github.io/cammap/">
+<meta property="og:title" content="cammap — facial recognition cameras in London">
+<meta property="og:description" content="A map of the facial recognition camera sites in London that the public record supports: the Met's LFR van deployments, the fixed cameras, the British Transport Police stations and the shops. Nothing here is estimated.">
+<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="cammap — facial recognition cameras in London">
+<meta name="twitter:description" content="A map of the facial recognition camera sites in London that the public record supports: the Met's LFR van deployments, the fixed cameras, the British Transport Police stations and the shops. Nothing here is estimated.">
+<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
 
 <!-- MapLibre GL, vendored into lib/ so the page needs no CDN. Version
      5 rather than 6: the 6.x builds are ES modules only, and a plain
@@ -42,8 +79,27 @@
      account.js. -->
 <script src="lib/supabase.js"></script>
 
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="feed.xml">
+<!-- The icon, in the forms the browsers between them ask for: SVG
+     for the tab in Chrome and Firefox, .ico for Safari and anything
+     older, a 180px PNG for an iOS home screen. manifest.json is what
+     makes "Add to Home Screen" on Android an icon rather than a
+     screenshot; theme-color is what the browser paints its own frame
+     around the page. All are drawn from img/favicon.svg - NOTES.md,
+     "Sharing the site", says how the raster ones are made from it. -->
+<link rel="icon" href="img/favicon.ico" sizes="32x32">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="cammap">
+<meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="fonts/fonts.css">
-<link rel="stylesheet" href="frontend/style.css?v=9f8635fe">
+<link rel="stylesheet" href="frontend/style.css?v=fc1b066a">
 </head>
 <body>
 <div class="sheet">
@@ -57,6 +113,8 @@
     <a href="pages/about.html">About</a>
     <span class="sep">&middot;</span>
     <a href="pages/blog.html">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="pages/rights.html">Rights</a>
     <!-- account.js fills this in once it knows whether anyone is
          signed in. Empty until then, so the nav never flickers. -->
     <span id="nav-account"></span>
@@ -78,6 +136,17 @@
         <div class="map-toggles">
           <button id="legacy-toggle" class="toggle" aria-pressed="false" title="Also show the LFR van sites - places a van has been sent, not places one is now">Legacy</button>
         </div>
+        <!-- Pressed, never automatic. The browser asks for a location
+             only when this is pressed; the answer is held in memory
+             for this visit, drawn as a ring, and written nowhere.
+             Hidden until map.js has looked for geolocation: without
+             it the button is shown disabled with the reason in its
+             title, and without JavaScript there is no button at all.
+             The privacy line is in NOTES.md, "The map as a tool". -->
+        <div class="map-toggles">
+          <button id="near-me" class="toggle" aria-pressed="false" hidden
+                  title="Centre the map on where you are. Asked for only when you press this, never on its own; nothing is stored or sent anywhere, and nothing is written to the address bar. Press again to clear it.">Near me</button>
+        </div>
         <div class="map-toggles" id="view-buttons">
           <button class="toggle on" data-view="dark" aria-pressed="true" title="The dark map">Dark</button>
           <button class="toggle" data-view="light" aria-pressed="false" title="The light map">Light</button>
@@ -85,6 +154,128 @@
         </div>
         <ul class="legend" id="legend"></ul>
       </div>
+
+      <!-- The years. A slider from the earliest year the record
+           covers to the latest, with a position before them for every
+           year at once; move it and the dots, the list and the count
+           show the cameras whose recorded period covers that year. It
+           filters the record and never predicts: a site recorded as a
+           span is shown in every year of the span, a camera the
+           record gives no period for is shown in every year, and the
+           range ends at the newest period in the record, not at this
+           year. The ends, the marks and the readout are written by
+           map.js from the points ("The years" there says why each
+           choice is what it is); hidden until it has, so a page
+           without JavaScript shows no slider that does nothing. The
+           label, the range and the output are the form a screen
+           reader already knows; aria-valuetext carries "All years"
+           for the position a number cannot name. -->
+      <div class="years" id="years" hidden>
+        <label for="year-range">Year</label>
+        <input type="range" id="year-range" aria-describedby="year-hint">
+        <output id="year-out" for="year-range">All years</output>
+        <div class="year-marks" id="year-marks" aria-hidden="true"></div>
+        <p class="hint" id="year-hint"></p>
+      </div>
+
+      <!-- How to read the map, in words. The legend gives five
+           colours and two fills, and a visitor had to work out for
+           themselves that a hollow ring is a van site and why the
+           map opens with none of them on it. Five sentences: the
+           colours, the ring, the wider ring under an approximate
+           pin, the glow, and why van sites sit behind Legacy - each
+           drawn from NOTES.md ("What active means", "What is not
+           known", "Tuning the glow"), none claiming what the data
+           does not.
+           The list of kinds in the first sentence is filled in by
+           map.js from CAMERA_TYPES, so it cannot disagree with the
+           key above it; without JavaScript the sentence still reads,
+           without the list.
+
+           Open in the markup, so a page without JavaScript shows it;
+           map.js closes it on any visit after the first, and
+           remembers a close. Details/summary rather than a button
+           and a box because the browser does the collapsing, the
+           keyboard already knows it (Enter or Space on the summary),
+           and the focus ring covers summary already. -->
+      <details class="explain" id="explain" open>
+        <summary>How to read this map</summary>
+        <p>
+          Colour says what a camera is<span id="explain-kinds"></span>.
+          The key above gives each kind its colour.
+          A solid dot is a camera in use; a hollow ring in the same
+          colour is a legacy site, one no longer in use; a dot filled
+          in the non-functional colour is one reported as not working,
+          whatever its kind.
+          A wider, fainter ring round a dot means the record gave the
+          site as an area &ndash; a borough, a district &ndash; and the
+          pin sits at the middle of it, not on a known spot.
+          Pull back and the dots pool into a glow, weighed by how many
+          times the record has a spot being used &ndash; so a place a
+          van has been sent twenty times reads hotter than one it
+          visited once &ndash; and a camera on its own makes no glow
+          at all.
+          Every LFR van site sits behind the <strong>Legacy</strong>
+          toggle: a van parks for a shift and drives away, so the
+          record can say where one has been and never where one is
+          now, and the map opens on the cameras fixed to something.
+        </p>
+      </details>
+
+      <!-- What the map is a map of, and how old it is: the count of
+           cameras in the record, worked out from the record by
+           map.js's render(), and the reach of the sources and when
+           they were last checked, from RECORD_SOURCES in shared.js.
+           Never a typed number: a number typed here would go stale
+           without a sound. Ordinary text, so it prints with the list
+           and a screen reader reads it where it sits. -->
+      <p class="record-line" id="record-line"></p>
+
+      <!-- Under it, only when it is true: "Showing the published
+           record; live updates unavailable." Written by map.js when
+           the database cannot be reached or has not answered in
+           eight seconds, cleared when a later fetch succeeds; empty,
+           it takes no room. Its own polite live region, so a screen
+           reader hears it once when it arrives - and not #map-note,
+           which is for what a link or Near me has to say and is
+           cleared by them. The seed the map draws meanwhile is the
+           published record, which is exact; what the line says is
+           that a change a moderator made since may not be on it. -->
+      <p class="record-line record-notice" id="record-notice" aria-live="polite"></p>
+
+      <!-- The one line under the map for what the map has to say: a
+           link it could not follow, what Near me found or did not.
+           Filled by map.js; hidden while empty; read out as it
+           changes. -->
+      <p class="note map-note" id="map-note" aria-live="polite"></p>
+
+      <!-- Finding a place. Everyone's, not only edit mode's: "is
+           there one near my station" is the question this map is
+           for, and a search box answers it in one line where the
+           list's own search cannot - the list finds cameras by name,
+           this moves the map to a place. It is under the map because
+           it moves the map. Hidden until map.js takes the attribute
+           off, so a page without JavaScript shows no box that does
+           nothing; class map-search so the print view can drop it.
+           What is typed goes to OpenStreetMap's Nominatim, and the
+           hint says so: the site says what it does. -->
+      <div class="box map-search" id="place-search" hidden>
+        <h3>Find a place</h3>
+        <div class="row">
+          <input type="text" id="search-text" placeholder="Peckham, or a postcode"
+                 autocomplete="off" spellcheck="false"
+                 aria-label="Find a place in London">
+          <button id="search-button">Search</button>
+        </div>
+        <p class="note" id="search-note" aria-live="polite"></p>
+        <ul class="results" id="search-results"></ul>
+        <p class="hint">
+          Moves the map to a place. What you type is sent to
+          OpenStreetMap's Nominatim to be looked up, and nowhere else;
+          the cameras are not filtered by it.
+        </p>
+      </div>
+
       <p class="hint edit-only" style="margin-top:8px">
         Click anywhere on the map to take its coordinates, then give the
         camera a name in the form opposite.
@@ -93,17 +284,6 @@
 
     <!-- ---------------- right: the list, and the editing tools ---------------- -->
     <div class="side-column">
-
-      <!-- Way 2: search for a place by name -->
-      <div class="box edit-only">
-        <h3>Find a place</h3>
-        <div class="row">
-          <input type="text" id="search-text" placeholder="Postman's Park">
-          <button id="search-button">Search</button>
-        </div>
-        <p class="note" id="search-note"></p>
-        <ul class="results" id="search-results"></ul>
-      </div>
 
       <!-- Way 1: type the coordinates in directly -->
       <div class="box edit-only">
@@ -134,11 +314,26 @@
            The search narrows this list only, not the map: dots
            vanishing letter by letter is a poor way to read a map. The
            kinds of camera are switched on and off in the legend under
-           the map instead, and those do narrow both. -->
-      <div class="box" id="cameras-box">
+           the map instead, and those do narrow both.
+
+           To a screen reader this box is the map. The dots are drawn
+           into a canvas nothing can read, and this list is the same
+           cameras in words - so the box is a named region whose name
+           says so, from the heading and the hidden sentence after it,
+           and a reader who lands on the map's canvas is sent here by
+           the canvas's own label (map.js names it). The status line
+           after the count is where the count is read out when the
+           list is narrowed: a live region, hidden from the eye because
+           the count beside the heading already says it, written by
+           map.js only when a visitor changes a filter and never on
+           load. It has to be in the page from the start - a live
+           region that appears with its first sentence is not heard. -->
+      <div class="box" id="cameras-box" role="region" aria-labelledby="cameras-heading cameras-equivalent">
         <div class="list-head">
-          <h3>Cameras</h3>
+          <h3 id="cameras-heading">Cameras</h3>
+          <span class="sr-only" id="cameras-equivalent">The map in words. Every camera the map is showing is a row here, and a row shows its camera on the map.</span>
           <span class="count" id="points-count"></span>
+          <span class="sr-only" id="list-status" role="status" aria-live="polite" aria-atomic="true"></span>
         </div>
         <input type="search" id="points-search" class="find"
                placeholder="Find a camera" autocomplete="off" spellcheck="false"
@@ -148,20 +343,29 @@
                   title="In the order the record lists them">A&ndash;Z</button>
           <button class="toggle" data-sort="used" aria-pressed="false"
                   title="Where the record shows cameras used most often">Most used</button>
+          <!-- Only while Near me holds a position: there is no
+               distance to sort by until there is somewhere to
+               measure from. -->
+          <button class="toggle" data-sort="near" aria-pressed="false" hidden
+                  title="Closest to where you are first">Nearest</button>
         </div>
         <ul class="points" id="points-list"></ul>
         <p class="empty" id="points-empty">No cameras recorded yet.</p>
       </div>
 
-      <!-- Writing the file back out -->
+      <!-- Writing the record back out. CSV rows, not a points.js:
+           points.js is written from data/cameras.csv by
+           tools/build_points.py and a pasted one fails stamp.py. -->
       <div class="box edit-only">
         <h3>Publish</h3>
         <p class="hint">
-          Copy the file below, paste it over everything in
-          <strong>points.js</strong>, then commit and push.
+          Copy the rows below and paste them over everything in
+          <strong>data/cameras.csv</strong>, then run
+          <strong>python3 tools/build_points.py</strong> and commit the
+          CSV with the two files it writes.
         </p>
         <div class="row">
-          <button id="copy-button">Copy points.js</button>
+          <button id="copy-button">Copy cameras.csv</button>
           <button id="reset-button" class="quiet">Start again</button>
         </div>
         <p class="note" id="export-note"></p>
@@ -175,7 +379,39 @@
 
 <footer class="foot">
   <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+       hosting" is true and says nothing - a precise small number is
+       far more persuasive than an unspecified appeal, and it fits a
+       site that says exactly what it knows everywhere else. The figure
+       was not available when this was written (QUESTIONS.md, item 2:
+       what the Supabase project and the cammap.app domain come to per
+       month; the Pages hosting itself is free). When it is known, make
+       the line below read, on all eight pages at once or stamp.py
+       fails:
+
+         cammap is free and has no advertising. Donations pay for the
+         hosting, which costs about £N a month.
+
+       Until then the sentence stays as it is: a number that has not
+       been checked is worse than none on a site whose whole argument
+       is that nothing on it is estimated. -->
   <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+  <!-- One licence, for the record only. The cameras are ODbL 1.0 so
+       that the record can be cited, plotted and built on, which is
+       what the site is for; the code is not licensed for reuse, and
+       LICENSE at the root says both. The link leaves the site: LICENSE
+       is served without a content type by Pages, which most browsers
+       download rather than show, so it points at the licence itself. -->
+  <span class="foot-note">Data <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> &middot; <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a></span>
+  <!-- The record, to take away. The CSV is the record itself, served
+       as it is - the one file the maintainer edits, so a download of
+       it cannot drift from what the map draws. The GeoJSON is written
+       from it by tools/build_points.py beside points.js and seed.sql,
+       never by hand; stamp.py fails if it is not what the CSV
+       produces. Both are ODbL like the line above says. The download
+       attribute saves the file rather than showing it, since a CSV
+       in a browser tab is no use to anyone. -->
+  <span class="foot-note">Download the data: <a href="data/cameras.csv" download>CSV</a> &middot; <a href="data/cameras.geojson" download>GeoJSON</a> &middot; <a href="pages/data.html">about the data</a></span>
 </footer>
 
 </div>
@@ -191,10 +427,17 @@
      Supabase CDN script above failed to load, account.js notices and
      says the account panel is unavailable rather than breaking
      anything. -->
-<script src="data/points.js?v=9f8635fe"></script>
-<script src="frontend/shared.js?v=9f8635fe"></script>
-<script src="supabase-config.js?v=9f8635fe"></script>
-<script src="frontend/account.js?v=9f8635fe"></script>
-<script src="frontend/map.js?v=9f8635fe"></script>
+<script src="data/points.js?v=fc1b066a"></script>
+<script src="frontend/shared.js?v=fc1b066a"></script>
+<script src="supabase-config.js?v=fc1b066a"></script>
+<script src="frontend/account.js?v=fc1b066a"></script>
+<script src="frontend/map.js?v=fc1b066a"></script>
+<!-- Last, on every page, and needed by nothing: registers the service
+     worker that keeps a copy of the site for a street with no signal,
+     and shows the one line under the page when a newer version is
+     ready. A file rather than a script written here because the
+     policy above allows no inline script. sw.js says what is kept
+     and what never is. -->
+<script src="frontend/offline.js?v=fc1b066a"></script>
 </body>
 </html>

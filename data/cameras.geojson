@@ -1,0 +1,4726 @@
+{
+  "type": "FeatureCollection",
+  "name": "cammap",
+  "license": "ODbL 1.0",
+  "attribution": "Contains data from cammap (https://forrest404.github.io/cammap/), made available under the Open Database License (ODbL) 1.0.",
+  "bbox": [
+    -0.481667,
+    51.36544,
+    0.221379,
+    51.65309
+  ],
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.273261,
+          51.50814
+        ]
+      },
+      "properties": {
+        "name": "Acton",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Ealing",
+        "seed_key": "Acton|51.508140|-0.273261|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.079324,
+          51.540268
+        ]
+      },
+      "properties": {
+        "name": "Barking",
+        "note": "Met Police LFR van - 3 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Barking and Dagenham",
+        "seed_key": "Barking|51.540268|0.079324|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.200226,
+          51.65309
+        ]
+      },
+      "properties": {
+        "name": "Barnet",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Barnet",
+        "seed_key": "Barnet|51.653090|-0.200226|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.116314,
+          51.505018
+        ]
+      },
+      "properties": {
+        "name": "Belvedere Road, Waterloo",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Lambeth",
+        "seed_key": "Belvedere Road, Waterloo|51.505018|-0.116314|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.056163,
+          51.530346
+        ]
+      },
+      "properties": {
+        "name": "Bethnal Green",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Tower Hamlets",
+        "seed_key": "Bethnal Green|51.530346|-0.056163|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.064883,
+          51.526447
+        ]
+      },
+      "properties": {
+        "name": "Bethnal Green Road",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Tower Hamlets",
+        "seed_key": "Bethnal Green Road|51.526447|-0.064883|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.146094,
+          51.45646
+        ]
+      },
+      "properties": {
+        "name": "Bexleyheath",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Bexley",
+        "seed_key": "Bexleyheath|51.456460|0.146094|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.149786,
+          51.514256
+        ]
+      },
+      "properties": {
+        "name": "Bond Street Station",
+        "note": "Met Police LFR van - 4 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 4,
+        "periods": {
+          "2025": 4
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Bond Street Station|51.514256|-0.149786|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.275906,
+          51.563996
+        ]
+      },
+      "properties": {
+        "name": "Brent",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Brent",
+        "seed_key": "Brent|51.563996|-0.275906|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.109973,
+          51.395055
+        ]
+      },
+      "properties": {
+        "name": "Brigstock Road, Thornton",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Croydon",
+        "seed_key": "Brigstock Road, Thornton|51.395055|-0.109973|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.112507,
+          51.470254
+        ]
+      },
+      "properties": {
+        "name": "Brixton Road",
+        "note": "Met Police LFR van - 2 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2025": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Lambeth",
+        "seed_key": "Brixton Road|51.470254|-0.112507|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.112637,
+          51.467895
+        ]
+      },
+      "properties": {
+        "name": "Brixton Road, Brixton",
+        "note": "Met Police LFR van - 2 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2025": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Lambeth",
+        "seed_key": "Brixton Road, Brixton|51.467895|-0.112637|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.003557,
+          51.541736
+        ]
+      },
+      "properties": {
+        "name": "Broadway, Stratford",
+        "note": "Met Police LFR van - 2 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "Broadway, Stratford|51.541736|0.003557|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.014814,
+          51.402805
+        ]
+      },
+      "properties": {
+        "name": "Bromley",
+        "note": "Met Police LFR van - 2 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Bromley",
+        "seed_key": "Bromley|51.402805|0.014814|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.070005,
+          51.593711
+        ]
+      },
+      "properties": {
+        "name": "Bruce Grove, Tottenham",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Haringey",
+        "seed_key": "Bruce Grove, Tottenham|51.593711|-0.070005|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.092601,
+          51.474907
+        ]
+      },
+      "properties": {
+        "name": "Camberwell Green",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Southwark",
+        "seed_key": "Camberwell Green|51.474907|-0.092601|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.16248,
+          51.542797
+        ]
+      },
+      "properties": {
+        "name": "Camden",
+        "note": "Met Police LFR van - 4 deployments 2023-2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 4,
+        "periods": {
+          "2023-2025": 4
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": true,
+        "borough": "Camden",
+        "seed_key": "Camden|51.542797|-0.162480|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.138995,
+          51.534932
+        ]
+      },
+      "properties": {
+        "name": "Camden High Road",
+        "note": "Met Police LFR van - 2 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2023-2025": 2
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Camden",
+        "seed_key": "Camden High Road|51.534932|-0.138995|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.019753,
+          51.445321
+        ]
+      },
+      "properties": {
+        "name": "Catford",
+        "note": "Met Police LFR van - 3 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 3,
+        "periods": {
+          "2023-24": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Lewisham",
+        "seed_key": "Catford|51.445321|-0.019753|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.10418,
+          51.373648
+        ]
+      },
+      "properties": {
+        "name": "Church Street, Croydon",
+        "note": "Met Police LFR van - 6 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 6,
+        "periods": {
+          "2023-24": 6
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Croydon",
+        "seed_key": "Church Street, Croydon|51.373648|-0.104180|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.138304,
+          51.461801
+        ]
+      },
+      "properties": {
+        "name": "Clapham Common",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Lambeth",
+        "seed_key": "Clapham Common|51.461801|-0.138304|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.170518,
+          51.464459
+        ]
+      },
+      "properties": {
+        "name": "Clapham Junction",
+        "note": "Met Police LFR van - 2 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Wandsworth",
+        "seed_key": "Clapham Junction|51.464459|-0.170518|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.300439,
+          51.411443
+        ]
+      },
+      "properties": {
+        "name": "Clarence Street, Kingston",
+        "note": "Met Police LFR van - 4 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 4,
+        "periods": {
+          "2025": 4
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Kingston upon Thames",
+        "seed_key": "Clarence Street, Kingston|51.411443|-0.300439|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.122564,
+          51.512873
+        ]
+      },
+      "properties": {
+        "name": "Covent Garden",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Covent Garden|51.512873|-0.122564|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.133936,
+          51.51004
+        ]
+      },
+      "properties": {
+        "name": "Coventry Street, Piccadilly",
+        "note": "Met Police LFR van - 3 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Coventry Street, Piccadilly|51.510040|-0.133936|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.014725,
+          51.514677
+        ]
+      },
+      "properties": {
+        "name": "Crisp Street, Poplar",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Tower Hamlets",
+        "seed_key": "Crisp Street, Poplar|51.514677|-0.014725|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.101957,
+          51.371305
+        ]
+      },
+      "properties": {
+        "name": "Croydon",
+        "note": "Met Police LFR van - 5 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 5,
+        "periods": {
+          "2023-24": 5
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Croydon",
+        "seed_key": "Croydon|51.371305|-0.101957|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.148114,
+          51.541327
+        ]
+      },
+      "properties": {
+        "name": "Dagenham",
+        "note": "Met Police LFR van - 3 deployments 2023-2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": true,
+        "borough": "Barking and Dagenham",
+        "seed_key": "Dagenham|51.541327|0.148114|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.145638,
+          51.541553
+        ]
+      },
+      "properties": {
+        "name": "Dagenham Heathway",
+        "note": "Met Police LFR van - 2 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2025": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Barking and Dagenham",
+        "seed_key": "Dagenham Heathway|51.541553|0.145638|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.076013,
+          51.543212
+        ]
+      },
+      "properties": {
+        "name": "Dalston",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Hackney",
+        "seed_key": "Dalston|51.543212|-0.076013|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.074968,
+          51.545284
+        ]
+      },
+      "properties": {
+        "name": "Dalston Junction",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Hackney",
+        "seed_key": "Dalston Junction|51.545284|-0.074968|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.076053,
+          51.548191
+        ]
+      },
+      "properties": {
+        "name": "Dalston Kingsland",
+        "note": "Met Police LFR van - 4 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 4,
+        "periods": {
+          "2025": 4
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Hackney",
+        "seed_key": "Dalston Kingsland|51.548191|-0.076053|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.025856,
+          51.476412
+        ]
+      },
+      "properties": {
+        "name": "Deptford High Street",
+        "note": "Met Police LFR van - 2 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2025": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Lewisham",
+        "seed_key": "Deptford High Street|51.476412|-0.025856|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.300407,
+          51.51498
+        ]
+      },
+      "properties": {
+        "name": "Ealing Broadway",
+        "note": "Met Police LFR van - 5 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 5,
+        "periods": {
+          "2023-2025": 5
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Ealing",
+        "seed_key": "Ealing Broadway|51.514980|-0.300407|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.302214,
+          51.515184
+        ]
+      },
+      "properties": {
+        "name": "Ealing Broadway Station",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Ealing",
+        "seed_key": "Ealing Broadway Station|51.515184|-0.302214|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.19822,
+          51.488797
+        ]
+      },
+      "properties": {
+        "name": "Earls Court",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Kensington and Chelsea",
+        "seed_key": "Earls Court|51.488797|-0.198220|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.19475,
+          51.494788
+        ]
+      },
+      "properties": {
+        "name": "Earls Court Road, Earls Court",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Kensington and Chelsea",
+        "seed_key": "Earls Court Road, Earls Court|51.494788|-0.194750|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.052604,
+          51.5394
+        ]
+      },
+      "properties": {
+        "name": "East Ham",
+        "note": "Met Police LFR van - 2 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "East Ham|51.539400|0.052604|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.048904,
+          51.546269
+        ]
+      },
+      "properties": {
+        "name": "East Ham, High Road",
+        "note": "Met Police LFR van - 6 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 6,
+        "periods": {
+          "2025": 6
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "East Ham, High Road|51.546269|0.048904|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.166764,
+          51.520193
+        ]
+      },
+      "properties": {
+        "name": "Edgware Road",
+        "note": "Met Police LFR van - 4 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 4,
+        "periods": {
+          "2023-2025": 4
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Edgware Road|51.520193|-0.166764|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.061402,
+          51.6245
+        ]
+      },
+      "properties": {
+        "name": "Edmonton Green",
+        "note": "Met Police LFR van - 3 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2025": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Enfield",
+        "seed_key": "Edmonton Green|51.624500|-0.061402|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.081018,
+          51.652085
+        ]
+      },
+      "properties": {
+        "name": "Enfield",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Enfield",
+        "seed_key": "Enfield|51.652085|-0.081018|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.134191,
+          51.528853
+        ]
+      },
+      "properties": {
+        "name": "Euston station",
+        "note": "British Transport Police LFR - 4 deployments in the 2026 station trial",
+        "type": "transportcam",
+        "status": "active",
+        "last": 2026,
+        "deployments": 4,
+        "periods": {
+          "2026": 4
+        },
+        "source_label": "British Transport Police LFR deployment register, 2026",
+        "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+        "approximate": false,
+        "borough": "Camden",
+        "seed_key": "Euston station|51.528853|-0.134191|transportcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.106414,
+          51.564835
+        ]
+      },
+      "properties": {
+        "name": "Finsbury Park",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Islington",
+        "seed_key": "Finsbury Park|51.564835|-0.106414|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.098912,
+          51.3739
+        ]
+      },
+      "properties": {
+        "name": "George Street, Croydon",
+        "note": "Met Police LFR van - 8 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 8,
+        "periods": {
+          "2023-2025": 8
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Croydon",
+        "seed_key": "George Street, Croydon|51.373900|-0.098912|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.031186,
+          51.546903
+        ]
+      },
+      "properties": {
+        "name": "Green Street, Newham",
+        "note": "Met Police LFR van - 5 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 5,
+        "periods": {
+          "2025": 5
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "Green Street, Newham|51.546903|0.031186|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.031288,
+          51.546553
+        ]
+      },
+      "properties": {
+        "name": "Green Street, Upton Park",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "Green Street, Upton Park|51.546553|0.031288|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.049362,
+          51.54324
+        ]
+      },
+      "properties": {
+        "name": "Hackney",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Hackney",
+        "seed_key": "Hackney|51.543240|-0.049362|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.22364,
+          51.492038
+        ]
+      },
+      "properties": {
+        "name": "Hammersmith",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Hammersmith and Fulham",
+        "seed_key": "Hammersmith|51.492038|-0.223640|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.223804,
+          51.493174
+        ]
+      },
+      "properties": {
+        "name": "Hammersmith Broadway",
+        "note": "Met Police LFR van - 3 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Hammersmith and Fulham",
+        "seed_key": "Hammersmith Broadway|51.493174|-0.223804|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.105438,
+          51.587936
+        ]
+      },
+      "properties": {
+        "name": "Haringey",
+        "note": "Met Police LFR van - 3 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 3,
+        "periods": {
+          "2023-24": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Haringey",
+        "seed_key": "Haringey|51.587936|-0.105438|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.257833,
+          51.536357
+        ]
+      },
+      "properties": {
+        "name": "Harlesden",
+        "note": "Met Police LFR van - 2 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2023-2025": 2
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Brent",
+        "seed_key": "Harlesden|51.536357|-0.257833|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.108371,
+          51.520049
+        ]
+      },
+      "properties": {
+        "name": "Hatton Garden",
+        "note": "Met Police LFR van - 1 deployment 2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": true,
+        "borough": "Camden",
+        "seed_key": "Hatton Garden|51.520049|-0.108371|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.148201,
+          51.53639
+        ]
+      },
+      "properties": {
+        "name": "Heathway, Dagenham",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Barking and Dagenham",
+        "seed_key": "Heathway, Dagenham|51.536390|0.148201|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.104195,
+          51.591166
+        ]
+      },
+      "properties": {
+        "name": "High Road, Haringey",
+        "note": "Met Police LFR van - 3 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-24": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Haringey",
+        "seed_key": "High Road, Haringey|51.591166|-0.104195|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.153083,
+          51.440647
+        ]
+      },
+      "properties": {
+        "name": "High Street, Bexleyheath",
+        "note": "Met Police LFR van - 1 deployment 2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": true,
+        "borough": "Bexley",
+        "seed_key": "High Street, Bexleyheath|51.440647|0.153083|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.015094,
+          51.404694
+        ]
+      },
+      "properties": {
+        "name": "High Street, Bromley",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Bromley",
+        "seed_key": "High Street, Bromley|51.404694|0.015094|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.000115,
+          51.539642
+        ]
+      },
+      "properties": {
+        "name": "High Street, East Ham",
+        "note": "Met Police LFR van - 2 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "High Street, East Ham|51.539642|-0.000115|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.243402,
+          51.535102
+        ]
+      },
+      "properties": {
+        "name": "High Street, Harlesden",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Brent",
+        "seed_key": "High Street, Harlesden|51.535102|-0.243402|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.355498,
+          51.470414
+        ]
+      },
+      "properties": {
+        "name": "High Street, Hounslow",
+        "note": "Met Police LFR van - 3 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Hounslow",
+        "seed_key": "High Street, Hounslow|51.470414|-0.355498|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.021934,
+          51.580967
+        ]
+      },
+      "properties": {
+        "name": "High Street, Ilford",
+        "note": "Met Police LFR van - 6 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 6,
+        "periods": {
+          "2023-2025": 6
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Redbridge",
+        "seed_key": "High Street, Ilford|51.580967|0.021934|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.026051,
+          51.478673
+        ]
+      },
+      "properties": {
+        "name": "High Street, Lewisham",
+        "note": "Met Police LFR van - 3 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Lewisham",
+        "seed_key": "High Street, Lewisham|51.478673|-0.026051|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.194008,
+          51.36544
+        ]
+      },
+      "properties": {
+        "name": "High Street, Sutton",
+        "note": "Met Police LFR van - 4 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 4,
+        "periods": {
+          "2023-2025": 4
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Sutton",
+        "seed_key": "High Street, Sutton|51.365440|-0.194008|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.479465,
+          51.546175
+        ]
+      },
+      "properties": {
+        "name": "High Street, Uxbridge",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Hillingdon",
+        "seed_key": "High Street, Uxbridge|51.546175|-0.479465|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.113009,
+          51.552867
+        ]
+      },
+      "properties": {
+        "name": "Holloway Road",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Islington",
+        "seed_key": "Holloway Road|51.552867|-0.113009|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.361347,
+          51.468613
+        ]
+      },
+      "properties": {
+        "name": "Hounslow",
+        "note": "Met Police LFR van - 4 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 4,
+        "periods": {
+          "2023-24": 4
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Hounslow",
+        "seed_key": "Hounslow|51.468613|-0.361347|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.35768,
+          51.46958
+        ]
+      },
+      "properties": {
+        "name": "Hounslow High Street",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Hounslow",
+        "seed_key": "Hounslow High Street|51.469580|-0.357680|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.071167,
+          51.558273
+        ]
+      },
+      "properties": {
+        "name": "Ilford",
+        "note": "Met Police LFR van - 3 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 3,
+        "periods": {
+          "2023-24": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Redbridge",
+        "seed_key": "Ilford|51.558273|0.071167|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.125724,
+          51.569645
+        ]
+      },
+      "properties": {
+        "name": "Ilford High Street",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Redbridge",
+        "seed_key": "Ilford High Street|51.569645|0.125724|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.099905,
+          51.538429
+        ]
+      },
+      "properties": {
+        "name": "Islington",
+        "note": "Met Police LFR van - 2 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Islington",
+        "seed_key": "Islington|51.538429|-0.099905|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.191353,
+          51.537748
+        ]
+      },
+      "properties": {
+        "name": "Kilburn High Road",
+        "note": "Met Police LFR van - 5 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 5,
+        "periods": {
+          "2025": 5
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Camden",
+        "seed_key": "Kilburn High Road|51.537748|-0.191353|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.216062,
+          51.528842
+        ]
+      },
+      "properties": {
+        "name": "Kilburn Lane",
+        "note": "Met Police LFR van - 2 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2025": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Kilburn Lane|51.528842|-0.216062|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.227664,
+          51.492733
+        ]
+      },
+      "properties": {
+        "name": "King Street, Hammersmith",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Hammersmith and Fulham",
+        "seed_key": "King Street, Hammersmith|51.492733|-0.227664|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.125401,
+          51.535238
+        ]
+      },
+      "properties": {
+        "name": "King's Cross Central",
+        "note": "Private facial recognition by the site's developer 2016-2018, withdrawn 2019 after an ICO inquiry",
+        "type": "privatecam",
+        "status": "legacy",
+        "last": null,
+        "deployments": 1,
+        "periods": null,
+        "source_label": "The Register, 6 September 2019",
+        "source_url": "https://www.theregister.com/2019/09/06/metropolitan_police_facial/",
+        "approximate": false,
+        "borough": "Camden",
+        "seed_key": "King's Cross Central|51.535238|-0.125401|privatecam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.123949,
+          51.530609
+        ]
+      },
+      "properties": {
+        "name": "King's Cross St Pancras",
+        "note": "British Transport Police LFR - 1 deployment in the 2026 station trial",
+        "type": "transportcam",
+        "status": "active",
+        "last": 2026,
+        "deployments": 1,
+        "periods": {
+          "2026": 1
+        },
+        "source_label": "British Transport Police LFR deployment register, 2026",
+        "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+        "approximate": false,
+        "borough": "Camden",
+        "seed_key": "King's Cross St Pancras|51.530609|-0.123949|transportcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.121655,
+          51.530491
+        ]
+      },
+      "properties": {
+        "name": "King's Cross station",
+        "note": "British Transport Police LFR - 4 deployments in the 2026 station trial",
+        "type": "transportcam",
+        "status": "active",
+        "last": 2026,
+        "deployments": 4,
+        "periods": {
+          "2026": 4
+        },
+        "source_label": "British Transport Police LFR deployment register, 2026",
+        "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+        "approximate": false,
+        "borough": "Camden",
+        "seed_key": "King's Cross station|51.530491|-0.121655|transportcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.123022,
+          51.532395
+        ]
+      },
+      "properties": {
+        "name": "Kings Cross",
+        "note": "Met Police LFR van - 3 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Camden",
+        "seed_key": "Kings Cross|51.532395|-0.123022|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.210372,
+          51.470192
+        ]
+      },
+      "properties": {
+        "name": "Kings Street, Hammersmith",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Hammersmith and Fulham",
+        "seed_key": "Kings Street, Hammersmith|51.470192|-0.210372|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.07516,
+          51.550198
+        ]
+      },
+      "properties": {
+        "name": "Kingsland High Street",
+        "note": "Met Police LFR van - 2 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Hackney",
+        "seed_key": "Kingsland High Street|51.550198|-0.075160|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.30182,
+          51.412933
+        ]
+      },
+      "properties": {
+        "name": "Kingston",
+        "note": "Met Police LFR van - 2 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Kingston upon Thames",
+        "seed_key": "Kingston|51.412933|-0.301820|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.166965,
+          51.500844
+        ]
+      },
+      "properties": {
+        "name": "Knightsbridge",
+        "note": "Met Police LFR van - 1 deployment 2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": true,
+        "borough": "Westminster",
+        "seed_key": "Knightsbridge|51.500844|-0.166965|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.130275,
+          51.510777
+        ]
+      },
+      "properties": {
+        "name": "Leicester",
+        "note": "Met Police LFR van - 1 deployment 2020-22",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2022,
+        "deployments": 1,
+        "periods": {
+          "2020-22": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2020-22",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/new/lfr-deployment-grid-2020-2022.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Leicester|51.510777|-0.130275|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.130394,
+          51.509961
+        ]
+      },
+      "properties": {
+        "name": "Leicester Square",
+        "note": "Met Police LFR van - 4 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 4,
+        "periods": {
+          "2025": 4
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Leicester Square|51.509961|-0.130394|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.010179,
+          51.462429
+        ]
+      },
+      "properties": {
+        "name": "Lewisham",
+        "note": "Met Police LFR van - 3 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 3,
+        "periods": {
+          "2023-24": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Lewisham",
+        "seed_key": "Lewisham|51.462429|-0.010179|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.01036,
+          51.462867
+        ]
+      },
+      "properties": {
+        "name": "Lewisham High Street",
+        "note": "Met Police LFR van - 3 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2025": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Lewisham",
+        "seed_key": "Lewisham High Street|51.462867|-0.010360|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.015681,
+          51.569673
+        ]
+      },
+      "properties": {
+        "name": "Leyton",
+        "note": "Met Police LFR van - 1 deployment 2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": true,
+        "borough": "Waltham Forest",
+        "seed_key": "Leyton|51.569673|-0.015681|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.080571,
+          51.517264
+        ]
+      },
+      "properties": {
+        "name": "Liverpool Street station",
+        "note": "British Transport Police LFR - 2 deployments in the 2026 station trial",
+        "type": "transportcam",
+        "status": "active",
+        "last": 2026,
+        "deployments": 2,
+        "periods": {
+          "2026": 2
+        },
+        "source_label": "British Transport Police LFR deployment register, 2026",
+        "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+        "approximate": false,
+        "borough": "City of London",
+        "seed_key": "Liverpool Street station|51.517264|-0.080571|transportcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.087671,
+          51.508049
+        ]
+      },
+      "properties": {
+        "name": "London Bridge",
+        "note": "Met Police LFR van - 3 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 3,
+        "periods": {
+          "2023-24": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "City of London",
+        "seed_key": "London Bridge|51.508049|-0.087671|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.085147,
+          51.504876
+        ]
+      },
+      "properties": {
+        "name": "London Bridge station",
+        "note": "British Transport Police LFR - 1 deployment in the 2026 station trial",
+        "type": "transportcam",
+        "status": "active",
+        "last": 2026,
+        "deployments": 1,
+        "periods": {
+          "2026": 1
+        },
+        "source_label": "British Transport Police LFR deployment register, 2026",
+        "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+        "approximate": false,
+        "borough": "Southwark",
+        "seed_key": "London Bridge station|51.504876|-0.085147|transportcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.111014,
+          51.387128
+        ]
+      },
+      "properties": {
+        "name": "London Road, Croydon",
+        "note": "Met Police - FIXED LFR cameras on street furniture, installed from Oct 2025",
+        "type": "fixedcam",
+        "status": "active",
+        "last": null,
+        "deployments": 1,
+        "periods": null,
+        "source_label": "Met Police press release, 13 May 2026",
+        "source_url": "https://news.met.police.uk/news/met-makes-one-arrest-every-35-minutes-during-live-facial-recognition-pilot-509256",
+        "approximate": false,
+        "borough": "Croydon",
+        "seed_key": "London Road, Croydon|51.387128|-0.111014|fixedcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.111014,
+          51.387128
+        ]
+      },
+      "properties": {
+        "name": "London Road, Croydon",
+        "note": "Met Police LFR van - 2 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2023-2025": 2
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Croydon",
+        "seed_key": "London Road, Croydon|51.387128|-0.111014|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.172116,
+          51.395254
+        ]
+      },
+      "properties": {
+        "name": "London Road, Morden",
+        "note": "Met Police LFR van - 1 deployment 2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": true,
+        "borough": "Merton",
+        "seed_key": "London Road, Morden|51.395254|-0.172116|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.070489,
+          51.604552
+        ]
+      },
+      "properties": {
+        "name": "Love Lane, Haringey",
+        "note": "Met Police LFR van - 2 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Haringey",
+        "seed_key": "Love Lane, Haringey|51.604552|-0.070489|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.158905,
+          51.513184
+        ]
+      },
+      "properties": {
+        "name": "Marble Arch",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Marble Arch|51.513184|-0.158905|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.055248,
+          51.541551
+        ]
+      },
+      "properties": {
+        "name": "Mare Street, Hackney",
+        "note": "Met Police LFR van - 3 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Hackney",
+        "seed_key": "Mare Street, Hackney|51.541551|-0.055248|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.101318,
+          51.37566
+        ]
+      },
+      "properties": {
+        "name": "North End Croydon",
+        "note": "Met Police LFR van - 7 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 7,
+        "periods": {
+          "2025": 7
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Croydon",
+        "seed_key": "North End Croydon|51.375660|-0.101318|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.102542,
+          51.377881
+        ]
+      },
+      "properties": {
+        "name": "North End, Croydon",
+        "note": "Met Police - FIXED LFR cameras on street furniture, installed from Oct 2025",
+        "type": "fixedcam",
+        "status": "active",
+        "last": null,
+        "deployments": 1,
+        "periods": null,
+        "source_label": "Met Police press release, 13 May 2026",
+        "source_url": "https://news.met.police.uk/news/met-makes-one-arrest-every-35-minutes-during-live-facial-recognition-pilot-509256",
+        "approximate": false,
+        "borough": "Croydon",
+        "seed_key": "North End, Croydon|51.377881|-0.102542|fixedcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.102542,
+          51.377881
+        ]
+      },
+      "properties": {
+        "name": "North End, Croydon",
+        "note": "Met Police LFR van - 21 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 21,
+        "periods": {
+          "2023-2025": 21
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Croydon",
+        "seed_key": "North End, Croydon|51.377881|-0.102542|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.053865,
+          51.601908
+        ]
+      },
+      "properties": {
+        "name": "Northumberland Park",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Haringey",
+        "seed_key": "Northumberland Park|51.601908|-0.053865|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.003203,
+          51.502937
+        ]
+      },
+      "properties": {
+        "name": "O2 Arena",
+        "note": "Met Police LFR van - 2 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Greenwich",
+        "seed_key": "O2 Arena|51.502937|0.003203|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.140779,
+          51.515361
+        ]
+      },
+      "properties": {
+        "name": "Oxford Circus",
+        "note": "Met Police LFR van - 16 deployments 2020-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 16,
+        "periods": {
+          "2020-2025": 16
+        },
+        "source_label": "Met Police LFR deployment records, 2020-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Oxford Circus|51.515361|-0.140779|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.135174,
+          51.515984
+        ]
+      },
+      "properties": {
+        "name": "Oxford Street",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Oxford Street|51.515984|-0.135174|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.176603,
+          51.515714
+        ]
+      },
+      "properties": {
+        "name": "Paddington Station",
+        "note": "Met Police LFR van - 3 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2025": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Paddington Station|51.515714|-0.176603|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.082013,
+          51.651453
+        ]
+      },
+      "properties": {
+        "name": "Palace Exchange",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Enfield",
+        "seed_key": "Palace Exchange|51.651453|-0.082013|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.069932,
+          51.473412
+        ]
+      },
+      "properties": {
+        "name": "Peckham",
+        "note": "Met Police LFR van - 3 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 3,
+        "periods": {
+          "2023-24": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Southwark",
+        "seed_key": "Peckham|51.473412|-0.069932|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.069413,
+          51.470006
+        ]
+      },
+      "properties": {
+        "name": "Peckham Rye",
+        "note": "Met Police LFR van - 2 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2025": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Southwark",
+        "seed_key": "Peckham Rye|51.470006|-0.069413|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.133936,
+          51.510138
+        ]
+      },
+      "properties": {
+        "name": "Piccadilly Circus",
+        "note": "Met Police LFR van - 3 deployments 2020-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2020-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2020-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Piccadilly Circus|51.510138|-0.133936|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.148443,
+          51.504078
+        ]
+      },
+      "properties": {
+        "name": "Piccadilly, Hard Rock",
+        "note": "Met Police LFR van - 2 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2025": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Piccadilly, Hard Rock|51.504078|-0.148443|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.014437,
+          51.512129
+        ]
+      },
+      "properties": {
+        "name": "Poplar - Vesey Path",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Tower Hamlets",
+        "seed_key": "Poplar - Vesey Path|51.512129|-0.014437|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.062603,
+          51.492588
+        ]
+      },
+      "properties": {
+        "name": "Powis Street",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Greenwich",
+        "seed_key": "Powis Street|51.492588|0.062603|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.064301,
+          51.492083
+        ]
+      },
+      "properties": {
+        "name": "Powis Street, Woolwich",
+        "note": "Met Police LFR van - 9 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 9,
+        "periods": {
+          "2023-2025": 9
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Greenwich",
+        "seed_key": "Powis Street, Woolwich|51.492083|0.064301|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.175365,
+          51.515479
+        ]
+      },
+      "properties": {
+        "name": "Praed Street, Paddington",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Praed Street, Paddington|51.515479|-0.175365|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.307639,
+          51.440553
+        ]
+      },
+      "properties": {
+        "name": "Richmond",
+        "note": "Met Police LFR van - 1 deployment 2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": true,
+        "borough": "Richmond upon Thames",
+        "seed_key": "Richmond|51.440553|-0.307639|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.263326,
+          51.469623
+        ]
+      },
+      "properties": {
+        "name": "Richmond High Street",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Richmond upon Thames",
+        "seed_key": "Richmond High Street|51.469623|-0.263326|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.182265,
+          51.576046
+        ]
+      },
+      "properties": {
+        "name": "Romford",
+        "note": "Met Police LFR van - 5 deployments 2023-2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 5,
+        "periods": {
+          "2023-2025": 5
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": true,
+        "borough": "Havering",
+        "seed_key": "Romford|51.576046|0.182265|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.018176,
+          51.44753
+        ]
+      },
+      "properties": {
+        "name": "Rushey Green",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Lewisham",
+        "seed_key": "Rushey Green|51.447530|-0.018176|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.065766,
+          51.467074
+        ]
+      },
+      "properties": {
+        "name": "Rye Lane, Peckham",
+        "note": "Met Police LFR van - 5 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 5,
+        "periods": {
+          "2025": 5
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Southwark",
+        "seed_key": "Rye Lane, Peckham|51.467074|-0.065766|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.140764,
+          51.540516
+        ]
+      },
+      "properties": {
+        "name": "Sainsbury's Camden Town",
+        "note": "Sainsbury's - Facewatch store facial recognition, from early 2026",
+        "type": "facewatchcam",
+        "status": "active",
+        "last": null,
+        "deployments": 1,
+        "periods": null,
+        "source_label": "Retail Technology Innovation Hub, 1 July 2026",
+        "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+        "approximate": false,
+        "borough": "Camden",
+        "seed_key": "Sainsbury's Camden Town|51.540516|-0.140764|facewatchcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.073206,
+          51.547484
+        ]
+      },
+      "properties": {
+        "name": "Sainsbury's Dalston",
+        "note": "Sainsbury's - Facewatch store facial recognition, from early 2026",
+        "type": "facewatchcam",
+        "status": "active",
+        "last": null,
+        "deployments": 1,
+        "periods": null,
+        "source_label": "Retail Technology Innovation Hub, 1 July 2026",
+        "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+        "approximate": false,
+        "borough": "Hackney",
+        "seed_key": "Sainsbury's Dalston|51.547484|-0.073206|facewatchcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.084998,
+          51.461793
+        ]
+      },
+      "properties": {
+        "name": "Sainsbury's East Dulwich",
+        "note": "Sainsbury's - Facewatch store facial recognition, paused after a wrongful ejection",
+        "type": "facewatchcam",
+        "status": "legacy",
+        "last": null,
+        "deployments": 1,
+        "periods": null,
+        "source_label": "Retail Gazette, August 2026",
+        "source_url": "https://www.retailgazette.co.uk/blog/2026/08/sainsburys-pauses-ai-facial-recognition-cameras-after-shopper-wrongly-ejected/",
+        "approximate": false,
+        "borough": "Southwark",
+        "seed_key": "Sainsbury's East Dulwich|51.461793|-0.084998|facewatchcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.09764,
+          51.49457
+        ]
+      },
+      "properties": {
+        "name": "Sainsbury's Elephant and Castle",
+        "note": "Sainsbury's - Facewatch store facial recognition, from early 2026",
+        "type": "facewatchcam",
+        "status": "active",
+        "last": null,
+        "deployments": 1,
+        "periods": null,
+        "source_label": "The Register, 6 February 2026",
+        "source_url": "https://www.theregister.com/2026/02/06/sainsburys_/",
+        "approximate": false,
+        "borough": "Southwark",
+        "seed_key": "Sainsbury's Elephant and Castle|51.494570|-0.097640|facewatchcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.217664,
+          51.526296
+        ]
+      },
+      "properties": {
+        "name": "Sainsbury's Ladbroke Grove",
+        "note": "Sainsbury's - Facewatch store facial recognition, from early 2026",
+        "type": "facewatchcam",
+        "status": "active",
+        "last": null,
+        "deployments": 1,
+        "periods": null,
+        "source_label": "Retail Technology Innovation Hub, 1 July 2026",
+        "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+        "approximate": false,
+        "borough": "Kensington and Chelsea",
+        "seed_key": "Sainsbury's Ladbroke Grove|51.526296|-0.217664|facewatchcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.033317,
+          51.430199
+        ]
+      },
+      "properties": {
+        "name": "Sainsbury's Sydenham",
+        "note": "Sainsbury's - Facewatch store facial recognition, trial store from Sep 2025",
+        "type": "facewatchcam",
+        "status": "active",
+        "last": null,
+        "deployments": 1,
+        "periods": null,
+        "source_label": "The Grocer, July 2026",
+        "source_url": "https://www.thegrocer.co.uk/news/sainsburys-to-extend-facial-recognition-tech-to-200-stores-by-christmas/720799.article",
+        "approximate": false,
+        "borough": "Lewisham",
+        "seed_key": "Sainsbury's Sydenham|51.430199|-0.033317|facewatchcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.058468,
+          51.521013
+        ]
+      },
+      "properties": {
+        "name": "Sainsbury's Whitechapel",
+        "note": "Sainsbury's - Facewatch store facial recognition, from early 2026",
+        "type": "facewatchcam",
+        "status": "active",
+        "last": null,
+        "deployments": 1,
+        "periods": null,
+        "source_label": "Retail Technology Innovation Hub, 1 July 2026",
+        "source_url": "https://retailtechinnovationhub.com/home/2026/7/1/sainsburys-expands-ai-powered-facial-recognition-technology-trial-in-partnership-with-facewatch",
+        "approximate": false,
+        "borough": "Tower Hamlets",
+        "seed_key": "Sainsbury's Whitechapel|51.521013|-0.058468|facewatchcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.081188,
+          51.398828
+        ]
+      },
+      "properties": {
+        "name": "Selhurst Park, Holmesdale Road",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Croydon",
+        "seed_key": "Selhurst Park, Holmesdale Road|51.398828|-0.081188|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.07426,
+          51.39709
+        ]
+      },
+      "properties": {
+        "name": "Selhurst Park, Norwood Junction",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Croydon",
+        "seed_key": "Selhurst Park, Norwood Junction|51.397090|-0.074260|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.072471,
+          51.583201
+        ]
+      },
+      "properties": {
+        "name": "Seven Sisters High Road",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Haringey",
+        "seed_key": "Seven Sisters High Road|51.583201|-0.072471|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.108782,
+          51.562813
+        ]
+      },
+      "properties": {
+        "name": "Seven Sisters Road",
+        "note": "Met Police LFR van - 2 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2025": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Islington",
+        "seed_key": "Seven Sisters Road|51.562813|-0.108782|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.224769,
+          51.504054
+        ]
+      },
+      "properties": {
+        "name": "Shepherds Bush",
+        "note": "Met Police LFR van - 2 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Hammersmith and Fulham",
+        "seed_key": "Shepherds Bush|51.504054|-0.224769|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.221755,
+          51.504247
+        ]
+      },
+      "properties": {
+        "name": "Shepherds Bush Green",
+        "note": "Met Police LFR van - 3 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2025": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Hammersmith and Fulham",
+        "seed_key": "Shepherds Bush Green|51.504247|-0.221755|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.074467,
+          51.523253
+        ]
+      },
+      "properties": {
+        "name": "Shoreditch High Street",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Tower Hamlets",
+        "seed_key": "Shoreditch High Street|51.523253|-0.074467|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.11342,
+          51.506532
+        ]
+      },
+      "properties": {
+        "name": "South Bank",
+        "note": "Met Police LFR van - 1 deployment 2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": true,
+        "borough": "Lambeth",
+        "seed_key": "South Bank|51.506532|-0.113420|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.183993,
+          51.572017
+        ]
+      },
+      "properties": {
+        "name": "South Street, Romford",
+        "note": "Met Police LFR van - 6 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 6,
+        "periods": {
+          "2023-2025": 6
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Havering",
+        "seed_key": "South Street, Romford|51.572017|0.183993|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.375517,
+          51.511146
+        ]
+      },
+      "properties": {
+        "name": "Southall",
+        "note": "Met Police LFR van - 2 deployments 2023-2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2023-2025": 2
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": true,
+        "borough": "Ealing",
+        "seed_key": "Southall|51.511146|-0.375517|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.099565,
+          51.505653
+        ]
+      },
+      "properties": {
+        "name": "Southwark",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Southwark",
+        "seed_key": "Southwark|51.505653|-0.099565|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.333388,
+          51.581937
+        ]
+      },
+      "properties": {
+        "name": "St Ann's, Harrow",
+        "note": "Met Police LFR van - 2 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Harrow",
+        "seed_key": "St Ann's, Harrow|51.581937|-0.333388|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.167961,
+          51.463701
+        ]
+      },
+      "properties": {
+        "name": "St John's Hill, Clapham",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Wandsworth",
+        "seed_key": "St John's Hill, Clapham|51.463701|-0.167961|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.127003,
+          51.53272
+        ]
+      },
+      "properties": {
+        "name": "St Pancras International",
+        "note": "British Transport Police LFR - 1 deployment in the 2026 station trial",
+        "type": "transportcam",
+        "status": "active",
+        "last": 2026,
+        "deployments": 1,
+        "periods": {
+          "2026": 1
+        },
+        "source_label": "British Transport Police LFR deployment register, 2026",
+        "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+        "approximate": false,
+        "borough": "Camden",
+        "seed_key": "St Pancras International|51.532720|-0.127003|transportcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.221379,
+          51.561243
+        ]
+      },
+      "properties": {
+        "name": "Station Lane, Hornchurch",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Havering",
+        "seed_key": "Station Lane, Hornchurch|51.561243|0.221379|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.199284,
+          51.548937
+        ]
+      },
+      "properties": {
+        "name": "Station Parade",
+        "note": "Met Police LFR van - 4 deployments 2025 (the record says only \"Station Parade\", and London has several - this pin is a guess)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 4,
+        "periods": {
+          "2025": 4
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Havering",
+        "seed_key": "Station Parade|51.548937|0.199284|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.080492,
+          51.538624
+        ]
+      },
+      "properties": {
+        "name": "Station Parade, Barking",
+        "note": "Met Police LFR van - 2 deployments 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Barking and Dagenham",
+        "seed_key": "Station Parade, Barking|51.538624|0.080492|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.4213,
+          51.502715
+        ]
+      },
+      "properties": {
+        "name": "Station Road, Hayes",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Hillingdon",
+        "seed_key": "Station Road, Hayes|51.502715|-0.421300|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.003547,
+          51.541289
+        ]
+      },
+      "properties": {
+        "name": "Stratford",
+        "note": "Met Police LFR van - 2 deployments 2020-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2020-24": 2
+        },
+        "source_label": "Met Police LFR deployment records, 2020-24",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "Stratford|51.541289|-0.003547|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.002803,
+          51.541374
+        ]
+      },
+      "properties": {
+        "name": "Stratford Broadway",
+        "note": "Met Police LFR van - 7 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 7,
+        "periods": {
+          "2025": 7
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "Stratford Broadway|51.541374|0.002803|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.002268,
+          51.541251
+        ]
+      },
+      "properties": {
+        "name": "Stratford station",
+        "note": "British Transport Police LFR - 1 deployment in the 2026 station trial",
+        "type": "transportcam",
+        "status": "active",
+        "last": 2026,
+        "deployments": 1,
+        "periods": {
+          "2026": 1
+        },
+        "source_label": "British Transport Police LFR deployment register, 2026",
+        "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "Stratford station|51.541251|-0.002268|transportcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.006417,
+          51.543064
+        ]
+      },
+      "properties": {
+        "name": "Stratford Westfield",
+        "note": "Met Police LFR van - 6 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 6,
+        "periods": {
+          "2023-2025": 6
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "Stratford Westfield|51.543064|-0.006417|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.126424,
+          51.417335
+        ]
+      },
+      "properties": {
+        "name": "Streatham High Road",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Lambeth",
+        "seed_key": "Streatham High Road|51.417335|-0.126424|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.451799,
+          51.469273
+        ]
+      },
+      "properties": {
+        "name": "T2 Heathrow Airport",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Hillingdon",
+        "seed_key": "T2 Heathrow Airport|51.469273|-0.451799|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.098606,
+          51.39911
+        ]
+      },
+      "properties": {
+        "name": "Thornton Heath",
+        "note": "Met Police LFR van - 2 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 2,
+        "periods": {
+          "2023-24": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Croydon",
+        "seed_key": "Thornton Heath|51.399110|-0.098606|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.167967,
+          51.427821
+        ]
+      },
+      "properties": {
+        "name": "Tooting",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Wandsworth",
+        "seed_key": "Tooting|51.427821|-0.167967|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.168291,
+          51.427739
+        ]
+      },
+      "properties": {
+        "name": "Tooting Broadway",
+        "note": "Met Police LFR van - 9 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 9,
+        "periods": {
+          "2023-2025": 9
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Wandsworth",
+        "seed_key": "Tooting Broadway|51.427739|-0.168291|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1328,
+          51.516134
+        ]
+      },
+      "properties": {
+        "name": "Tottenham Court Road",
+        "note": "Met Police LFR van - 5 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 5,
+        "periods": {
+          "2023-2025": 5
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Tottenham Court Road|51.516134|-0.132800|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.059944,
+          51.588123
+        ]
+      },
+      "properties": {
+        "name": "Tottenham Hale",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Haringey",
+        "seed_key": "Tottenham Hale|51.588123|-0.059944|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.021346,
+          51.58378
+        ]
+      },
+      "properties": {
+        "name": "Town Square, Walthamstow",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Waltham Forest",
+        "seed_key": "Town Square, Walthamstow|51.583780|-0.021346|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.033984,
+          51.535106
+        ]
+      },
+      "properties": {
+        "name": "Upton Park",
+        "note": "Met Police LFR van - 2 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2025": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Newham",
+        "seed_key": "Upton Park|51.535106|0.033984|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.481667,
+          51.544951
+        ]
+      },
+      "properties": {
+        "name": "Uxbridge",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Hillingdon",
+        "seed_key": "Uxbridge|51.544951|-0.481667|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.23941,
+          51.506491
+        ]
+      },
+      "properties": {
+        "name": "Uxbridge Road, Shepherds",
+        "note": "Met Police LFR van - 2 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2023-2025": 2
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Hammersmith and Fulham",
+        "seed_key": "Uxbridge Road, Shepherds|51.506491|-0.239410|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.144845,
+          51.495052
+        ]
+      },
+      "properties": {
+        "name": "Victoria station",
+        "note": "British Transport Police LFR - 5 deployments in the 2026 station trial",
+        "type": "transportcam",
+        "status": "active",
+        "last": 2026,
+        "deployments": 5,
+        "periods": {
+          "2026": 5
+        },
+        "source_label": "British Transport Police LFR deployment register, 2026",
+        "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Victoria station|51.495052|-0.144845|transportcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.133591,
+          51.49798
+        ]
+      },
+      "properties": {
+        "name": "Victoria Street",
+        "note": "Met Police LFR van - 2 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 2,
+        "periods": {
+          "2025": 2
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Victoria Street|51.497980|-0.133591|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.018819,
+          51.58447
+        ]
+      },
+      "properties": {
+        "name": "Walthamstow",
+        "note": "Met Police LFR van - 3 deployments 2023-2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": true,
+        "borough": "Waltham Forest",
+        "seed_key": "Walthamstow|51.584470|-0.018819|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.019994,
+          51.582893
+        ]
+      },
+      "properties": {
+        "name": "Walthamstow Central",
+        "note": "Met Police LFR van - 6 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 6,
+        "periods": {
+          "2025": 6
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Waltham Forest",
+        "seed_key": "Walthamstow Central|51.582893|-0.019994|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.030573,
+          51.582208
+        ]
+      },
+      "properties": {
+        "name": "Walthamstow Market",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Waltham Forest",
+        "seed_key": "Walthamstow Market|51.582208|-0.030573|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.096681,
+          51.489848
+        ]
+      },
+      "properties": {
+        "name": "Walworth Road",
+        "note": "Met Police LFR van - 6 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 6,
+        "periods": {
+          "2023-2025": 6
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Southwark",
+        "seed_key": "Walworth Road|51.489848|-0.096681|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.096975,
+          51.490318
+        ]
+      },
+      "properties": {
+        "name": "Walworth Road, Southwark",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Southwark",
+        "seed_key": "Walworth Road, Southwark|51.490318|-0.096975|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.131629,
+          51.510697
+        ]
+      },
+      "properties": {
+        "name": "Wardour Street, Westminster",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Westminster",
+        "seed_key": "Wardour Street, Westminster|51.510697|-0.131629|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.112062,
+          51.502678
+        ]
+      },
+      "properties": {
+        "name": "Waterloo station",
+        "note": "British Transport Police LFR - 3 deployments in the 2026 station trial",
+        "type": "transportcam",
+        "status": "active",
+        "last": 2026,
+        "deployments": 3,
+        "periods": {
+          "2026": 3
+        },
+        "source_label": "British Transport Police LFR deployment register, 2026",
+        "source_url": "https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf",
+        "approximate": false,
+        "borough": "Lambeth",
+        "seed_key": "Waterloo station|51.502678|-0.112062|transportcam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.335252,
+          51.594309
+        ]
+      },
+      "properties": {
+        "name": "Wealdstone High Street",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Harrow",
+        "seed_key": "Wealdstone High Street|51.594309|-0.335252|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.279603,
+          51.556069
+        ]
+      },
+      "properties": {
+        "name": "Wembley",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Brent",
+        "seed_key": "Wembley|51.556069|-0.279603|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.296675,
+          51.552328
+        ]
+      },
+      "properties": {
+        "name": "Wembley Central",
+        "note": "Met Police LFR van - 6 deployments 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 6,
+        "periods": {
+          "2025": 6
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Brent",
+        "seed_key": "Wembley Central|51.552328|-0.296675|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.102039,
+          51.378808
+        ]
+      },
+      "properties": {
+        "name": "West Croydon",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Croydon",
+        "seed_key": "West Croydon|51.378808|-0.102039|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.221808,
+          51.507848
+        ]
+      },
+      "properties": {
+        "name": "Westfield, Shepherds",
+        "note": "Met Police LFR van - 3 deployments 2023-2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": false,
+        "borough": "Hammersmith and Fulham",
+        "seed_key": "Westfield, Shepherds|51.507848|-0.221808|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.12654,
+          51.500444
+        ]
+      },
+      "properties": {
+        "name": "Westminster",
+        "note": "Met Police LFR van - 22 deployments 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 22,
+        "periods": {
+          "2023-24": 22
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Westminster",
+        "seed_key": "Westminster|51.500444|-0.126540|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.12493,
+          51.501356
+        ]
+      },
+      "properties": {
+        "name": "Westminster Bridge Street",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Westminster Bridge Street|51.501356|-0.124930|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.134782,
+          51.500825
+        ]
+      },
+      "properties": {
+        "name": "Westminster, Birdcage Walk",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Westminster, Birdcage Walk|51.500825|-0.134782|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1357,
+          51.509165
+        ]
+      },
+      "properties": {
+        "name": "Westminster, Piccadilly",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Westminster, Piccadilly|51.509165|-0.135700|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.121026,
+          51.509162
+        ]
+      },
+      "properties": {
+        "name": "Westminster, Savoy Place",
+        "note": "Met Police LFR van - 1 deployment 2023-24 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": true,
+        "borough": "Westminster",
+        "seed_key": "Westminster, Savoy Place|51.509162|-0.121026|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.130261,
+          51.506082
+        ]
+      },
+      "properties": {
+        "name": "Westminster, The Mall",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Westminster",
+        "seed_key": "Westminster, The Mall|51.506082|-0.130261|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.065968,
+          51.517486
+        ]
+      },
+      "properties": {
+        "name": "Whitechapel",
+        "note": "Met Police LFR van - 3 deployments 2023-2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2023-2025": 3
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": true,
+        "borough": "Tower Hamlets",
+        "seed_key": "Whitechapel|51.517486|-0.065968|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.206776,
+          51.420942
+        ]
+      },
+      "properties": {
+        "name": "Wimbledon Bridge",
+        "note": "Met Police LFR van - 1 deployment 2023-24",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2024,
+        "deployments": 1,
+        "periods": {
+          "2023-24": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2023-24",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/lfr-deployment-grid-2023-to-2024.pdf",
+        "approximate": false,
+        "borough": "Merton",
+        "seed_key": "Wimbledon Bridge|51.420942|-0.206776|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.109959,
+          51.597205
+        ]
+      },
+      "properties": {
+        "name": "Wood Green",
+        "note": "Met Police LFR van - 3 deployments 2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 3,
+        "periods": {
+          "2025": 3
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": true,
+        "borough": "Haringey",
+        "seed_key": "Wood Green|51.597205|-0.109959|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.105348,
+          51.589876
+        ]
+      },
+      "properties": {
+        "name": "Wood Green High Road",
+        "note": "Met Police LFR van - 1 deployment 2025",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 1,
+        "periods": {
+          "2025": 1
+        },
+        "source_label": "Met Police LFR deployment record, 2025",
+        "source_url": "https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf",
+        "approximate": false,
+        "borough": "Haringey",
+        "seed_key": "Wood Green High Road|51.589876|-0.105348|vancam"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.062334,
+          51.48267
+        ]
+      },
+      "properties": {
+        "name": "Woolwich",
+        "note": "Met Police LFR van - 8 deployments 2023-2025 (pin marks the surrounding area, not an exact spot)",
+        "type": "vancam",
+        "status": "legacy",
+        "last": 2025,
+        "deployments": 8,
+        "periods": {
+          "2023-2025": 8
+        },
+        "source_label": "Met Police LFR deployment records, 2023-2025",
+        "source_url": "https://www.met.police.uk/police-forces/metropolitan-police/areas/about-us/about-the-met/facial-recognition-technology/",
+        "approximate": true,
+        "borough": "Greenwich",
+        "seed_key": "Woolwich|51.482670|0.062334|vancam"
+      }
+    }
+  ]
+}

@@ -3,6 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- What a request from this page says about where it came from.
+     Cross-origin hosts - OpenFreeMap, Esri, Supabase, Nominatim - get
+     the origin only: Nominatim's usage policy asks for a referrer
+     that identifies the application, and the origin does. Same-origin
+     requests get the full URL, which is why a position must never be
+     in a query string on this site - it would reach the host with
+     the page request and ride in the Referer of every script, style
+     and font the page loads; a fragment is never sent at all. This
+     is the browser's default in Chrome and Firefox, declared so it
+     does not depend on a default. Nine copies, one per page;
+     stamp.py does not police this tag. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <!-- Identical on all seven pages, and must stay that way: it is what
      makes the no-CDN rule something the browser enforces rather than
      something we remember. tools/stamp.py fails if they drift. Why
@@ -17,7 +29,7 @@
           https://tiles.openfreemap.org https://*.openfreemap.org
           https://*.supabase.co;
   media-src 'self' blob: https://*.supabase.co;
-  worker-src blob:;
+  worker-src 'self' blob:;
   child-src blob:;
   connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
               https://tiles.openfreemap.org https://*.openfreemap.org
@@ -28,8 +40,52 @@
   form-action 'none';
   frame-ancestors 'none'">
 <title>Account &mdash; cammap</title>
+<meta name="description" content="A cammap account is two random words and a password. No email, no name, nothing about you. With one you can save cameras and report new ones.">
+<link rel="canonical" href="https://forrest404.github.io/cammap/pages/account.html">
+<!-- What a shared link turns into. Each page has its own title and
+     description - one shared across the site would be the failure
+     mode - and all of them show the same card, img/share.png, which
+     is the map itself photographed by tools/share-card.html and
+     committed, because a static site has nothing to draw one with on
+     request. The addresses are absolute because a card scraper has no
+     base to resolve against; they name the site's home on Pages, and
+     NOTES.md ("Sharing the site") lists every file that does. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cammap">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://forrest404.github.io/cammap/pages/account.html">
+<meta property="og:title" content="Account — cammap">
+<meta property="og:description" content="A cammap account is two random words and a password. No email, no name, nothing about you. With one you can save cameras and report new ones.">
+<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Account — cammap">
+<meta name="twitter:description" content="A cammap account is two random words and a password. No email, no name, nothing about you. With one you can save cameras and report new ones.">
+<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../feed.xml">
+<!-- The icon, in the forms the browsers between them ask for: SVG
+     for the tab in Chrome and Firefox, .ico for Safari and anything
+     older, a 180px PNG for an iOS home screen. manifest.json is what
+     makes "Add to Home Screen" on Android an icon rather than a
+     screenshot; theme-color is what the browser paints its own frame
+     around the page. All are drawn from img/favicon.svg - NOTES.md,
+     "Sharing the site", says how the raster ones are made from it. -->
+<link rel="icon" href="../img/favicon.ico" sizes="32x32">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<meta name="apple-mobile-web-app-title" content="cammap">
+<meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=9f8635fe">
+<link rel="stylesheet" href="../frontend/style.css?v=fc1b066a">
 </head>
 <body>
 <div class="sheet">
@@ -42,6 +98,8 @@
     <a href="about.html">About</a>
     <span class="sep">&middot;</span>
     <a href="blog.html">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="rights.html">Rights</a>
     <!-- account.js fills this in once it knows whether anyone is
          signed in. Empty until then, so the nav never flickers. -->
     <span id="nav-account"></span>
@@ -55,6 +113,12 @@
     <div id="account-signedout">
 
       <h2>An account, without the usual parts</h2>
+
+      <!-- Filled by account.js when something on this page ended the
+           session - signing out everywhere, deleting the account - so
+           the person is told why they are looking at the forms again.
+           Empty otherwise. -->
+      <p class="note" id="account-message"></p>
 
       <p>
         No email address, no real name, nothing about you. The site picks
@@ -79,25 +143,72 @@
 
       <div class="account-forms">
 
-        <div class="box">
+        <div class="box" id="signup-box">
           <h3>Make an account</h3>
 
-          <p class="hint">Your username. Save it somewhere: it is the
-            only way back in, and there is nothing to send a reminder to.</p>
+          <p class="hint">Your username. It is the only way back in, and
+            there is nothing to send a reminder to &mdash; so the card
+            below is for keeping.</p>
 
           <div class="username-row">
             <code id="new-username" class="username-big">&hellip;</code>
             <button id="reroll-button" class="quiet" title="Pick a different one">Another</button>
           </div>
 
-          <label for="new-password">Password</label>
+          <!-- "Make me one" writes a passphrase into both fields, made
+               here in the browser from the same word lists the username
+               comes from; account.js says how random it is. -->
+          <div class="pw-head">
+            <label for="new-password">Password</label>
+            <button id="passphrase-button" class="quiet small" type="button">Make me one</button>
+          </div>
           <input type="password" id="new-password" autocomplete="new-password">
           <label for="new-password-again">Password again</label>
           <input type="password" id="new-password-again" autocomplete="new-password">
           <p class="hint">At least 10 characters, with a capital, a number
-            and a symbol.</p>
+            and a symbol. Or press <em>Make me one</em>: five random words
+            and a number, easier to keep than it looks and harder to guess
+            than most passwords.</p>
 
-          <button id="signup-button">Make the account</button>
+          <!-- The recovery card. One element, moved by account.js into
+               the signed-in half once the account exists, because the
+               password is never shown again after that. Nothing on it
+               leaves the browser. Print this card prints it alone, on
+               one side of paper, through body.printing-card and the
+               ACCOUNTS print rules in style.css. -->
+          <div class="recovery masked" id="recovery">
+            <div class="card" id="recovery-card" role="group" aria-labelledby="card-title">
+              <p class="card-title" id="card-title">cammap &middot; recovery card</p>
+              <p class="card-line">
+                <span class="card-label">Username</span>
+                <code class="card-value" id="card-username"></code>
+              </p>
+              <p class="card-line">
+                <span class="card-label">Password</span>
+                <code class="card-value card-pw-plain" id="card-password"></code>
+                <code class="card-value card-pw-masked" id="card-password-masked" aria-hidden="true"></code>
+              </p>
+              <p class="card-text">
+                This is the only way back into the account. There is no
+                email on it, so nothing can be sent and nothing can be
+                reset. Keep this somewhere safe, and destroy it when you
+                no longer need it.
+              </p>
+              <p class="card-text card-site" id="card-site"></p>
+            </div>
+            <div class="row card-actions">
+              <button id="print-card-button" class="quiet" type="button" disabled>Print this card</button>
+              <button id="show-password-button" class="quiet" type="button" aria-pressed="false">Show</button>
+            </div>
+            <label class="tick" for="saved-tick">
+              <input type="checkbox" id="saved-tick">
+              <span>I have saved my username and password somewhere
+                &mdash; this card printed, written down, or in a password
+                manager.</span>
+            </label>
+          </div>
+
+          <button id="signup-button" disabled>Make the account</button>
           <p class="note" id="signup-note"></p>
         </div>
 
@@ -129,6 +240,16 @@
 
       <h2>Signed in</h2>
 
+      <!-- The card again, straight after sign-up or a password change,
+           in case it was not kept a moment ago: after this the
+           password is never shown. account.js moves #recovery in
+           here and ticking the box puts it away. -->
+      <div class="box" id="recovery-after" style="display:none">
+        <h3>Your recovery card</h3>
+        <p class="hint" id="recovery-after-hint"></p>
+        <div id="recovery-after-home"></div>
+      </div>
+
       <p>
         You are <code id="account-username" class="username-big"></code>
         <span class="hint" id="account-standing"></span>.
@@ -153,13 +274,153 @@
         <p class="hint">
           Visible to you and to nobody else. Saving one records its name
           and where it is, nothing about you and nothing about when you
-          looked.
+          looked. A row says if the map now shows that camera as
+          non-functional, no longer in use, or gone from that spot; the
+          map is checked here in your browser, and nothing about what
+          you saved is sent anywhere.
         </p>
         <ul class="points" id="saved-list"></ul>
         <p class="empty" id="saved-empty" style="display:none">
           Nothing saved yet. The stars are beside the camera list on the
           <a href="../index.html">map</a>.
         </p>
+      </div>
+
+      <!-- What you reported, and what became of it. Filled by
+           account.js from the reports table, a page at a time, your
+           own rows only: the read policy would show a moderator
+           everyone's, and the .eq on user_id keeps this list yours
+           and cheap. Each row is the report as it stands - waiting,
+           on the map, not accepted, or merged into a camera already
+           there - with the moderator's note when one was left. The
+           receipt on the report page links here as #report-<id>,
+           and that row is found, lit and scrolled to. -->
+      <div class="box" id="reports-box" style="display:none">
+        <h3>Your reports</h3>
+        <p class="hint">
+          Every report you have sent, newest first, and what became of
+          it. A report waits until a moderator looks or enough other
+          people report the same thing; one that is accepted is on the
+          map; one that is not says why, if the moderator said. Nothing
+          here is visible to anyone but you and the moderators.
+        </p>
+        <ul class="queue" id="reports-list"></ul>
+        <p class="empty" id="reports-empty" style="display:none">
+          Nothing sent yet. <a href="report.html">Report a camera</a> when
+          you see one the map does not have.
+        </p>
+        <p class="note" id="reports-note"></p>
+        <button id="reports-more" class="quiet" style="display:none">Load more</button>
+      </div>
+
+      <!-- The leaderboard is public to anyone. The switch is a real
+           checkbox in a real label; the server enforces it in the
+           view definitions, so the page only reports and asks. -->
+      <div class="box" id="leaderboard-box">
+        <h3>On the leaderboard</h3>
+        <p class="hint">
+          The <a href="leaderboard.html">leaderboard</a> is public: anyone
+          can read it, signed in or not. Your username says nothing about
+          you, but what someone has reported, and how much, is a pattern.
+          You can keep yours off the list; the points still count.
+        </p>
+        <label class="tick" for="leaderboard-switch">
+          <input type="checkbox" id="leaderboard-switch" checked>
+          <span>Show me on the leaderboard</span>
+        </label>
+        <p class="note" id="leaderboard-note"></p>
+      </div>
+
+      <!-- The current password is asked for and checked first, by
+           signing in with it, because Supabase's own password change
+           does not ask: without this a session left open on someone
+           else's machine could set a new one. -->
+      <div class="box" id="password-box">
+        <h3>Change your password</h3>
+        <p class="hint">
+          The current one first, so a session left open on another
+          machine cannot set a new one. There is no email on the
+          account: this is the only way it changes.
+        </p>
+        <label for="pw-current">Current password</label>
+        <input type="password" id="pw-current" autocomplete="current-password">
+        <div class="pw-head">
+          <label for="pw-new">New password</label>
+          <button id="pw-passphrase-button" class="quiet small" type="button">Make me one</button>
+        </div>
+        <input type="password" id="pw-new" autocomplete="new-password">
+        <label for="pw-new-again">New password again</label>
+        <input type="password" id="pw-new-again" autocomplete="new-password">
+        <p class="hint">At least 10 characters, with a capital, a number
+          and a symbol.</p>
+        <button id="pw-button">Change the password</button>
+        <p class="note" id="pw-note"></p>
+      </div>
+
+      <!-- Ends every session the account holds, not only this one.
+           The confirmation is a second button that appears, not a
+           browser dialog: the site uses none, and a dialog cannot say
+           what this one has to say. -->
+      <div class="box" id="everywhere-box">
+        <h3>Sign out everywhere</h3>
+        <p class="hint">
+          Every device that is signed in as this account is signed out,
+          this one included. For a session left open on a shared or
+          borrowed machine.
+        </p>
+        <button id="everywhere-button" class="quiet">Sign out everywhere</button>
+        <div class="confirm" id="everywhere-confirm" style="display:none">
+          <p>
+            This ends every session for
+            <code class="username-inline" id="everywhere-who"></code>,
+            here and everywhere else, and signing back in needs the
+            password. A device that is signed in now keeps going until
+            its current token runs out &mdash; up to an hour &mdash;
+            and cannot renew it after that.
+          </p>
+          <div class="row">
+            <button id="everywhere-yes">Yes, sign out everywhere</button>
+            <button id="everywhere-cancel" class="quiet">Cancel</button>
+          </div>
+        </div>
+        <p class="note" id="everywhere-note"></p>
+      </div>
+
+      <!-- Leaving. The statement of what goes and what stays comes
+           before the confirmation, which is the username typed out:
+           the button is disabled until it matches. One call on the
+           server, delete_my_account(), which acts on the caller and
+           nobody else. -->
+      <div class="box" id="delete-box">
+        <h3>Delete this account</h3>
+        <p class="hint">
+          <strong>What goes:</strong> the account and its password, your
+          XP, your saved cameras, and every report you sent, with any
+          photo attached to it.
+        </p>
+        <!-- "With the name and note you gave it" is the correction the
+             privacy pass asked for: approve_report copies the report's
+             two text fields onto the camera, and this box used to say
+             the camera kept "nothing about you". The account that sent
+             the report is not on the camera row; the words are. -->
+        <p class="hint">
+          <strong>What stays:</strong> a camera that is on the map because
+          of a report of yours stays on the map, with the name and note
+          you gave it &mdash; they became the camera's own when the report
+          was approved, and they are part of the record now. Deleting an
+          account does not un-see a camera. The camera keeps no trace of
+          the account that reported it, and it keeps the words.
+        </p>
+        <p class="hint">
+          The username is released. The same two words may one day be
+          drawn for someone else, and nothing will connect them to this
+          account. There is no undo: a deleted account cannot be
+          recovered, because nothing about it is kept.
+        </p>
+        <label for="delete-confirm">Type your username, <code class="username-inline" id="delete-who"></code>, to confirm</label>
+        <input type="text" id="delete-confirm" autocomplete="off" autocapitalize="none" spellcheck="false">
+        <button id="delete-button" disabled>Delete this account</button>
+        <p class="note" id="delete-note"></p>
       </div>
 
     </div>
@@ -174,13 +435,52 @@
 
 <footer class="foot">
   <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+       hosting" is true and says nothing - a precise small number is
+       far more persuasive than an unspecified appeal, and it fits a
+       site that says exactly what it knows everywhere else. The figure
+       was not available when this was written (QUESTIONS.md, item 2:
+       what the Supabase project and the cammap.app domain come to per
+       month; the Pages hosting itself is free). When it is known, make
+       the line below read, on all eight pages at once or stamp.py
+       fails:
+
+         cammap is free and has no advertising. Donations pay for the
+         hosting, which costs about £N a month.
+
+       Until then the sentence stays as it is: a number that has not
+       been checked is worse than none on a site whose whole argument
+       is that nothing on it is estimated. -->
   <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+  <!-- One licence, for the record only. The cameras are ODbL 1.0 so
+       that the record can be cited, plotted and built on, which is
+       what the site is for; the code is not licensed for reuse, and
+       LICENSE at the root says both. The link leaves the site: LICENSE
+       is served without a content type by Pages, which most browsers
+       download rather than show, so it points at the licence itself. -->
+  <span class="foot-note">Data <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> &middot; <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a></span>
+  <!-- The record, to take away. The CSV is the record itself, served
+       as it is - the one file the maintainer edits, so a download of
+       it cannot drift from what the map draws. The GeoJSON is written
+       from it by tools/build_points.py beside points.js and seed.sql,
+       never by hand; stamp.py fails if it is not what the CSV
+       produces. Both are ODbL like the line above says. The download
+       attribute saves the file rather than showing it, since a CSV
+       in a browser tab is no use to anyone. -->
+  <span class="foot-note">Download the data: <a href="../data/cameras.csv" download>CSV</a> &middot; <a href="../data/cameras.geojson" download>GeoJSON</a> &middot; <a href="data.html">about the data</a></span>
 </footer>
 
 </div>
 <script src="../lib/supabase.js"></script>
-<script src="../frontend/shared.js?v=9f8635fe"></script>
-<script src="../supabase-config.js?v=9f8635fe"></script>
-<script src="../frontend/account.js?v=9f8635fe"></script>
+<script src="../frontend/shared.js?v=fc1b066a"></script>
+<script src="../supabase-config.js?v=fc1b066a"></script>
+<script src="../frontend/account.js?v=fc1b066a"></script>
+<!-- Last, on every page, and needed by nothing: registers the service
+     worker that keeps a copy of the site for a street with no signal,
+     and shows the one line under the page when a newer version is
+     ready. A file rather than a script written here because the
+     policy above allows no inline script. sw.js says what is kept
+     and what never is. -->
+<script src="../frontend/offline.js?v=fc1b066a"></script>
 </body>
 </html>

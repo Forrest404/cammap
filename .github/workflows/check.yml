@@ -1,0 +1,103 @@
+# The checks, run by GitHub on every push and every pull request.
+#
+# This is a checker, not a build. There is no build step in this
+# repository, on purpose - what is committed is what the browser runs -
+# and this workflow does not add one. It checks out the tree exactly as
+# it was pushed, runs the two scripts that are already run by hand
+# before every commit, and goes red if either of them does. It compiles
+# nothing, installs nothing and deploys nothing. GitHub Pages goes on
+# serving main whatever the verdict here; what changes is that a rule
+# which used to depend on somebody remembering to run one script is now
+# applied whether anybody remembered or not, and a commit that skipped
+# it is named in public rather than found ten minutes after a deploy.
+#
+# The two scripts, and why both:
+#
+#   python3 tools/stamp.py --check   every copy of what this repository
+#                                    writes out more than once - the
+#                                    CSP, the nav, the footer, the two
+#                                    data files, the bounds, the types -
+#                                    and the cache stamp on every page.
+#   node tools/check.js              the record and the pure functions,
+#                                    loaded in bare Node the way the
+#                                    browser would load them.
+#
+# --check, and not the default mode, because the default writes: it
+# stamps the pages, and would leave a repaired tree on a runner that
+# nobody will ever commit from. On a checked-out tree a stale stamp
+# means somebody committed without running stamp.py, and the honest
+# thing is to say so, naming the page, not to quietly mend it where
+# nobody can see. The flag exists for exactly this.
+#
+# Nothing is installed. stamp.py is standard-library Python and
+# check.js is plain Node using fs, path and vm, so the runner's own
+# python3 and node are the whole of what is needed: no setup action, no
+# pip, no npm, no lockfile, no cache. That is speed - the work is a few
+# seconds after the checkout - but it is mostly principle. A workflow
+# that installs a toolchain to check a site that has none is the first
+# step towards a site that needs one, and a pinned interpreter version
+# is one more thing to rot. actions/checkout is the one action used,
+# because there is no other way to get the tree onto the runner.
+#
+# When it is red: read the log. Each script names the page, the row or
+# the constraint that failed and says what to do about it. For a stale
+# stamp, run  python3 tools/stamp.py  with no flag, locally, and commit
+# what it writes.
+#
+# Nothing under .github reaches the site. Pages builds main through
+# Jekyll - there is no .nojekyll - and Jekyll leaves out anything whose
+# name starts with a dot. A red check does not stop a deploy either;
+# only branch protection, set in the repository's settings, can make
+# this verdict a lock on merging rather than a notice.
+
+name: check
+
+on:
+  # Every push to every branch, not only main: a branch that has drifted
+  # should hear about it before it becomes a pull request, and the check
+  # is cheap enough that there is no reason to wait. And every pull
+  # request, so that one from a fork - which never pushes here - is
+  # checked as well. A branch that is also an open pull request runs
+  # twice, once under each trigger; accepted, because the alternative is
+  # a fork's pull request that is not checked at all.
+  push:
+  pull_request:
+
+# The job reads the checkout and nothing else. It never writes to the
+# repository, never comments, never releases; a token that could do any
+# of those would be a token with nothing to do and everything to lose.
+permissions:
+  contents: read
+
+# A burst of pushes to one branch cancels the runs it made stale: only
+# the newest commit's verdict is worth having. Keyed on the ref, so a
+# push and its pull request - different refs - do not cancel each other.
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # The work is seconds. Five minutes is a ceiling against a hung
+    # runner, not a budget - the default is six hours.
+    timeout-minutes: 5
+    steps:
+      # Pinned by major version, as the one thing this workflow takes
+      # from outside the repository. The default shallow checkout is
+      # enough - neither script reads git history - and the token is
+      # not left in the checkout's git config, because nothing after
+      # this step talks to GitHub.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # So a red run's log says which Python and which Node judged it.
+      - name: runtimes
+        run: python3 --version && node --version
+
+      - name: stamp.py --check
+        run: python3 tools/stamp.py --check
+
+      - name: check.js
+        run: node tools/check.js

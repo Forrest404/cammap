@@ -3,6 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- What a request from this page says about where it came from.
+     Cross-origin hosts - OpenFreeMap, Esri, Supabase, Nominatim - get
+     the origin only: Nominatim's usage policy asks for a referrer
+     that identifies the application, and the origin does. Same-origin
+     requests get the full URL, which is why a position must never be
+     in a query string on this site - it would reach the host with
+     the page request and ride in the Referer of every script, style
+     and font the page loads; a fragment is never sent at all. This
+     is the browser's default in Chrome and Firefox, declared so it
+     does not depend on a default. Nine copies, one per page;
+     stamp.py does not police this tag. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <!-- Identical on all seven pages, and must stay that way: it is what
      makes the no-CDN rule something the browser enforces rather than
      something we remember. tools/stamp.py fails if they drift. Why
@@ -17,7 +29,7 @@
           https://tiles.openfreemap.org https://*.openfreemap.org
           https://*.supabase.co;
   media-src 'self' blob: https://*.supabase.co;
-  worker-src blob:;
+  worker-src 'self' blob:;
   child-src blob:;
   connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
               https://tiles.openfreemap.org https://*.openfreemap.org
@@ -28,6 +40,39 @@
   form-action 'none';
   frame-ancestors 'none'">
 <title>Moderate &mdash; cammap</title>
+<meta name="description" content="cammap's moderation page: the queue of reported cameras, the history of decisions, every camera on the map, and a record of who decided what. For moderators; every action is checked again on the server.">
+<link rel="canonical" href="https://forrest404.github.io/cammap/pages/moderate.html">
+<!-- What a shared link turns into. Each page has its own title and
+     description - one shared across the site would be the failure
+     mode - and all of them show the same card, img/share.png, which
+     is the map itself photographed by tools/share-card.html and
+     committed, because a static site has nothing to draw one with on
+     request. The addresses are absolute because a card scraper has no
+     base to resolve against; they name the site's home on Pages, and
+     NOTES.md ("Sharing the site") lists every file that does. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cammap">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://forrest404.github.io/cammap/pages/moderate.html">
+<meta property="og:title" content="Moderation — cammap">
+<meta property="og:description" content="cammap's moderation page: the queue of reported cameras, the history of decisions, every camera on the map, and a record of who decided what. For moderators; every action is checked again on the server.">
+<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Moderation — cammap">
+<meta name="twitter:description" content="cammap's moderation page: the queue of reported cameras, the history of decisions, every camera on the map, and a record of who decided what. For moderators; every action is checked again on the server.">
+<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- Not a page to find in a search: it is empty for anyone who is not
+     a moderator, and a search result that opens on "This page is for
+     moderators" helps nobody. Kept out with this rather than with a
+     Disallow in robots.txt, which would stop a crawler from ever
+     reading it - robots.txt says why. It is left out of sitemap.xml
+     for the same reason. The server still gates every action here;
+     this only decides whether search engines list the address. -->
+<meta name="robots" content="noindex">
 <!-- MapLibre, vendored in lib/ like everywhere else on this site.
      The map, the report form and this page are the three that pull it
      in: the Cameras tab opens the same pin-dropping map to correct
@@ -36,8 +81,27 @@
 <link rel="stylesheet" href="../lib/maplibre-gl.css">
 <script src="../lib/maplibre-gl.js"></script>
 
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../feed.xml">
+<!-- The icon, in the forms the browsers between them ask for: SVG
+     for the tab in Chrome and Firefox, .ico for Safari and anything
+     older, a 180px PNG for an iOS home screen. manifest.json is what
+     makes "Add to Home Screen" on Android an icon rather than a
+     screenshot; theme-color is what the browser paints its own frame
+     around the page. All are drawn from img/favicon.svg - NOTES.md,
+     "Sharing the site", says how the raster ones are made from it. -->
+<link rel="icon" href="../img/favicon.ico" sizes="32x32">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<meta name="apple-mobile-web-app-title" content="cammap">
+<meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=9f8635fe">
+<link rel="stylesheet" href="../frontend/style.css?v=fc1b066a">
 </head>
 <body>
 <div class="sheet">
@@ -50,6 +114,8 @@
     <a href="about.html">About</a>
     <span class="sep">&middot;</span>
     <a href="blog.html">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="rights.html">Rights</a>
     <!-- account.js fills this in once it knows whether anyone is
          signed in. Empty until then, so the nav never flickers. -->
     <span id="nav-account"></span>
@@ -74,20 +140,73 @@
         <button class="toggle on" data-tab="queue">Queue</button>
         <button class="toggle" data-tab="history">History</button>
         <button class="toggle" data-tab="cameras">Cameras</button>
+        <button class="toggle" data-tab="activity">Activity</button>
       </div>
 
       <!-- What is waiting. -->
       <div id="mod-queue">
         <p class="hint">
-          Pending reports, newest first. Approving a new camera puts it on
-          the map for everyone; approving a state report changes the camera
-          it is about. Both give the reporter their XP. Reports that enough
-          people agreed on have already gone through by themselves and are
-          not here.
+          Pending reports. Approving a new camera puts it on the map for
+          everyone; approving a state report changes the camera it is
+          about. Both give the reporter their XP. Reports that enough
+          people agreed on have already gone through by themselves and
+          are not here. <strong>Nearest first</strong> puts the reports
+          that sit on top of a camera the map already has at the top -
+          the likeliest duplicates, and the quickest decisions.
         </p>
+        <!-- How many are waiting and how long the oldest has waited:
+             the measure of whether the queue is being kept up with.
+             account.js's refreshBacklog() writes it, from a count-only
+             request, and again after every decision. -->
+        <p class="backlog" id="queue-backlog" aria-live="polite"></p>
+        <!-- Which reports, in what order. The sort sees the whole
+             queue, not the loaded page: account.js fetches every
+             pending report's small columns once, measures each against
+             the cameras it already holds, sorts here, and pages the
+             full rows by id. The kind list is filled from CAMERA_TYPES. -->
+        <div class="queue-tools" id="queue-tools">
+          <span class="tool">
+            <label for="queue-kind">Show</label>
+            <select id="queue-kind">
+              <option value="all">All reports</option>
+              <option value="new">New cameras</option>
+              <option value="status">State reports</option>
+            </select>
+          </span>
+          <span class="tool">
+            <label for="queue-type">Kind</label>
+            <select id="queue-type"></select>
+          </span>
+          <span class="tool">
+            <label for="queue-sort">Order</label>
+            <select id="queue-sort">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="nearest">Nearest to a camera on the map</option>
+            </select>
+          </span>
+          <span class="note" id="queue-count" aria-live="polite"></span>
+        </div>
+        <!-- Deciding many at once. Tick rows, or all on this page, and
+             one press approves or rejects them - each through
+             moderate_report, the same function and the same gate as the
+             buttons on a row, one call per report. A row that fails stays
+             with its reason beside it; the rest leave. account.js's
+             bulkDecide() is the whole of it. -->
+        <div class="bulk-bar" id="queue-bulk">
+          <input type="checkbox" id="queue-select-all">
+          <label for="queue-select-all" class="pick">Select all on this page</label>
+          <button id="queue-approve-selected">Approve selected</button>
+          <button id="queue-reject-selected" class="quiet">Reject selected</button>
+          <span class="note" id="queue-bulk-note" aria-live="polite"></span>
+        </div>
         <p class="note" id="queue-note"></p>
         <ul class="queue" id="queue-list"></ul>
         <p class="empty" id="queue-empty" style="display:none">Nothing waiting.</p>
+        <!-- Thirty at a time. The button is hidden until a page comes
+             back full, and hidden again once one comes back short:
+             account.js's makePager() is what shows it. -->
+        <button id="queue-more" class="quiet load-more" style="display:none">Load more</button>
       </div>
 
       <!-- Every camera on the map, and a way to put one there by hand. -->
@@ -99,7 +218,12 @@
           behind it and no XP for anyone. <strong>Move</strong> opens
           the map under a camera so its pin can be dragged onto where
           it actually is - the commonest thing wrong with a camera
-          that is otherwise right.
+          that is otherwise right. <strong>Edit</strong> corrects the
+          rest of it: the name, the note, the kind and the state.
+          <strong>Merge into…</strong> is for two rows that are one
+          camera: the reports move to the row that survives and this
+          one is taken off the map, with nothing deleted. Every change
+          is recorded with who made it and what it said before.
         </p>
 
         <div class="box">
@@ -153,6 +277,36 @@
         <p class="note" id="history-note"></p>
         <ul class="queue" id="history-list"></ul>
         <p class="empty" id="history-empty" style="display:none">Nothing decided yet.</p>
+        <button id="history-more" class="quiet load-more" style="display:none">Load more</button>
+      </div>
+
+      <!-- Who did what. The same decided reports the history shows,
+           read the other way round - by the moderator who decided
+           them - and under that every change made to a camera by
+           hand, from moderation_log. Nothing here can be changed; it
+           is the record of what was. Moderators only, and the server
+           says so: every table this reads asks is_moderator(). -->
+      <div id="mod-activity" style="display:none">
+        <p class="hint">
+          Every decision a moderator has made, newest first: who, when,
+          what they said, and what it was about. A report that approved
+          itself because enough people agreed says so. Under that, every
+          change made to a camera by hand - added, edited, moved, taken
+          off the map, put back, merged - with what it was before.
+          Nothing here can be changed. It is the record of what was.
+        </p>
+
+        <h3>Decisions on reports</h3>
+        <p class="note" id="activity-note"></p>
+        <ul class="queue" id="activity-list"></ul>
+        <p class="empty" id="activity-empty" style="display:none">Nothing decided yet.</p>
+        <button id="activity-more" class="quiet load-more" style="display:none">Load more</button>
+
+        <h3>Changes to cameras</h3>
+        <p class="note" id="activity-log-note"></p>
+        <ul class="queue" id="activity-log-list"></ul>
+        <p class="empty" id="activity-log-empty" style="display:none">No camera has been changed by hand yet.</p>
+        <button id="activity-log-more" class="quiet load-more" style="display:none">Load more</button>
       </div>
 
     </div>
@@ -161,14 +315,53 @@
 
 <footer class="foot">
   <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+       hosting" is true and says nothing - a precise small number is
+       far more persuasive than an unspecified appeal, and it fits a
+       site that says exactly what it knows everywhere else. The figure
+       was not available when this was written (QUESTIONS.md, item 2:
+       what the Supabase project and the cammap.app domain come to per
+       month; the Pages hosting itself is free). When it is known, make
+       the line below read, on all eight pages at once or stamp.py
+       fails:
+
+         cammap is free and has no advertising. Donations pay for the
+         hosting, which costs about £N a month.
+
+       Until then the sentence stays as it is: a number that has not
+       been checked is worse than none on a site whose whole argument
+       is that nothing on it is estimated. -->
   <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+  <!-- One licence, for the record only. The cameras are ODbL 1.0 so
+       that the record can be cited, plotted and built on, which is
+       what the site is for; the code is not licensed for reuse, and
+       LICENSE at the root says both. The link leaves the site: LICENSE
+       is served without a content type by Pages, which most browsers
+       download rather than show, so it points at the licence itself. -->
+  <span class="foot-note">Data <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> &middot; <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a></span>
+  <!-- The record, to take away. The CSV is the record itself, served
+       as it is - the one file the maintainer edits, so a download of
+       it cannot drift from what the map draws. The GeoJSON is written
+       from it by tools/build_points.py beside points.js and seed.sql,
+       never by hand; stamp.py fails if it is not what the CSV
+       produces. Both are ODbL like the line above says. The download
+       attribute saves the file rather than showing it, since a CSV
+       in a browser tab is no use to anyone. -->
+  <span class="foot-note">Download the data: <a href="../data/cameras.csv" download>CSV</a> &middot; <a href="../data/cameras.geojson" download>GeoJSON</a> &middot; <a href="data.html">about the data</a></span>
 </footer>
 
 </div>
 <script src="../lib/supabase.js"></script>
-<script src="../frontend/shared.js?v=9f8635fe"></script>
-<script src="../supabase-config.js?v=9f8635fe"></script>
-<script src="../frontend/picker.js?v=9f8635fe"></script>
-<script src="../frontend/account.js?v=9f8635fe"></script>
+<script src="../frontend/shared.js?v=fc1b066a"></script>
+<script src="../supabase-config.js?v=fc1b066a"></script>
+<script src="../frontend/picker.js?v=fc1b066a"></script>
+<script src="../frontend/account.js?v=fc1b066a"></script>
+<!-- Last, on every page, and needed by nothing: registers the service
+     worker that keeps a copy of the site for a street with no signal,
+     and shows the one line under the page when a newer version is
+     ready. A file rather than a script written here because the
+     policy above allows no inline script. sw.js says what is kept
+     and what never is. -->
+<script src="../frontend/offline.js?v=fc1b066a"></script>
 </body>
 </html>

@@ -287,7 +287,14 @@ footer.foot::before {
   background: var(--bg);
 }
 
-.maplibregl-ctrl-group button:hover {
+/* :not(:disabled) is not a condition, it is weight. MapLibre's own
+   hover rule is written ".maplibregl-ctrl button:not(:disabled):hover"
+   and outranks a plain "button:hover" here, so without it this fill
+   never applied - the button stayed dark on hover while the glyph
+   below was flipped dark to suit a fill that was not there, and the
+   plus sign vanished under the pointer. Found while checking the
+   focus ring against a hovered button. */
+.maplibregl-ctrl-group button:not(:disabled):hover {
   background: var(--accent);
 }
 
@@ -302,8 +309,15 @@ footer.foot::before {
   filter: none;
 }
 
+/* 0.94, not the 0.86 it was. The bar is the one surface on the site
+   that changes with what is under it, and under the light and
+   satellite views that can be white: at 0.86 over white it composited
+   to #2f2f2f, where its own links were 3.7:1 and its dim text 4.0:1.
+   At 0.94 it is #1c1c1c over white, 4.75:1 for the accent and 4.94:1
+   for the dim - and it still lets the map through, just less. The
+   focus ring lands on this bar too, which is what forced the sum. */
 .maplibregl-ctrl-attrib {
-  background: rgba(13, 13, 13, 0.86) !important;
+  background: rgba(13, 13, 13, 0.94) !important;
   color: var(--dim);
   font-family: var(--mono);
   font-size: 11px;
@@ -655,6 +669,14 @@ input.find {
   min-height: 0;
   overflow-y: auto;
 
+  /* Four pixels wider each side, and padded back by the same, so
+     nothing drawn moves. A list that scrolls clips to its own box,
+     and the focus ring round a row sits two pixels clear of it and is
+     two pixels wide: without this room the ring lost its left edge
+     under the box and its right edge under the scrollbar. */
+  margin: 0 -4px;
+  padding: 0 4px;
+
   /* a flat scrollbar, so it reads as part of the page */
   scrollbar-width: thin;
   scrollbar-color: var(--rule) transparent;
@@ -733,7 +755,14 @@ input[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
 }
 
+/* A field says it has focus by turning its border the accent colour.
+   select is in the list so a drop-down says it the same way, rather
+   than in the browser's own blue. This rule takes the outline off
+   every input, which is right for a bordered field and wrong for one
+   with no border to colour - a file picker, a checkbox. Those get the
+   ring instead, under KEYBOARD FOCUS. */
 input:focus,
+select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--accent);
@@ -1291,6 +1320,159 @@ textarea.export {
 }
 
 /* ------------------------------------------------------------------
+   KEYBOARD FOCUS
+
+   One ring for everything Tab can reach: two pixels of the accent,
+   two pixels clear of the thing it marks. It is :focus-visible and
+   not :focus, so it shows for a keyboard and stays out of the way of
+   a click - the hover fill already answers the mouse - and it is an
+   outline and not a shadow, which the header promises.
+
+   Before this a keyboard user had a ring on the text fields and the
+   Donate link and nothing anywhere else. Every button on the site,
+   every nav link, every row of the list and the map itself gave no
+   sign of where they were.
+
+   The accent is the ring's colour because it is the one colour the
+   page has for "this one". Where the accent cannot be seen against
+   what is under it, the ring moves rather than changing colour. It
+   was checked against every surface it can land on - WCAG 2.x, the
+   bar is 4.5:1, the sums are in NOTES.md under "Keyboard focus and
+   print":
+
+     the page, #0d0d0d                          5.42:1
+     the page through a scanline, #151515       5.09:1
+     an input well, #141414                     5.14:1
+     a pressed toggle, filled with the accent   1.00:1  so the ring goes inside it, in the page colour: 5.42:1
+     a hovered zoom button, filled the same     1.00:1  the same answer
+     the attribution bar over white, at 0.86    3.73:1  so the bar is 0.94 now: 4.75:1 (see .maplibregl-ctrl-attrib)
+     the light map's land, #f8f4f0              3.28:1  never landed on: the map's ring is drawn round its box
+     the light map's water, #aecfe2             2.19:1  the same
+     the dark map's brightest grey, #5c5c5c     1.86:1  the same
+     MapLibre's own white button                3.59:1  not a surface here: the site paints them #0d0d0d
+
+   Checked by focusing each kind of element in turn and looking, on
+   the map page in all three views, on the report form and on the
+   moderation page with Move open, at desk and phone widths. The
+   numbers alone would not have found the blue box-shadow MapLibre
+   draws on its own buttons, or the corner it rounds while doing so.
+   ------------------------------------------------------------------ */
+
+/* The inputs are in this list because the rule under FORMS that
+   gives a text field its accent border on focus also says outline:
+   none, and it says it for every input. A file picker has no border
+   to colour, so it went dark; a checkbox, a radio or a slider would
+   too, the day one is added. summary is here for the same reason:
+   nothing uses one yet, and the first page that does should not have
+   to remember this. */
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible,
+input[type="file"]:focus-visible,
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible,
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The toggles sit in rows with no gap between them - Dark | Light |
+   Satellite, A-Z | Most used, Queue | History | Cameras - so a ring
+   outside one would cross its neighbours, and cross the neighbour
+   that is pressed and filled with the accent, where it vanishes. The
+   ring goes inside instead, two pixels in from the border, on the
+   button's own background. A pressed toggle's background is the
+   accent, so on it the ring is drawn in the page colour: the same
+   5.42:1, seen from the other side. Every .toggle gets this, the lone
+   Legacy switch included, so pressed-and-focused looks the same
+   wherever it is. */
+button.toggle:focus-visible {
+  outline-offset: -3px;
+}
+
+button.toggle.on:focus-visible {
+  outline-color: var(--bg);
+}
+
+/* MapLibre's own focus is a blue box-shadow, and a rounded corner on
+   the button while it has it. Wrong on three counts here - a shadow,
+   a radius, and not the accent - and set at button:focus:focus-visible
+   and button:focus:first-child, so it takes the same to unset.
+
+   The ring goes inside these buttons too: the group floats over the
+   map, and a ring outside a 29px button would sit on whatever the
+   base map is drawing under it, which on the light view is land the
+   accent cannot be read against. Inside, it is on the button's own
+   #0d0d0d. The hover fill is the accent, so a button hovered and
+   focused at once gets the page-coloured ring, as a pressed toggle
+   does. */
+.maplibregl-ctrl-group button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.maplibregl-ctrl-group button:focus:focus-visible {
+  box-shadow: none;
+}
+
+.maplibregl-ctrl-group button:focus:first-child,
+.maplibregl-ctrl-group button:focus:last-child,
+.maplibregl-ctrl-group button:focus:only-child {
+  border-radius: 0;
+}
+
+.maplibregl-ctrl-group button:hover:focus-visible {
+  outline-color: var(--bg);
+}
+
+/* On a narrow map the attribution folds into a round "i" button with
+   the same blue shadow. It is over the map like the zoom buttons, so
+   the same inside ring. */
+.maplibregl-ctrl-attrib-button:focus {
+  box-shadow: none;
+}
+
+.maplibregl-ctrl-attrib-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* The close button sits in the popup's top corner, against its
+   border, so a ring outside it would spill over the popup's edge onto
+   the map. Inside, it is on the popup's own page-coloured fill. */
+.maplibregl-popup-close-button:focus-visible {
+  outline-offset: -2px;
+}
+
+/* MapLibre gives its canvas a tabindex so that the arrow keys pan
+   and +/- zoom, which means Tab lands on the map itself. The map
+   clips to its own box, so a ring outside the canvas is never seen,
+   and one inside it would sit on the map's drawing: the dark view's
+   greys at 1.9:1, the light view's land at 3.3:1, the satellite view
+   on anything. So the ring is drawn round the map's container
+   instead, on the page, where it is 5.42:1 whatever the map shows.
+   The container is not the focused element; :has() lets it ask
+   whether its canvas is. A browser without :has() gets the ring
+   inside the canvas - not right on the light view, but not nothing. */
+@supports selector(:has(a)) {
+  .maplibregl-canvas:focus-visible {
+    outline: none;
+  }
+
+  .maplibregl-map:has(.maplibregl-canvas:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@supports not selector(:has(a)) {
+  .maplibregl-canvas:focus-visible {
+    outline-offset: -3px;
+  }
+}
+
+/* ------------------------------------------------------------------
    NARROW SCREENS
    ------------------------------------------------------------------ */
 
@@ -1367,5 +1549,1817 @@ textarea.export {
 
   nav.bar a:first-of-type {
     padding-left: 0;
+  }
+}
+
+/* ------------------------------------------------------------------
+   MAP TOOLS
+
+   The controls that turn the map from a picture into a tool: the
+   place search under the map, and what else Wave 2 adds to the map
+   page. Each is a few rules; the reasoning for the thing itself is in
+   map.js and NOTES.md ("The map as a tool"), and this block only says
+   where it sits and what paper does with it.
+   ------------------------------------------------------------------ */
+
+/* ---------- finding a place ----------
+
+   Under the map, not beside the list, because it moves the map: the
+   list has a search of its own that finds a camera by name, and two
+   boxes both saying "find" in one column would ask to be confused.
+   The box keeps the panel border so it reads as a control and not as
+   a caption, and sits a little clear of the toggles above it. */
+
+.map-search {
+  margin: 14px 0 0 0;
+}
+
+/* The hint goes under the field rather than over it - what the box
+   does is plain from its heading, and where the words go is the
+   thing a person should read after typing them, not before. */
+.map-search p.hint {
+  margin: 8px 0 0 0;
+}
+
+/* The results list carries a rule along its top so the first result
+   has a line above it. With nothing found, or nothing asked yet, that
+   rule was a stray line between the note and the hint. */
+.map-search ul.results:empty {
+  display: none;
+}
+
+/* ---------- the lines under the map ----------
+
+   Two. The record line says what the map is a map of and how old it
+   is - the count, the reach of the sources, when they were last
+   checked - in the dim the legend uses, because it is a caption and
+   not a control. On paper it goes to full black with the count in the
+   list head, since a printed list with no date on it is exactly the
+   thing the line exists to prevent.
+
+   The note is what the map has to say when it has something to say -
+   a link it could not follow, what Near me found - in the note voice
+   the forms use. Silent, it takes no room: .note reserves a line so a
+   form does not jump when a message arrives, and under the map that
+   reserved line was a gap. */
+
+.record-line {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.map-note {
+  margin: 6px 0 0 0;
+}
+
+.map-note:empty {
+  display: none;
+}
+
+@media print {
+  .record-line {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: var(--text);
+  }
+}
+
+/* ---------- the link in the popup ----------
+
+   Where the clipboard is refused, the address is put in a box under
+   "Copy link" and selected. It is a text field like any other on the
+   site, only smaller, because a popup is 240 pixels wide and an
+   address is long: it is there to be copied, not read. */
+
+.maplibregl-popup-content input.copy-box {
+  margin: 6px 0 2px 0;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+/* ---------- the chooser, for a click that lands on two ----------
+
+   The popup a click opens when more than one camera sits under it:
+   "2 cameras here" and a button per camera, written the way a list
+   row is - swatch, name in the accent, the kind beneath in the dim -
+   so a person who has read the list reads this without learning
+   anything new. The buttons carry no border and no capitals for the
+   same reason the legend's keys do not: they are the things to
+   choose between, not a row of controls. */
+
+.maplibregl-popup-content ul.stack {
+  margin: 6px 0 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.maplibregl-popup-content ul.stack li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.maplibregl-popup-content button.pick-camera {
+  display: block;
+  width: 100%;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  line-height: 1.45;
+}
+
+.maplibregl-popup-content button.pick-camera:hover {
+  background: none;
+}
+
+.maplibregl-popup-content button.pick-camera .swatch {
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+
+.maplibregl-popup-content button.pick-camera .name {
+  color: var(--accent);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.maplibregl-popup-content button.pick-camera:hover .name {
+  color: var(--text);
+}
+
+/* The kind on its own line under the name, as the popup writes it. */
+.maplibregl-popup-content button.pick-camera .kind {
+  margin: 0;
+}
+
+/* Paper cannot move the map, copy a link or ask where you are. The
+   search, its results, the note and Near me go; the popup was never
+   on paper. The Nearest sort, if it is the order in force, prints as
+   "Order: Nearest" through the PAPER rule for the sort row, which is
+   right: a list sorted by distance from somewhere is worth saying. */
+@media print {
+  .map-search,
+  .map-note,
+  #near-me {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   ACCESSIBILITY
+
+   Reading the map without a mouse, or without sight. The map's dots
+   are drawn into a canvas nothing can read, so to a screen reader
+   the list beside the map is the map; what is here is what that
+   needs from the stylesheet, and it is little, because the work is
+   in the markup and in map.js - names, roles and a live region. The
+   long version is "Reading the map without a mouse, or without
+   sight" in NOTES.md.
+   ------------------------------------------------------------------ */
+
+/* Words for a screen reader and no one else: the sentence that names
+   the list as the map in words, the kind and state spoken after each
+   row's name, and the status line the count is read out through.
+   Off the page but in it - not display: none, which would take them
+   out of the accessibility tree along with the eye's - one pixel
+   square, clipped, and taken out of the flow so the flex rows they
+   sit in do not move. The same recipe as .pick-text under MODERATION,
+   written for the queue's tick boxes before this class existed;
+   whoever next edits that block should make it this. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The line under the map is a live region, and until now it was
+   display: none while empty. A region that is not in the tree when
+   its first sentence arrives is not read: screen readers watch the
+   regions they were handed at load, and one that appears with its
+   text is a new element, not a change. So an empty note keeps its
+   place in the tree at no height, and takes no room on the page
+   either - which was the whole point of hiding it. */
+.map-note:empty {
+  display: block;
+  height: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* "only", beside each key in the legend: press it and that kind is
+   the only one shown; press it again, or the key, and every kind is
+   back. A second button rather than a modifier on the key because a
+   keyboard needs something it can land on. It is styled as the key
+   is - no border, no fill, no capitals - and a size smaller, in the
+   dim, so the legend still reads as a key first; the brackets are
+   the nav's, and are what stops "LFR van site only" reading as one
+   phrase. Pressed, it takes the accent and an underline, so the
+   state is not carried by colour alone (the other keys emptying to
+   outlines says it as well). The dim and the accent are the page's
+   own 5.6:1 and 5.4:1. */
+button.legend-only {
+  padding: 1px 2px;
+  border: none;
+  background: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+button.legend-only::before { content: "["; }
+button.legend-only::after  { content: "]"; }
+
+button.legend-only:hover {
+  background: none;
+  color: var(--accent);
+}
+
+button.legend-only.on {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* Paper cannot press it, and the struck-through keys already say
+   what is shown. */
+@media print {
+  button.legend-only {
+    display: none;
+  }
+}
+
+/* "How to read this map", under the legend: a details element whose
+   summary is set in the voice of the boxes' headings, so it reads as
+   a heading that happens to fold, and whose prose is the hint voice
+   - the dim, at the hint's size - because it is a thing to read once.
+   The browser's own marker is kept: it is what says the thing folds.
+   Held to a comfortable measure; the map column is wider than prose
+   should run. Not on paper: the paper has no map to read, and each
+   printed row already says its kind and state in words. */
+details.explain {
+  margin: 12px 0 0 0;
+  max-width: 76ch;
+}
+
+details.explain summary {
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+details.explain summary:hover {
+  color: var(--text);
+}
+
+details.explain p {
+  margin: 8px 0 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dim);
+}
+
+details.explain strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+@media print {
+  details.explain {
+    display: none;
+  }
+}
+
+/* The footer goes with the nav. Printing nine Croydon rows put only
+   the footer on a second sheet - the ASCII rule above it and two
+   lines nobody on a street needs: an appeal for donations, which is
+   for a screen, and the licence, which is named on the site the
+   paper came from and on the record itself. The PAPER block already
+   drops Donate; the rest of the footer follows it, and the leaflet
+   is one side of A4 again. Measured with Page.printToPDF at A4: two
+   pages before, one after. */
+@media print {
+  footer.foot {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   REPORTING
+
+   The reporting loop, closed at both ends. The report form is open
+   to everyone and asks for an account at the moment of sending; a
+   report says what it is worth before it is written, warns about a
+   duplicate before it is filled in, takes three photographs, is
+   listed afterwards with what became of it, and hands back a
+   receipt. What is here is only what those need from the
+   stylesheet that the FORMS, ACCOUNTS and queue rules do not
+   already give them. The long version is "The reporting loop" in
+   NOTES.md.
+   ------------------------------------------------------------------ */
+
+/* ---------- the account, asked for under the form ----------
+
+   The account page's two boxes, brought under the form and shown
+   only when Send is pressed by someone signed out. Set off above by
+   a rule in the accent rather than put in a box of its own: it is
+   the answer to the button just pressed, and the one thing on the
+   page waiting on the person, the way .confirm is on the account
+   page. It takes focus by script when it appears (tabindex -1), so
+   the outline that would draw on a focused block is taken off - the
+   ring is for the keyboard, and the boxes inside keep theirs. */
+.report-account {
+  margin: 0 0 16px 0;
+  padding: 14px 0 0 0;
+  border-top: 1px solid var(--accent);
+}
+
+.report-account:focus {
+  outline: none;
+}
+
+.report-account .account-forms {
+  margin: 12px 0 0 0;
+}
+
+/* ---------- "someone reported this corner" ----------
+
+   The duplicate sentence, under the picker's hint. A .note reserves
+   a line and has no margin below, which is right for a note under a
+   button and wrong for a sentence with another hint after it; when
+   it has something to say it takes a gap, and when it has nothing
+   it takes the one line and no more. */
+#pick-dup:not(:empty) {
+  margin-bottom: 10px;
+}
+
+/* ---------- the photos, before they are sent ----------
+
+   Up to three thumbnails under the file picker, each with its name,
+   its re-saved size and a button to take it out. Small, because
+   they are there to be recognised - "the close one, the wide one" -
+   not looked at; the moderation queue shows them larger. The
+   remove button is button.remove from the points list, the same
+   small bordered box at the end of a row. Empty, the list takes no
+   room, so a form with no photo looks as it did. */
+ul.proof-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+ul.proof-list:empty {
+  margin: 0;
+}
+
+ul.proof-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px 4px 4px;
+  border: 1px solid var(--rule);
+  font-size: 12px;
+  color: var(--dim);
+}
+
+ul.proof-list img {
+  display: block;
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+/* Room for a short name, a size and "· sent" - "a.png · 2 KB · sent"
+   is 19 characters - before a long name is cut with an ellipsis. */
+ul.proof-list .proof-name {
+  max-width: 20ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The proof line reserves no height while it has nothing to say -
+   it sits between the list and a hint, and an empty line there is
+   a gap for nothing - and takes a gap below when it does, so a
+   refusal does not run into the hint under it. */
+#s-proof-note:empty,
+#s-status-proof-note:empty {
+  display: none;
+}
+
+#s-proof-note:not(:empty),
+#s-status-proof-note:not(:empty) {
+  margin-bottom: 10px;
+}
+
+/* Send and "Try the photos again" side by side; on a phone the
+   second wraps under the first. */
+.report-main .row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* ---------- Your reports ----------
+
+   The list on the account page is a ul.queue like the moderation
+   lists, and takes their rules: the strong line, the dim meta line,
+   the body. Two things of its own. The moderator's note is set off
+   from the meta line above it, in the text colour rather than the
+   dim, because it is the one thing on the page written to the person
+   by a person and should read as words rather than as data. And the
+   row a receipt links to (#report-<id>) is lit with a rule in the
+   accent at its left, the way a panel opened in a row is set off
+   under MODERATION, so it can be found in a list of thirty; a row
+   takes focus by script when it is lit, and the outline that would
+   draw on a focused list item is taken off in favour of the rule. */
+ul.queue .mod-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+}
+
+ul.queue li.spotlit {
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
+}
+
+ul.queue li.spotlit:focus {
+  outline: none;
+}
+
+/* A box on the account page holds itself to 42ch; the list of
+   reports is the moderation queue's width, and reads badly folded
+   into a column of that measure. */
+#reports-box {
+  max-width: 68ch;
+}
+
+/* ---------- the receipt ----------
+
+   Under the Send button once a report is in: the number, a box that
+   copies it, and the link to it under Your reports. Bordered in the
+   accent like .confirm on the account page, because it is the one
+   thing on the page that has just changed and the thing to take
+   away. The box is sized to a number - "#12345" - and reads as a
+   value, not a field to type in: the FORMS rules would stretch it
+   to the row and give it a well, so both are undone here. */
+.receipt {
+  margin: 12px 0 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  font-size: 13px;
+}
+
+.receipt p {
+  margin: 0 0 8px 0;
+}
+
+.receipt p.hint {
+  margin: 8px 0 0 0;
+}
+
+.receipt .receipt-row {
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.receipt input.copy-box {
+  width: 9ch;
+  margin: 0;
+  padding: 4px 8px;
+  background: none;
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.receipt .hint {
+  margin: 0;
+}
+
+/* ---------- what a report is worth ----------
+
+   The XP table on the leaderboard page is a table.board like the
+   boards above it, two columns: words, then a number. The board's
+   own rules right-align and dim its first column, which there is a
+   rank; here it is a sentence, so it goes back to the left in the
+   text colour and is allowed to wrap on a phone. */
+table.board.xp td:first-child {
+  text-align: left;
+  color: var(--text);
+  white-space: normal;
+}
+
+table.board.xp td:nth-child(2) {
+  text-align: right;
+  color: var(--dim);
+}
+
+/* The heading over it sits under the boards' empty line or the last
+   row's rule, and wants a breath of room; so does the line saying
+   where to leave the list, which follows "Nobody yet." or the table
+   with nothing between. */
+#xp-title {
+  margin-top: 28px;
+}
+
+#leave-hint {
+  margin-top: 14px;
+}
+
+/* ------------------------------------------------------------------
+   THE WORDS
+
+   The About page, the rights page and the posts are prose, and prose
+   already has its rules under ABOUT AND THOUGHTS above. What is here
+   is the little the words needed that no prose page had before, and
+   why each is the way it is. The feed link needs nothing: it is a
+   <link> in the head and draws nothing.
+   ------------------------------------------------------------------ */
+
+/* A post's permalink. A post has an id so that a link can land on it
+   (blog.html#post-...), and an anchor nobody can see is an anchor
+   nobody uses, so the heading carries a small link to itself: right-
+   click, copy link, and you have the address of the post. It sits
+   inside the h3 and undoes the heading's dress - the capitals, the
+   spacing, the weight, the accent - so it reads as an annotation on
+   the heading rather than part of the title. Dim rather than accent
+   because it is furniture, not content; the KEYBOARD FOCUS ring
+   covers it like any other link. */
+article.post h3 a.permalink {
+  margin-left: 10px;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--dim);
+}
+
+article.post h3 a.permalink:hover {
+  color: var(--text);
+}
+
+/* Where a link to a post lands. There is no fixed header on the site,
+   so nothing would hide the target; this only keeps the heading off
+   the very top edge of the window when the browser scrolls to it. */
+article.post {
+  scroll-margin-top: 14px;
+}
+
+/* The rights page. Short sections, each under its own heading, read
+   on a phone one thumb at a time - so its headings get more room
+   above them than a prose page's h3 has, to make the seams visible
+   while scrolling. Scoped to .rights so the account and report pages,
+   which are .prose too, keep their tighter spacing. */
+.prose.rights h3 {
+  margin-top: 30px;
+}
+
+/* The contents list at the top of the rights page: one line per
+   section, so a person who needs "if you are stopped" gets there in
+   one press. The same shape as ul.benefits on the account page,
+   without the rule down the side, which would say "these are points"
+   when they are links. */
+.prose ul.contents {
+  margin: 0 0 18px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prose ul.contents li {
+  margin: 0 0 6px 0;
+}
+
+/* A citation. Every legal claim on the rights page is followed by a
+   link to the document it comes from, in brackets. Smaller and dim so
+   that a paragraph reads as a paragraph and not as a bibliography -
+   still underlined, still a link, still 5.6:1 on the page (--dim). */
+.prose a.cite {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.prose a.cite:hover {
+  color: var(--text);
+}
+
+/* The notice at the top of the rights page - not legal advice, and
+   when it was checked - and any claim the page could not confirm.
+   Both are marked the same way, a rule down the left in the accent,
+   so that the eye catches them while scrolling; a screen reader gets
+   the words that start them ("Not confirmed:"), which is the mark
+   that matters. */
+.prose .notice,
+.prose .unconfirmed {
+  margin: 0 0 1.1em 0;
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--accent);
+}
+
+.prose .notice strong,
+.prose .unconfirmed strong {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------------
+   THE RECORD (Wave 5: the record agent writes this block)
+
+   What makes the record legible on the page: the popup's source line,
+   the approximate marker's legend entry, the published-record notice,
+   the download line in the footer, the period scrubber, and the press
+   and data pages. Each rule says why it is here; the reasoning that
+   did not fit is under "Provenance and the record on the page" in
+   NOTES.md.
+   ------------------------------------------------------------------ */
+
+/* ---------- the source line in the popup ----------
+
+   "Source: Met Police LFR deployment record, 2025", under the note.
+   It wears the popup's dim caption voice (.kind) because it is a
+   citation and not a call to action - the accent in the popup is for
+   Copy link and Report its state, the things a visitor does - and its
+   link is styled as the rights page styles a citation (.prose a.cite):
+   underlined, dim, the text colour on hover. --dim is 5.6:1 on the
+   page, so the link is a link to the eye and reads at the ratio the
+   header promises. It is a link, so the KEYBOARD FOCUS ring covers it
+   like any other. */
+.maplibregl-popup-content .source a {
+  color: var(--dim);
+}
+
+.maplibregl-popup-content .source a:hover {
+  color: var(--text);
+}
+
+/* ---------- the approximate marker's legend entry ----------
+
+   The swatch for "Approximate position": a wider, thinner ring than
+   the legacy swatch, in the van colour dimmed to the brightness
+   ceiling, because that is what the halo under an approximate pin is
+   on the map - a ring two and a half times the dot, in the dot's own
+   hue held under the rule (approxPaint() in map.js; the colour comes
+   from dimTo() there, inline, like every swatch colour). Drawn the
+   same way so the key can be read off the map. On paper the printer
+   is told to keep swatch colours already; a thin ring prints as a
+   thin ring. */
+.swatch.approx {
+  width: 11px;
+  height: 11px;
+  border-width: 1px;
+  background: none;
+}
+
+/* ---------- the published-record notice ----------
+
+   "Showing the published record; live updates unavailable." under
+   the record line, in the record line's own dim caption voice - it is
+   a fact about the page, not an alarm, and the accent would make it
+   one. Empty, it keeps its place in the tree at no height, for the
+   reason .map-note:empty does under ACCESSIBILITY: it is a live
+   region, and a region that appears with its first sentence is not
+   read. On paper it prints with the record line, black, because a
+   printed list that may be missing a moderator's change should say
+   so beside its date. */
+.record-notice {
+  margin-top: 2px;
+}
+
+.record-notice:empty {
+  display: block;
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* ---------- the year scrubber ----------
+
+   Under the legend: the label, the range and the readout on one row,
+   a row of marks under the range - "All", then each year - with the
+   one in force lit, and the hint under those. The range is drawn by
+   hand, because the browser's own is a rounded thumb on a rounded
+   track in its own blue, and this page has no rounded corners and
+   one accent: appearance none, a two-pixel rule for the track in
+   --rule, a square thumb in the accent. Firefox and the WebKit family
+   name the parts differently, so each rule is written twice and
+   never combined - a selector list with one unknown pseudo-element
+   is dropped whole. The KEYBOARD FOCUS block already lists
+   input[type="range"], so the ring needs nothing here.
+
+   The marks are aria-hidden: they say to the eye what the readout
+   and aria-valuetext say to a reader, and a row of eight numbers read
+   out on every step would be noise. The block is a grid of three
+   columns - the label, the range, the readout - so that the marks,
+   placed in the range's column on the row below, are exactly as wide
+   as the range at every width and each mark sits under its step; a
+   flex row and a guessed margin put them a step out on a phone. The
+   readout is the exact answer whatever the marks do. */
+.years {
+  display: grid;
+  /* A fixed width for the label's column, on purpose. An auto track
+     stretches to take the row's spare width and the range slid to
+     the right of a wide page; a max-content track took the hint's
+     whole sentence as its size - a spanning item's intrinsic width
+     is handed to any intrinsic track it crosses - and the page
+     scrolled sideways by two thousand pixels. 5ch is "YEAR" in the
+     label's capitals and spacing, and nothing here is intrinsic. */
+  grid-template-columns: 5ch minmax(0, 360px) 4.5em;
+  column-gap: 12px;
+  align-items: center;
+  margin: 10px 0 0 0;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.years label {
+  grid-column: 1;
+  margin: 0;
+}
+
+.years output {
+  grid-column: 3;
+  color: var(--text);
+}
+
+.years input[type="range"] {
+  grid-column: 2;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.years input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--rule);
+}
+
+.years input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -5px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+}
+
+.years input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--rule);
+}
+
+.years input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+}
+
+/* The marks, in the range's column on the row below it. */
+.year-marks {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  font-size: 11px;
+  color: var(--dim);   /* 5.6:1 - small, but text, and the promise holds */
+}
+
+.year-marks span.on {
+  color: var(--accent);
+}
+
+.years .hint {
+  grid-column: 1 / -1;
+  margin: 6px 0 0 0;
+}
+
+/* ---------- the data and press pages ----------
+
+   Two prose pages that carry things prose has not needed here before:
+   a line to copy (the curl request, the attribution), and a table of
+   columns. The block to copy is a field, not a quotation - the well
+   colour and the rule a text field has, at the small size the popup's
+   caption uses - and it wraps rather than scrolls: a curl line is
+   longer than a phone is wide, a box that scrolls sideways hides its
+   end, and a wrapped line still selects and copies as one. break-all
+   because a URL has nowhere natural to break. The table of columns
+   is the leaderboard's shape without its rules for numbers: the name
+   in the caption voice, the meaning beside it, a rule under each
+   row. Both print as they are; the palette flip under PAPER covers
+   the colours. */
+.prose pre {
+  margin: 0 0 1.1em 0;
+  padding: 8px 10px;
+  background: var(--field);
+  border: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.95em;
+}
+
+.prose table.columns {
+  width: 100%;
+  margin: 0 0 1.1em 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.prose table.columns th,
+.prose table.columns td {
+  padding: 5px 12px 5px 0;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+}
+
+/* The name wraps - a row that names six columns at once would
+   otherwise push the table past a phone's edge - and so does a long
+   code token in the meaning, for the same reason. */
+.prose table.columns th {
+  width: 9em;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.prose table.columns td {
+  overflow-wrap: anywhere;
+}
+
+/* The share card on the press page, offered for reuse: the picture at
+   the column's width with its caption under it in the caption voice.
+   The image carries its own width and height in the markup so the
+   page does not jump as it loads; this only stops it overflowing. */
+.prose figure {
+  margin: 0 0 1.1em 0;
+}
+
+.prose figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+}
+
+.prose figcaption {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+/* On paper the year in force is part of the filter state, which the
+   print view says plainly: the label and the readout print as "Year
+   2024" (or "Year All years"), and the slider, the marks and the hint
+   go, since none of them can be moved on paper. */
+@media print {
+  .years input[type="range"],
+  .year-marks,
+  .years .hint {
+    display: none;
+  }
+
+  .years {
+    color: var(--text);
+  }
+}
+
+/* ------------------------------------------------------------------
+   BOROUGHS
+
+   The thirty-three generated pages under pages/boroughs/, and their
+   index. They are prose pages - .prose carries nearly all of it - and
+   what is here is the three lists prose did not already have a shape
+   for: how many of each kind, the sites themselves, and the index.
+
+   No colour anywhere, and that is deliberate rather than an omission.
+   A swatch beside each kind would be the obvious thing, and the
+   colours live in CAMERA_TYPES in shared.js and are set as inline
+   styles by the scripts that draw the legend. These pages run no
+   JavaScript of their own - they are prose, and they read in full
+   with scripts off - so a swatch here would mean a second copy of
+   five colours in this file, which is exactly the copy the comment at
+   the top of shared.js says was deleted once already. The kind is
+   said in words instead, which is what the page was going to have to
+   do for a black-and-white printer and a screen reader anyway.
+   ------------------------------------------------------------------ */
+
+/* How many of each kind. A key, not a sentence: the count in a narrow
+   fixed column so the eye can run down it, the legend's own label
+   beside it. Fixed by ch rather than by px because the numbers are in
+   the same monospace as everything else, and three characters is room
+   for any count this record will hold. */
+.borough ul.kinds {
+  margin: 0 0 1.4em 0;
+  padding: 0;
+  list-style: none;
+}
+
+.borough ul.kinds li {
+  margin: 0 0 2px 0;
+  color: var(--dim);
+}
+
+.borough ul.kinds .n {
+  display: inline-block;
+  width: 4ch;
+  text-align: right;
+  margin-right: 10px;
+  color: var(--text);
+}
+
+/* The sites. Each is a link to itself on the map and a line of what
+   the record says, and the two want telling apart: the name is the
+   thing being pointed at, the detail is the footnote. So the detail
+   is its own block under the name, dim and a size down, and the whole
+   row gets a rule under it - the same rule the column tables on the
+   data page use - so a list of twenty-five in Westminster reads as
+   rows rather than as a wall.
+
+   No bullets: every item is a link, and a bullet in front of a link
+   is a bullet in front of everything. */
+.borough ul.sites {
+  margin: 0 0 1.4em 0;
+  padding: 0;
+  list-style: none;
+}
+
+.borough ul.sites li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.borough ul.sites .detail {
+  display: block;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+/* The documents a borough's entries rest on. Labels only - the link
+   is on each camera's own popup, where DATA-1 put it - so this is a
+   plain list and wants nothing but its bullets taken off and a little
+   air. */
+.borough ul.sources {
+  margin: 0 0 1.1em 0;
+  padding: 0;
+  list-style: none;
+  color: var(--dim);
+}
+
+.borough ul.sources li {
+  margin: 0 0 4px 0;
+}
+
+/* The index: thirty-three rows of a name and a count. The count is
+   pushed to the right of the column so the names line up on the left
+   and the numbers on the right, which is the only way a list this
+   long is scannable; flex rather than a table because the two halves
+   wrap onto two lines on a phone rather than squeezing, and a wrapped
+   count still belongs to the name above it.
+
+   gap carries both directions: 14px between the name and the count on
+   one line, 0 when they wrap, since the row's own padding is the
+   space that matters then. */
+.borough ul.borough-list {
+  margin: 0 0 1.4em 0;
+  padding: 0;
+  list-style: none;
+}
+
+.borough ul.borough-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 14px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.borough ul.borough-list .count {
+  font-size: 12px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------
+   OFFLINE
+
+   The one line frontend/offline.js puts at the foot of the window:
+   "Working from a saved copy." while the page is being answered from
+   the service worker's cache with no network behind it, or "A newer
+   version is ready." with a Reload button when a new sw.js has
+   installed and is waiting to be let in. Fixed to the bottom of the
+   viewport rather than set in the page, because on the map page the
+   footer is under 660px of map and a line about the page's own state
+   has to be seen without scrolling to find it. The record line's
+   size and colour - 12px, --dim - because it is a status and not a
+   headline; the page's own background and the site's one rule colour
+   along its top edge, so it reads as the edge of the page and not as
+   a banner laid over it. The button is the quiet one, dim on the rule
+   colour, for the same reason. Nothing here is drawn on the map, so
+   the brightness rule has nothing to say about it. Not printed: what
+   is on paper is the record, and whether the browser had a network
+   when it printed is not part of it. The element is made only when
+   there is something to say, so there is no empty strip to hide.
+   ------------------------------------------------------------------ */
+
+.offline-line {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;   /* over the map's own controls, which MapLibre puts at 2 */
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 5px 20px;
+  border-top: 1px solid var(--rule);
+  background: var(--bg);
+  color: var(--dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.offline-line button {
+  padding: 1px 10px;
+  font-size: 11px;
+}
+
+@media print {
+  .offline-line {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   PAPER
+
+   What printing the map page gives you: the list, in one column,
+   black on white, every camera with its coordinates. Before this it
+   gave the dark page as it stood: a dark rectangle where the map is
+   (a WebGL canvas that was never asked to keep its drawing prints as
+   nothing) and the list cut off at the bottom of the box it scrolls
+   in, seventeen rows and no more.
+
+   "Usable on the street" set the choices. The paper is for someone
+   walking a borough with it: a name to look for, a line saying what
+   the thing is, and coordinates to type into a phone. So the
+   coordinates print at the size of the name rather than as the
+   footnote they are on screen; the swatch keeps its colour (the
+   printer is told to print it) but nothing depends on the colour,
+   because the printer may be black and white - the swatch's title,
+   "LFR van site · legacy · last seen 2025", is printed out at the end
+   of the row; and no row is split across a page.
+
+   What the list is a list OF prints with it: the count, the legend
+   with the kinds switched off struck through, whether the legacy van
+   sites are included, the order in force, and the search term if
+   there is one. That is the filter state. It is already in the DOM,
+   because the list is rendered from the same state as the dots, so
+   the print view only has to keep it and say it plainly.
+
+   Dropped, because they are no use on paper: the map, its view
+   buttons, the search box while it is empty, the sort button not in
+   force, the nav, the star and remove buttons on rows, Donate, and
+   the editing boxes even in edit mode. The map's attribution goes
+   with the map: it credits tiles that are not on the page.
+
+   The other pages get the same paper and the same black, and nothing
+   else: prose prints as prose.
+   ------------------------------------------------------------------ */
+
+@media print {
+
+  /* Paper is white, so the palette flips here, once, and every rule
+     that names a variable follows. The accent goes to black: at 3.6:1
+     on white it cannot carry text, and there is nothing on paper for
+     a link colour to mean. What it marked - headings, the names in the
+     list - is set bold instead. --rule is for borders, and #999 is
+     fine for a border; the one place it is text is a legend key that
+     has been switched off, which is struck through below so it does
+     not depend on being faint. */
+  :root {
+    --bg:     #ffffff;
+    --text:   #000000;
+    --dim:    #555555;   /* 7.5:1 on white */
+    --accent: #000000;
+    --rule:   #999999;
+    --field:  #ffffff;
+  }
+
+  @page {
+    margin: 15mm;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    padding: 0;
+  }
+
+  /* The scanlines are position: fixed, and a fixed element prints on
+     every page. */
+  body::before {
+    display: none;
+  }
+
+  .sheet {
+    max-width: none;
+  }
+
+  /* No use on paper, or gone with the map. */
+  nav.bar,
+  a.donate,
+  #map,
+  .pick-map,
+  .pick-toggles,
+  #view-buttons,
+  button.star,
+  button.remove,
+  .edit-only,
+  body.editing .edit-only {
+    display: none;
+  }
+
+  /* ---------- the map page ---------- */
+
+  .map-layout,
+  .map-bar,
+  .map-toggles {
+    display: block;
+  }
+
+  .map-bar {
+    margin: 0 0 14px 0;
+    font-size: 13px;
+    color: var(--text);
+    break-after: avoid;
+  }
+
+  /* The Legacy switch is the one filter the count alone does not
+     explain - "17 of 187" could as well be a search - so it prints as
+     a sentence, its own word first. */
+  #legacy-toggle {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text);
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  #legacy-toggle::after {
+    content: " van sites: not included";
+  }
+
+  #legacy-toggle.on::after {
+    content: " van sites: included";
+  }
+
+  ul.legend {
+    justify-content: flex-start;
+    margin-top: 6px;
+  }
+
+  button.legend-key {
+    color: var(--text);
+  }
+
+  /* Switched off: struck through, so it reads as off on a printer
+     that would drop a faint grey. */
+  button.legend-key.off {
+    color: var(--dim);
+    text-decoration: line-through;
+  }
+
+  .side-column {
+    margin: 0;
+  }
+
+  #cameras-box {
+    height: auto;
+    display: block;
+    padding: 0;
+    border: none;
+  }
+
+  #cameras-box .list-head {
+    justify-content: flex-start;
+    gap: 2ch;
+    break-after: avoid;
+  }
+
+  #cameras-box .count {
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  /* The search term, if there is one, is part of what the list is;
+     an empty box is not. */
+  input.find:placeholder-shown {
+    display: none;
+  }
+
+  /* The order in force, as a line; the other button goes. */
+  #points-sort button {
+    display: none;
+  }
+
+  #points-sort button.on {
+    display: block;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--dim);
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  #points-sort button.on::before {
+    content: "Order: ";
+  }
+
+  #cameras-box ul.points {
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* A little denser than the screen list. On screen a row has room
+     because a finger has to land on it; on paper it has to share an
+     A4 side with the rest of its borough, and at the screen spacing
+     Croydon's nine spilled the last onto a page of its own. */
+  ul.points li {
+    position: relative;   /* for the kind, below */
+    padding: 6px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  button.goto {
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  button.goto .name {
+    font-weight: 600;
+  }
+
+  /* The coordinates are the part you type into a phone, so they are
+     the size of the name and in the same black. */
+  button.goto .coords {
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  /* The swatch is coloured by an inline style from CAMERA_TYPES, and
+     printers drop backgrounds unless told not to. */
+  .swatch {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* What the swatch's colour means, in words, at the end of the row,
+     for the black-and-white printer. rowFor() in map.js puts the kind
+     and state on the swatch as its title - "Transport police", "LFR
+     van site · legacy · last seen 2025" - and attr() reads it back.
+     The row is positioned so the words can sit at its right edge,
+     level with the coordinates, where nothing else is. Scoped to the
+     map's list: the saved list on the account page already says the
+     kind in its coordinates line. */
+  #points-list li .swatch::after {
+    content: attr(title);
+    position: absolute;
+    right: 0;
+    bottom: 10px;
+    font-size: 12px;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+
+  /* ---------- the other pages ---------- */
+
+  /* Wide content scrolls inside its box on screen; on paper it can
+     only be cut off. */
+  .table-box {
+    overflow: visible;
+  }
+}
+
+/* ------------------------------------------------------------------
+   MODERATION
+
+   The moderation page at scale. Moderation is volunteer time and the
+   scarcest thing the project has, so everything here is judged by
+   decisions per minute: a list that goes on past thirty, a count of
+   what is waiting, a tick box on every row so twenty approvals are
+   one press, a way to sort the likely duplicates to the top, and a
+   log of who decided what. The rules are few because the queue's own
+   rules (ul.queue, .queue-head, .row, .note) already carry most of
+   it; what is here is what those did not cover.
+   ------------------------------------------------------------------ */
+
+/* Load more sits under a list on its own line, in the list's own
+   left margin, so the eye that has just read the last row lands on
+   it. Hidden by an inline style until the first full page is in;
+   account.js's makePager() shows and hides it. */
+button.load-more {
+  display: block;
+  margin: 14px 0 0 0;
+}
+
+/* "12 waiting · the oldest has waited 3 days." The one line on the
+   page that says whether the queue is being kept up with, so it is
+   in the body colour and the body size, not the dim of a hint:
+   a hint is something to read once, this is something to read
+   every time. */
+.backlog {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+/* The panels Edit and Merge open inside a camera's row: the same
+   indent and rule as Move's panel, for the same reason - each
+   belongs to the row above it and should read as part of it, not as
+   a box of its own. Their fields are the ordinary form fields; the
+   hints in them are the ordinary hint. */
+.edit-panel,
+.merge-panel {
+  margin: 10px 0 4px 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--rule);
+}
+
+.edit-panel p.hint,
+.merge-panel p.hint {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+/* Merge's candidates are the place search's result rows - a list
+   of full-width buttons under a text box - so they take that list's
+   rules and add none. The statement of what is about to happen is
+   in the body colour and size: it is the thing the moderator is
+   confirming, and it is not a hint. Empty until a survivor is
+   picked, so it takes no room then. */
+.merge-panel ul.results {
+  margin-bottom: 12px;
+}
+
+.merge-panel .statement {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.merge-panel .statement:empty {
+  margin: 0;
+}
+
+/* Deciding many at once. Every queue row is a tick box beside the
+   report, and a bar over the list holds "select all", the two
+   buttons, and the batch's outcome on a line of its own. The box is
+   the accent so a ticked row reads as the site's and not the
+   browser's blue; the FORMS rule that takes the outline off every
+   input does not reach it, because KEYBOARD FOCUS gives a checkbox
+   the ring back. */
+.bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  max-width: 68ch;
+  margin: 0 0 12px 0;
+}
+
+.bulk-bar .note {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/* A label beside a box, not the block capitals over a field. */
+label.pick {
+  display: inline;
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  vertical-align: middle;
+  accent-color: var(--accent);
+}
+
+/* The row: the box in a narrow column at the left, the report to
+   its right, so thirty boxes line up down the page and the eye can
+   run down them. The box sits level with the report's first line. */
+ul.queue li.pickable {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+ul.queue li.pickable label.pick {
+  padding-top: 3px;
+}
+
+.queue-main {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* The label's words are for a screen reader; the box says it all to
+   the eye, thirty times down a page. */
+.pick-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A row a batch could not decide stays, marked at its edge, with the
+   server's reason where the row's own buttons would have put it. */
+ul.queue li.failed {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+
+/* A camera's row now carries four buttons - Edit, Move, Merge into…,
+   Remove from map - and on a phone they do not fit one line. The
+   .row they sit in is a flex line that does not wrap, so they were
+   squeezed until their words broke inside them; wrapping between
+   buttons is what a row of buttons should do. Every button row on
+   the page's lists gets it, because the same is true of any of them
+   the moment a fifth button arrives. */
+ul.queue .row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* Which reports, in what order: three drop-downs on one line, each
+   with a word in front of it, wrapping on a phone. The labels are
+   inline like the tick box's, not the block capitals over a form
+   field, and the selects take their own width rather than the
+   field's full one. The match count sits at the end of the line. */
+.queue-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  max-width: 68ch;
+  margin: 0 0 12px 0;
+}
+
+/* A word and its drop-down wrap as one, so "Order" is never left at
+   the end of a line with its select on the next. */
+.queue-tools .tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.queue-tools label {
+  display: inline;
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.queue-tools select {
+  width: auto;
+  margin: 0;
+  padding: 5px 7px;
+  font-size: 13px;
+}
+
+.queue-tools .note {
+  margin: 0;
+}
+
+/* The distance line under a report's name, dim like the coordinates
+   it sits beside: it is the number the nearest-first sort orders by,
+   shown whatever the order. */
+.queue-head .nearest {
+  display: block;
+}
+
+/* The Activity tab is two lists under two headings. The second
+   heading needs air above it, because what comes before it is a
+   list's last rule or a Load more button, and h3's own margin is
+   only below. The first sits straight under the hint. */
+#mod-activity h3 {
+  margin-top: 24px;
+}
+
+#mod-activity p.hint + h3 {
+  margin-top: 0;
+}
+
+/* ------------------------------------------------------------------
+   ACCOUNTS
+
+   The account page's boxes for the ordinary operations an account
+   needs and the anonymity principle did not cover: signing out
+   everywhere, changing the password, the leaderboard switch, what a
+   saved camera has since become, the recovery card and its print
+   layout, and deleting the account. Each is a .box like the two
+   forms above them and takes its fields, buttons and notes from the
+   FORMS rules; what is here is only what those boxes have that no
+   other page does.
+   ------------------------------------------------------------------ */
+
+/* A confirmation that appears under the button that asked for it -
+   sign out everywhere, and later delete - rather than a browser
+   dialog: the site uses none, a dialog cannot carry a sentence this
+   long, and a second button in the page is reachable by keyboard and
+   read by a screen reader like any other. Bordered in the accent so
+   it reads as the one thing on the page waiting for an answer. */
+.confirm {
+  margin: 12px 0 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+}
+
+.confirm p {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+}
+
+/* Two buttons that do not both fit a phone's width on one line. */
+.confirm .row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* A username inside a sentence: the accent, the weight of the big
+   one, at the size of the words around it. */
+code.username-inline {
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* A tick box with its words beside it - the leaderboard switch, and
+   "I have saved this" under the recovery card. The label rule under
+   FORMS makes every label a line of small capitals over a field,
+   which is wrong for a box that sits inside its own sentence; this
+   is label.pick from the moderation queue, written for a label whose
+   words are meant to be seen. The box takes the ring from KEYBOARD
+   FOCUS like any other checkbox. */
+label.tick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+label.tick input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+
+/* What the map now says about a saved camera - "Since marked
+   non-functional." - on its own line under the coordinates, in the
+   accent because it is news, at the coordinates' size because it is
+   a note on the row and not the row. Absent when there is nothing to
+   say, so a list of cameras that are as they were looks as it did. */
+a.saved-goto .state {
+  display: block;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+a.saved-goto:hover .state {
+  color: var(--text);
+}
+
+/* ---------- the recovery card ----------
+
+   A label with a button at its right - Password ... Make me one - on
+   one line. The label keeps its block capitals; the button is the
+   small quiet kind, because it is an offer beside a field and not
+   the form's action. */
+.pw-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pw-head label {
+  flex: 1 1 auto;
+}
+
+button.small {
+  padding: 3px 9px;
+  font-size: 11px;
+}
+
+/* The card itself: bordered in the text colour rather than the rule
+   grey, and doubled, so it reads as a thing apart from the panels
+   around it - the one thing on the page meant to leave it. */
+.recovery {
+  margin: 14px 0 12px 0;
+}
+
+.recovery .card {
+  padding: 14px 16px;
+  border: 3px double var(--text);
+}
+
+.recovery .card p {
+  margin: 0;
+}
+
+.recovery .card-title {
+  margin: 0 0 10px 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.recovery .card-line {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+}
+
+/* Each value on a line of its own under its label, so a passphrase
+   is read whole and not broken beside the word "password" - on
+   screen where it is checked against the field, and on paper where
+   a break at a hyphen would leave the reader guessing. */
+.recovery .card-label {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.recovery .card-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+/* An empty value keeps the line's height, so the card does not grow
+   when the first character of a password is typed. */
+.recovery .card-value:empty::before {
+  content: "\00a0";
+}
+
+.recovery .card-text {
+  margin: 10px 0 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+.recovery .card-site {
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+/* Masked on screen until Show: the card is read over a shoulder more
+   easily than a field. The print rules below always show the plain
+   one; a masked card on paper is no card. */
+.recovery.masked .card-pw-plain {
+  display: none;
+}
+
+.recovery:not(.masked) .card-pw-masked {
+  display: none;
+}
+
+.recovery .card-actions {
+  margin: 10px 0 12px 0;
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+/* The box the card comes back in after sign-up: the first thing on
+   the signed-in half, and it takes focus after a password change so
+   a keyboard user is brought to it. No ring: it is not a control. */
+#recovery-after:focus {
+  outline: none;
+}
+
+/* ---------- the card on paper ----------
+
+   Only while "Print this card" has put printing-card on <body>. The
+   rest of the page is kept out of the way with visibility rather
+   than display, because the card is a descendant of the sheet and
+   display: none on an ancestor takes the card with it; the sheet is
+   then given no height so the hidden page does not run to a second
+   sheet of paper, and the card is taken out of the flow and put at
+   the top. It is absolutely positioned against the page - nothing
+   between it and <body> is positioned - so the sheet's overflow
+   does not clip it. Scoped to the class: Ctrl-P on the account page
+   prints the page as prose like every other page, and the PAPER
+   rules for the map page are not touched. The palette has already
+   flipped to black on white in the PAPER block, so the card's
+   colours follow.
+
+   One side of paper: the card is 100mm wide and a few lines tall.
+   Each value goes on a line of its own under its label, at a size
+   the longest passphrase the generator makes (42 characters) fits
+   in, so a password is never broken across two lines where a reader
+   would have to guess whether the break was a hyphen. Checked with
+   Page.printToPDF at A4 - one page, the card and nothing else. */
+@media print {
+  body.printing-card .sheet {
+    visibility: hidden;
+    height: 0;
+    overflow: hidden;
+  }
+
+  body.printing-card .recovery .card {
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100mm;
+    max-width: 100%;
+    padding: 6mm 7mm;
+    border: 3pt double var(--text);   /* a double needs three device pixels to be one */
+    break-inside: avoid;
+  }
+
+  body.printing-card .recovery .card * {
+    visibility: visible;
+  }
+
+  body.printing-card .recovery .card .card-value {
+    font-size: 11pt;
+    color: var(--text);
+  }
+
+  body.printing-card .recovery .card .card-pw-plain {
+    display: block;
+  }
+
+  body.printing-card .recovery .card .card-pw-masked {
+    display: none;
   }
 }

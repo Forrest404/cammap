@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- cammap - the feed: one entry per post on pages/blog.html.
+
+     Written by hand. There is no build step and no generator on this
+     site, and a page with one post does not need one. A new post on
+     the Thoughts page is a new <entry> pasted under the ENTRIES line
+     below, newest first, and the feed's own <updated> at the top set
+     to that entry's date. The recipe, field by field:
+
+       <title>      the post's heading, as text. Escape any ampersand
+                    or angle bracket in it (&amp; &lt; &gt;).
+       <id>         a tag URI, built from the post's id on blog.html:
+                    tag:forrest404.github.io,YYYY-MM-DD:post-YYYY-MM-DD-title
+                    It is an identifier, not an address, and it must
+                    never change once published. A feed reader that
+                    meets a new id has met a new post and tells every
+                    subscriber again; a reader that meets the old id
+                    with a new <updated> knows it is the same post,
+                    edited. That is also why it is not the post's
+                    URL: the site's address may move one day (NOTES.md,
+                    "Sharing the site"), and the tag stays.
+       <link>       the post's absolute address: the blog page plus a
+                    hash and the article's id. This is what a reader
+                    opens.
+       <published>  the post's date, in RFC 3339 form -
+       <updated>    YYYY-MM-DDT00:00:00Z - the same date the post's
+                    <time datetime> carries, with a time of midnight
+                    UTC because the post carries a day and not a
+                    time, and an hour typed in would be a fact made
+                    up. Both the same when a post is new; a later
+                    edit to the post moves <updated> alone.
+       <content>    the post's paragraphs, type="html", with every
+                    left angle bracket and ampersand escaped (&lt;
+                    &amp;) so that a reader shows the text itself and
+                    not a summary of it. Curly quotes and dashes are
+                    fine as they are; the file is UTF-8.
+
+     Then the feed's <updated> becomes the newest entry's, so a reader
+     polling the address sees at a glance that something changed.
+
+     Atom rather than RSS: one format rather than two copies to keep
+     in step; dates in one unambiguous form; and an author, an id and
+     an updated required on the feed and on every entry, which is what
+     lets the file be checked for shape without a network. The
+     absolute addresses name the site's home on GitHub Pages; if it
+     ever moves they change with every other file listed under
+     "Sharing the site" in NOTES.md. The W3C validator at
+     validator.w3.org/feed needs the deployed address, so it is a
+     check to run after a push, not before.
+
+     The author is the site and not a person. The site puts no names
+     on itself, on principle, and the feed is not the place to start. -->
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>cammap — Thoughts</title>
+  <subtitle>Notes and entries from cammap on facial recognition in London: what is being rolled out, by whom, and why it matters.</subtitle>
+  <id>tag:forrest404.github.io,2026:cammap-thoughts</id>
+  <link rel="self" type="application/atom+xml" href="https://forrest404.github.io/cammap/feed.xml"/>
+  <link rel="alternate" type="text/html" href="https://forrest404.github.io/cammap/pages/blog.html"/>
+  <updated>2026-08-28T00:00:00Z</updated>
+  <author>
+    <name>cammap</name>
+    <uri>https://forrest404.github.io/cammap/</uri>
+  </author>
+  <icon>https://forrest404.github.io/cammap/img/icon-192.png</icon>
+
+  <!-- ==================== ENTRIES - NEWEST FIRST ==================== -->
+
+  <entry>
+    <title>London AI Face Recognition</title>
+    <id>tag:forrest404.github.io,2026-08-28:post-2026-08-28-london-ai-face-recognition</id>
+    <link rel="alternate" type="text/html" href="https://forrest404.github.io/cammap/pages/blog.html#post-2026-08-28-london-ai-face-recognition"/>
+    <published>2026-08-28T00:00:00Z</published>
+    <updated>2026-08-28T00:00:00Z</updated>
+    <content type="html">
+      &lt;p&gt;The Government is about to unleash the “largest ever” roll out of live facial recognition surveillance. At the same time, shops across the UK are wiring up facial recognition cameras to their doorways and creating secret watchlists of their customers. Facial recognition is spiralling out of control in the UK and there are no clear laws in place to protect our privacy.&lt;/p&gt;
+      &lt;p&gt;Unlike CCTV, facial recognition doesn’t just record what you do, your face becomes a barcode in the same way as your fingerprint or your DNA.&lt;/p&gt;
+      &lt;p&gt;We must stop this.&lt;/p&gt;
+    </content>
+  </entry>
+
+</feed>

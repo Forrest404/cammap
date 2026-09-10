@@ -3,6 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- What a request from this page says about where it came from.
+     Cross-origin hosts - OpenFreeMap, Esri, Supabase, Nominatim - get
+     the origin only: Nominatim's usage policy asks for a referrer
+     that identifies the application, and the origin does. Same-origin
+     requests get the full URL, which is why a position must never be
+     in a query string on this site - it would reach the host with
+     the page request and ride in the Referer of every script, style
+     and font the page loads; a fragment is never sent at all. This
+     is the browser's default in Chrome and Firefox, declared so it
+     does not depend on a default. Nine copies, one per page;
+     stamp.py does not police this tag. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <!-- Identical on all seven pages, and must stay that way: it is what
      makes the no-CDN rule something the browser enforces rather than
      something we remember. tools/stamp.py fails if they drift. Why
@@ -17,7 +29,7 @@
           https://tiles.openfreemap.org https://*.openfreemap.org
           https://*.supabase.co;
   media-src 'self' blob: https://*.supabase.co;
-  worker-src blob:;
+  worker-src 'self' blob:;
   child-src blob:;
   connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
               https://tiles.openfreemap.org https://*.openfreemap.org
@@ -27,9 +39,53 @@
   base-uri 'self';
   form-action 'none';
   frame-ancestors 'none'">
-<title>Blog &mdash; cammap</title>
+<title>Thoughts &mdash; cammap</title>
+<meta name="description" content="Notes and entries from cammap on facial recognition in London: what is being rolled out, by whom, and why it matters.">
+<link rel="canonical" href="https://forrest404.github.io/cammap/pages/blog.html">
+<!-- What a shared link turns into. Each page has its own title and
+     description - one shared across the site would be the failure
+     mode - and all of them show the same card, img/share.png, which
+     is the map itself photographed by tools/share-card.html and
+     committed, because a static site has nothing to draw one with on
+     request. The addresses are absolute because a card scraper has no
+     base to resolve against; they name the site's home on Pages, and
+     NOTES.md ("Sharing the site") lists every file that does. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cammap">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://forrest404.github.io/cammap/pages/blog.html">
+<meta property="og:title" content="Thoughts — cammap">
+<meta property="og:description" content="Notes and entries from cammap on facial recognition in London: what is being rolled out, by whom, and why it matters.">
+<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Thoughts — cammap">
+<meta name="twitter:description" content="Notes and entries from cammap on facial recognition in London: what is being rolled out, by whom, and why it matters.">
+<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../feed.xml">
+<!-- The icon, in the forms the browsers between them ask for: SVG
+     for the tab in Chrome and Firefox, .ico for Safari and anything
+     older, a 180px PNG for an iOS home screen. manifest.json is what
+     makes "Add to Home Screen" on Android an icon rather than a
+     screenshot; theme-color is what the browser paints its own frame
+     around the page. All are drawn from img/favicon.svg - NOTES.md,
+     "Sharing the site", says how the raster ones are made from it. -->
+<link rel="icon" href="../img/favicon.ico" sizes="32x32">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<meta name="apple-mobile-web-app-title" content="cammap">
+<meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=9f8635fe">
+<link rel="stylesheet" href="../frontend/style.css?v=fc1b066a">
 </head>
 <body>
 <div class="sheet">
@@ -41,7 +97,9 @@
     <span class="sep">&middot;</span>
     <a href="about.html">About</a>
     <span class="sep">&middot;</span>
-    <a href="blog.html" class="current">Thoughts</a>  
+    <a href="blog.html" class="current">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="rights.html">Rights</a>
     <!-- account.js fills this in once it knows whether anyone is
          signed in. Empty until then, so the nav never flickers. -->
     <span id="nav-account"></span>
@@ -59,9 +117,42 @@
 <!-- underneath this comment, and fill it in. The post nearest the    -->
 <!-- top of the file is the one shown first.                          -->
 <!--                                                                  -->
-<!-- <article class="post">                                           -->
-<!--   <h3>Your title here</h3>                                       -->
-<!--   <p class="date">1st January, 2026</p>                           -->
+<!-- Three things in the block are there so a post can be pointed at  -->
+<!-- from outside this page, and none of them needs a build step:     -->
+<!--                                                                  -->
+<!--   id        on the <article>. It is what a link to one post ends -->
+<!--             in - blog.html#post-2026-08-28-london-ai-face-...    -->
+<!--             - so it must be unique and must never change once    -->
+<!--             the post is published, or every link to it breaks.   -->
+<!--             The rule: "post-", the date as YYYY-MM-DD, "-", and  -->
+<!--             the title in lower case with every run of anything   -->
+<!--             that is not a letter or a digit turned into one      -->
+<!--             hyphen. "London AI Face Recognition" on 28 August    -->
+<!--             2026 is post-2026-08-28-london-ai-face-recognition.  -->
+<!--             The date goes first so two posts with one title on   -->
+<!--             different days still differ.                         -->
+<!--   permalink in the heading: a small "permalink" link whose href  -->
+<!--             is "#" plus that id. It is how a reader finds out    -->
+<!--             the anchor exists - right-click, copy link - and it  -->
+<!--             is the address the feed entry points at.             -->
+<!--   <time>    around the date, with datetime="YYYY-MM-DD". The     -->
+<!--             words inside are for people and can say "28th        -->
+<!--             August, 2026"; the attribute is for machines and     -->
+<!--             must be the ISO form, because a screen reader, a     -->
+<!--             crawler and the feed all read the attribute, not     -->
+<!--             the words.                                           -->
+<!--                                                                  -->
+<!-- Then the feed. A new post here is a new <entry> in feed.xml at   -->
+<!-- the root, written by hand - there is no generator - with the     -->
+<!-- same title, the same date, and a link to this anchor. The        -->
+<!-- comment at the top of feed.xml gives the recipe; NOTES.md, "The  -->
+<!-- words", says why the feed is what it is.                         -->
+<!--                                                                  -->
+<!-- <article class="post" id="post-YYYY-MM-DD-your-title-here">      -->
+<!--   <h3>Your title here <a class="permalink"                       -->
+<!--       href="#post-YYYY-MM-DD-your-title-here">permalink</a></h3> -->
+<!--   <p class="date"><time datetime="YYYY-MM-DD">1st January,       -->
+<!--       2026</time></p>                                            -->
 <!--   <p>First paragraph.</p>                                        -->
 <!--   <p>Second paragraph, if there is one.</p>                      -->
 <!-- </article>                                                       -->
@@ -70,9 +161,9 @@
 
 
   <!-- ---------------------------- POST ---------------------------- -->
-  <article class="post">
-    <h3>London AI Face Recognition</h3>
-    <p class="date">28th August, 2026</p>
+  <article class="post" id="post-2026-08-28-london-ai-face-recognition">
+    <h3>London AI Face Recognition <a class="permalink" href="#post-2026-08-28-london-ai-face-recognition">permalink</a></h3>
+    <p class="date"><time datetime="2026-08-28">28th August, 2026</time></p>
     <p>
       The Government is about to unleash the “largest ever” roll out of live
       facial recognition surveillance. At the same time, shops across the UK
@@ -100,15 +191,54 @@
 
 <footer class="foot">
   <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+       hosting" is true and says nothing - a precise small number is
+       far more persuasive than an unspecified appeal, and it fits a
+       site that says exactly what it knows everywhere else. The figure
+       was not available when this was written (QUESTIONS.md, item 2:
+       what the Supabase project and the cammap.app domain come to per
+       month; the Pages hosting itself is free). When it is known, make
+       the line below read, on all eight pages at once or stamp.py
+       fails:
+
+         cammap is free and has no advertising. Donations pay for the
+         hosting, which costs about £N a month.
+
+       Until then the sentence stays as it is: a number that has not
+       been checked is worse than none on a site whose whole argument
+       is that nothing on it is estimated. -->
   <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+  <!-- One licence, for the record only. The cameras are ODbL 1.0 so
+       that the record can be cited, plotted and built on, which is
+       what the site is for; the code is not licensed for reuse, and
+       LICENSE at the root says both. The link leaves the site: LICENSE
+       is served without a content type by Pages, which most browsers
+       download rather than show, so it points at the licence itself. -->
+  <span class="foot-note">Data <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> &middot; <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a></span>
+  <!-- The record, to take away. The CSV is the record itself, served
+       as it is - the one file the maintainer edits, so a download of
+       it cannot drift from what the map draws. The GeoJSON is written
+       from it by tools/build_points.py beside points.js and seed.sql,
+       never by hand; stamp.py fails if it is not what the CSV
+       produces. Both are ODbL like the line above says. The download
+       attribute saves the file rather than showing it, since a CSV
+       in a browser tab is no use to anyone. -->
+  <span class="foot-note">Download the data: <a href="../data/cameras.csv" download>CSV</a> &middot; <a href="../data/cameras.geojson" download>GeoJSON</a> &middot; <a href="data.html">about the data</a></span>
 </footer>
 
 </div>
 <!-- The account controls live in the nav, so every page needs these
      three. All local files; nothing is fetched from a CDN. -->
 <script src="../lib/supabase.js"></script>
-<script src="../frontend/shared.js?v=9f8635fe"></script>
-<script src="../supabase-config.js?v=9f8635fe"></script>
-<script src="../frontend/account.js?v=9f8635fe"></script>
+<script src="../frontend/shared.js?v=fc1b066a"></script>
+<script src="../supabase-config.js?v=fc1b066a"></script>
+<script src="../frontend/account.js?v=fc1b066a"></script>
+<!-- Last, on every page, and needed by nothing: registers the service
+     worker that keeps a copy of the site for a street with no signal,
+     and shows the one line under the page when a newer version is
+     ready. A file rather than a script written here because the
+     policy above allows no inline script. sw.js says what is kept
+     and what never is. -->
+<script src="../frontend/offline.js?v=fc1b066a"></script>
 </body>
 </html>

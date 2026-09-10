@@ -1,0 +1,74 @@
+# The thirty-three areas Greater London is divided into: the 32 London
+# boroughs created by the London Government Act 1963, and the City of
+# London, which is not a borough and is the thirty-third all the same -
+# it has its own authority and its own police force, and a map of
+# cameras that left it out would be leaving out Liverpool Street.
+#
+# This file is the list, and the only copy of it. tools/boroughs.py
+# checks what a reverse geocode returns against it and refuses a name
+# that is not here rather than inventing one; tools/build_points.py
+# refuses a borough column that is not here; tools/build_boroughs.py
+# writes one page per line below, in the order they are written here,
+# whether or not the record has a camera in it; tools/check.js asserts
+# that every camera's borough is one of these and that no two make the
+# same page address.
+#
+# The names are the short forms - the form a person says and a page
+# heading wants - not the councils' legal titles. Nominatim answers
+# with those titles ("London Borough of Croydon", "Royal Borough of
+# Kensington and Chelsea", "City of Westminster") and boroughs.py
+# reduces them to these; the reduction is written out in that file so
+# it can be read rather than guessed at. "City of London" is left
+# whole, because that is the area's name and not a title in front of
+# one.
+#
+# The order is alphabetical, which is the order the index page lists
+# them in and the order the pages are generated in. A page's address
+# is its name lowered with every run of non-alphanumerics made one
+# hyphen - "kensington-and-chelsea", "city-of-london" - which
+# tools/build_boroughs.py computes and never stores, so there is no
+# second thing to keep in step. Once a borough page is published its
+# address must not change: it is in the sitemap and in whatever anyone
+# has linked.
+#
+# Source: the London Government Act 1963 as the boundaries are
+# published by the Office for National Statistics and the London
+# Datastore. This list has not changed since 1965 and is not expected
+# to; if it ever does, this file is the one edit, and the pages are
+# regenerated.
+#
+# Blank lines and lines starting with # are not boroughs.
+
+Barking and Dagenham
+Barnet
+Bexley
+Brent
+Bromley
+Camden
+City of London
+Croydon
+Ealing
+Enfield
+Greenwich
+Hackney
+Hammersmith and Fulham
+Haringey
+Harrow
+Havering
+Hillingdon
+Hounslow
+Islington
+Kensington and Chelsea
+Kingston upon Thames
+Lambeth
+Lewisham
+Merton
+Newham
+Redbridge
+Richmond upon Thames
+Southwark
+Sutton
+Tower Hamlets
+Waltham Forest
+Wandsworth
+Westminster

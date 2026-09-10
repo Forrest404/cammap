@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- What a request from this page says about where it came from.
+     Cross-origin hosts - OpenFreeMap, Esri, Supabase, Nominatim - get
+     the origin only: Nominatim's usage policy asks for a referrer
+     that identifies the application, and the origin does. Same-origin
+     requests get the full URL, which is why a position must never be
+     in a query string on this site - it would reach the host with
+     the page request and ride in the Referer of every script, style
+     and font the page loads; a fragment is never sent at all. This
+     is the browser's default in Chrome and Firefox, declared so it
+     does not depend on a default. Nine copies, one per page;
+     stamp.py does not police this tag. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- Identical on all seven pages, and must stay that way: it is what
+     makes the no-CDN rule something the browser enforces rather than
+     something we remember. tools/stamp.py fails if they drift. Why
+     each source is listed, and what breaks without worker-src, is in
+     CLAUDE.md under "The Content-Security-Policy". -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
+  img-src 'self' data: blob: https://server.arcgisonline.com
+          https://tiles.openfreemap.org https://*.openfreemap.org
+          https://*.supabase.co;
+  media-src 'self' blob: https://*.supabase.co;
+  worker-src 'self' blob:;
+  child-src blob:;
+  connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
+              https://tiles.openfreemap.org https://*.openfreemap.org
+              https://server.arcgisonline.com
+              https://nominatim.openstreetmap.org;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'none';
+  frame-ancestors 'none'">
+<title>Southwark &mdash; cammap</title>
+<meta name="description" content="10 recorded facial recognition cameras in Southwark: where each one is, what kind it is, and which published record it comes from.">
+<link rel="canonical" href="https://forrest404.github.io/cammap/pages/boroughs/southwark.html">
+<!-- What a shared link turns into. Each page has its own title and
+     description - one shared across the site would be the failure
+     mode - and all of them show the same card, img/share.png, which
+     is the map itself photographed by tools/share-card.html and
+     committed, because a static site has nothing to draw one with on
+     request. The addresses are absolute because a card scraper has no
+     base to resolve against; they name the site's home on Pages, and
+     NOTES.md ("Sharing the site") lists every file that does. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cammap">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://forrest404.github.io/cammap/pages/boroughs/southwark.html">
+<meta property="og:title" content="Southwark — cammap">
+<meta property="og:description" content="10 recorded facial recognition cameras in Southwark: where each one is, what kind it is, and which published record it comes from.">
+<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Southwark — cammap">
+<meta name="twitter:description" content="10 recorded facial recognition cameras in Southwark: where each one is, what kind it is, and which published record it comes from.">
+<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../../feed.xml">
+<!-- The icon, in the forms the browsers between them ask for: SVG
+     for the tab in Chrome and Firefox, .ico for Safari and anything
+     older, a 180px PNG for an iOS home screen. manifest.json is what
+     makes "Add to Home Screen" on Android an icon rather than a
+     screenshot; theme-color is what the browser paints its own frame
+     around the page. All are drawn from img/favicon.svg - NOTES.md,
+     "Sharing the site", says how the raster ones are made from it. -->
+<link rel="icon" href="../../img/favicon.ico" sizes="32x32">
+<link rel="icon" href="../../img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../../img/apple-touch-icon.png">
+<link rel="manifest" href="../../manifest.json">
+<meta name="apple-mobile-web-app-title" content="cammap">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="stylesheet" href="../../fonts/fonts.css">
+<link rel="stylesheet" href="../../frontend/style.css?v=fc1b066a">
+</head>
+<body>
+<div class="sheet">
+
+<header class="masthead">
+  <h1 class="title">cammap</h1>
+  <nav class="bar">
+    <a href="../../index.html">Map</a>
+    <span class="sep">&middot;</span>
+    <a href="../about.html">About</a>
+    <span class="sep">&middot;</span>
+    <a href="../blog.html">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="../rights.html">Rights</a>
+    <!-- account.js fills this in once it knows whether anyone is
+         signed in. Empty until then, so the nav never flickers. -->
+    <span id="nav-account"></span>
+  </nav>
+</header>
+
+<!-- ================================================================
+     Southwark - one of the thirty-three borough pages.
+
+     GENERATED. Written by tools/build_boroughs.py from
+     data/cameras.csv, and never edited by hand: tools/stamp.py
+     regenerates all thirty-four in memory on every run and fails,
+     naming the file and the first differing line, if what is
+     committed is not what the record produces. To change what this
+     page says, change the record or change the generator.
+
+     The head, the nav, the footer and every script tag on it were
+     copied from pages/rights.html at the moment it was generated, with the
+     relative paths moved one directory down - so this page carries
+     the same Content-Security-Policy and the same nav as the rest of
+     the site by construction rather than by anyone remembering. When
+     those change on the other pages, regenerate these.
+
+     Every number here is counted from the record. None is typed.
+     ================================================================ -->
+
+<main>
+  <div class="prose borough">
+
+    <h2>Southwark</h2>
+
+    <p>
+      The record holds 10 cameras in Southwark.
+      2 of the pins mark the surrounding area rather than an exact
+      spot, because that is all the source gave.
+    </p>
+
+    <ul class="kinds">
+      <li><span class="n">7</span> LFR van site</li>
+      <li><span class="n">1</span> Transport police</li>
+      <li><span class="n">2</span> Shop (Facewatch)</li>
+    </ul>
+
+    <h3>Where they are</h3>
+
+    <p>
+      Each opens on the map, at the camera, with what the record says
+      about it.
+    </p>
+
+    <ul class="sites">
+      <li>
+        <a href="../../index.html#camera=Camberwell%20Green%7C51.474907%7C-0.092601%7Cvancam">Camberwell Green</a>
+        <span class="detail">LFR van site &middot; legacy &middot; the record shows 1 deployment 2025</span>
+      </li>
+      <li>
+        <a href="../../index.html#camera=London%20Bridge%20station%7C51.504876%7C-0.085147%7Ctransportcam">London Bridge station</a>
+        <span class="detail">Transport police &middot; the record shows 1 deployment 2026</span>
+      </li>
+      <li>
+        <a href="../../index.html#camera=Peckham%7C51.473412%7C-0.069932%7Cvancam">Peckham</a>
+        <span class="detail">LFR van site &middot; legacy &middot; the record shows 3 deployments 2023-24 &middot; approximate position</span>
+      </li>
+      <li>
+        <a href="../../index.html#camera=Peckham%20Rye%7C51.470006%7C-0.069413%7Cvancam">Peckham Rye</a>
+        <span class="detail">LFR van site &middot; legacy &middot; the record shows 2 deployments 2025</span>
+      </li>
+      <li>
+        <a href="../../index.html#camera=Rye%20Lane%2C%20Peckham%7C51.467074%7C-0.065766%7Cvancam">Rye Lane, Peckham</a>
+        <span class="detail">LFR van site &middot; legacy &middot; the record shows 5 deployments 2025</span>
+      </li>
+      <li>
+        <a href="../../index.html#camera=Sainsbury's%20East%20Dulwich%7C51.461793%7C-0.084998%7Cfacewatchcam">Sainsbury's East Dulwich</a>
+        <span class="detail">Shop (Facewatch) &middot; legacy</span>
+      </li>
+      <li>
+        <a href="../../index.html#camera=Sainsbury's%20Elephant%20and%20Castle%7C51.494570%7C-0.097640%7Cfacewatchcam">Sainsbury's Elephant and Castle</a>
+        <span class="detail">Shop (Facewatch)</span>
+      </li>
+      <li>
+        <a href="../../index.html#camera=Southwark%7C51.505653%7C-0.099565%7Cvancam">Southwark</a>
+        <span class="detail">LFR van site &middot; legacy &middot; the record shows 1 deployment 2023-24 &middot; approximate position</span>
+      </li>
+      <li>
+        <a href="../../index.html#camera=Walworth%20Road%7C51.489848%7C-0.096681%7Cvancam">Walworth Road</a>
+        <span class="detail">LFR van site &middot; legacy &middot; the record shows 6 deployments 2023-2025</span>
+      </li>
+      <li>
+        <a href="../../index.html#camera=Walworth%20Road%2C%20Southwark%7C51.490318%7C-0.096975%7Cvancam">Walworth Road, Southwark</a>
+        <span class="detail">LFR van site &middot; legacy &middot; the record shows 1 deployment 2025</span>
+      </li>
+    </ul>
+
+    <h3>The busiest spot</h3>
+
+    <p>The spot the record has used most often here is Walworth Road - the record shows 6 deployments 2023-2025.</p>
+
+    <h3>Where this comes from</h3>
+
+    <p>
+      The cameras in Southwark rest on:
+    </p>
+    <ul class="sources">
+      <li>Met Police LFR deployment record, 2025</li>
+      <li>British Transport Police LFR deployment register, 2026</li>
+      <li>Met Police LFR deployment record, 2023-24</li>
+      <li>Retail Gazette, August 2026</li>
+      <li>The Register, 6 February 2026</li>
+      <li>Met Police LFR deployment records, 2023-2025</li>
+    </ul>
+
+    <p>
+      Each camera's own entry links to the document it comes from;
+      open it on <a href="../../index.html">the map</a> to follow it.
+    </p>
+
+    <h3>The whole record</h3>
+
+    <p>
+      This page was written from the record as it stood on
+      <time datetime="2026-09-10">2026-09-10</time>. Every figure on it is counted from
+      that record rather than typed, and the page is generated - so it
+      cannot say one thing while the map says another.
+      <a href="../../index.html">The map</a> shows every borough at once;
+      <a href="index.html">the other boroughs</a> each have a page like
+      this one; and <a href="../data.html">the data page</a> says what the
+      record holds, how to take it away, and on what terms.
+    </p>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+       hosting" is true and says nothing - a precise small number is
+       far more persuasive than an unspecified appeal, and it fits a
+       site that says exactly what it knows everywhere else. The figure
+       was not available when this was written (QUESTIONS.md, item 2:
+       what the Supabase project and the cammap.app domain come to per
+       month; the Pages hosting itself is free). When it is known, make
+       the line below read, on all eight pages at once or stamp.py
+       fails:
+
+         cammap is free and has no advertising. Donations pay for the
+         hosting, which costs about £N a month.
+
+       Until then the sentence stays as it is: a number that has not
+       been checked is worse than none on a site whose whole argument
+       is that nothing on it is estimated. -->
+  <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+  <!-- One licence, for the record only. The cameras are ODbL 1.0 so
+       that the record can be cited, plotted and built on, which is
+       what the site is for; the code is not licensed for reuse, and
+       LICENSE at the root says both. The link leaves the site: LICENSE
+       is served without a content type by Pages, which most browsers
+       download rather than show, so it points at the licence itself. -->
+  <span class="foot-note">Data <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> &middot; <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a></span>
+  <!-- The record, to take away. The CSV is the record itself, served
+       as it is - the one file the maintainer edits, so a download of
+       it cannot drift from what the map draws. The GeoJSON is written
+       from it by tools/build_points.py beside points.js and seed.sql,
+       never by hand; stamp.py fails if it is not what the CSV
+       produces. Both are ODbL like the line above says. The download
+       attribute saves the file rather than showing it, since a CSV
+       in a browser tab is no use to anyone. -->
+  <span class="foot-note">Download the data: <a href="../../data/cameras.csv" download>CSV</a> &middot; <a href="../../data/cameras.geojson" download>GeoJSON</a> &middot; <a href="../data.html">about the data</a></span>
+</footer>
+
+
+</div>
+<!-- The account controls live in the nav, so every page needs these
+     three. All local files; nothing is fetched from a CDN. -->
+<script src="../../lib/supabase.js"></script>
+<script src="../../frontend/shared.js?v=fc1b066a"></script>
+<script src="../../supabase-config.js?v=fc1b066a"></script>
+<script src="../../frontend/account.js?v=fc1b066a"></script>
+<!-- Last, on every page, and needed by nothing: registers the service
+     worker that keeps a copy of the site for a street with no signal,
+     and shows the one line under the page when a newer version is
+     ready. A file rather than a script written here because the
+     policy above allows no inline script. sw.js says what is kept
+     and what never is. -->
+<script src="../../frontend/offline.js?v=fc1b066a"></script>
+</body>
+</html>

@@ -3,6 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- What a request from this page says about where it came from.
+     Cross-origin hosts - OpenFreeMap, Esri, Supabase, Nominatim - get
+     the origin only: Nominatim's usage policy asks for a referrer
+     that identifies the application, and the origin does. Same-origin
+     requests get the full URL, which is why a position must never be
+     in a query string on this site - it would reach the host with
+     the page request and ride in the Referer of every script, style
+     and font the page loads; a fragment is never sent at all. This
+     is the browser's default in Chrome and Firefox, declared so it
+     does not depend on a default. Nine copies, one per page;
+     stamp.py does not police this tag. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <!-- Identical on all seven pages, and must stay that way: it is what
      makes the no-CDN rule something the browser enforces rather than
      something we remember. tools/stamp.py fails if they drift. Why
@@ -17,7 +29,7 @@
           https://tiles.openfreemap.org https://*.openfreemap.org
           https://*.supabase.co;
   media-src 'self' blob: https://*.supabase.co;
-  worker-src blob:;
+  worker-src 'self' blob:;
   child-src blob:;
   connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
               https://tiles.openfreemap.org https://*.openfreemap.org
@@ -28,8 +40,52 @@
   form-action 'none';
   frame-ancestors 'none'">
 <title>About &mdash; cammap</title>
+<meta name="description" content="What cammap is: what live facial recognition is, where every camera on the map comes from, what the map does not claim, and who runs it.">
+<link rel="canonical" href="https://forrest404.github.io/cammap/pages/about.html">
+<!-- What a shared link turns into. Each page has its own title and
+     description - one shared across the site would be the failure
+     mode - and all of them show the same card, img/share.png, which
+     is the map itself photographed by tools/share-card.html and
+     committed, because a static site has nothing to draw one with on
+     request. The addresses are absolute because a card scraper has no
+     base to resolve against; they name the site's home on Pages, and
+     NOTES.md ("Sharing the site") lists every file that does. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cammap">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://forrest404.github.io/cammap/pages/about.html">
+<meta property="og:title" content="About cammap">
+<meta property="og:description" content="What cammap is: what live facial recognition is, where every camera on the map comes from, what the map does not claim, and who runs it.">
+<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About cammap">
+<meta name="twitter:description" content="What cammap is: what live facial recognition is, where every camera on the map comes from, what the map does not claim, and who runs it.">
+<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../feed.xml">
+<!-- The icon, in the forms the browsers between them ask for: SVG
+     for the tab in Chrome and Firefox, .ico for Safari and anything
+     older, a 180px PNG for an iOS home screen. manifest.json is what
+     makes "Add to Home Screen" on Android an icon rather than a
+     screenshot; theme-color is what the browser paints its own frame
+     around the page. All are drawn from img/favicon.svg - NOTES.md,
+     "Sharing the site", says how the raster ones are made from it. -->
+<link rel="icon" href="../img/favicon.ico" sizes="32x32">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<meta name="apple-mobile-web-app-title" content="cammap">
+<meta name="theme-color" content="#0d0d0d">
 <link rel="stylesheet" href="../fonts/fonts.css">
-<link rel="stylesheet" href="../frontend/style.css?v=9f8635fe">
+<link rel="stylesheet" href="../frontend/style.css?v=fc1b066a">
 </head>
 <body>
 <div class="sheet">
@@ -42,6 +98,8 @@
     <a href="about.html" class="current">About</a>
     <span class="sep">&middot;</span>
     <a href="blog.html">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="rights.html">Rights</a>
     <!-- account.js fills this in once it knows whether anyone is
          signed in. Empty until then, so the nav never flickers. -->
     <span id="nav-account"></span>
@@ -55,12 +113,148 @@
 <!-- ==================== EDIT ABOUT TEXT BELOW ===================== -->
 <!-- Change the heading and the paragraphs here. Everything outside   -->
 <!-- these two markers is the page furniture and can be left alone.   -->
+<!--                                                                  -->
+<!-- Two rules for what goes between them, both the site's own.       -->
+<!-- Nothing is claimed that the record does not support: where a     -->
+<!-- sentence says where a camera comes from or what the map does not -->
+<!-- claim, it is drawn from the header of data/points.js and from    -->
+<!-- NOTES.md ("What active means", "The build script and the         -->
+<!-- record", "Anonymity"), and a change there should reach here. And -->
+<!-- no number is typed: a count in prose goes stale without a sound, -->
+<!-- so it says "every camera on the map" rather than a figure, and   -->
+<!-- the line under the map, which computes its own, is where the     -->
+<!-- figures live.                                                    -->
 <!-- ================================================================ -->
 
     <h2>About this site</h2>
 
     <p>
-      Our mission is to map out every facial recognition camera in London.
+      cammap is a map of the facial recognition cameras in London that the
+      public record supports: the places the Metropolitan Police has sent
+      its live facial recognition vans, its fixed cameras in Croydon, the
+      stations the British Transport Police has run it at, and the shops
+      that have said they use it. Nothing on it is estimated. This page
+      says what the cameras are, where every entry comes from, what the map
+      does not claim, and who is behind it.
+    </p>
+
+    <h3>What live facial recognition is</h3>
+
+    <p>
+      A CCTV camera records what happens in front of it for someone to look
+      at later. A live facial recognition camera looks at every face that
+      passes it, as it passes: it measures the face, turns the measurements
+      into a biometric template, compares that template against a watchlist
+      of people the operator is looking for, and raises an alert when the
+      score is high enough. Your face becomes a barcode in the same way as
+      your fingerprint or your DNA. The camera does not need to know you to
+      do it; it does it to everyone who walks past.
+    </p>
+
+    <p>
+      In London it has come in five forms, and the map colours them apart.
+      The Metropolitan Police runs it from vans parked for a shift and from
+      a pair of fixed cameras in Croydon. The British Transport Police has
+      run it from temporary rigs at stations. Some shops run Facewatch, a
+      private system whose watchlist shop staff add people to, under
+      different law from the police cameras. And one private estate, King's
+      Cross Central, ran its own system on its developer's cameras until an
+      inquiry ended it in 2019; the map keeps it as the one entry of its
+      kind. What each of them means for you when you are standing in front
+      of one is on the <a href="rights.html">rights page</a>.
+    </p>
+
+    <h3>Where every camera comes from</h3>
+
+    <p>
+      Every entry on the map comes from a published source: the Met's own
+      deployment records, which list the places its vans were sent and how
+      often, by period; the British Transport Police's deployment register
+      for its station trial; and, for the fixed cameras and the shops,
+      named press reporting and the Met's own announcement of the Croydon
+      cameras. Each camera carries the name of the record or report it
+      rests on and, where there is one, a link to it. Where no source is
+      known the map says nothing rather than something vague.
+    </p>
+
+    <p>
+      The record itself is one file of comma-separated values in the
+      repository, one camera per line, and everything the site shows is
+      written out from it by a script: the data the map draws, and the rows
+      the database is filled from. It is edited by hand, from the
+      documents, and nothing fills a blank by guessing - where a source
+      gives no value, the record holds none. The line under the map says
+      how many cameras there are, which years the records run to, and when
+      the record was last checked. The whole record can be taken away as a
+      file, or read over the same interface the map reads it from: the
+      <a href="data.html">data page</a> says what is in it and how.
+    </p>
+
+    <h3>What the map does not claim</h3>
+
+    <p>
+      It does not say that a van is anywhere now. A van parks for a shift
+      and drives away, so there is no hour at which "a van is at this spot"
+      is a thing this map can honestly say. What the record supports is
+      that a van was sent here, this many times, most recently in this
+      year, and that is what a van site's entry says. Every van site is
+      marked legacy for that reason and sits behind the Legacy toggle; the
+      map opens on the cameras that are fixed to something.
+    </p>
+
+    <p>
+      It does not predict. Using the record to guess where the vans will go
+      next was considered and dropped: a confident guess printed beside a
+      public record invites people to read it as one. What the map offers
+      instead is the record's own answer to the question people have - the
+      Most used sort, which orders the sites by how many times a source
+      records them being used, and the glow, which is weighed by the same
+      number.
+    </p>
+
+    <p>
+      It does not pretend to a precision the sources lack. The Met's
+      records give a van site as a street or a district, never a
+      coordinate, and where a record gives only an area the pin sits at the
+      middle of it and the camera's note says so. A station entry is the
+      station, not the spot on the concourse. And it is not complete: a
+      shop is not required to publish where its cameras are - a sign on the
+      door is the whole of the disclosure - so only the shops that have
+      named their stores are on the map, and a place that is not on the map
+      is not known to be free of one.
+    </p>
+
+    <p>
+      Anyone can <a href="report.html">report a camera</a>, with a photo of
+      it. It goes on the map when a moderator has checked the report, or
+      when enough people have reported the same spot independently.
+    </p>
+
+    <h3>Who runs this, and how it is paid for</h3>
+
+    <p>
+      Volunteers. There is no organisation behind it, no office and no
+      names on it - the site puts no names on anyone, and it begins with
+      itself. It is free and carries no advertising, and donations pay for
+      the hosting. An account, for the people who report cameras, is a
+      username of two random words and a password: no email address, no
+      real name, and no IP address kept in any table of ours. The
+      <a href="account.html">account page</a> says what is kept, and what
+      cannot be taken back once a report has put a camera on the map.
+      Writing about this? The <a href="press.html">press page</a> has the
+      counts, the method and the terms for reuse, and says how to get in
+      touch.
+    </p>
+
+    <h3>The licence</h3>
+
+    <p>
+      The record - every camera on the map - is published under the
+      <a href="https://opendatacommons.org/licenses/odbl/1-0/">Open Database
+      License 1.0</a>, so that it can be cited, plotted and built on. The
+      code that draws it is not licensed for reuse. Both are set out in the
+      <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a>
+      in the repository.
     </p>
 
 
@@ -73,15 +267,54 @@
 
 <footer class="foot">
   <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+       hosting" is true and says nothing - a precise small number is
+       far more persuasive than an unspecified appeal, and it fits a
+       site that says exactly what it knows everywhere else. The figure
+       was not available when this was written (QUESTIONS.md, item 2:
+       what the Supabase project and the cammap.app domain come to per
+       month; the Pages hosting itself is free). When it is known, make
+       the line below read, on all eight pages at once or stamp.py
+       fails:
+
+         cammap is free and has no advertising. Donations pay for the
+         hosting, which costs about £N a month.
+
+       Until then the sentence stays as it is: a number that has not
+       been checked is worse than none on a site whose whole argument
+       is that nothing on it is estimated. -->
   <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+  <!-- One licence, for the record only. The cameras are ODbL 1.0 so
+       that the record can be cited, plotted and built on, which is
+       what the site is for; the code is not licensed for reuse, and
+       LICENSE at the root says both. The link leaves the site: LICENSE
+       is served without a content type by Pages, which most browsers
+       download rather than show, so it points at the licence itself. -->
+  <span class="foot-note">Data <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> &middot; <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a></span>
+  <!-- The record, to take away. The CSV is the record itself, served
+       as it is - the one file the maintainer edits, so a download of
+       it cannot drift from what the map draws. The GeoJSON is written
+       from it by tools/build_points.py beside points.js and seed.sql,
+       never by hand; stamp.py fails if it is not what the CSV
+       produces. Both are ODbL like the line above says. The download
+       attribute saves the file rather than showing it, since a CSV
+       in a browser tab is no use to anyone. -->
+  <span class="foot-note">Download the data: <a href="../data/cameras.csv" download>CSV</a> &middot; <a href="../data/cameras.geojson" download>GeoJSON</a> &middot; <a href="data.html">about the data</a></span>
 </footer>
 
 </div>
 <!-- The account controls live in the nav, so every page needs these
      three. All local files; nothing is fetched from a CDN. -->
 <script src="../lib/supabase.js"></script>
-<script src="../frontend/shared.js?v=9f8635fe"></script>
-<script src="../supabase-config.js?v=9f8635fe"></script>
-<script src="../frontend/account.js?v=9f8635fe"></script>
+<script src="../frontend/shared.js?v=fc1b066a"></script>
+<script src="../supabase-config.js?v=fc1b066a"></script>
+<script src="../frontend/account.js?v=fc1b066a"></script>
+<!-- Last, on every page, and needed by nothing: registers the service
+     worker that keeps a copy of the site for a street with no signal,
+     and shows the one line under the page when a newer version is
+     ready. A file rather than a script written here because the
+     policy above allows no inline script. sw.js says what is kept
+     and what never is. -->
+<script src="../frontend/offline.js?v=fc1b066a"></script>
 </body>
 </html>

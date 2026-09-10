@@ -14,10 +14,13 @@
    which is exactly the thing that should not be able to drift.
 
    The database keeps its own copies of both tables below, in the
-   `cameras_type_check` constraint and the London `check` constraints
-   in backend/schema.sql. That is deliberate: the server has to be
-   able to refuse a bad row on its own, without trusting anything a
-   browser sent. Change one and change the other.
+   `cameras_type_check` constraint and in `public.in_city()`, which
+   the three London `check` constraints in backend/schema.sql call.
+   That is deliberate: the server has to be able to refuse a bad row
+   on its own, without trusting anything a browser sent. SQL cannot
+   read JavaScript, so there is one copy per language rather than
+   one copy; tools/stamp.py reads both and fails if they differ.
+   Change one and change the other.
    ------------------------------------------------------------------ */
 
 /* One colour per kind of camera. This table is the only place the
@@ -45,19 +48,154 @@ var NONFUNCTIONAL_COLOUR = "#b58bd6";
    it, and a row with it should not show as a bare identifier. */
 var NONFUNCTIONAL_TYPE = "nonfunccam";
 
-/* South-west corner, then north-east: Heathrow across to Upminster,
-   Coulsdon up to Enfield. All 32 boroughs and the City. Moving the
-   map to another city is this, LONDON_CENTRE just below, the three
-   check constraints in schema.sql, and the opening zoom in map.js. */
-var LONDON_BOUNDS = [[51.28, -0.51], [51.70, 0.33]];
+/* ---------------- the city this map is of ----------------
 
-/* Where a map opens when it has no reason to look anywhere else.
-   Both maps use it, so it is here rather than in either of them. */
-var LONDON_CENTRE = [51.5074, -0.1278];
+   Everything that says *which city* rather than *what a camera is*:
+   its name, the box it lives in, where a map opens on it, and how
+   far in. Four values that used to be four places - the box and the
+   centre here as two separate variables, the opening zoom in map.js,
+   and the city's name typed into the prose of every page - and every
+   one of them would have to be found again the day this map is of
+   two cities.
+
+     name    as it is written on a page. The borough pages say it, and
+             so would any second city's.
+     bounds  south-west corner first, then north-east: Heathrow across
+             to Upminster, Coulsdon up to Enfield. All 32 boroughs and
+             the City. It is what inLondon() checks a pin against, what
+             the map is bounded to, and what the place search is asked
+             to look inside.
+     centre  where a map opens when it has no reason to look anywhere
+             else. The map page and both pickers use it.
+     zoom    how far in it opens. map.js reads it from here; it was a
+             constant of its own, which meant a second city could not
+             open wider or closer without editing the map.
+
+   What a second city would be: a second object like this one and a
+   switch that chooses between them - not a search and replace across
+   five files. Doing that while there is one city is an afternoon;
+   doing it with two is a migration. What it would still need typed
+   by hand is in NOTES.md, "Another city": SQL cannot read
+   JavaScript, so the box is also in one SQL function (public.in_city
+   in backend/schema.sql, which tools/stamp.py holds to the numbers
+   below), the seed's on-conflict list names columns rather than a
+   city, and the borough pages' words are London's.
+
+   RECORD_SOURCES below is deliberately NOT in here. It dates the
+   record - which years of which force's returns have been read - and
+   that is a fact about the sources, not about the city. A second
+   city's record would have its own dates and its own forces. */
+var CITY = {
+  name: "London",
+  bounds: [[51.28, -0.51], [51.70, 0.33]],   /* SW, NE */
+  centre: [51.5074, -0.1278],
+  zoom: 11
+};
+
+/* The names every other file already uses. Aliases, not copies: they
+   are the same arrays, so nothing can hold an old box while CITY
+   holds a new one, and map.js, picker.js, account.js, press.js and
+   tools/check.js needed no edit when CITY arrived. A second city
+   would repoint these two lines at whichever object is in force and
+   leave the rest of the site alone - which is the whole of why they
+   are still here rather than being replaced by CITY.bounds
+   everywhere. */
+var LONDON_BOUNDS = CITY.bounds;
+var LONDON_CENTRE = CITY.centre;
+
+/* How far the record reaches, and when somebody last looked. These
+   three are typed by hand when the record is refreshed, and nothing
+   else dates the data: a visitor cannot tell a current map from an
+   abandoned one without them, and it is the first thing a sceptical
+   reader checks. The map page writes them under the map beside a
+   count it works out from the record itself, so the count can never
+   go stale silently; these can, which is why they are in one place
+   with a comment on them and nowhere else.
+
+     met      the last year of the Met's LFR deployment records the
+              record holds. The Met has published a 2026 record; it
+              refuses scripted download and has not been added (the
+              TODO in NOTES.md), so this stays 2025 until it is.
+     btp      the year of the British Transport Police register the
+              nine station entries come from.
+     checked  when the sources were last looked at for anything new,
+              as a month, because a day would claim a precision the
+              checking does not have.
+
+   When the record is refreshed: update data/cameras.csv, run
+   tools/build_points.py, change these, and make img/share.png again
+   if the count moved - the card carries the count as a picture, and
+   the two should move together. */
+var RECORD_SOURCES = { met: 2025, btp: 2026, checked: "September 2026" };
 
 function inLondon(lat, lon) {
   return lat >= LONDON_BOUNDS[0][0] && lat <= LONDON_BOUNDS[1][0] &&
          lon >= LONDON_BOUNDS[0][1] && lon <= LONDON_BOUNDS[1][1];
+}
+
+/* ---------------- the periods a record gives ----------------
+
+   A camera's `periods` is counted by the period the source gives -
+   {"2023-24": 1, "2025": 3} - and a key is YYYY, YYYY-YY or YYYY-YYYY,
+   the whole of the vocabulary the sources use (NOTES.md, "Deployments
+   by period"). The year scrubber on the map needs to know which years
+   a key covers, and nothing else may guess at that: a span covers
+   every year from its first to its last inclusive, and a two-digit
+   tail takes the century of the start, so "2023-24" is 2023 and 2024
+   and "2020-2025" is six years. That is all a period says. It does
+   not say which of those years a deployment fell in, which is why the
+   scrubber shows a site in every year its period covers and never
+   picks one.
+
+   periodSpan() is the twin of period_span() in tools/build_points.py
+   - same rule, same century arithmetic - and tools/check.js holds the
+   two together by running it over every key in the record. Change
+   one, change the other. */
+function periodSpan(key) {
+  var start = parseInt(key.slice(0, 4), 10);
+  var tail = key.slice(5);
+
+  if (key.length === 4) {
+    return [start, start];
+  }
+
+  return [start, tail.length === 4 ? parseInt(tail, 10) : parseInt(key.slice(0, 2) + tail, 10)];
+}
+
+/* Every year a periods object covers, each once, earliest first; null
+   where the record names no period - which is the case for a shop, a
+   fixed install and the King's Cross estate, and means "no year is
+   claimed", not "no year". */
+function periodYears(periods) {
+  var years = [];
+  var key;
+  var span;
+  var y;
+
+  if (!periods || typeof periods !== "object") {
+    return null;
+  }
+
+  for (key in periods) {
+    if (periods.hasOwnProperty(key)) {
+      span = periodSpan(key);
+      for (y = span[0]; y <= span[1]; y++) {
+        if (years.indexOf(y) === -1) {
+          years.push(y);
+        }
+      }
+    }
+  }
+
+  years.sort(function (a, b) { return a - b; });
+
+  return years;
+}
+
+/* seed_key is how a database row says which seed entry it is. It is
+   built the same way here as in the build script, so they agree. */
+function seedKeyOf(point) {
+  return point.name + "|" + point.lat.toFixed(6) + "|" + point.lon.toFixed(6) + "|" + point.type;
 }
 
 function typeOf(type) {
@@ -110,6 +248,82 @@ function typeColourExpression() {
   return ["case", ["==", ["get", "status"], "nonfunctional"], NONFUNCTIONAL_COLOUR, match];
 }
 
+/* What the record adds up to, for a page that states it in words -
+   the press page - worked out from the entries and never typed, for
+   the reason the count line under the map is: a number in prose goes
+   stale without a sound. The total, the count per kind in
+   CAMERA_TYPES order, how many pins the record marks approximate, how
+   many entries carry a period, and the first and last year any period
+   covers (null where none does). Pure, so tools/check.js can hold it
+   against the record. */
+function recordCounts(list) {
+  var out = { total: 0, byType: {}, approximate: 0, dated: 0, from: null, to: null };
+  var i;
+  var years;
+
+  for (i = 0; i < CAMERA_TYPES.length; i++) {
+    out.byType[CAMERA_TYPES[i].type] = 0;
+  }
+
+  for (i = 0; i < list.length; i++) {
+    out.total++;
+    out.byType[list[i].type] = (out.byType[list[i].type] || 0) + 1;
+    if (list[i].approximate === true) {
+      out.approximate++;
+    }
+    years = periodYears(list[i].periods);
+    if (years && years.length) {
+      out.dated++;
+      out.from = out.from === null ? years[0] : Math.min(out.from, years[0]);
+      out.to = out.to === null ? years[years.length - 1] : Math.max(out.to, years[years.length - 1]);
+    }
+  }
+
+  return out;
+}
+
+/* ---------------- the brightness rule, as arithmetic ----------------
+
+   Nothing drawn under the cameras may be brighter than the dimmest
+   camera dot - the fixed-camera red, 134 on the perceived scale
+   0.299 R + 0.587 G + 0.114 B. The LIFT table below is tuned to it by
+   eye and measured after; this is the same rule for a colour that has
+   to be derived rather than typed. dimTo() scales a colour down, hue
+   kept, until its brightness is at or under a ceiling: the halo under
+   an approximate pin is the dot's own colour dimmed this way, because
+   a translucent lighter colour over a pixel the glow has already
+   lifted near the ceiling can only push it over, and a colour that is
+   itself under the ceiling never can - over anything brighter than
+   itself it darkens. A colour already under the ceiling comes back
+   as it is. */
+function brightnessOf(hex) {
+  var r = parseInt(hex.slice(1, 3), 16);
+  var g = parseInt(hex.slice(3, 5), 16);
+  var b = parseInt(hex.slice(5, 7), 16);
+
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+function dimTo(hex, ceiling) {
+  var was = brightnessOf(hex);
+  var by;
+  var i;
+  var part;
+  var out = "#";
+
+  if (was <= ceiling) {
+    return hex;
+  }
+
+  by = ceiling / was;
+  for (i = 1; i < 7; i += 2) {
+    part = Math.floor(parseInt(hex.slice(i, i + 2), 16) * by);
+    out += (part < 16 ? "0" : "") + part.toString(16);
+  }
+
+  return out;
+}
+
 /* Fills a <select> from the table above, so no page has to keep its
    own copy of the list. `selected` is which one starts chosen, since
    the sensible default differs by page: the map's own add form opens
@@ -151,6 +365,11 @@ function fillTypeSelect(el, selected) {
                off in the legend, and the list's sort order.
      DRAFT     the ?edit working copy of points.js. Never written
                outside edit mode.
+     EXPLAINED that "How to read this map" under the legend has been
+               shown open once, so later visits open it closed. Set
+               the first time it is shown and again when it is closed;
+               where storage is refused it is open on every visit,
+               which is the harmless way round.
 
    Storage may be refused outright - a private window, a browser set
    to block it - so every read and write of these is wrapped, and the
@@ -158,9 +377,16 @@ function fillTypeSelect(el, selected) {
    ------------------------------------------------------------------ */
 
 var STORAGE = {
-  cameras: "cammap.cameras",
-  view:    "cammap.view",
-  draft:   "cammap.draft"
+  cameras:   "cammap.cameras",
+  view:      "cammap.view",
+  draft:     "cammap.draft",
+  explained: "cammap.explained",
+  /* The two below are sessionStorage, not localStorage: a report half
+     written and the receipt for the last one sent belong to this tab and
+     this sitting, not to the browser. Named here all the same, because
+     the rule is that every key the site writes is in this one table. */
+  reportDraft:   "cammap.report-draft",
+  reportReceipt: "cammap.report-receipt"
 };
 
 /* Throw the camera cache away. Called after anything that changes what
@@ -432,4 +658,78 @@ function showSatellite(m, on, ground) {
       m.setLayoutProperty(ground[i], "visibility", on ? "none" : "visible");
     }
   }
+}
+
+/* ------------------------------------------------------------------
+   The two answers both pages need
+
+   map.js and account.js each had their own copy of the two functions
+   below, and on index.html both files load - account.js first, map.js
+   second - into the same global scope. Neither was wrapped, so the
+   second copy loaded silently replaced the first for the whole page,
+   and the copy that lost was never the one anybody was reading. The
+   copies had already drifted: the two distances were written to
+   different identities of the same formula, and only one of the two
+   view checks survived being handed nothing. Neither drift could
+   show up as a fault, which is why they lasted.
+
+   check.js now fails if any file loaded after this one defines a name
+   this one defines, so the pair cannot come back. That check used to
+   name seedKeyOf alone; the hazard was never about that one function.
+   ------------------------------------------------------------------ */
+
+/* Metres between two points on the ground - the haversine formula, on
+   a sphere of the Earth's mean radius. Across London the error against
+   the real ellipsoid is under a metre, which is less than any phone
+   knows where it is to.
+
+   The twin of metres_between in schema.sql: the same formula and the
+   same 6371000 m radius, so a distance the moderation queue shows is
+   the one approve_report would measure. Change one, change the other.
+
+   asin, not the atan2 form map.js carried. They are the same number -
+   asin(x) is atan2(x, sqrt(1 - x*x)) - but asin is the shorter reading
+   of what the formula says, and clamping its argument to 1 is what
+   keeps two points at the same spot from falling out of the domain on
+   a rounding error. */
+function metresBetween(lat1, lon1, lat2, lon2) {
+  var toRad = Math.PI / 180;
+  var dLat = (lat2 - lat1) * toRad;
+  var dLon = (lon2 - lon1) * toRad;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+/* Whether a failed read says cameras_public is not there - as against
+   any other failure, which is the seed standing. PostgREST's code for
+   a relation it cannot find was Postgres's own 42P01, and is PGRST205
+   since version 12; both come with a 404, and supabase-js passes the
+   status through, so the status is the third tell for a version that
+   words it some other way.
+
+   Nothing else is taken as "missing": a permission refused, say, is
+   42501 with a 403, and falling back on that would turn a
+   misconfigured view into a silent read of the table it was made to
+   replace.
+
+   The guards on result and result.error are account.js's, kept: this
+   is called on whatever a failed request left behind, and the map's
+   copy - the one that won on index.html - would have thrown on
+   nothing rather than answer false.
+
+   Boolean() so the answer is always true or false. Handed nothing, the
+   old account.js copy returned undefined - falsy, so every caller
+   behaved, but a predicate that sometimes answers neither is a thing
+   to read twice.
+
+   All of this goes when migration 012 is run; BUILD-LOG.md says
+   whether it has been. */
+function viewMissing(result) {
+  var code = result && result.error && result.error.code;
+
+  return code === "42P01" || code === "PGRST205" ||
+    Boolean(result && result.status === 404);
 }

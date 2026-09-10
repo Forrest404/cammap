@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- What a request from this page says about where it came from.
+     Cross-origin hosts - OpenFreeMap, Esri, Supabase, Nominatim - get
+     the origin only: Nominatim's usage policy asks for a referrer
+     that identifies the application, and the origin does. Same-origin
+     requests get the full URL, which is why a position must never be
+     in a query string on this site - it would reach the host with
+     the page request and ride in the Referer of every script, style
+     and font the page loads; a fragment is never sent at all. This
+     is the browser's default in Chrome and Firefox, declared so it
+     does not depend on a default. Nine copies, one per page;
+     stamp.py does not police this tag. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- Identical on all seven pages, and must stay that way: it is what
+     makes the no-CDN rule something the browser enforces rather than
+     something we remember. tools/stamp.py fails if they drift. Why
+     each source is listed, and what breaks without worker-src, is in
+     CLAUDE.md under "The Content-Security-Policy". -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  font-src 'self';
+  img-src 'self' data: blob: https://server.arcgisonline.com
+          https://tiles.openfreemap.org https://*.openfreemap.org
+          https://*.supabase.co;
+  media-src 'self' blob: https://*.supabase.co;
+  worker-src 'self' blob:;
+  child-src blob:;
+  connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co
+              https://tiles.openfreemap.org https://*.openfreemap.org
+              https://server.arcgisonline.com
+              https://nominatim.openstreetmap.org;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'none';
+  frame-ancestors 'none'">
+<title>Know your rights &mdash; cammap</title>
+<meta name="description" content="In front of a facial recognition camera in London: must you show your face, what to do if you are stopped, who to complain to, and how to ask what is held on you. Every claim linked to its source.">
+<link rel="canonical" href="https://forrest404.github.io/cammap/pages/rights.html">
+<!-- What a shared link turns into. Each page has its own title and
+     description - one shared across the site would be the failure
+     mode - and all of them show the same card, img/share.png, which
+     is the map itself photographed by tools/share-card.html and
+     committed, because a static site has nothing to draw one with on
+     request. The addresses are absolute because a card scraper has no
+     base to resolve against; they name the site's home on Pages, and
+     NOTES.md ("Sharing the site") lists every file that does. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="cammap">
+<meta property="og:locale" content="en_GB">
+<meta property="og:url" content="https://forrest404.github.io/cammap/pages/rights.html">
+<meta property="og:title" content="Know your rights — cammap">
+<meta property="og:description" content="In front of a facial recognition camera in London: must you show your face, what to do if you are stopped, who to complain to, and how to ask what is held on you. Every claim linked to its source.">
+<meta property="og:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Know your rights — cammap">
+<meta name="twitter:description" content="In front of a facial recognition camera in London: must you show your face, what to do if you are stopped, who to complain to, and how to ask what is held on you. Every claim linked to its source.">
+<meta name="twitter:image" content="https://forrest404.github.io/cammap/img/share.png">
+<meta name="twitter:image:alt" content="The cammap map of London at night, the recorded facial recognition camera sites glowing across it, with the count in the corner.">
+<!-- The feed: one Atom entry per post on the Thoughts page, kept by
+     hand in feed.xml at the root. Linked from every page so that a
+     reader handed any address on the site can find it. The path is
+     relative, like the icons' below, so the same tag serves from the
+     root and from pages/. -->
+<link rel="alternate" type="application/atom+xml" title="cammap — Thoughts" href="../feed.xml">
+<!-- The icon, in the forms the browsers between them ask for: SVG
+     for the tab in Chrome and Firefox, .ico for Safari and anything
+     older, a 180px PNG for an iOS home screen. manifest.json is what
+     makes "Add to Home Screen" on Android an icon rather than a
+     screenshot; theme-color is what the browser paints its own frame
+     around the page. All are drawn from img/favicon.svg - NOTES.md,
+     "Sharing the site", says how the raster ones are made from it. -->
+<link rel="icon" href="../img/favicon.ico" sizes="32x32">
+<link rel="icon" href="../img/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../img/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.json">
+<meta name="apple-mobile-web-app-title" content="cammap">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../frontend/style.css?v=fc1b066a">
+</head>
+<body>
+<div class="sheet">
+
+<header class="masthead">
+  <h1 class="title">cammap</h1>
+  <nav class="bar">
+    <a href="../index.html">Map</a>
+    <span class="sep">&middot;</span>
+    <a href="about.html">About</a>
+    <span class="sep">&middot;</span>
+    <a href="blog.html">Thoughts</a>
+    <span class="sep">&middot;</span>
+    <a href="rights.html" class="current">Rights</a>
+    <!-- account.js fills this in once it knows whether anyone is
+         signed in. Empty until then, so the nav never flickers. -->
+    <span id="nav-account"></span>
+  </nav>
+</header>
+
+<!-- ================================================================
+     KNOW YOUR RIGHTS - where each section's claims come from.
+
+     Checked 7 September 2026, against the documents linked from the
+     page. The rule for every sentence: a legal claim carries a link to
+     the document it comes from, and a claim that could not be traced to
+     a document is either not on the page or is marked, in the page
+     itself, "Not confirmed" with what would confirm it. Most of the
+     citations were found through the research survey in
+     london-lfr-cameras/results/ (Regulatory_and_legal_status_as_of_2026
+     and the Met, BTP and Facewatch units); each was then fetched and
+     read on the date above. The two exceptions are the Met's and BTP's
+     web pages, which refuse scripted requests and were read through
+     the survey; their PDF documents download directly and were read in
+     full, and those are what the page cites wherever it can.
+
+     Written for a phone, one thumb at a time: short sections, one idea
+     each, the most urgent first, a contents list at the top so "if
+     you are stopped" is one press away. No JavaScript of its own; the
+     nav's account links are the only script on the page and it reads
+     in full without them.
+
+       If a van is in front of you   the Met's Overt LFR Policy (signage
+                                     outside the zone, officers who
+                                     answer questions, the leaflet, the
+                                     deletion of non-matches, the 24-hour
+                                     watchlist); TfL's press release and
+                                     Biometric Update on the station
+                                     trial (signed areas, another route);
+                                     s60AA of the Criminal Justice and
+                                     Public Order Act 1994 and s157 of
+                                     the Crime and Policing Act 2026 on
+                                     legislation.gov.uk, the two powers
+                                     found that can require a face
+                                     uncovered, with the Home Office
+                                     factsheet for the second; the
+                                     Romford Recorder, 2019, and Big
+                                     Brother Watch for the one documented
+                                     stop of a person who covered his
+                                     face.
+       If you are stopped            the policy's "Response to an Alert"
+                                     (an alert alone is not grounds for
+                                     arrest, search or detention; not
+                                     identifying yourself is not an
+                                     offence; questions under the common
+                                     law); the Met's 2025 deployment
+                                     record and BTP's register for the
+                                     threshold; the judiciary's press
+                                     summary in Thompson and Carlo for
+                                     what happened to Mr Thompson; the
+                                     Met's 2025 annual report for its
+                                     own false-alert count; PACE s61(6A)
+                                     for fingerprints away from a
+                                     station; the policy's §9 for how
+                                     long an alert's data is kept.
+       Who to complain to            the IOPC's complaints page; the
+                                     ICO's; the ICO's August 2026 note on
+                                     its police audits; gov.uk for the
+                                     Biometrics and Surveillance Camera
+                                     Commissioner; the London Assembly
+                                     member's February 2026 report; Big
+                                     Brother Watch's campaign page.
+       Asking what is held on you    DPA 2018 ss 45 and 54 (police, Part
+                                     3); UK GDPR arts 12 and 15 (a shop);
+                                     the ICO's page for the public; the
+                                     policy's contact address and its
+                                     retention periods.
+       Shops                         Facewatch's privacy notice (read in
+                                     the Wayback Machine's capture of 13
+                                     July 2026, because facewatch.co.uk
+                                     refuses scripted requests; the page
+                                     links the live notice); KentOnline
+                                     for the door notice wording; the
+                                     ICO's closure letter of 28 March
+                                     2023; Big Brother Watch's account of
+                                     what the ICO required; The Register
+                                     and Retail Gazette for the two 2026
+                                     Sainsbury's cases.
+       The law is changing           Bridges [2020] EWCA Civ 1058 on
+                                     BAILII; the press summary of
+                                     Thompson and Carlo [2026] EWHC 915
+                                     (Admin); Inforrm's note on what the
+                                     court did not decide; Big Brother
+                                     Watch's post of the same day on
+                                     seeking to appeal; the Home Office
+                                     consultation page on gov.uk;
+                                     Statewatch on the consultation's
+                                     scope.
+
+     Marked "Not confirmed" on the page, and why: whether the
+     Commissioner's post has a holder (gov.uk names nobody; the survey
+     says vacant since August 2024 in one unit and filled in November
+     2025 in another); and whether an appeal in Thompson and Carlo has
+     been lodged or heard. Both say what would settle them.
+
+     The date is typed once, at the top, in prose: this is a document,
+     not data, and a reader should see when it was last true.
+     ================================================================ -->
+
+<main>
+  <div class="prose rights">
+
+    <h2>Know your rights</h2>
+
+    <p class="notice">
+      <strong>This is not legal advice.</strong> It is what the public
+      documents say, with a link to each one, and nothing that is not in
+      one of them. It was checked on
+      <time datetime="2026-09-07">7 September 2026</time>. The law on
+      facial recognition is changing - the last section says how - so
+      look at that date before you rely on anything here, and if you are
+      in trouble, speak to a solicitor.
+    </p>
+
+    <ul class="contents">
+      <li><a href="#now">If a van is in front of you now</a></li>
+      <li><a href="#stopped">If you are stopped</a></li>
+      <li><a href="#complain">Who to complain to</a></li>
+      <li><a href="#held">Asking what is held on you</a></li>
+      <li><a href="#shops">Shops</a></li>
+      <li><a href="#law">The law is changing</a></li>
+    </ul>
+
+    <h3 id="now">If a van is in front of you now</h3>
+
+    <p>
+      <strong>You can walk past it, or not.</strong> No law says you must
+      walk through the cameras, and the police's own documents are written
+      on the basis that you can see them coming and choose. The Met's
+      policy requires a deployment to be overt: signage "outside of the
+      Zone of Recognition", a marked vehicle, and officers "able to answer
+      public questions"
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/policy-documents/lfr-policy-document2.pdf">[Met LFR policy, &sect;10]</a>.
+      At stations the trial runs "in signed areas of TfL stations, allowing
+      customers to make informed choices about passing through"
+      <a class="cite" href="https://tfl.gov.uk/info-for/media/press-releases/2026/august/british-transport-police-trialling-live-facial-recognition-at-transport-for-london-stations">[TfL, 10 Aug 2026]</a>,
+      and the British Transport Police has said that people who prefer not
+      to enter the zone will be given another route
+      <a class="cite" href="https://www.biometricupdate.com/202608/british-transport-police-extends-live-facial-recognition-trial-into-underground-stations">[Biometric Update, 11 Aug 2026]</a>.
+      BTP names its next deployment on its own website before it happens
+      <a class="cite" href="https://www.btp.police.uk/police-forces/british-transport-police/areas/about-us/about-us/facial-recognition-technology/">[BTP, facial recognition]</a>.
+    </p>
+
+    <p>
+      <strong>You do not have to show your face to a camera.</strong>
+      There is no general duty to. The two powers this page could find
+      that let a police officer require a face covering to be removed both
+      need an authorisation in force for that place and time: section 60AA
+      of the Criminal Justice and Public Order Act 1994, where an inspector
+      believes offences are likely in the area, for up to 24 hours, with
+      failure to comply an offence
+      <a class="cite" href="https://www.legislation.gov.uk/ukpga/1994/33/section/60AA">[CJPOA 1994, s60AA]</a>;
+      and, since 29 June 2026, section 157 of the Crime and Policing Act
+      2026, in an area an inspector has designated at a protest, with
+      defences for health, religion and work
+      <a class="cite" href="https://www.legislation.gov.uk/ukpga/2026/20/section/157">[Crime and Policing Act 2026, s157]</a>
+      <a class="cite" href="https://www.gov.uk/government/publications/crime-and-policing-act-2026-factsheets/crime-and-policing-act-2026-public-order-offences-factsheet">[Home Office factsheet]</a>.
+      Neither is about facial recognition, and neither applies unless the
+      authorisation has been given. You can ask an officer whether one is
+      in force.
+    </p>
+
+    <p>
+      <strong>Covering it can still get you stopped.</strong> The one
+      documented case: on 31 January 2019, outside Romford station, a man
+      pulled his jumper up over his face as he passed the Met's van.
+      Officers stopped him; the Met said he "became aggressive and made
+      threats towards officers", and he was given a &pound;90 penalty
+      notice for disorder
+      <a class="cite" href="https://www.romfordrecorder.co.uk/news/21510955.man-fined-covering-face-romford-police-facial-recognition-trial/">[Romford Recorder, Jan 2019]</a>
+      <a class="cite" href="https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/">[Big Brother Watch]</a>.
+      On the Met's account the penalty was for the exchange with the
+      officers and not for the covered face - which is the point. The stop
+      is where it goes wrong, and staying calm and asking under what power
+      costs nothing.
+    </p>
+
+    <p>
+      <strong>You can ask what is going on.</strong> The policy commits the
+      Met to officers at the deployment who can answer questions, and to
+      offering a leaflet to anyone it stops
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/policy-documents/lfr-policy-document2.pdf">[Met LFR policy, &sect;10]</a>.
+      Worth asking: is this live facial recognition, and which of the
+      policy's three use cases is it - a crime or missing-person hotspot,
+      a protective security operation, or specific intelligence? Outside
+      those three the policy does not allow it
+      <a class="cite" href="https://www.judiciary.uk/wp-content/uploads/2026/04/Summary-of-judgment-Thomson-and-Carlo-v-Metropolitan-Police-Commmissioner-AC-2024-LON-001764-21-04-2026.pdf">[judgment summary, 21 Apr 2026]</a>.
+    </p>
+
+    <p>
+      <strong>What happens to your face if you are not on the list.</strong>
+      The Met's policy says the biometric template of anyone who does not
+      raise an alert is "immediately and automatically deleted", the
+      watchlist is deleted within 24 hours of the deployment ending, and
+      the CCTV footage within 31 days
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/policy-documents/lfr-policy-document2.pdf">[Met LFR policy, &sect;3 and &sect;9]</a>.
+      The station trial says the same of anyone not matched
+      <a class="cite" href="https://tfl.gov.uk/info-for/media/press-releases/2026/august/british-transport-police-trialling-live-facial-recognition-at-transport-for-london-stations">[TfL, 10 Aug 2026]</a>.
+      That is what they say. There is no way to check it from the street.
+    </p>
+
+    <h3 id="stopped">If you are stopped</h3>
+
+    <p>
+      <strong>What a match is.</strong> The system scores your face against
+      every image on the watchlist and raises an alert when the score
+      passes a threshold - 0.64 in every deployment in the Met's 2025
+      record and in BTP's register
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/deployment-records/live-facial-recognition-deployment-record-2025.pdf">[Met deployment record 2025]</a>
+      <a class="cite" href="https://www.btp.police.uk/SysSiteAssets/media/images/british-transport-police/live-facial-recognition/lfr-deployment-register.pdf">[BTP deployment register 2026]</a>.
+      An officer is then meant to compare the two images by hand before
+      anyone is approached; the policy says it "must not be an automatic
+      consequence that an Alert results in an Engagement"
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/policy-documents/lfr-policy-document2.pdf">[Met LFR policy, &sect;7]</a>.
+    </p>
+
+    <p>
+      <strong>An alert is not grounds for arrest.</strong> The Met's policy
+      says an alert "on its own, indicating that a person is on the
+      Watchlist, should not be taken as providing sufficient grounds by
+      itself for arrest, search or detention", and that if a person
+      stopped "cannot be identified or fails to confirm their identity,
+      this alone does not constitute a criminal offence and does not
+      necessarily render them liable to arrest"
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/policy-documents/lfr-policy-document2.pdf">[Met LFR policy, &sect;7]</a>.
+      Officers asking you questions after an alert are, in the policy's
+      own words, using "common law powers to ask questions" - questions,
+      rather than any power particular to facial recognition.
+    </p>
+
+    <p>
+      <strong>Wrong matches happen.</strong> On 23 February 2024, near
+      London Bridge, Shaun Thompson was matched to an image of his brother,
+      stopped, questioned, asked to prove his identity, and threatened
+      with arrest when he declined to give fingerprints
+      <a class="cite" href="https://www.judiciary.uk/wp-content/uploads/2026/04/Summary-of-judgment-Thomson-and-Carlo-v-Metropolitan-Police-Commmissioner-AC-2024-LON-001764-21-04-2026.pdf">[judgment summary, 21 Apr 2026]</a>.
+      The Met's own annual report for 2025 counts ten false alerts, six of
+      them spoken to, out of about three million faces seen
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/other-lfr-documents/live-facial-recognition-annual-report-2025.pdf">[Met LFR annual report 2025]</a>.
+    </p>
+
+    <p>
+      <strong>Fingerprints on the street.</strong> An officer can take your
+      fingerprints without consent, away from a police station, only if
+      they reasonably suspect you of an offence and either do not know your
+      name and cannot readily find it out, or have reasonable grounds to
+      doubt the name you give
+      <a class="cite" href="https://www.legislation.gov.uk/ukpga/1984/60/section/61">[PACE 1984, s61(6A)&ndash;(6B)]</a>.
+      If you are asked, ask under which power and what offence you are
+      suspected of: the policy above says an alert by itself is not enough.
+    </p>
+
+    <p>
+      <strong>Write it down.</strong> The time, the place, the officers'
+      numbers, what you were told. A stop after an alert makes a record,
+      and the policy keeps an alert's data for up to 31 days, longer where
+      a complaint is being looked into
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/policy-documents/lfr-policy-document2.pdf">[Met LFR policy, &sect;9]</a>
+      - so if you want a copy, ask soon. The next two sections say how.
+    </p>
+
+    <h3 id="complain">Who to complain to</h3>
+
+    <p>
+      <strong>The force first.</strong> A complaint about how officers
+      behaved goes to the force's own professional standards department -
+      the Met, or the British Transport Police at a station. The
+      Independent Office for Police Conduct says most complaints are
+      handled by the force, that it investigates the most serious itself,
+      and that you can ask it for a review if you are unhappy with the
+      outcome
+      <a class="cite" href="https://www.policeconduct.gov.uk/complaints">[IOPC, Complaints]</a>.
+      The Met's own contact for facial recognition, given in its policy,
+      is LFR@met.police.uk
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/policy-documents/lfr-policy-document2.pdf">[Met LFR policy, &sect;10]</a>.
+    </p>
+
+    <p>
+      <strong>The ICO for your data.</strong> How your face was processed -
+      by the police under Part 3 of the Data Protection Act 2018, or by a
+      shop under the UK GDPR - is a data protection matter, and the
+      Information Commissioner's Office takes complaints about it
+      <a class="cite" href="https://ico.org.uk/make-a-complaint/">[ICO, Make a complaint]</a>.
+      The ICO audited five police forces' use of facial recognition in 2026
+      and published what it found
+      <a class="cite" href="https://ico.org.uk/about-the-ico/media-centre/news-and-blogs/2026/08/facial-recognition-in-policing/">[ICO, Aug 2026]</a>.
+    </p>
+
+    <p>
+      <strong>The Commissioner.</strong> The Biometrics and Surveillance
+      Camera Commissioner's role is "to encourage compliance with the
+      surveillance camera code of practice", which is the code police
+      forces are bound to have regard to; the office takes enquiries at
+      enquiries@obscc.org.uk
+      <a class="cite" href="https://www.gov.uk/government/organisations/biometrics-and-surveillance-camera-commissioner">[gov.uk]</a>.
+    </p>
+
+    <p class="unconfirmed">
+      <strong>Not confirmed:</strong> whether the post currently has a
+      holder. gov.uk names nobody; the survey this page draws on found it
+      vacant since August 2024 in one place and filled in November 2025 in
+      another. An appointment notice on gov.uk would settle it.
+    </p>
+
+    <p>
+      <strong>London's own scrutiny.</strong> The Mayor's Office for
+      Policing and Crime and the London Assembly's Police and Crime
+      Committee question the Met. A February 2026 report by a member of
+      the Assembly called for a pause in the Met's expansion and for the
+      data the Met withholds
+      <a class="cite" href="https://www.london.gov.uk/new-report-zoe-garbett-am-urges-immediate-pause-mets-rapid-expansion-live-facial-recognition">[London Assembly, Feb 2026]</a>.
+      Big Brother Watch attends deployments it is tipped off about and
+      takes reports of them by email and Signal
+      <a class="cite" href="https://bigbrotherwatch.org.uk/campaigns/stop-facial-recognition/">[Big Brother Watch]</a>.
+      And this site takes <a href="report.html">reports of cameras</a>.
+    </p>
+
+    <h3 id="held">Asking what is held on you</h3>
+
+    <p>
+      You have a right to be told whether an organisation holds personal
+      data about you, and to a copy of it. Anyone can ask, without a
+      solicitor, and the organisation usually has one month
+      <a class="cite" href="https://ico.org.uk/for-the-public/getting-copies-of-your-information-subject-access-request/">[ICO, Getting copies of your information]</a>.
+      For the police the right is section 45 of the Data Protection Act
+      2018, and the month, extendable by two for a complex request, is
+      section 54
+      <a class="cite" href="https://www.legislation.gov.uk/ukpga/2018/12/section/45">[DPA 2018, s45]</a>
+      <a class="cite" href="https://www.legislation.gov.uk/ukpga/2018/12/section/54">[DPA 2018, s54]</a>.
+      For a shop, or Facewatch, it is article 15 of the UK GDPR, free of
+      charge unless the request is "manifestly unfounded or excessive"
+      <a class="cite" href="https://www.legislation.gov.uk/eur/2016/679/article/15">[UK GDPR, art 15]</a>
+      <a class="cite" href="https://www.legislation.gov.uk/eur/2016/679/article/12">[UK GDPR, art 12]</a>.
+      The police may withhold what would prejudice an investigation, and
+      must normally tell you that they have
+      <a class="cite" href="https://www.legislation.gov.uk/ukpga/2018/12/section/45">[DPA 2018, s45(4)]</a>.
+    </p>
+
+    <p>
+      <strong>What to ask the Met.</strong> Put "subject access request" in
+      the subject line, give the date, time and place of the deployment
+      and what happened, and ask for any alert record, images or notes
+      about you, and whether you were on a watchlist. The ICO's page says
+      what else a request should contain
+      <a class="cite" href="https://ico.org.uk/for-the-public/getting-copies-of-your-information-subject-access-request/">[ICO]</a>.
+      If you walked past and nothing happened, expect nothing back: the
+      Met says it deletes non-matches at once
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/policy-documents/lfr-policy-document2.pdf">[Met LFR policy, &sect;3]</a>.
+      If you were stopped, ask quickly, for the 31-day reason above. The
+      Met's policy says it answers requests made under the Data Protection
+      Act, and gives LFR@met.police.uk for anything about the technology
+      <a class="cite" href="https://www.met.police.uk/SysSiteAssets/media/downloads/force-content/met/advice/lfr/policy-documents/lfr-policy-document2.pdf">[Met LFR policy, &sect;10]</a>.
+    </p>
+
+    <h3 id="shops">Shops</h3>
+
+    <p>
+      <strong>A different system, and thinner rules.</strong> Facewatch is
+      a private company. It is the data controller, not the shop; the
+      shop's part is to display a sign saying facial recognition is in
+      operation
+      <a class="cite" href="https://www.facewatch.co.uk/privacy/">[Facewatch privacy notice]</a>.
+      The notice on a door reads: "Facial recognition in operation. To
+      protect our employees, customers and stock. Our legal process for
+      processing your data is our legitimate interest and the substantial
+      public interest of preventing and detecting crime"
+      <a class="cite" href="https://www.kentonline.co.uk/medway/news/ai-facial-recognition-to-be-used-at-kent-shop-291009/">[KentOnline, Aug 2023]</a>.
+      That sentence is the legal basis - legitimate interests under the UK
+      GDPR - and the sign is the whole of the disclosure: no authorisation,
+      no time limit, and no register of which shops have it
+      <a class="cite" href="https://www.facewatch.co.uk/privacy/">[Facewatch privacy notice]</a>.
+    </p>
+
+    <p>
+      <strong>Who is on the list.</strong> Subscribing shops report people
+      they suspect. Facewatch says the biometric data of anyone not on its
+      list is "instantly deleted", that an entry is kept for up to twelve
+      months from the last recorded incident, two years where a weapon was
+      involved, and that an alert can go to other subscribing shops "in a
+      defined area relevant to the subscriber"
+      <a class="cite" href="https://www.facewatch.co.uk/privacy/">[Facewatch privacy notice]</a>.
+      In March 2023 the ICO told Facewatch it had breached the UK GDPR on
+      eight counts - among them lawfulness, fairness and transparency, and
+      the processing of biometric and criminal-offence data - accepted the
+      changes it made, and decided that "regulatory action is not required"
+      <a class="cite" href="https://ico.org.uk/media2/migrated/4026382/closure-letter.pdf">[ICO closure letter, 28 Mar 2023]</a>.
+      One of those changes, as Big Brother Watch reported it, was to limit
+      the watchlist to repeat offenders or more serious offences
+      <a class="cite" href="https://bigbrotherwatch.org.uk/blog/update-big-brother-watchs-complaint-to-the-ico-on-retailer-facial-recognition/">[Big Brother Watch, Jun 2023]</a>.
+    </p>
+
+    <p>
+      <strong>If you are wrongly flagged.</strong> Twice in 2026 it reached
+      the press in London: a man ejected from Sainsbury's at Elephant and
+      Castle in January, who then had to send Facewatch a copy of his
+      passport and a photograph so that it could confirm he was not on its
+      database
+      <a class="cite" href="https://www.theregister.com/software/2026/02/06/shopper-wrongfully-ejected-after-facial-recognition-alert/4515741">[The Register, 6 Feb 2026]</a>;
+      and a man ejected at East Dulwich in August, after which the store's
+      cameras were paused
+      <a class="cite" href="https://www.retailgazette.co.uk/blog/2026/08/sainsburys-pauses-ai-facial-recognition-cameras-after-shopper-wrongly-ejected/">[Retail Gazette, Aug 2026]</a>.
+      If it happens to you: ask the shop what the alert said; write to
+      Facewatch's data protection officer, whose address is in its privacy
+      notice, to see the entry and have it corrected or removed; and if
+      that fails, complain to the ICO
+      <a class="cite" href="https://www.facewatch.co.uk/privacy/">[Facewatch privacy notice]</a>
+      <a class="cite" href="https://ico.org.uk/make-a-complaint/">[ICO]</a>.
+    </p>
+
+    <h3 id="law">The law is changing</h3>
+
+    <p>
+      There is still no Act of Parliament about facial recognition. Police
+      use rests on common law powers, Part 3 of the Data Protection Act
+      2018, the Human Rights Act and each force's own policy
+      <a class="cite" href="https://www.judiciary.uk/wp-content/uploads/2026/04/Summary-of-judgment-Thomson-and-Carlo-v-Metropolitan-Police-Commmissioner-AC-2024-LON-001764-21-04-2026.pdf">[judgment summary, 21 Apr 2026]</a>.
+      In 2020 the Court of Appeal held South Wales Police's use unlawful,
+      because its policy left too much discretion over who went on a
+      watchlist and where the cameras went - not because the technology
+      was unlawful in itself
+      <a class="cite" href="https://www.bailii.org/ew/cases/EWCA/Civ/2020/1058.html">[R (Bridges) v South Wales Police [2020] EWCA Civ 1058]</a>.
+      On 21 April 2026 the High Court dismissed a challenge to the Met's
+      2024 policy, holding that it does constrain that discretion
+      <a class="cite" href="https://www.judiciary.uk/wp-content/uploads/2026/04/Summary-of-judgment-Thomson-and-Carlo-v-Metropolitan-Police-Commmissioner-AC-2024-LON-001764-21-04-2026.pdf">[R (Thompson and Carlo) v Commissioner of Police of the Metropolis [2026] EWHC 915 (Admin), press summary]</a>.
+      It declined to decide whether a policy written for vans that come
+      and go covers cameras fixed to a wall, as the ones in Croydon are
+      <a class="cite" href="https://inforrm.org/2026/05/19/the-legality-of-police-live-facial-recognition-policy-the-scope-and-limitations-of-thompson-and-carlo-william-page/">[Inforrm, 19 May 2026]</a>.
+    </p>
+
+    <p class="unconfirmed">
+      <strong>Not confirmed:</strong> whether an appeal against that
+      judgment has been lodged or heard. On the day of the judgment Big
+      Brother Watch said it supported Mr Thompson "in seeking to appeal"
+      and was raising funds for it
+      <a class="cite" href="https://bigbrotherwatch.org.uk/blog/facial-recognition-fight-support-the-appeal/">[Big Brother Watch, 21 Apr 2026]</a>.
+      A listing in the Court of Appeal, or a judgment on
+      caselaw.nationalarchives.gov.uk, would settle it.
+    </p>
+
+    <p>
+      The Home Office consulted on a new legal framework for police use of
+      biometrics between 4 December 2025 and 12 February 2026. As of the
+      date at the top of this page the consultation is closed and no
+      response and no bill has been published
+      <a class="cite" href="https://www.gov.uk/government/consultations/legal-framework-for-using-facial-recognition-in-law-enforcement/consultation-on-a-new-legal-framework-for-law-enforcement-use-of-biometrics-facial-recognition-and-similar-technologies-accessible">[Home Office consultation]</a>.
+      Shops are outside that consultation altogether
+      <a class="cite" href="https://www.statewatch.org/news/2026/february/submission-to-home-office-consultation-on-a-new-legal-framework-for-law-enforcement-use-of-biometrics-facial-recognition-and-similar-technologies/">[Statewatch, Feb 2026]</a>.
+      When any of this changes, this page should change with it.
+    </p>
+
+    <p>
+      Where the cameras are is on <a href="../index.html">the map</a>;
+      what the map does and does not claim is on the
+      <a href="about.html">About page</a>.
+    </p>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <a class="donate" href="https://ko-fi.com/cammap" target="_blank" rel="noopener noreferrer">Donate</a>
+  <!-- TODO (WORD-5): name the real monthly cost. "Donations pay for the
+       hosting" is true and says nothing - a precise small number is
+       far more persuasive than an unspecified appeal, and it fits a
+       site that says exactly what it knows everywhere else. The figure
+       was not available when this was written (QUESTIONS.md, item 2:
+       what the Supabase project and the cammap.app domain come to per
+       month; the Pages hosting itself is free). When it is known, make
+       the line below read, on all eight pages at once or stamp.py
+       fails:
+
+         cammap is free and has no advertising. Donations pay for the
+         hosting, which costs about £N a month.
+
+       Until then the sentence stays as it is: a number that has not
+       been checked is worse than none on a site whose whole argument
+       is that nothing on it is estimated. -->
+  <span class="foot-note">cammap is free and has no advertising. Donations pay for the hosting.</span>
+  <!-- One licence, for the record only. The cameras are ODbL 1.0 so
+       that the record can be cited, plotted and built on, which is
+       what the site is for; the code is not licensed for reuse, and
+       LICENSE at the root says both. The link leaves the site: LICENSE
+       is served without a content type by Pages, which most browsers
+       download rather than show, so it points at the licence itself. -->
+  <span class="foot-note">Data <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> &middot; <a href="https://github.com/Forrest404/cammap/blob/main/LICENSE">licence</a></span>
+  <!-- The record, to take away. The CSV is the record itself, served
+       as it is - the one file the maintainer edits, so a download of
+       it cannot drift from what the map draws. The GeoJSON is written
+       from it by tools/build_points.py beside points.js and seed.sql,
+       never by hand; stamp.py fails if it is not what the CSV
+       produces. Both are ODbL like the line above says. The download
+       attribute saves the file rather than showing it, since a CSV
+       in a browser tab is no use to anyone. -->
+  <span class="foot-note">Download the data: <a href="../data/cameras.csv" download>CSV</a> &middot; <a href="../data/cameras.geojson" download>GeoJSON</a> &middot; <a href="data.html">about the data</a></span>
+</footer>
+
+</div>
+<!-- The account controls live in the nav, so every page needs these
+     three. All local files; nothing is fetched from a CDN. -->
+<script src="../lib/supabase.js"></script>
+<script src="../frontend/shared.js?v=fc1b066a"></script>
+<script src="../supabase-config.js?v=fc1b066a"></script>
+<script src="../frontend/account.js?v=fc1b066a"></script>
+<!-- Last, on every page, and needed by nothing: registers the service
+     worker that keeps a copy of the site for a street with no signal,
+     and shows the one line under the page when a newer version is
+     ready. A file rather than a script written here because the
+     policy above allows no inline script. sw.js says what is kept
+     and what never is. -->
+<script src="../frontend/offline.js?v=fc1b066a"></script>
+</body>
+</html>
