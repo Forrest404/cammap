@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- cammap - the pages a search engine should know about.
 
-     Written by hand. Seven addresses do not need generating, and a
-     generator would be one more tool for a site that has none. Every
+     Written by hand, apart from the borough block below, which
+     tools/build_boroughs.py writes between its two markers. A handful
+     of hand-written addresses do not need generating, and a generator
+     for those would be one more tool for a site that has none. Every
      page that is meant to be found is here; the moderation page is
      not, because its <head> says noindex - it is empty for anyone who
      is not a moderator - and a sitemap that lists a page and a <head>

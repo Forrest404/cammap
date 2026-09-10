@@ -271,6 +271,30 @@ else:
     ok("own files: every script and stylesheet a page loads is in OWN")
 
 
+# ---- 404.html is at the root, where Pages looks for it ----
+#
+# GitHub Pages serves a custom error page from /404.html and from
+# nowhere else. Anywhere else and a rotted link gets GitHub's own page
+# instead, which is the thing REACH-4 exists to stop.
+#
+# This is checked because it has already happened once: the file was
+# moved into pages/ by an errant `git add -A` and nothing noticed for
+# two commits. Nothing could - PAGES is found by glob, so the file
+# still counted as one of the pages, still carried the same policy,
+# nav and footer as the others, and passed every check there was. The
+# only thing wrong with it was where it sat, and no check had an
+# opinion about that. Now one does.
+
+if not os.path.exists("404.html"):
+    where = [p for p in PAGES if os.path.basename(p) == "404.html"]
+    fail("404.html IS NOT AT THE ROOT",
+         (["It is at %s." % where[0]] if where else ["It is nowhere in the page set."]) +
+         ["GitHub Pages serves a custom error page from /404.html only.",
+          "Move it back to the repository root."])
+else:
+    ok("404: the error page is at the root, where Pages looks for it")
+
+
 # ---- the copies of the policy have to stay one policy ----
 
 CSP = re.compile(r'<meta http-equiv="Content-Security-Policy" content="(.*?)">', re.S)

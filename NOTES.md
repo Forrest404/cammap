@@ -523,17 +523,22 @@ is the short version, plus the parts that live outside the file.
 **What is kept.** Two caches, under two rules.
 
 - *The shell:* every file a page needs to render without the network -
-  the eleven pages, the site's own scripts and stylesheet, `points.js`
+  every page, the site's own scripts and stylesheet, `points.js`
   (so the published record is on the map offline), MapLibre and
-  supabase-js from `lib/`, the fonts, the icons, the manifest. Thirty-
-  three files, about 2 MB, fetched in full when the worker installs and
+  supabase-js from `lib/`, the fonts, the icons, the manifest. Sixty-
+  seven files, about 2.8 MB - forty-five of them pages, because the
+  thirty-four borough pages joined the shell the moment they existed:
+  the list is `PAGES` and `PAGES` is found, not typed. Fetched in full
+  when the worker installs and
   answered from the cache ever after, never updated in place. Not the
   downloads, not `share.png`, not the feed or the sitemap: none of them
   draws a page, and the first two are large.
 - *The last tiles seen:* every response from `tiles.openfreemap.org`
   and `server.arcgisonline.com`, answered cache first, bounded to the
-  newest 300 by last use (a pan can carry it to 302 or 303 for a moment
-  while a trim runs). The two index documents - the style JSON and the
+  newest 300 by last use. It oscillates rather than grows: a sweep of
+  street-zoom views across both base maps was measured between 301 and
+  314 while trims ran behind it, and settled back each time. The number
+  to hold to is that it is bounded, not that it is exact. The two index documents - the style JSON and the
   TileJSON at `/planet` - go network first with the cache as fallback,
   because OpenFreeMap rotates its tileset under a dated path and a
   client that kept the old index for ever would ask for tiles that had
@@ -2036,7 +2041,16 @@ The rule the numbers answer to: **nothing the base map draws may be
 brighter than the dimmest camera dot** (perceived brightness 134, the
 fixed-camera red). The map is the backdrop; the cameras are the point.
 Getting that backwards once turned London into a white web with the
-cameras lost in it. The brightest thing the base map draws is now 92.
+cameras lost in it. The brightest colour the base map is told to draw is
+now 92.
+
+That is a measurement of the colours in the style, which is what the
+`LIFT` table controls. Rendered pixels go a little above it where the
+renderer antialiases: a pixel-level sweep of the dark map with every
+label and every camera layer hidden found fifteen pixels out of half a
+million at 136, all of them on the joins of major-road casings, and
+63.5 with the line layers hidden too. Worth knowing before someone
+measures the screen and thinks the table has drifted.
 
 Raise a floor to bring the street grid up, and check the result
 against that ceiling before committing it.
