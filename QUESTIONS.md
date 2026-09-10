@@ -6,6 +6,16 @@ it can be revisited. Answer by editing this file or by telling the orchestrator.
 
 ## Open
 
+### 18. One camera's borough is disputed between two sources
+`tools/boroughs.py` asked Nominatim for the borough of every camera from its own recorded
+pin. All 182 answers agree with the research survey and with the cameras' own names except
+one: **Kilburn High Road**. The survey says "Brent / Camden", marking it uncertain because
+the road runs along the boundary; the lookup says **Camden**, from the pin the record holds.
+Nothing was resolved silently: the lookup's answer stands and appears on the Camden page.
+Settling it needs someone who knows which side of the road the van parks on. If Brent is
+right, the fix is one cell in `data/cameras.csv` and a re-run of
+`python3 tools/build_boroughs.py`.
+
 ### 17. The press page needs a contact address, and the site has none
 REACH-6 asks for "one contact address" on the press page. The site deliberately keeps no
 email for its users; the project itself has none published either — only the Ko-fi link and
