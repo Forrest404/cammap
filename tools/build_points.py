@@ -91,6 +91,24 @@ record"). Columns, in the order they are written:
                zeros ("51.50814") is fine; a seventh decimal is refused
                naming the row, because rounding it would be this script
                deciding where a camera is.
+  borough      Which of London's thirty-three the camera is in, as
+               data/boroughs.txt writes it. Looked up once per camera
+               by tools/boroughs.py from OpenStreetMap's Nominatim and
+               written here as a cell - never worked out from the name
+               ("Rye Lane, Peckham" is Southwark and says so nowhere)
+               and never worked out by a page at the moment it is
+               drawn. It sits beside the position because that is what
+               it is a fact about, and it is the position that decides
+               it. A value that is not one of the thirty-three is
+               refused naming the row; blank is allowed here and
+               refused by tools/check.js, so a camera added to the
+               record can be built before boroughs.py has been run but
+               cannot be committed before it. It travels into
+               data/cameras.geojson's properties and deliberately not
+               into points.js or the database: the map does not draw
+               boroughs and the database is not what the borough pages
+               read - they are static, generated from this file. See
+               NOTES.md, "Another city".
   approximate  true where the pin marks the surrounding area rather
                than an exact spot - the Met's record gives some van
                sites as a borough or a district, not a street, and
@@ -225,6 +243,16 @@ note states outright:
                imported it is a column, and a pin the maintainer knows
                to be approximate for some other reason - "this pin is
                a guess" - is a cell to set, not a phrase to match.
+  borough      from the CSV being replaced, matched on seed_key. A
+               points.js carries no borough - the map does not draw
+               them - so an import that did not do this would blank
+               all of them, and tools/boroughs.py would have to spend
+               another three and a half minutes on somebody else's
+               free service. An entry whose position moved has a
+               different seed_key and so comes back blank, which is
+               right: a camera that moved may have moved across a
+               boundary. Run boroughs.py after an import and it fills
+               exactly those.
 """
 import csv
 import io
@@ -248,8 +276,18 @@ USAGE = "usage: python3 tools/build_points.py [--check | --import POINTS_JS]"
 # header row is checked against this on every read, so a column renamed
 # or reordered in a spreadsheet is a failure that names itself rather
 # than a silent shift of every value one place to the left.
-COLUMNS = ["name", "type", "status", "lat", "lon", "approximate", "last", "periods", "deployments",
-           "source_label", "source_url", "note"]
+COLUMNS = ["name", "type", "status", "lat", "lon", "approximate", "borough", "last", "periods",
+           "deployments", "source_label", "source_url", "note"]
+
+# The thirty-three areas a camera's borough may be, read from
+# data/boroughs.txt on every run rather than copied here - the same
+# arrangement CAMERA_TYPES and the London box already have. A borough
+# that is not on the list is refused naming the row; a blank one is
+# allowed, because a camera added to the record has no borough until
+# tools/boroughs.py has been run and the build must not stand in the
+# way of that half-hour. tools/check.js is what refuses a blank, so a
+# record with one in it cannot be committed either way.
+BOROUGHS_FILE = "data/boroughs.txt"
 
 # A source URL: https, and nothing that could be two things.
 SOURCE_URL = re.compile(r'^https://\S+$')
@@ -408,6 +446,20 @@ def read(rel):
 # a failure, not a pass: a build that checked types against an empty
 # list would accept anything.
 
+def read_boroughs():
+    """The thirty-three, as data/boroughs.txt writes them. Blank lines
+    and # lines are the file's own comments, which a CSV could not
+    carry and which is why the list is a text file."""
+    out = []
+    for line in read(BOROUGHS_FILE).split("\n"):
+        line = line.strip()
+        if line and not line.startswith("#"):
+            out.append(line)
+    if not out:
+        raise BuildError("%s has no boroughs in it" % BOROUGHS_FILE)
+    return out
+
+
 def read_shared():
     shared = read(SHARED_FILE)
 
@@ -416,10 +468,15 @@ def read_shared():
     if not types:
         raise BuildError("CAMERA_TYPES not found in %s, or has no entries" % SHARED_FILE)
 
-    m = re.search(r'var LONDON_BOUNDS\s*=\s*\[\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*,'
-                  r'\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*\]', shared)
+    # CITY.bounds, not LONDON_BOUNDS: since KEEP-6 the second is an
+    # alias of the first, and reading the alias would go on working
+    # right up until the day a second city made it point somewhere
+    # else - which is the one day this must not silently keep
+    # building against London.
+    m = re.search(r'var CITY\s*=\s*\{.*?\bbounds:\s*\[\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*,'
+                  r'\s*\[\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\]\s*\]', shared, re.S)
     if not m:
-        raise BuildError("LONDON_BOUNDS not found in %s" % SHARED_FILE)
+        raise BuildError("CITY.bounds not found in %s" % SHARED_FILE)
     south, west, north, east = (Decimal(x) for x in m.groups())
 
     return types, (south, west, north, east)
@@ -463,6 +520,7 @@ def read_csv(text=None):
     None, deployments as an int, status filled in where blank. Rows are
     returned in canonical order, not CSV order."""
     types, (south, west, north, east) = read_shared()
+    known_boroughs = read_boroughs()
 
     if text is None:
         text = read(CSV_FILE)
@@ -508,6 +566,17 @@ def read_csv(text=None):
             raise BuildError("%s: %s, %s is outside LONDON_BOUNDS" % (where, lat, lon))
         approximate = boolean(raw["approximate"], "approximate", where)
 
+        # Blank until tools/boroughs.py has been run for a newly added
+        # camera; anything else has to be one of the thirty-three, and
+        # a near miss ("London Borough of Croydon", "croydon") is
+        # refused rather than tidied, because tidying it here would be
+        # a second place that decides what a borough name is.
+        borough = raw["borough"].strip() or None
+        if borough is not None and borough not in known_boroughs:
+            raise BuildError("%s: borough %r is not one of the thirty-three in %s - "
+                             "run python3 tools/boroughs.py rather than typing one in"
+                             % (where, borough, BOROUGHS_FILE))
+
         last = None if raw["last"].strip() == "" else integer(raw["last"], "last", where, 1900)
 
         # deployments is the sum of periods wherever periods is given -
@@ -543,6 +612,7 @@ def read_csv(text=None):
             "lat": lat,
             "lon": lon,
             "approximate": approximate,
+            "borough": borough,
             "last": last,
             "periods": periods,
             "deployments": deployments,
@@ -808,9 +878,20 @@ def render_seed(rows):
 # the entry's identity in the record rather than a fact about the
 # camera, and a reader joining this file to the CSV or to the API
 # joins on it.
+#
+# borough is here and not in points.js or seed.sql. The map draws no
+# boroughs, so points.js has no use for it and the database has none
+# either - the borough pages are static files this repository
+# generates, not something a browser asks for. A download, though, is
+# for somebody counting cameras per borough in QGIS or a spreadsheet,
+# and doing that without the column means them repeating the lookup
+# this record has already done. So the two outputs the site itself
+# reads stay exactly as they were - which is also why the row-for-row
+# check in stamp.py, which compares those two, needed no change - and
+# the download carries one field more.
 
 GEOJSON_PROPERTIES = ["name", "note", "type", "status", "last", "deployments", "periods",
-                      "source_label", "source_url", "approximate", "seed_key"]
+                      "source_label", "source_url", "approximate", "borough", "seed_key"]
 
 # The attribution line, as LICENSE gives it. One more place the site's
 # address is written (NOTES.md, "Sharing the site").
@@ -968,11 +1049,46 @@ def periods_from_note(note, deployments, who):
     return {period: count}
 
 
+def boroughs_by_key():
+    """Every borough the CSV already holds, by seed_key. An import
+    reads a points.js, and points.js carries no borough - so without
+    this an import would blank all 182 of them, and the three and a
+    half minutes tools/boroughs.py spent on somebody else's free
+    service would have to be spent again. Matched on seed_key, which
+    is name|lat|lon|type: an entry whose position moved has a
+    different key and so loses its borough, which is right, because a
+    camera that moved may have moved across a boundary. Run
+    boroughs.py after an import and it fills exactly those.
+
+    A CSV that cannot be read at all - the first import, before the
+    file existed - gives nothing, and every borough is then blank."""
+    out = {}
+    try:
+        text = read(CSV_FILE)
+    except IOError:
+        return out
+    reader = csv.reader(io.StringIO(text, newline=""))
+    try:
+        header = next(reader)
+    except StopIteration:
+        return out
+    if "borough" not in header:
+        return out
+    at = header.index("borough")
+    for values in reader:
+        if len(values) == len(header) and values[at].strip():
+            row = dict(zip(header, values))
+            out["%s|%s|%s|%s" % (row["name"], row["lat"], row["lon"], row["type"])] = values[at].strip()
+    return out
+
+
 def csv_text(entries):
     """CSV text for a list of entries as parse_points returns them. A
     missing type, status or last is filled the way the map fills it;
     a missing deployments is one; a missing periods is read off the
-    note; nothing else may be missing."""
+    note; a missing borough is carried over from the CSV being
+    replaced, by seed_key; nothing else may be missing."""
+    kept = boroughs_by_key()
     out = io.StringIO()
     writer = csv.writer(out, lineterminator="\n")
     writer.writerow(COLUMNS)
@@ -1003,6 +1119,13 @@ def csv_text(entries):
             approximate = e["approximate"] is True
         else:
             approximate = APPROXIMATE_PHRASE in e["note"]
+        # The entry may carry a borough (an import of a CSV round trip
+        # through ?edit could), and otherwise it is whatever the CSV
+        # being replaced said for this exact name, position and type.
+        if "borough" in e and e["borough"]:
+            borough = e["borough"]
+        else:
+            borough = kept.get("%s|%s|%s|%s" % (e["name"], e["lat"], e["lon"], kind), "")
         writer.writerow([
             e["name"],
             kind,
@@ -1010,6 +1133,7 @@ def csv_text(entries):
             str(e["lat"]),
             str(e["lon"]),
             "true" if approximate else "false",
+            borough,
             "" if last is None else str(last),
             periods_text(periods),
             "1" if deployments is None else str(deployments),

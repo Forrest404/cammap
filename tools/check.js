@@ -33,12 +33,19 @@
    expression is built from the table, stop for stop. Its shape is
    checked as MapLibre will read it.
 
-   The bounds. LONDON_BOUNDS is south-west then north-east, and the
-   database repeats the numbers in three check constraints. MapLibre
-   wants longitude first and everything else here wants latitude
-   first, so a point with its coordinates the wrong way round has to
-   fail inLondon(), not pass it; the corners, the edges and the swap
-   are all tried.
+   The city. CITY says which city this map is of - the name, the box,
+   the opening centre and zoom - and LONDON_BOUNDS and LONDON_CENTRE
+   are aliases of two of its fields. That they are aliases and not
+   copies is the whole of KEEP-6, and only an identity test tells the
+   two apart, so that is what is asserted.
+
+   The bounds. CITY.bounds is south-west then north-east, and the
+   database keeps the same four numbers in public.in_city(), which
+   three check constraints call (tools/stamp.py holds those to these).
+   MapLibre wants longitude first and everything else here wants
+   latitude first, so a point with its coordinates the wrong way round
+   has to fail inLondon(), not pass it; the corners, the edges and the
+   swap are all tried.
 
    seed_key. It is how a database row says which published entry it
    is, built in JavaScript for the map and in SQL for the seed. The
@@ -63,6 +70,19 @@
    one order, a bbox inside London - so a change to the generator
    that broke the file for QGIS would be named here, not found by the
    next journalist to open it.
+
+   The borough. Every camera has one and it is one of the thirty-three
+   in data/boroughs.txt: a blank is a borough page that under-counts
+   in silence, and a near miss ("London Borough of Croydon") is one
+   borough with two pages and its cameras split between them. It is
+   asserted on the GeoJSON rather than on data/cameras.csv, and
+   deliberately: the CSV is stamp.py's to police - it regenerates all
+   three outputs from it on every run and fails on any difference - so
+   a borough that is in the GeoJSON is the borough that is in the CSV,
+   and a second CSV parser here would only be a second thing to get
+   wrong. The list itself is checked too, because two boroughs whose
+   names reduced to one page address would be one page for two places
+   and no warning at all.
 
    The brightness rule. The halo under an approximate pin is drawn in
    the dot's colour dimmed to a ceiling, and brightnessOf() and
@@ -117,6 +137,16 @@ var PERIOD_KEY = /^\d{4}(-\d{2}|-\d{4})?$/;
 
 var HEX_COLOUR = /^#[0-9a-f]{6}$/i;
 
+/* Properties data/cameras.geojson carries that data/points.js does
+   not, so a value comparison between the two must skip them. seed_key
+   is the entry's identity in the record rather than a fact about the
+   camera, and is checked against seedKeyOf() instead; borough is a
+   fact the download carries for whoever is counting cameras per
+   borough in QGIS, which the map has no use for - the borough pages
+   are static files this repository generates, not something the
+   browser asks for. Both are checked below in their own right. */
+var NOT_IN_POINTS = ["seed_key", "borough"];
+
 /* Where seedKeyOf must not be: the files that load after shared.js.
    A second copy in any of them would shadow the shared one and could
    drift from it without a word. */
@@ -156,6 +186,35 @@ function load(context, file) {
     check("load " + file, false, err && err.message ? err.message : String(err));
     return false;
   }
+}
+
+/* The thirty-three, read from data/boroughs.txt the way every tool
+   here reads it - blank lines and # lines are the file's own comments,
+   which is why the list is a text file and not a CSV. Read rather than
+   copied, so this is not one more copy of the list. */
+function boroughList() {
+  var lines = readFile("data/boroughs.txt").split("\n");
+  var out = [];
+  var i;
+  var line;
+
+  for (i = 0; i < lines.length; i++) {
+    line = lines[i].trim();
+    if (line && line.charAt(0) !== "#") {
+      out.push(line);
+    }
+  }
+
+  return out;
+}
+
+/* A borough page's address, from its name: lowered, with every run of
+   non-alphanumerics made one hyphen and any hyphen at either end
+   dropped. The twin of slug_of() in tools/build_boroughs.py - change
+   one, change the other, and never after a page is published, because
+   the address is in the sitemap and in whatever anyone has linked. */
+function boroughSlug(name) {
+  return String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 /* ------------------------------------------------------------------
@@ -262,6 +321,7 @@ function seedRows() {
 var site = browserStub();
 var havePoints = load(site, "data/points.js");
 var haveShared = load(site, "frontend/shared.js");
+var known = boroughList();
 
 if (havePoints && haveShared) {
 
@@ -366,6 +426,46 @@ if (havePoints && haveShared) {
       site.typeLabel("unicorncam") === "unicorncam" &&
       site.typeLabel(undefined) === "" && site.typeLabel(null) === "" && site.typeLabel("") === "",
       JSON.stringify([site.typeLabel("unicorncam"), site.typeLabel(undefined), site.typeLabel(null)]));
+  });
+
+  /* CITY is what says which city this map is of - its name, its box,
+     where a map opens on it and how far in - and LONDON_BOUNDS and
+     LONDON_CENTRE are aliases of two of its fields rather than copies
+     of them. That distinction is the whole of KEEP-6: an alias cannot
+     hold an old box while CITY holds a new one, a copy can, and the
+     day somebody "tidies" the alias into a literal is the day a second
+     city half-arrives. So it is asserted by identity - the same array,
+     not an equal one - which is the only test that tells the two
+     apart. The zoom is here because map.js reads it from CITY now and
+     a map that opens at no zoom at all opens at the whole world. */
+  section("CITY", function () {
+    var c = site.CITY;
+
+    check("CITY is an object with a name, bounds, centre and zoom",
+      c && typeof c === "object" &&
+      typeof c.name === "string" && c.name !== "" &&
+      Array.isArray(c.bounds) && Array.isArray(c.centre) &&
+      typeof c.zoom === "number" && isFinite(c.zoom),
+      JSON.stringify(c));
+    if (!c || typeof c !== "object") {
+      return;
+    }
+
+    check("CITY.zoom is a zoom a map can open at", c.zoom >= 0 && c.zoom <= 22, String(c.zoom));
+    check("LONDON_BOUNDS is CITY.bounds itself, not a copy of it",
+      site.LONDON_BOUNDS === c.bounds,
+      site.LONDON_BOUNDS === c.bounds ? "" : "same value, different array - a copy can drift");
+    check("LONDON_CENTRE is CITY.centre itself, not a copy of it",
+      site.LONDON_CENTRE === c.centre,
+      site.LONDON_CENTRE === c.centre ? "" : "same value, different array - a copy can drift");
+
+    /* RECORD_SOURCES dates the record, not the city: a second city
+       would have its own forces and its own years, and folding them
+       together would make one of the two wrong the day it arrived. */
+    check("RECORD_SOURCES is beside CITY and not inside it",
+      site.RECORD_SOURCES && typeof site.RECORD_SOURCES === "object" &&
+      c.met === undefined && c.btp === undefined && c.checked === undefined,
+      JSON.stringify(site.RECORD_SOURCES));
   });
 
   section("the London box", function () {
@@ -566,14 +666,14 @@ if (havePoints && haveShared) {
     var P = site.POINTS;
     var B = site.LONDON_BOUNDS;
     var PROPS = ["name", "note", "type", "status", "last", "deployments", "periods",
-      "source_label", "source_url", "approximate", "seed_key"];
+      "source_label", "source_url", "approximate", "borough", "seed_key"];
     var g;
     var f;
     var i;
     var k;
     var keys;
     var who;
-    var off = { geometry: [], keys: [], values: [], key: [] };
+    var off = { geometry: [], keys: [], values: [], key: [], borough: [] };
     var bbox;
 
     try {
@@ -618,7 +718,10 @@ if (havePoints && haveShared) {
         off.keys.push(who + " " + JSON.stringify(keys));
         continue;
       }
-      for (k = 0; k < PROPS.length - 1; k++) {
+      for (k = 0; k < PROPS.length; k++) {
+        if (NOT_IN_POINTS.indexOf(PROPS[k]) !== -1) {
+          continue;
+        }
         if (!sameJSON(f.properties[PROPS[k]], P[i][PROPS[k]])) {
           off.values.push(who + " " + PROPS[k] + ": " + JSON.stringify(f.properties[PROPS[k]]) + " for " + JSON.stringify(P[i][PROPS[k]]));
         }
@@ -626,11 +729,63 @@ if (havePoints && haveShared) {
       if (typeof site.seedKeyOf === "function" && f.properties.seed_key !== site.seedKeyOf(P[i])) {
         off.key.push(who + " " + JSON.stringify(f.properties.seed_key));
       }
+      /* The borough is the whole reason the borough pages can state a
+         count rather than work one out: a value looked up once, from a
+         named source, and recorded. Every camera has one and it is one
+         of the thirty-three - a blank would be a page that
+         under-counts in silence, and a near miss ("London Borough of
+         Croydon") would be a borough with two pages and the cameras
+         split between them. */
+      if (known.indexOf(f.properties.borough) === -1) {
+        off.borough.push(who + " " + JSON.stringify(f.properties.borough));
+      }
     }
     check("every feature is a Point at [lon, lat] of its entry", off.geometry.length === 0, listOf(off.geometry));
     check("every feature carries exactly the public fields, in order", off.keys.length === 0, listOf(off.keys));
     check("every property is the value points.js has", off.values.length === 0, listOf(off.values));
     check("every feature's seed_key is what seedKeyOf writes for its entry", off.key.length === 0, listOf(off.key));
+    check("every camera's borough is one of the thirty-three in data/boroughs.txt",
+      off.borough.length === 0, listOf(off.borough));
+  });
+
+  /* data/boroughs.txt is the list of thirty-three, and the address of
+     a borough page is its name lowered with every run of
+     non-alphanumerics made one hyphen. Nothing stores that address, so
+     nothing can disagree with it - but two boroughs that reduced to
+     one address would be one page for two places, silently, and the
+     page that lost would simply not exist. So the rule is run over the
+     list here, which is where it costs nothing to be sure. */
+  section("the borough list", function () {
+    var slugs = {};
+    var dups = [];
+    var bad = [];
+    var i;
+    var slug;
+
+    check("data/boroughs.txt holds thirty-three areas", known.length === 33, String(known.length));
+    check("the City of London is one of them", known.indexOf("City of London") !== -1);
+    check("the list is in alphabetical order",
+      sameJSON(known, known.slice().sort(function (a, b) { return a < b ? -1 : a > b ? 1 : 0; })));
+
+    for (i = 0; i < known.length; i++) {
+      if (known[i] !== known[i].trim() || known[i] === "") {
+        bad.push(JSON.stringify(known[i]));
+      }
+      slug = boroughSlug(known[i]);
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) {
+        bad.push(known[i] + " -> " + JSON.stringify(slug));
+      }
+      if (slugs[slug]) {
+        dups.push(slug + " (" + slugs[slug] + " and " + known[i] + ")");
+      }
+      slugs[slug] = known[i];
+    }
+    check("every borough is a trimmed name with a usable page address", bad.length === 0, listOf(bad));
+    check("no two boroughs make the same page address", dups.length === 0, listOf(dups));
+    check("the addresses are what the pages were generated at",
+      slugs["city-of-london"] === "City of London" &&
+      slugs["kensington-and-chelsea"] === "Kensington and Chelsea" &&
+      slugs["kingston-upon-thames"] === "Kingston upon Thames");
   });
 
   section("the brightness rule", function () {

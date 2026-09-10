@@ -42,6 +42,73 @@
 --    and then granted only to whoever is meant to call it.
 -- ------------------------------------------------------------------
 
+-- ---------------- the city this map is of ----------------
+
+-- version 2.15: one place, on this side of the wire, that says where
+-- the map is.
+--
+-- The box was written out four times in this file - a check
+-- constraint on cameras, one on reports, one on saved_cameras, and a
+-- fourth inline in pending_near, which the Wave 4 merge note flagged
+-- as a copy nothing was holding to the others. Four copies of four
+-- numbers, all of which have to agree with LONDON_BOUNDS in
+-- frontend/shared.js, and none of which could be changed with any
+-- confidence that the other three had been. That is the shape of
+-- every bug this repository's checks exist to catch, and it was
+-- waiting in the one place a wrong answer is a camera the server
+-- refuses to store.
+--
+-- SQL cannot read JavaScript, so there is no making this literally
+-- the same copy as CITY.bounds in shared.js: what there can be is
+-- one copy per language, and a check that holds them together.
+-- tools/stamp.py reads the four numbers out of this function's body
+-- and out of CITY.bounds and fails, naming the function, if they
+-- differ; it also fails if any of the three constraints, or
+-- pending_near, has gone back to writing the numbers itself instead
+-- of calling this. So a second city is two edits - the object in
+-- shared.js and the function here - and the commit that makes only
+-- one of them does not pass.
+--
+-- immutable because a check constraint may only call a function that
+-- is: the answer depends on the two arguments and on nothing else,
+-- no table, no clock, no setting. parallel safe for the same reason.
+-- Deliberately not "set search_path": the body names no object at
+-- all, so there is nothing for a search path to resolve, and a
+-- function with one set on it cannot be inlined by the planner -
+-- which this must be, because it runs on every insert into three
+-- tables and inside a function anyone may call.
+--
+-- Not strict, so that a null coordinate answers null rather than
+-- false, which is what the four bare "between" tests it replaces
+-- did: a check constraint passes on null and the columns are all
+-- "not null" anyway, so nothing about a stored row changes.
+--
+-- Named in_city rather than in_london on purpose. The name is the
+-- one thing that does not change when the city does.
+-- (backend/migrations/013_in_city.sql is this block, the three
+-- constraints and pending_near's body on their own.)
+create or replace function public.in_city(lat double precision, lon double precision)
+returns boolean
+language sql
+immutable
+parallel safe
+as $$
+  select lat between 51.28 and 51.70
+     and lon between -0.51 and 0.33;
+$$;
+
+comment on function public.in_city(double precision, double precision) is
+  'True where a point is inside the city this map is of. The one copy of the box on the SQL side; CITY.bounds in frontend/shared.js is the other, and tools/stamp.py holds the two together.';
+
+-- Granted to everyone who can insert a row that is checked against it
+-- and to anon, which calls pending_near. It answers a question whose
+-- answer is already published in shared.js and drawn on every page,
+-- so there is nothing here to withhold; the revoke is only so that
+-- the grant is written down rather than inherited from PUBLIC.
+revoke all on function public.in_city(double precision, double precision) from public;
+grant execute on function public.in_city(double precision, double precision) to anon, authenticated, service_role;
+
+
 -- ---------------- helpers used inside policies ----------------
 
 -- These come first because policies further down mention them.
@@ -386,11 +453,9 @@ create table if not exists public.cameras (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
 
-  -- same bounds as LONDON_BOUNDS in frontend/shared.js
-  constraint cameras_in_london check (
-    lat between 51.28 and 51.70 and
-    lon between -0.51 and 0.33
-  )
+  -- the same box as CITY.bounds in frontend/shared.js, through the
+  -- one SQL copy of it (in_city, at the top of this file)
+  constraint cameras_in_london check (public.in_city(lat, lon))
 );
 
 -- version 2.1 widened source to allow 'admin'; on an older table the
@@ -634,10 +699,9 @@ create table if not exists public.reports (
   resolution_note text,
   created_at      timestamptz not null default now(),
 
-  constraint reports_in_london check (
-    lat between 51.28 and 51.70 and
-    lon between -0.51 and 0.33
-  ),
+  -- the same box as CITY.bounds in frontend/shared.js, through
+  -- in_city at the top of this file
+  constraint reports_in_london check (public.in_city(lat, lon)),
 
   -- a new-camera report needs a type and a name and makes no claim; a
   -- status report needs a camera and a claim (its type is the
@@ -865,13 +929,11 @@ create table if not exists public.saved_cameras (
   camera_type text not null default 'vancam',
   created_at  timestamptz default now(),
 
-  -- same bounds as LONDON_BOUNDS in frontend/shared.js - a save outside Greater
-  -- London means something is wrong upstream, so reject it here too
-  -- rather than only in the browser.
-  constraint saved_cameras_in_london check (
-    lat between 51.28 and 51.70 and
-    lon between -0.51 and 0.33
-  ),
+  -- the same box as CITY.bounds in frontend/shared.js, through
+  -- in_city at the top of this file - a save outside Greater London
+  -- means something is wrong upstream, so reject it here too rather
+  -- than only in the browser.
+  constraint saved_cameras_in_london check (public.in_city(lat, lon)),
 
   constraint saved_cameras_unique_per_user_v2
     unique (user_id, camera_name, lat, lon, camera_type)
@@ -901,6 +963,37 @@ begin
                              'facewatchcam', 'privatecam', 'nonfunccam'));
   end if;
 end $$;
+
+-- version 2.15: the three London constraints call in_city.
+--
+-- On a fresh database the create-table statements above already
+-- wrote them this way and these three statements only replace them
+-- with themselves. On a database made before this version they carry
+-- the four numbers written out, and this is what moves them onto the
+-- one copy - which is why it is here rather than only in the create
+-- tables, and why migration 013 is these three statements plus the
+-- function and pending_near's body.
+--
+-- Nothing about a stored row changes. The box is the same box, so
+-- every existing row satisfies the new constraint exactly as it
+-- satisfied the old one, and "add constraint ... check" validates
+-- them all as it goes rather than being taken on trust. Dropped by
+-- name first, because a constraint cannot be redefined in place and
+-- a second one under a new name would be a second copy again.
+-- Written out per table rather than in a loop: three names, and a
+-- loop over them would hide which tables carry it from anyone
+-- reading this file for that answer.
+alter table public.cameras drop constraint if exists cameras_in_london;
+alter table public.cameras add constraint cameras_in_london
+  check (public.in_city(lat, lon));
+
+alter table public.reports drop constraint if exists reports_in_london;
+alter table public.reports add constraint reports_in_london
+  check (public.in_city(lat, lon));
+
+alter table public.saved_cameras drop constraint if exists saved_cameras_in_london;
+alter table public.saved_cameras add constraint saved_cameras_in_london
+  check (public.in_city(lat, lon));
 
 create index if not exists saved_cameras_user_id_idx on public.saved_cameras(user_id);
 
@@ -1203,10 +1296,15 @@ grant execute on function public.cluster_of_report(bigint) to service_role;
 -- gives away. It is rate-limited by its own cheapness - one probe of
 -- reports_pending_cell_idx, nine cells wide.
 --
--- The London bounds are written out here as well as in the check
--- constraints; a point outside them is answered without looking.
--- KEEP-6 (the second city) folds every copy of those four numbers
--- into one place; until then this is one of the copies.
+-- A point outside the city is answered without looking. That test
+-- used to write the four numbers out here, which made this the
+-- fourth copy of the box in this file and the one nothing was
+-- holding to the other three; since version 2.15 it calls in_city
+-- at the top, which is the SQL side's one copy. It is a cost guard
+-- rather than a lock - a caller outside London learns nothing
+-- either way - but a guard that disagreed with the constraints
+-- would answer "nothing here" for a corner of London where a report
+-- can perfectly well be waiting.
 --
 -- The column is `found`, not `exists`: exists is a keyword, and a
 -- column that has to be quoted everywhere it is read is a trap laid
@@ -1224,8 +1322,7 @@ as $$
   newest as (
     select max(r.created_at) as at
       from public.reports r, here
-     where pending_near.lat between 51.28 and 51.70
-       and pending_near.lon between -0.51 and 0.33
+     where public.in_city(pending_near.lat, pending_near.lon)
        and r.kind = 'new'
        and r.state = 'pending'
        and r.cell_lat between here.clat - 0.001 and here.clat + 0.001

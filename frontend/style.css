@@ -2459,12 +2459,122 @@ article.post {
 }
 
 /* ------------------------------------------------------------------
-   BOROUGHS (Wave 6: the city agent writes this block)
+   BOROUGHS
 
-   Rules for the generated borough pages: the count, the site list,
-   the busiest spot. If the agent needs no rule here, this block is
-   removed rather than left empty.
+   The thirty-three generated pages under pages/boroughs/, and their
+   index. They are prose pages - .prose carries nearly all of it - and
+   what is here is the three lists prose did not already have a shape
+   for: how many of each kind, the sites themselves, and the index.
+
+   No colour anywhere, and that is deliberate rather than an omission.
+   A swatch beside each kind would be the obvious thing, and the
+   colours live in CAMERA_TYPES in shared.js and are set as inline
+   styles by the scripts that draw the legend. These pages run no
+   JavaScript of their own - they are prose, and they read in full
+   with scripts off - so a swatch here would mean a second copy of
+   five colours in this file, which is exactly the copy the comment at
+   the top of shared.js says was deleted once already. The kind is
+   said in words instead, which is what the page was going to have to
+   do for a black-and-white printer and a screen reader anyway.
    ------------------------------------------------------------------ */
+
+/* How many of each kind. A key, not a sentence: the count in a narrow
+   fixed column so the eye can run down it, the legend's own label
+   beside it. Fixed by ch rather than by px because the numbers are in
+   the same monospace as everything else, and three characters is room
+   for any count this record will hold. */
+.borough ul.kinds {
+  margin: 0 0 1.4em 0;
+  padding: 0;
+  list-style: none;
+}
+
+.borough ul.kinds li {
+  margin: 0 0 2px 0;
+  color: var(--dim);
+}
+
+.borough ul.kinds .n {
+  display: inline-block;
+  width: 4ch;
+  text-align: right;
+  margin-right: 10px;
+  color: var(--text);
+}
+
+/* The sites. Each is a link to itself on the map and a line of what
+   the record says, and the two want telling apart: the name is the
+   thing being pointed at, the detail is the footnote. So the detail
+   is its own block under the name, dim and a size down, and the whole
+   row gets a rule under it - the same rule the column tables on the
+   data page use - so a list of twenty-five in Westminster reads as
+   rows rather than as a wall.
+
+   No bullets: every item is a link, and a bullet in front of a link
+   is a bullet in front of everything. */
+.borough ul.sites {
+  margin: 0 0 1.4em 0;
+  padding: 0;
+  list-style: none;
+}
+
+.borough ul.sites li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.borough ul.sites .detail {
+  display: block;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+/* The documents a borough's entries rest on. Labels only - the link
+   is on each camera's own popup, where DATA-1 put it - so this is a
+   plain list and wants nothing but its bullets taken off and a little
+   air. */
+.borough ul.sources {
+  margin: 0 0 1.1em 0;
+  padding: 0;
+  list-style: none;
+  color: var(--dim);
+}
+
+.borough ul.sources li {
+  margin: 0 0 4px 0;
+}
+
+/* The index: thirty-three rows of a name and a count. The count is
+   pushed to the right of the column so the names line up on the left
+   and the numbers on the right, which is the only way a list this
+   long is scannable; flex rather than a table because the two halves
+   wrap onto two lines on a phone rather than squeezing, and a wrapped
+   count still belongs to the name above it.
+
+   gap carries both directions: 14px between the name and the count on
+   one line, 0 when they wrap, since the row's own padding is the
+   space that matters then. */
+.borough ul.borough-list {
+  margin: 0 0 1.4em 0;
+  padding: 0;
+  list-style: none;
+}
+
+.borough ul.borough-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 14px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.borough ul.borough-list .count {
+  font-size: 12px;
+  color: var(--dim);
+  white-space: nowrap;
+}
 
 /* ------------------------------------------------------------------
    OFFLINE
