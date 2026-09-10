@@ -2519,13 +2519,6 @@ article.post {
 }
 
 /* ------------------------------------------------------------------
-   FRESHNESS (Wave 6: the freshness agent writes this block)
-
-   Rules for anything the background revalidation shows. If the agent
-   needs no rule here, this block is removed rather than left empty.
-   ------------------------------------------------------------------ */
-
-/* ------------------------------------------------------------------
    PAPER
 
    What printing the map page gives you: the list, in one column,
