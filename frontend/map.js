@@ -39,7 +39,14 @@ var DRAFT_KEY = STORAGE.draft;
    report form validates against the same box, and the picker opens on
    the same spot. Only the zooms below are the map's own. */
 
-var OPENING_ZOOM = 11;
+/* The opening zoom comes from CITY in shared.js, which is where the
+   city this map is of is named once - its box, its centre and how
+   close the map opens on it - so that a second city is one object to
+   change rather than a number here and a box there. The fallback is
+   for a shared.js older than that object: a page that loads the two
+   files from different deploys, or a copy of this file dropped beside
+   an earlier one, opens on London's 11 rather than on nothing. */
+var OPENING_ZOOM = (typeof CITY !== "undefined" && CITY.zoom) || 11;
 var CLOSEST_ZOOM = 19;   /* street and building level */
 var WIDEST_ZOOM  = 10;   /* the whole of London at once */
 
@@ -1997,7 +2004,15 @@ function pointById(id) {
 /* One popup, moved from camera to camera. Circles are not elements, so
    there is nothing for a popup to hang off; it is placed by coordinate
    instead, and the previous one is taken down first. */
-function openPopup(id) {
+/* `quiet` is for a popup being put back rather than opened: the
+   background revalidation rebuilds the one that was already open, and
+   MapLibre focuses a popup's first control as it opens (focusAfterOpen
+   defaults to true), which would take the keyboard off whatever the
+   visitor was actually using - the search box, a legend key - for a
+   redraw they never asked for. Every deliberate opening leaves it
+   alone: a list row or a link should land the keyboard in the popup
+   it just opened. See redrawCameras(). */
+function openPopup(id, quiet) {
   var point = pointById(id);
 
   if (!point) {
@@ -2006,7 +2021,7 @@ function openPopup(id) {
 
   closePopup();
 
-  popup = new maplibregl.Popup({ offset: 10, closeButton: true })
+  popup = new maplibregl.Popup({ offset: 10, closeButton: true, focusAfterOpen: !quiet })
     .setLngLat(lngLat(point.lat, point.lon))
     .setDOMContent(popupFor(point))
     .addTo(map);
@@ -2265,8 +2280,14 @@ function popupFor(point) {
    from the popup they were reading, and the back button would land
    them on a map that has forgotten it. rel="noopener noreferrer" for
    the reason every external link here carries it. Plain text and a
-   plain link, in the popup's tab order after the close button and
-   before Copy link, because that is where it sits on the screen.
+   plain link, and the first focusable thing in the popup: MapLibre
+   builds the close button after the content it is given and appends
+   it to the same box, so it is last in the DOM and last in the tab
+   order, not first. Tab therefore runs source link, Copy link,
+   Report its state, close button - the order they sit in on the
+   screen, with the close button in the corner. Walked with real Tab
+   presses; an earlier version of this comment said the close button
+   came first, which is not what the popup does.
 
    The list row does not repeat it. Its spoken text says the kind and
    the state after the name (rowFor()), and the note it reads next
@@ -3639,15 +3660,84 @@ render();
    to need is added to the view, on purpose, and never by widening
    what the table lets out.
 
-   The result is kept in the browser for a few minutes. A busy day is
-   many people opening the map, not many changes to it, so most of
-   those visits should be answered from storage rather than the
-   database. Edit mode never overlays: it is for the file, not the
-   table.
+   The result is kept in the browser, and the map is drawn from it at
+   once. A busy day is many people opening the map, not many changes
+   to it, so the cache is what nearly every visit is answered from -
+   but it is drawn *and then checked*, rather than trusted for a fixed
+   span, for the reason under "Fresh data" below. Edit mode never
+   overlays: it is for the file, not the table.
+   ------------------------------------------------------------------ */
+
+/* ---------------- fresh data (KEEP-5) ----------------
+
+   What this used to do: if the cache was less than five minutes old,
+   draw it and ask nothing. That is one behaviour with two bad ends.
+   A moderator who hides a camera saw it gone at once (every
+   moderating action calls forgetCameraCache()) but nobody else did,
+   for up to five minutes - and it is everyone else the correction is
+   for. And a visitor arriving cold, with no cache, watched the seed
+   sit there while a request they could not see went out; the seed is
+   right to be drawn first, but the five minutes were doing nothing
+   for that visit at all.
+
+   What it does now is the pattern a browser's own cache calls
+   stale-while-revalidate: draw whatever is in storage immediately,
+   whatever its age, and then ask the database anyway, in the
+   background, and redraw only if the answer is not what is already
+   on the screen. One request per page load against a table of a few
+   hundred rows is cheap - it is one request either way, when the
+   cache expires - and it buys the thing the five minutes cost: a
+   moderator's change appears on everybody's *next load*, rather than
+   on their next load after the cache happens to have expired.
+
+   The floor is the one thing the old TTL was genuinely doing. A
+   cache younger than CACHE_FLOOR is drawn and not revalidated,
+   because a reload inside half a minute is not a new visit: it is
+   somebody pressing reload, or stepping from the map to the report
+   page and back, or a page restored from the browser's own
+   back-forward cache. Thirty seconds is long enough that none of
+   those puts a second request on the database and short enough that
+   it is never what a person notices - the worst a moderator waits is
+   thirty seconds rather than five minutes, and only if they reload
+   that fast. It is not a correctness rule; it is a rate limit on
+   ourselves.
+
+   Same or different, and why the rows and not a timestamp. The
+   obvious cheap check would be "has anything been updated since",
+   and the view cannot answer it: updated_at was taken off
+   cameras_public by the privacy pass (a moderator's uuid against the
+   hour they acted, beside the daily leaderboard, is a name against a
+   time - L3 and L6), so there is deliberately no column that says
+   when. So the comparison is on the rows themselves: every row
+   serialised with its own keys sorted, the rows then sorted by id,
+   the whole thing joined into one string. Sorting both ends means
+   the answer does not depend on the order PostgREST happened to
+   return, and sorting the keys means it does not depend on the
+   column order either - which differs between the view and the
+   table fallback, and so between a cache written by one and an
+   answer from the other. A few hundred rows is well under a
+   millisecond, and the only thing it is used for is deciding whether
+   to redraw.
+
+   What the redraw keeps, and why each thing: see redrawCameras().
    ------------------------------------------------------------------ */
 
 var CAMERAS_KEY = STORAGE.cameras;
-var CAMERAS_TTL = 5 * 60 * 1000;   /* five minutes */
+
+/* How recently the cache must have been written for the revalidation
+   to be skipped altogether. Not a time-to-live: an older cache is
+   still drawn, it is only also checked. */
+var CACHE_FLOOR = 30 * 1000;   /* thirty seconds */
+
+/* The signature of the rows the map is drawn from, so a background
+   answer can be compared against what is actually on the screen
+   rather than against what was last fetched. Null until something
+   has been laid over the seed. */
+var drawnSignature = null;
+
+/* Set while redrawCameras() is taking the map apart and putting it
+   back: writeHash() reads it, because a redraw is not a move. */
+var redrawing = false;
 
 /* A row's deployment count, or the fallback if it has none. A camera
    that came from a report has never been counted, so it stands at one
@@ -3801,12 +3891,22 @@ function takeRecordFields(point, row) {
   return point;
 }
 
+/* What is in storage, whatever its age, with the time it was written
+   - the caller decides what an age means now, since the age no longer
+   decides whether the rows may be drawn. Null where there is nothing
+   usable, which is also what a browser that refuses storage gives:
+   no cache, so the request goes first and the map works exactly as it
+   did before any of this.
+
+   The shape written here is read by account.js as well (the report
+   form's context dots, which have a TTL of their own and are welcome
+   to), so { at, rows } is not ours alone to change. */
 function readCachedCameras() {
   try {
     var raw = window.localStorage.getItem(CAMERAS_KEY);
     var saved = raw ? JSON.parse(raw) : null;
-    if (saved && saved.at && Date.now() - saved.at < CAMERAS_TTL && Array.isArray(saved.rows)) {
-      return saved.rows;
+    if (saved && saved.at && Array.isArray(saved.rows)) {
+      return { at: saved.at, rows: saved.rows };
     }
   } catch (err) {
     /* nothing usable in storage */
@@ -3820,6 +3920,46 @@ function cacheCameras(rows) {
   } catch (err) {
     /* storage refused or full - the fetch still worked */
   }
+}
+
+/* One row, as a string that does not depend on the order its columns
+   came in. JSON.stringify on the object itself would: it writes keys
+   in insertion order, which is the select's order, and the view and
+   the table fallback name their columns differently - so a cache
+   written by one and an answer from the other would differ as
+   strings while saying the same thing, and every load would redraw
+   for nothing. */
+function rowSignature(row) {
+  var keys = Object.keys(row).sort();
+  var parts = [];
+  var i;
+
+  for (i = 0; i < keys.length; i++) {
+    parts.push(keys[i] + "=" + JSON.stringify(row[keys[i]]));
+  }
+
+  /* Newline-separated, and every value goes through JSON.stringify,
+     which escapes a newline inside a string - so no two different
+     rows can run together into one indistinguishable string. */
+  return parts.join("\n");
+}
+
+/* The whole answer, as one string. Sorted by id, so the order
+   PostgREST returned them in is not part of the comparison either;
+   the id is put in front of each row's own signature and the strings
+   are sorted, which is a total order whether or not it is numeric
+   (it is not: "10" sorts before "9"), and a signature only has to be
+   the same for the same rows. */
+function rowsSignature(rows) {
+  var sigs = [];
+  var i;
+
+  for (i = 0; i < rows.length; i++) {
+    sigs.push(String(rows[i].id) + "\n" + rowSignature(rows[i]));
+  }
+  sigs.sort();
+
+  return sigs.join("\n");
 }
 
 /* ---------------- when the database cannot be reached ----------------
@@ -3881,6 +4021,251 @@ function liveUpdates(available) {
   }
 }
 
+/* ---------------- the redraw, and what it keeps ----------------
+
+   The background answer differs from what is on the screen, so the
+   map has to be built again. The difficulty is that the visitor has
+   been using it for the second or two the request took, and none of
+   what they have done is in the answer: they have panned, zoomed,
+   narrowed the legend, typed in the search box, scrolled the list,
+   opened a popup, pressed Near me. A redraw that threw any of that
+   away would be worse than the stale data it fixed - a map that
+   jumps back to the middle of London on its own is a broken map,
+   however fresh.
+
+   So the rows are laid over a fresh reading of the seed rather than
+   over the points already standing. points is rebuilt with tidy()
+   and overlayCameras() runs on it exactly as it does on a first
+   load, which is what makes a camera the answer no longer carries
+   actually leave the map: overlaying a second time on top of the
+   first would only ever add and update, never remove, and a camera a
+   moderator hid would sit there until the page was reloaded.
+
+   What is deliberately not touched, and why each one:
+
+     the map        No moveMap(), no fitBounds(), no setCenter. The
+                    view is the visitor's; the answer is about the
+                    cameras, not about where to look.
+     the filters    Legacy, the hidden kinds, the solo, the year, the
+                    search term and the sort all live in variables
+                    that overlayCameras() and render() only read.
+                    Checked rather than assumed: the only thing in
+                    that path that touches a control is fitYearRange(),
+                    which moves the scrubber's ends when the record
+                    has grown and puts the chosen year back on it.
+     the popup      Remembered by what it is of and not by point id,
+                    because tidy() hands out fresh ids: its database
+                    id and its seed key, both - see cameraIdentity(),
+                    which says why both and not one. Put back on the
+                    same camera where either still answers, closed
+                    with a sentence under the map where neither does,
+                    since a popup left standing over a camera that is
+                    no longer on the map is the map lying.
+     its focus      A popup is put back without taking the keyboard
+                    (openPopup's `quiet`): the visitor may have been
+                    typing in the search box, and a request they did
+                    not make must not move their cursor. Where the
+                    keyboard was in the popup itself the element is
+                    gone with it, so the rebuilt popup takes focus as
+                    it would on any opening - and where there is no
+                    popup to rebuild, the map takes it, rather than
+                    the body taking it by default.
+     the list       render() rebuilds every row, which drops the
+                    scroll to the top and drops a focused row on the
+                    floor. Both are put back: the scroll by pixels,
+                    the focus by the row's place in the list and the
+                    kind of button it was, the way drawLegend() hands
+                    focus back after it rebuilds the legend. By place
+                    and not by camera because the rows carry no id in
+                    the markup; the order is the same sort of nearly
+                    the same set, so it is the same row bar the rare
+                    case where the row that changed is above it.
+     Near me        `here` is a variable, so the ring, the distances
+                    on every row and the Nearest sort survive without
+                    anything being done. The ring is drawn on the
+                    style, which the redraw does not touch at all.
+     the address    writeHash() is held off for the whole redraw -
+                    see the note there. The one exception is a popup
+                    that could not be put back: the bar then names a
+                    camera that has gone, and one write takes it off.
+                    That write can only ever remove the camera from a
+                    hash the page itself wrote, since the hash only
+                    ever names a camera the page opened.
+
+   And the count is read out only if it changed, through the same
+   live region a filter uses: a screen reader hearing "187 cameras
+   shown" for a redraw that showed the same 187 is noise.
+   ------------------------------------------------------------------ */
+
+/* What a camera is, across a rebuild that gives every point a fresh
+   id: its database id and its seed key, both, since a camera may
+   carry either or both. The same two cameraLinkId() picks between,
+   and for the same reason - one of them is always there and neither
+   is disturbed by a rename or a Move.
+
+   Both rather than a preference, because they can come apart in the
+   one case this is for. A moderator hides a seed camera: its row
+   leaves cameras_public, so the database id it was open under
+   resolves to nothing - but the camera is still on the map, drawn
+   from points.js as the fallback it has always been, and a popup
+   that shut on it would be saying it had gone when it has not. So
+   the seed key answers where the id no longer does, and only a
+   camera with neither - a report a moderator approved and has since
+   taken off, which lives in the database alone - is really gone. */
+function cameraIdentity(point) {
+  return {
+    id: point.cameraId || null,
+    seed: point.seedKey || seedKeyOf(point) || null
+  };
+}
+
+function pointByIdentity(want) {
+  var i;
+
+  for (i = 0; i < points.length; i++) {
+    if (want.id !== null && points[i].cameraId === want.id) {
+      return points[i];
+    }
+  }
+
+  for (i = 0; i < points.length; i++) {
+    if (want.seed !== null && points[i].seedKey === want.seed) {
+      return points[i];
+    }
+  }
+
+  return null;
+}
+
+/* Which row of the list holds the keyboard, if any: its place and the
+   button it was on. Null when the focus is anywhere else, which is
+   nearly always - and then nothing is done to it. */
+function focusedListRow() {
+  var active = document.activeElement;
+  var rows;
+  var i;
+
+  if (!pointsList || !active || !pointsList.contains(active)) {
+    return null;
+  }
+
+  rows = pointsList.children;
+  for (i = 0; i < rows.length; i++) {
+    if (rows[i].contains(active)) {
+      return { index: i, className: active.className };
+    }
+  }
+
+  return null;
+}
+
+function restoreListFocus(had) {
+  var rows;
+  var row;
+  var again;
+
+  if (!had || !pointsList) {
+    return;
+  }
+
+  rows = pointsList.children;
+  if (!rows.length) {
+    return;
+  }
+
+  /* A button with no class at all would make this "querySelector('.')",
+     which throws; every button a row holds has one, but a row is not
+     this function's to assume. */
+  if (!had.className) {
+    return;
+  }
+
+  row = rows[Math.min(had.index, rows.length - 1)];
+  again = row.querySelector("." + had.className.split(" ").join("."));
+
+  if (again && again.focus) {
+    again.focus();
+  }
+}
+
+function redrawCameras(rows) {
+  var openIdentity = null;
+  var scroller = pointsList;
+  var scrolled = scroller ? scroller.scrollTop : 0;
+  var parentScrolled = scroller && scroller.parentNode ? scroller.parentNode.scrollTop : 0;
+  var focusInPopup = false;
+  var hadRow = focusedListRow();
+  var countBefore = listedCount;
+  var open;
+  var again;
+
+  if (popupId !== null) {
+    open = pointById(popupId);
+    if (open) {
+      openIdentity = cameraIdentity(open);
+      focusInPopup = !!(popup && popup.getElement && popup.getElement() &&
+                        document.activeElement &&
+                        popup.getElement().contains(document.activeElement));
+    }
+  }
+
+  redrawing = true;
+
+  /* The popup holds a point that is about to be replaced by a new
+     object, so it comes down before the rebuild rather than after. */
+  closePopup();
+
+  points = tidy(published());
+  overlayCameras(rows);
+
+  if (openIdentity !== null) {
+    again = pointByIdentity(openIdentity);
+    if (again) {
+      openPopup(again.id, !focusInPopup);
+    }
+  }
+
+  /* The list is a fresh set of rows, so the scroll and the keyboard
+     are put back onto them. Both offsets, because which box actually
+     scrolls is a stylesheet decision (ul.points carries overflow-y
+     today) and a redraw should not depend on which one it is. */
+  if (scroller) {
+    scroller.scrollTop = scrolled;
+    if (scroller.parentNode && parentScrolled) {
+      scroller.parentNode.scrollTop = parentScrolled;
+    }
+  }
+  restoreListFocus(hadRow);
+
+  redrawing = false;
+
+  if (openIdentity !== null && !again) {
+    /* The camera whose popup was open is not in the answer under
+       either name: a report a moderator has taken off, since a seed
+       camera is still drawn from points.js whatever the database
+       says. Say so, rather than let a popup vanish with no account of
+       itself - and take its name out of the address bar, which is the
+       only write this whole redraw makes.
+
+       And where the keyboard was inside that popup it has nowhere to
+       go, so it is handed to the map, which is focusable and is where
+       the chooser hands it back on Escape. Dropping it on the body
+       is the thing CLAUDE.md warns about, and a redraw nobody asked
+       for is the worst moment to do it. */
+    sayUnderMap("The camera whose details were open is no longer on the map: it may have been taken off since this page was loaded.");
+    writeHash();
+    if (focusInPopup) {
+      map.getCanvas().focus();
+    }
+  }
+
+  /* Only when it actually moved: a redraw that shows the same number
+     of cameras has nothing to tell a screen reader. */
+  if (listedCount !== countBefore) {
+    announceCount();
+  }
+}
+
 function loadCamerasFromDatabase() {
   var cached;
   var slow;
@@ -3892,10 +4277,17 @@ function loadCamerasFromDatabase() {
     return;
   }
 
+  /* Whatever is in storage is drawn at once, whatever its age - see
+     "fresh data" above. Only a cache younger than the floor stops the
+     page asking again; anything older is drawn and then checked. */
   cached = readCachedCameras();
   if (cached) {
-    overlayCameras(cached);
-    return;
+    overlayCameras(cached.rows);
+    drawnSignature = rowsSignature(cached.rows);
+
+    if (Date.now() - cached.at < CACHE_FLOOR) {
+      return;
+    }
   }
 
   /* The timer beside the request - see above. Cleared by whichever
@@ -3946,18 +4338,43 @@ function loadCamerasFromDatabase() {
      so a fallback to it would only fail slower, and the branch would
      be a second query to keep honest for nothing. */
   function settle(result) {
+    var signature;
+
     answered();
     if (result.error || !Array.isArray(result.data)) {
-      /* The seed stands, and the line says so; a camera link by
-         database id has no answer here, so say that rather than
-         wait for one. */
+      /* The seed stands - or the cache, where one was drawn, which is
+         nearer the truth than the seed and stays exactly as it is -
+         and the line says so. A camera link by database id has no
+         answer here, so say that rather than wait for one. */
       liveUpdates(false);
       cameraLinkSettled();
       return;
     }
+
     liveUpdates(true);
     cacheCameras(result.data);
-    overlayCameras(result.data);
+
+    /* Nothing has been laid over the seed yet: this is the first
+       draw, on a visit with no cache or with storage refused, and it
+       is the overlay it always was. */
+    if (drawnSignature === null) {
+      drawnSignature = rowsSignature(result.data);
+      overlayCameras(result.data);
+      return;
+    }
+
+    /* Otherwise the cache is already on the screen and this is the
+       revalidation. Same rows means there is nothing to do beyond
+       what has been done: the notice is clear and the cache has a
+       fresh timestamp, so the next load inside the floor asks
+       nothing. Different rows means a redraw that keeps the view. */
+    signature = rowsSignature(result.data);
+    if (signature === drawnSignature) {
+      return;
+    }
+
+    drawnSignature = signature;
+    redrawCameras(result.data);
   }
 
   /* The request itself failed to complete - a network error the
@@ -4152,6 +4569,20 @@ function writeHash() {
      under "Near me" further down; a var is hoisted, so before that
      line runs it is simply undefined, and no fix is held. */
   if (here) {
+    return;
+  }
+
+  /* Nor while the background revalidation is putting the map back
+     together. A redraw is not a move: the visitor did not pan, did
+     not zoom and did not open anything, so the address bar has
+     nothing new to say. Without this the redraw would write twice
+     for no change - the open popup closes, which writes the view
+     without its camera, and then opens again, which writes the
+     camera back - and a page that was opened plain, and so has a
+     plain address, would find a view written into it by a request
+     it never made. redrawCameras() is the one place this is set,
+     and it writes once itself if the camera in the bar has gone. */
+  if (redrawing) {
     return;
   }
 

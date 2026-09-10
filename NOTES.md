@@ -505,8 +505,104 @@ update path was tested.)*
 
 ### Fresh data
 
-*(Written by the Wave 6 freshness agent: what is drawn from the cache,
-what is revalidated, and what a redraw is careful to keep.)*
+The map reads its cameras from the database and keeps the answer in
+`localStorage`. What that cache used to mean was a time-to-live: for five
+minutes the rows were drawn and nothing was asked, and after five minutes
+they were thrown away and the request went out before anything was laid over
+the seed. Both halves of that were wrong in the same way - they made the
+freshness of the map a function of the clock rather than of what the database
+actually said.
+
+The five minutes were most wrong where it mattered most. Every moderating
+action calls `forgetCameraCache()`, so a moderator who hides a camera sees it
+gone at once; nobody else did, for up to five minutes, and it is everybody
+else the correction is for. A camera taken off the map because it is not
+there any more, or a pin moved onto the right pole, is exactly the kind of
+change that should reach a person opening the map on a street, and it was
+arriving on a timer that had nothing to do with when the change was made.
+
+So `map.js` now does what a browser's own cache calls stale-while-revalidate.
+Whatever is in storage is drawn immediately, whatever its age - the map has
+never been blank in this project and now it is not stale-and-silent either -
+and then the database is asked anyway, in the background, and the map is
+redrawn only if the answer is not what is already on the screen. The cost is
+one request per page load, which is what it was before at the moment the
+cache expired; the gain is that a change reaches everyone on their next load
+rather than on their next load after some five-minute window happens to have
+run out.
+
+**The floor.** A cache written less than thirty seconds ago is drawn and not
+checked. That is the one thing the old TTL was genuinely doing and it is kept,
+narrowed: a reload inside half a minute is not a new visit but somebody
+pressing reload, stepping to the report page and back, or a page restored from
+the browser's own back-forward cache, and none of those should put a second
+request on the database. Thirty seconds is short enough that no person
+notices it - the worst a moderator waits to see their own change on a second
+browser is thirty seconds, against five minutes - and long enough to stop a
+loop of reloads. It is a rate limit on ourselves, not a claim about how fresh
+the data is.
+
+**Same or different, and why it is the rows.** The obvious check would be to
+ask the database whether anything has changed since, and it cannot answer:
+`updated_at` was deliberately taken off `cameras_public` by the privacy pass,
+because a moderator's uuid against the hour they acted is a name against a
+time beside the daily leaderboard (findings L3 and L6). Privacy took the
+timestamp away, so the comparison is on the rows themselves. Each row is
+serialised with its own keys sorted, the rows are sorted by id, and the whole
+becomes one string - both ends sorted, so neither the order PostgREST
+returned the rows in nor the column order of the query is part of the answer.
+That last matters in practice: a cache written by the table fallback and an
+answer from the view name their columns differently, and comparing the raw
+JSON would have redrawn on every load for nothing. For 187 rows the whole
+comparison is well under a millisecond.
+
+**What the redraw keeps.** This is the part that had to be got right, because
+the visitor has been using the map for the second or two the request took and
+none of that is in the answer. A redraw that moved the map, or reset the
+legend, or shut a popup, would be worse than the stale data it was fixing.
+So: the map is not moved at all - no `moveMap()`, no `fitBounds()`, no
+`setCenter()`; Legacy, the hidden kinds, the solo, the chosen year, the search
+term and the sort are variables that nothing in the overlay path writes, and
+the only control it touches is the year scrubber's ends, which widen when the
+record has grown; the open popup is remembered by what it is *of* - the
+database id, or the seed key - and not by point id, because the rebuild hands
+out fresh ids, and it is put back on the same camera without taking the
+keyboard, so a visitor typing in the search box keeps their cursor; the list's
+scroll position is put back by pixels and a focused row by its place and the
+kind of button it was, the way `drawLegend()` hands focus back after it
+rebuilds the legend; Near me's fix, its rings and the distances on every row
+survive on their own, since `here` is a variable and the redraw does not touch
+the style; the hash is not written, because a redraw is not a move; and the
+count is read out through the live region only when it actually changed.
+
+One deliberate difference from the old second overlay. The rows are laid over
+a fresh reading of `points.js` rather than over the points already standing,
+because overlaying twice can only ever add and update - it has no way to
+notice that a row it saw last time is gone. Rebuilding from the seed first
+makes the redraw identical to what a reload would draw, which is what lets a
+camera a moderator hid actually leave the map. When the camera whose popup was
+open is the one that went, the popup closes and the line under the map says
+so, and that is the single hash write the whole redraw makes: to take the
+name of a camera that is no longer there out of the address bar.
+
+**What failure does, which is what it always did.** A request that errors or
+never answers leaves what is drawn exactly where it is - the cache, now,
+rather than only the seed - and `liveUpdates(false)` writes the
+published-record line after eight seconds. A late answer still lands. See
+"Provenance and the record on the page" for that line.
+
+**How it was checked.** Headless Chrome over the DevTools protocol, with
+`fetch` wrapped to count and delay the cameras request and with `render()`,
+`overlayCameras()` and `moveMap()` counted: a seeded cache differing from the
+answer by one renamed and one removed camera drew from the cache before any
+request completed and redrew when the answer landed, with the centre, the
+zoom, Legacy, the solo, the year, the search term, the sort, the popup and the
+list's scroll all read back unchanged either side of it; an identical answer
+produced one request, no second overlay and no second render; a failing
+request left the cached rows standing and the notice after eight seconds; a
+cache younger than the floor produced no request at all; no cache and storage
+made to throw both requested first, as before; and a popup on a camera the
+answer no longer carried closed with the sentence under the map.
 
 ### What active means
 
@@ -1530,9 +1626,12 @@ has answered by then, since supabase-js has no timeout of its own and a
 request that hangs is the commonest way a bad connection fails. The
 request is not abandoned: an answer that arrives late still lays its
 rows over the map and clears the line, and so does any later successful
-fetch through `liveUpdates(true)` - the cache expiring and the next load
-asking again, or a background revalidation, which is the call for
-whoever builds that to make. A camera link by database id is not given
+fetch through `liveUpdates(true)` - which since KEEP-5 is the background
+revalidation that every load makes, so the line clears on the next load
+rather than on the next load after a cache happens to have expired. What
+stands under the line meanwhile is the cache where there is one and the
+seed where there is not; "Fresh data" above is the whole of that. A
+camera link by database id is not given
 up at the timer either: the line under the map says the database has
 not answered, and the link opens if it does. The notice is its own
 polite live region beside `#record-line` and not in `#map-note`, which
