@@ -219,7 +219,25 @@ Things that look like they would work and do not:
 - **The four cameras requests when the database is unreachable are
   postgrest-js's own retry** (backoff 1/2/4 s). `liveUpdates(false)` shows the
   published-record notice after eight seconds and `liveUpdates(true)` clears it
-  on any later success; a late answer still lands.
+  on any later success; a late answer still lands, and so does the next load's
+  background revalidation.
+- **The camera cache is drawn first and checked second.** `readCachedCameras()`
+  returns whatever is in storage whatever its age, and the request goes out
+  anyway; only a cache younger than `CACHE_FLOOR` (30 s) skips it. There is no
+  TTL any more. A background answer is compared with what is drawn by
+  `rowsSignature()` — the rows, keys sorted, sorted by id — because the view
+  has no `updated_at` to compare against; privacy took it. Anything that
+  fetches cameras and succeeds must still call `liveUpdates(true)`.
+- **A redraw is not a move.** `redrawCameras()` sets `redrawing`, which
+  `writeHash()` reads: the visitor did not pan, so the bar says nothing new.
+  Anything else that rebuilds the map in the background must do the same, or a
+  page opened plain gets a view written into it by a request nobody made.
+- **The redraw rebuilds `points` from the seed before overlaying.** Overlaying
+  a second time on the points already standing can only add and update, never
+  remove, so a camera a moderator hid would sit there until a reload.
+- **`openPopup(id, quiet)`.** MapLibre focuses a popup's first control as it
+  opens. Pass `quiet` for a popup being put back rather than opened, or a
+  background redraw takes the keyboard off the search box.
 - **`edit_camera` leaves `seed_key` alone,** so a re-seed overwrites an
   edited seed camera's name, note and status. Correct `data/cameras.csv` as
   well, or the edit is undone by the next seed.
@@ -269,6 +287,10 @@ Things that look like they would work and do not:
   rather than from the seed entry it is laying itself over. Miss either and
   the camera silently goes back to where it was: the first on the next seed
   run, the second on the next page load.
+- **The camera cache's shape.** `{ at, rows }` in `STORAGE.cameras` is written
+  by `cacheCameras()` in `map.js` and read both by `readCachedCameras()` there
+  and by the report form's context dots in `account.js`, which keep a TTL of
+  their own. Neither file owns it alone.
 - **The camera types.** `CAMERA_TYPES` in `frontend/shared.js` is the one list.
   The legend, every drop-down, and every label come from it. The database keeps
   its own copy in the `type` check constraints — deliberately, because the
